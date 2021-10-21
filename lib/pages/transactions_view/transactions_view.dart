@@ -54,7 +54,7 @@ class _TransactionsViewState extends State<TransactionsView> {
               icon: Icon(Icons.blur_circular),
               color: Color(0xff81D4FA),
               onPressed: () {
-                return showAdvancedOptions(context);
+                // return showAdvancedOptions(context);
               },
             )
           ],
@@ -84,11 +84,13 @@ class _TransactionsViewState extends State<TransactionsView> {
           child: Icon(Icons.refresh),
           backgroundColor: Color(0xff81D4FA),
           onPressed: () async {
-            final BitcoinService bitcoinService = Provider.of<BitcoinService>(context);
+            final BitcoinService bitcoinService =
+                Provider.of<BitcoinService>(context);
 
             showModal(
               context: context,
-              configuration: FadeScaleTransitionConfiguration(barrierDismissible: false),
+              configuration:
+                  FadeScaleTransitionConfiguration(barrierDismissible: false),
               builder: (context) {
                 return showLoading(context);
               },
@@ -116,7 +118,8 @@ class _TransactionsViewState extends State<TransactionsView> {
         ),
         body: FutureBuilder(
           future: bitcoinService.transactionData,
-          builder: (BuildContext context, AsyncSnapshot<TransactionData> txData) {
+          builder:
+              (BuildContext context, AsyncSnapshot<TransactionData> txData) {
             if (txData.connectionState == ConnectionState.done) {
               return _buildActivityView(context, txData);
             } else {
@@ -131,7 +134,8 @@ class _TransactionsViewState extends State<TransactionsView> {
 
 // Transaction View Helper Functions
 
-Widget _buildActivityView(BuildContext context, AsyncSnapshot<TransactionData> txData) {
+Widget _buildActivityView(
+    BuildContext context, AsyncSnapshot<TransactionData> txData) {
   // Assuming here that the txData list is empty
 
   if (txData.data.txChunks.length == 0) {
@@ -159,13 +163,15 @@ Widget _buildActivityView(BuildContext context, AsyncSnapshot<TransactionData> t
                 color: Color(0xff121212),
                 padding: EdgeInsets.fromLTRB(10, 0, 0, 8),
                 child: Text(
-                  extractDateFromTimestamp(txData.data.txChunks[index].timestamp ?? 0),
+                  extractDateFromTimestamp(
+                      txData.data.txChunks[index].timestamp ?? 0),
                   textScaleFactor: 1.25,
                   style: TextStyle(color: Colors.white),
                 )),
             content: ListView(
               physics: NeverScrollableScrollPhysics(),
-              children: _buildTransactionChildLists(txData.data.txChunks[index].transactions),
+              children: _buildTransactionChildLists(
+                  txData.data.txChunks[index].transactions),
               shrinkWrap: true,
               scrollDirection: Axis.vertical,
             ),
@@ -179,7 +185,8 @@ Widget _buildActivityView(BuildContext context, AsyncSnapshot<TransactionData> t
 List<Widget> _buildTransactionChildLists(List<Transaction> txChildren) {
   final List<Widget> finalListView = [];
 
-  final satoshisToBtc = (int satoshiAmount) => (satoshiAmount / 100000000).toString();
+  final satoshisToBtc =
+      (int satoshiAmount) => (satoshiAmount / 100000000).toString();
 
   for (var txIndex = 0; txIndex < txChildren.length; txIndex++) {
     final tx = txChildren[txIndex];
@@ -227,7 +234,8 @@ String extractDateFromTimestamp(int timestamp) {
     return 'Now...';
   }
 
-  final int weekday = DateTime.fromMillisecondsSinceEpoch(timestamp * 1000).weekday;
+  final int weekday =
+      DateTime.fromMillisecondsSinceEpoch(timestamp * 1000).weekday;
   final int day = DateTime.fromMillisecondsSinceEpoch(timestamp * 1000).day;
   final int month = DateTime.fromMillisecondsSinceEpoch(timestamp * 1000).month;
   final int year = DateTime.fromMillisecondsSinceEpoch(timestamp * 1000).year;
@@ -237,7 +245,8 @@ String extractDateFromTimestamp(int timestamp) {
 
 // Wallet Output View Helper Functions
 
-Widget _buildSecurityView(AsyncSnapshot<UtxoData> utxoData, BuildContext context) {
+Widget _buildSecurityView(
+    AsyncSnapshot<UtxoData> utxoData, BuildContext context) {
   if (utxoData.data.unspentOutputArray.length == 0) {
     return Center(
       child: Text(
@@ -308,51 +317,51 @@ String timestampToDateString(int timestamp) {
   return timeago.format(dt);
 }
 
-showAdvancedOptions(BuildContext _) {
-  showCupertinoModalBottomSheet(
-    context: _,
-    bounce: true,
-    builder: (context, scrollController) {
-      return Material(
-        color: Colors.black,
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: <Widget>[
-            SizedBox(height: 8),
-            ListTile(
-                title: Row(
-                  children: [
-                    Icon(Icons.save, color: Colors.white),
-                    SizedBox(width: 12),
-                    Text('Export output data to CSV', style: TextStyle(color: Colors.white)),
-                  ],
-                ),
-                onTap: () => Navigator.pushNamed(_, '/exportoutput')),
-            ListTile(
-                title: Row(
-                  children: [
-                    Icon(Icons.settings_backup_restore, color: Colors.white),
-                    SizedBox(width: 12),
-                    Text('Restore output data from CSV', style: TextStyle(color: Colors.white)),
-                  ],
-                ),
-                onTap: () => Navigator.pushNamed(_, '/restoreoutputcsv')),
-            ListTile(
-                title: Row(
-                  children: [
-                    Icon(Icons.save, color: Colors.white),
-                    SizedBox(width: 12),
-                    Text('Export transaction data to CSV', style: TextStyle(color: Colors.white)),
-                  ],
-                ),
-                onTap: () => Navigator.pushNamed(_, '/exporttx')),
-            SizedBox(height: 8),
-          ],
-        ),
-      );
-    },
-  );
-}
+// showAdvancedOptions(BuildContext _) {
+//   showCupertinoModalBottomSheet(
+//     context: _,
+//     bounce: true,
+//     builder: (context, scrollController) {
+//       return Material(
+//         color: Colors.black,
+//         child: Column(
+//           mainAxisSize: MainAxisSize.min,
+//           children: <Widget>[
+//             SizedBox(height: 8),
+//             ListTile(
+//                 title: Row(
+//                   children: [
+//                     Icon(Icons.save, color: Colors.white),
+//                     SizedBox(width: 12),
+//                     Text('Export output data to CSV', style: TextStyle(color: Colors.white)),
+//                   ],
+//                 ),
+//                 onTap: () => Navigator.pushNamed(_, '/exportoutput')),
+//             ListTile(
+//                 title: Row(
+//                   children: [
+//                     Icon(Icons.settings_backup_restore, color: Colors.white),
+//                     SizedBox(width: 12),
+//                     Text('Restore output data from CSV', style: TextStyle(color: Colors.white)),
+//                   ],
+//                 ),
+//                 onTap: () => Navigator.pushNamed(_, '/restoreoutputcsv')),
+//             ListTile(
+//                 title: Row(
+//                   children: [
+//                     Icon(Icons.save, color: Colors.white),
+//                     SizedBox(width: 12),
+//                     Text('Export transaction data to CSV', style: TextStyle(color: Colors.white)),
+//                   ],
+//                 ),
+//                 onTap: () => Navigator.pushNamed(_, '/exporttx')),
+//             SizedBox(height: 8),
+//           ],
+//         ),
+//       );
+//     },
+//   );
+// }
 
 AlertDialog showLoading(BuildContext _) {
   return AlertDialog(
