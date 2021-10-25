@@ -32,14 +32,16 @@ class _WalletViewState extends State<WalletView> {
 
             FutureBuilder(
               future: bitcoinService.marketInfo,
-              builder: (BuildContext context, AsyncSnapshot<String> marketInfo) {
+              builder:
+                  (BuildContext context, AsyncSnapshot<String> marketInfo) {
                 if (marketInfo.connectionState == ConnectionState.done) {
                   return Container(
                     height: 16,
                     child: Marquee(
                       fadingEdgeStartFraction: 0.2,
                       fadingEdgeEndFraction: 0.2,
-                      text: marketInfo.data ?? 'Unable to fetch Market metadata    ',
+                      text: marketInfo.data ??
+                          'Unable to fetch Market metadata    ',
                       style: TextStyle(color: Colors.white),
                     ),
                   );
@@ -63,7 +65,8 @@ class _WalletViewState extends State<WalletView> {
               height: (MediaQuery.of(context).size.height - 46) / 3,
               child: FutureBuilder(
                 future: bitcoinService.utxoData,
-                builder: (BuildContext context, AsyncSnapshot<UtxoData> utxoData) {
+                builder:
+                    (BuildContext context, AsyncSnapshot<UtxoData> utxoData) {
                   if (utxoData.connectionState == ConnectionState.done) {
                     if (utxoData == null || utxoData.hasError) {
                       return Container(
@@ -104,11 +107,13 @@ class _WalletViewState extends State<WalletView> {
             Expanded(
               child: FutureBuilder(
                 future: bitcoinService.chartData,
-                builder: (BuildContext context, AsyncSnapshot<ChartModel> chartData) {
+                builder: (BuildContext context,
+                    AsyncSnapshot<ChartModel> chartData) {
                   if (chartData.connectionState == ConnectionState.done) {
                     return FutureBuilder(
                       future: bitcoinService.currency,
-                      builder: (BuildContext context, AsyncSnapshot<String> currency) {
+                      builder: (BuildContext context,
+                          AsyncSnapshot<String> currency) {
                         if (currency.connectionState == ConnectionState.done) {
                           if (chartData == null || chartData.hasError) {
                             return Container(
@@ -122,22 +127,34 @@ class _WalletViewState extends State<WalletView> {
                           }
                           return FutureBuilder(
                             future: bitcoinService.bitcoinPrice,
-                            builder: (BuildContext context, AsyncSnapshot<dynamic> price) {
-                              if (price.connectionState == ConnectionState.done) {
+                            builder: (BuildContext context,
+                                AsyncSnapshot<dynamic> price) {
+                              if (price.connectionState ==
+                                  ConnectionState.done) {
                                 final symbol = currency.data;
-                                final midDate = chartData.data.xAxis[chartData.data.xAxis.length - 35];
+                                final midDate = chartData.data
+                                    .xAxis[chartData.data.xAxis.length - 35];
 
-                                FlutterMoneyFormatter fmf = FlutterMoneyFormatter(amount: price.data + .00);
+                                FlutterMoneyFormatter fmf =
+                                    FlutterMoneyFormatter(
+                                        amount: price.data + .00);
 
-                                final String displayPrice = currencyMap[symbol] + fmf.output.nonSymbol ?? '???';
+                                final String displayPrice =
+                                    currencyMap[symbol] +
+                                            fmf.output.nonSymbol ??
+                                        '???';
 
                                 return Padding(
-                                  padding: const EdgeInsets.fromLTRB(0, 0, 0, 0),
+                                  padding:
+                                      const EdgeInsets.fromLTRB(0, 0, 0, 0),
                                   child: Echarts(
                                     extensions: [darkThemeScript],
                                     theme: 'dark',
                                     option: json.encode({
-                                      "title": {"text": "BTC/$symbol @ $displayPrice", "left": 15},
+                                      "title": {
+                                        "text": "BTC/$symbol @ $displayPrice",
+                                        "left": 15
+                                      },
                                       "tooltip": {
                                         "trigger": 'axis',
                                         "axisPointer": {"type": 'cross'}
@@ -148,7 +165,8 @@ class _WalletViewState extends State<WalletView> {
                                       "series": [
                                         {
                                           "type": 'k',
-                                          "itemStyle": buildCandleStickColorData(),
+                                          "itemStyle":
+                                              buildCandleStickColorData(),
                                           "data": chartData.data.candleData,
                                         }
                                       ]
@@ -254,5 +272,10 @@ List buildDataZoomOptions(String midValue) {
 }
 
 Map<String, String> buildCandleStickColorData() {
-  return {"color": '#15F4EE', "color0": '#FF0266', "borderColor": '#15F4EE', "borderColor0": '#FF0266'};
+  return {
+    "color": '#15F4EE',
+    "color0": '#FF0266',
+    "borderColor": '#15F4EE',
+    "borderColor0": '#FF0266'
+  };
 }

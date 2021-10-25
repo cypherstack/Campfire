@@ -35,7 +35,8 @@ class _ReceiveViewState extends State<ReceiveView> {
             ),
             FutureBuilder(
               future: bitcoinService.currentReceivingAddress,
-              builder: (BuildContext context, AsyncSnapshot<String> currentAddress) {
+              builder:
+                  (BuildContext context, AsyncSnapshot<String> currentAddress) {
                 if (currentAddress.connectionState == ConnectionState.done) {
                   return Expanded(
                     child: Center(
@@ -49,7 +50,9 @@ class _ReceiveViewState extends State<ReceiveView> {
                     ),
                   );
                 } else {
-                  return Container(height: 200, child: Center(child: CircularProgressIndicator()));
+                  return Container(
+                      height: 200,
+                      child: Center(child: CircularProgressIndicator()));
                 }
               },
             ),
@@ -149,5 +152,7 @@ class _ReceiveViewState extends State<ReceiveView> {
 // Receive View helper functions
 
 String condenseAdress(String address) {
-  return address.substring(0, 5) + '...' + address.substring(address.length - 5);
+  return address.substring(0, 5) +
+      '...' +
+      address.substring(address.length - 5);
 }
