@@ -51,6 +51,14 @@ class BitcoinService extends ChangeNotifier {
   Future<bool> _useBiomterics;
   Future<bool> get useBiometrics => _useBiomterics;
 
+  final firo = new NetworkType(
+      messagePrefix: '\x18Zcoin Signed Message:\n',
+      bech32: 'bc',
+      bip32: new Bip32Type(public: 0x0488b21e, private: 0x0488ade4),
+      pubKeyHash: 0x52,
+      scriptHash: 0x07,
+      wif: 0xd2);
+
   BitcoinService() {
     _currency = CurrencyUtilities.fetchPreferredCurrency();
 
@@ -69,7 +77,7 @@ class BitcoinService extends ChangeNotifier {
       // Triggers for new users automatically. Generates new wallet
       await _generateNewWallet(wallet);
     } else {
-      // Wallet alreiady exists, triggers for a returning user
+      // Wallet already exists, triggers for a returning user
       this._currentReceivingAddress = _getCurrentAddressForChain(0);
       this._useBiomterics = Future(
         () async => await wallet.get('use_biometrics'),
@@ -123,9 +131,11 @@ class BitcoinService extends ChangeNotifier {
     final secureStore = new FlutterSecureStorage();
     final seed = bip39.mnemonicToSeed(await secureStore.read(key: 'mnemonic'));
     final root = bip32.BIP32.fromSeed(seed);
-    final node = root.derivePath("m/84'/0'/0'/$chain/$index");
+    final node = root.derivePath("m/44'/136'/0'/$chain/$index");
 
-    return P2WPKH(data: new PaymentData(pubkey: node.publicKey)).data.address;
+    return P2PKH(network: firo, data: new PaymentData(pubkey: node.publicKey))
+        .data
+        .address;
   }
 
   /// Increases the index for either the internal or external chain, depending on [chain].
@@ -304,7 +314,7 @@ class BitcoinService extends ChangeNotifier {
     int inputsBeingConsumed = 0;
     List<UtxoObject> utxoObjectsToUse = new List();
 
-    for (var i = 0; satoshisBeingUsed < satoshiAmountToSend; i++) {
+    for (var i = 0; satoshisBeingUsed <= satoshiAmountToSend; i++) {
       utxoObjectsToUse.add(spendableOutputs[i]);
       satoshisBeingUsed += spendableOutputs[i].value;
       inputsBeingConsumed += 1;
@@ -314,14 +324,21 @@ class BitcoinService extends ChangeNotifier {
     List<String> recipientsArray = [_recipientAddress];
     List<int> recipientsAmtArray = [satoshiAmountToSend];
 
+    // https://bitcoin.stackexchange.com/questions/1195/how-to-calculate-transaction-size-before-sending-legacy-non-segwit-p2pkh-p2sh/3011#3011
     // Assume 1 output, only for recipient and no change
     final feeForOneOutput =
-        ((42 + 272 * inputsBeingConsumed + 128) / 4).ceil() *
-            selectedTxFee.ceil();
+        ((((inputsBeingConsumed * 180 + 1 * 34 + 10 + inputsBeingConsumed) /
+                        1024.0) *
+                    selectedTxFee) *
+                100000000)
+            .ceil();
     // Assume 2 outputs, one for recipient and one for change
     final feeForTwoOutputs =
-        ((42 + 272 * inputsBeingConsumed + 128 * 2) / 4).ceil() *
-            selectedTxFee.ceil();
+        ((((inputsBeingConsumed * 180 + 2 * 34 + 10 + inputsBeingConsumed) /
+                        1024.0) *
+                    selectedTxFee) *
+                100000000)
+            .ceil();
 
     if (satoshisBeingUsed - satoshiAmountToSend > feeForOneOutput) {
       if (satoshisBeingUsed - satoshiAmountToSend > feeForOneOutput + 293) {
@@ -441,7 +458,7 @@ class BitcoinService extends ChangeNotifier {
       };
 
       final response = await http.post(
-        'https://us-central1-paymint.cloudfunctions.net/api/voutLookup',
+        'https://us-central1-paymint-3a58d.cloudfunctions.net/api/voutLookup',
         body: json.encode(requestBody),
         headers: {'Content-Type': 'application/json'},
       );
@@ -457,7 +474,11 @@ class BitcoinService extends ChangeNotifier {
 
     final secureStore = new FlutterSecureStorage();
     final seed = bip39.mnemonicToSeed(await secureStore.read(key: 'mnemonic'));
-    final root = bip32.BIP32.fromSeed(seed);
+
+    final _FIRO = new bip32.NetworkType(
+        wif: 0xd2,
+        bip32: new bip32.Bip32Type(public: 0x0488b21e, private: 0x0488ade4));
+    final root = bip32.BIP32.fromSeed(seed, _FIRO);
 
     List<ECPair> elipticCurvePairArray = new List();
     List<Uint8List> outputDataArray = new List();
@@ -466,37 +487,47 @@ class BitcoinService extends ChangeNotifier {
       final addressToCheckFor = addressesToDerive[i];
 
       for (var i = 0; i < 2000; i++) {
-        final nodeReceiving = root.derivePath("m/84'/0'/0'/0/$i");
-        final nodeChange = root.derivePath("m/84'/0'/0'/1/$i");
+        final nodeReceiving = root.derivePath("m/44'/136'/0'/0/$i");
+        final nodeChange = root.derivePath("m/44'/136'/0'/1/$i");
 
-        if (P2WPKH(data: new PaymentData(pubkey: nodeReceiving.publicKey))
+        if (P2PKH(
+                    network: firo,
+                    data: new PaymentData(pubkey: nodeReceiving.publicKey))
                 .data
                 .address ==
             addressToCheckFor) {
           print('Receiving found on loop $i');
-          elipticCurvePairArray.add(ECPair.fromWIF(nodeReceiving.toWIF()));
-          outputDataArray.add(
-              P2WPKH(data: new PaymentData(pubkey: nodeReceiving.publicKey))
-                  .data
-                  .output);
+          elipticCurvePairArray
+              .add(ECPair.fromWIF(nodeReceiving.toWIF(), network: firo));
+          outputDataArray.add(P2PKH(
+                  network: firo,
+                  data: new PaymentData(pubkey: nodeReceiving.publicKey))
+              .data
+              .output);
           break;
         }
-        if (P2WPKH(data: new PaymentData(pubkey: nodeChange.publicKey))
+        if (P2PKH(
+                    network: firo,
+                    data: new PaymentData(pubkey: nodeChange.publicKey))
                 .data
                 .address ==
             addressToCheckFor) {
           print('Change found on loop $i');
-          elipticCurvePairArray.add(ECPair.fromWIF(nodeChange.toWIF()));
-          outputDataArray.add(
-              P2WPKH(data: new PaymentData(pubkey: nodeChange.publicKey))
-                  .data
-                  .output);
+          elipticCurvePairArray
+              .add(ECPair.fromWIF(nodeChange.toWIF(), network: firo));
+
+          outputDataArray.add(P2PKH(
+                  network: firo,
+                  data: new PaymentData(pubkey: nodeChange.publicKey))
+              .data
+              .output);
           break;
         }
       }
     }
 
-    final txb = new TransactionBuilder();
+    final txb = new TransactionBuilder(network: firo);
+    // TODO should I set to version 2?
     txb.setVersion(1);
 
     // Add transaction inputs
@@ -517,7 +548,9 @@ class BitcoinService extends ChangeNotifier {
         witnessValue: utxosToUse[i].value,
       );
     }
-    return txb.build().toHex();
+    String builtHex = txb.build().toHex();
+    print(builtHex);
+    return builtHex;
   }
 
   Future<String> getEsploraUrl() async {
@@ -525,7 +558,7 @@ class BitcoinService extends ChangeNotifier {
     final String url = await wallet.get('esplora_url');
 
     if (url == null) {
-      final blockstreamUrl = 'https://www.blockstream.info/api';
+      final blockstreamUrl = 'https://10.0.0.176/api/FIRO/mainnet/';
       print('Using blockstream for esplora server');
       await wallet.put('esplora_url', blockstreamUrl);
       return blockstreamUrl;
@@ -537,11 +570,11 @@ class BitcoinService extends ChangeNotifier {
   Future<bool> submitHexToNetwork(String hex) async {
     final Map<String, dynamic> obj = {
       "url": await getEsploraUrl(),
-      "hex": hex,
+      "rawTx": hex,
     };
 
     final res = await http.post(
-      'https://us-central1-paymint.cloudfunctions.net/api/pushtx',
+      'https://us-central1-paymint-3a58d.cloudfunctions.net/api/pushtx',
       body: jsonEncode(obj),
       headers: {'Content-Type': 'application/json'},
     );
@@ -578,7 +611,7 @@ class BitcoinService extends ChangeNotifier {
 
     try {
       final response = await http.post(
-        'https://us-central1-paymint.cloudfunctions.net/api/outputData',
+        'https://us-central1-paymint-3a58d.cloudfunctions.net/api/outputData',
         body: jsonEncode(requestBody),
         headers: {'Content-Type': 'application/json'},
       );
@@ -657,7 +690,7 @@ class BitcoinService extends ChangeNotifier {
 
     try {
       final response = await http.post(
-        'https://us-central1-paymint.cloudfunctions.net/api/txData',
+        'https://us-central1-paymint-3a58d.cloudfunctions.net/api/txData',
         body: jsonEncode(requestBody),
         headers: {'Content-Type': 'application/json'},
       );
@@ -701,7 +734,7 @@ class BitcoinService extends ChangeNotifier {
     final Map<String, String> requestBody = {"currency": currency};
 
     final response = await http.post(
-      'https://us-central1-paymint.cloudfunctions.net/api/getChartInfo',
+      'https://us-central1-paymint-3a58d.cloudfunctions.net/api/getChartInfo',
       body: json.encode(requestBody),
       headers: {'Content-Type': 'application/json'},
     );
@@ -721,7 +754,7 @@ class BitcoinService extends ChangeNotifier {
     final Map<String, String> requestBody = {"currency": currency};
 
     final response = await http.post(
-      'https://us-central1-paymint.cloudfunctions.net/api/currentBitcoinPrice',
+      'https://us-central1-paymint-3a58d.cloudfunctions.net/api/currentBitcoinPrice',
       body: jsonEncode(requestBody),
       headers: {'Content-Type': 'application/json'},
     );
@@ -745,7 +778,7 @@ class BitcoinService extends ChangeNotifier {
     };
 
     final response = await http.post(
-      'https://us-central1-paymint.cloudfunctions.net/api/txCount',
+      'https://us-central1-paymint-3a58d.cloudfunctions.net/api/txCount',
       body: json.encode(requestBody),
       headers: {'Content-Type': 'application/json'},
     );
@@ -780,7 +813,7 @@ class BitcoinService extends ChangeNotifier {
     final Map<String, dynamic> requestBody = {"url": await getEsploraUrl()};
 
     final response = await http.post(
-      'https://us-central1-paymint.cloudfunctions.net/api/fees',
+      'https://us-central1-paymint-3a58d.cloudfunctions.net/api/fees',
       body: jsonEncode(requestBody),
       headers: {'Content-Type': 'application/json'},
     );
@@ -801,7 +834,7 @@ class BitcoinService extends ChangeNotifier {
     final Map<String, String> requestBody = {"currency": currency};
 
     final response = await http.post(
-      'https://us-central1-paymint.cloudfunctions.net/api/getMarketInfo',
+      'https://us-central1-paymint-3a58d.cloudfunctions.net/api/getMarketInfo',
       body: json.encode(requestBody),
       headers: {'Content-Type': 'application/json'},
     ).catchError((error) => Future(() => 'Unable to fetch market data'));
@@ -837,18 +870,24 @@ class BitcoinService extends ChangeNotifier {
         break;
       }
 
-      final currentNode = root.derivePath("m/84'/0'/0'/0/$i");
-      final address =
-          P2WPKH(data: new PaymentData(pubkey: currentNode.publicKey))
-              .data
-              .address;
+      final currentNode = root.derivePath("m/44'/136'/0'/0/$i");
+      print(currentNode.toBase58());
+      print(currentNode.toWIF());
+      print(currentNode.publicKey);
+      print(currentNode.privateKey);
+      final address = P2PKH(
+              network: firo,
+              data: new PaymentData(pubkey: currentNode.publicKey))
+          .data
+          .address;
+      print(address);
       final Map<String, String> requestBody = {
         "address": address,
         "url": await getEsploraUrl()
       };
 
       final response = await http.post(
-        'https://us-central1-paymint.cloudfunctions.net/api/txCount',
+        'https://us-central1-paymint-3a58d.cloudfunctions.net/api/txCount',
         body: json.encode(requestBody),
         headers: {'Content-Type': 'application/json'},
       );
@@ -876,18 +915,19 @@ class BitcoinService extends ChangeNotifier {
         break;
       }
 
-      final currentNode = root.derivePath("m/84'/0'/0'/1/$i");
-      final address =
-          P2WPKH(data: new PaymentData(pubkey: currentNode.publicKey))
-              .data
-              .address;
+      final currentNode = root.derivePath("m/44'/136'/0'/1/$i");
+      final address = P2PKH(
+              network: firo,
+              data: new PaymentData(pubkey: currentNode.publicKey))
+          .data
+          .address;
       final Map<String, String> requestBody = {
         "address": address,
         "url": await getEsploraUrl()
       };
 
       final response = await http.post(
-        'https://us-central1-paymint.cloudfunctions.net/api/txCount',
+        'https://us-central1-paymint-3a58d.cloudfunctions.net/api/txCount',
         body: json.encode(requestBody),
         headers: {'Content-Type': 'application/json'},
       );

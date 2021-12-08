@@ -25,8 +25,10 @@ class _EsploraViewState extends State<EsploraView> {
             onPressed: () async {
               final wallet = await Hive.openBox('wallet');
 
-              if (textController.text.isEmpty || textController.text.trim() == '') {
-                await wallet.put('esplora_url', 'https://www.blockstream.info/api');
+              if (textController.text.isEmpty ||
+                  textController.text.trim() == '') {
+                await wallet.put(
+                    'esplora_url', 'https://10.0.0.176/api/FIRO/mainnet/');
               } else {
                 await wallet.put('esplora_url', textController.text);
               }
@@ -46,7 +48,8 @@ class _EsploraViewState extends State<EsploraView> {
             SizedBox(height: 24),
             FutureBuilder(
               future: bitcoinService.getEsploraUrl(),
-              builder: (BuildContext context, AsyncSnapshot<String> esploraUrl) {
+              builder:
+                  (BuildContext context, AsyncSnapshot<String> esploraUrl) {
                 if (esploraUrl.connectionState == ConnectionState.done) {
                   return TextField(
                     controller: textController,
