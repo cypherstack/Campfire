@@ -83,7 +83,8 @@ class _ExportOutputCsvViewState extends State<ExportOutputCsvView> {
     if (allOutputs.length == 0) {
       _scaffoldKey.currentState.showSnackBar(SnackBar(
         backgroundColor: Colors.red,
-        content: Text('No output data to export', style: TextStyle(color: Colors.white)),
+        content: Text('No output data to export',
+            style: TextStyle(color: Colors.white)),
       ));
 
       return 0;
@@ -113,7 +114,8 @@ class _ExportOutputCsvViewState extends State<ExportOutputCsvView> {
 
     _scaffoldKey.currentState.showSnackBar(SnackBar(
       backgroundColor: Colors.green,
-      content: Text('Output data successfully exported to CSV', style: TextStyle(color: Colors.white)),
+      content: Text('Output data successfully exported to CSV',
+          style: TextStyle(color: Colors.white)),
     ));
 
     return 1;

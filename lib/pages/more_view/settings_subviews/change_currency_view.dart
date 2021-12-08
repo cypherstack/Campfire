@@ -42,7 +42,8 @@ class _ChangeCurrencyViewState extends State<ChangeCurrencyView> {
     );
   }
 
-  _buildChangeCurrencyView(BuildContext context, AsyncSnapshot<String> currency) {
+  _buildChangeCurrencyView(
+      BuildContext context, AsyncSnapshot<String> currency) {
     return Scaffold(
       body: ListView.builder(
         itemCount: currencyList.length,
@@ -59,7 +60,8 @@ class _ChangeCurrencyViewState extends State<ChangeCurrencyView> {
       return Container(
         color: Color(0xff121212),
         child: ListTile(
-          title: Text(selectedCurrency + ' ~ $symbol', style: TextStyle(color: Colors.white)),
+          title: Text(selectedCurrency + ' ~ $symbol',
+              style: TextStyle(color: Colors.white)),
           trailing: Icon(
             Icons.check,
             color: Colors.cyanAccent,
@@ -72,16 +74,19 @@ class _ChangeCurrencyViewState extends State<ChangeCurrencyView> {
       return Container(
         color: Color(0xff121212),
         child: ListTile(
-          title: Text(currencyList[index] + ' ~ $symbol', style: TextStyle(color: Colors.white)),
+          title: Text(currencyList[index] + ' ~ $symbol',
+              style: TextStyle(color: Colors.white)),
           onTap: () async {
             showModal(
               context: context,
-              configuration: FadeScaleTransitionConfiguration(barrierDismissible: false),
+              configuration:
+                  FadeScaleTransitionConfiguration(barrierDismissible: false),
               builder: (BuildContext context) {
                 return _currencySwitchDialog(currencyList[index]);
               },
             );
-            final BitcoinService btcService = Provider.of<BitcoinService>(context);
+            final BitcoinService btcService =
+                Provider.of<BitcoinService>(context);
             await btcService.changeCurrency(currencyList[index]);
             await btcService.refreshWalletData();
             Navigator.pop(context);

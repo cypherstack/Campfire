@@ -26,7 +26,8 @@ class ActiveOutputTile extends StatefulWidget {
       : super(key: key);
 
   @override
-  _ActiveOutputTileState createState() => _ActiveOutputTileState(name, currentValue, blockHeight, fullOutput);
+  _ActiveOutputTileState createState() =>
+      _ActiveOutputTileState(name, currentValue, blockHeight, fullOutput);
 }
 
 class _ActiveOutputTileState extends State<ActiveOutputTile> {
@@ -35,7 +36,8 @@ class _ActiveOutputTileState extends State<ActiveOutputTile> {
   final String _blockHeight;
   final UtxoObject _fullOutput;
 
-  _ActiveOutputTileState(this._name, this._currentValue, this._blockHeight, this._fullOutput);
+  _ActiveOutputTileState(
+      this._name, this._currentValue, this._blockHeight, this._fullOutput);
 
   @override
   Widget build(BuildContext context) {
@@ -71,7 +73,8 @@ class PendingOutputTile extends StatefulWidget {
   PendingOutputTile({Key key, @required this.currentValue}) : super(key: key);
 
   @override
-  _PendingOutputTileState createState() => _PendingOutputTileState(currentValue);
+  _PendingOutputTileState createState() =>
+      _PendingOutputTileState(currentValue);
 }
 
 class _PendingOutputTileState extends State<PendingOutputTile> {
@@ -118,7 +121,8 @@ class InactiveOutputTile extends StatefulWidget {
       : super(key: key);
 
   @override
-  _InactiveOutputTileState createState() => _InactiveOutputTileState(name, currentValue, blockHeight, fullOutput);
+  _InactiveOutputTileState createState() =>
+      _InactiveOutputTileState(name, currentValue, blockHeight, fullOutput);
 }
 
 class _InactiveOutputTileState extends State<InactiveOutputTile> {
@@ -127,9 +131,11 @@ class _InactiveOutputTileState extends State<InactiveOutputTile> {
   final String _blockHeight;
   final UtxoObject _fullOutput;
 
-  ContainerTransitionType containerTransitionType = ContainerTransitionType.fadeThrough;
+  ContainerTransitionType containerTransitionType =
+      ContainerTransitionType.fadeThrough;
 
-  _InactiveOutputTileState(this._name, this._currentValue, this._blockHeight, this._fullOutput);
+  _InactiveOutputTileState(
+      this._name, this._currentValue, this._blockHeight, this._fullOutput);
 
   @override
   Widget build(BuildContext context) {
@@ -178,20 +184,24 @@ class IncomingTransactionListTile extends StatefulWidget {
   final String currentValue;
 
   @override
-  _IncomingTransactionListTileState createState() => _IncomingTransactionListTileState();
+  _IncomingTransactionListTileState createState() =>
+      _IncomingTransactionListTileState();
 }
 
-class _IncomingTransactionListTileState extends State<IncomingTransactionListTile> {
+class _IncomingTransactionListTileState
+    extends State<IncomingTransactionListTile> {
   @override
   Widget build(BuildContext context) {
     return ListTile(
       leading: CircularProgressIndicator(),
-      title: Text('Incoming Transaction...', style: TextStyle(color: Colors.white)),
+      title: Text('Incoming Transaction...',
+          style: TextStyle(color: Colors.white)),
       subtitle: Text(
         formatSatoshiBalance(int.parse(widget.satoshiAmt)),
         style: TextStyle(color: Colors.white),
       ),
-      trailing: Text(widget.currentValue, style: TextStyle(color: Colors.white)),
+      trailing:
+          Text(widget.currentValue, style: TextStyle(color: Colors.white)),
       onTap: () {},
     );
   }
@@ -203,20 +213,24 @@ class OutgoingTransactionListTile extends StatefulWidget {
   final String currentValue;
 
   @override
-  _OutgoingTransactionListTileState createState() => _OutgoingTransactionListTileState();
+  _OutgoingTransactionListTileState createState() =>
+      _OutgoingTransactionListTileState();
 }
 
-class _OutgoingTransactionListTileState extends State<OutgoingTransactionListTile> {
+class _OutgoingTransactionListTileState
+    extends State<OutgoingTransactionListTile> {
   @override
   Widget build(BuildContext context) {
     return ListTile(
       leading: CircularProgressIndicator(),
-      title: Text('Outgoing Transaction...', style: TextStyle(color: Colors.white)),
+      title: Text('Outgoing Transaction...',
+          style: TextStyle(color: Colors.white)),
       subtitle: Text(
         formatSatoshiBalance(int.parse(widget.satoshiAmt)),
         style: TextStyle(color: Colors.white),
       ),
-      trailing: Text(widget.currentValue, style: TextStyle(color: Colors.white)),
+      trailing:
+          Text(widget.currentValue, style: TextStyle(color: Colors.white)),
       onTap: () {},
     );
   }
@@ -248,7 +262,8 @@ class _UtxoDetailViewState extends State<UtxoDetailView> {
     return Scaffold(
       appBar: AppBar(
         backgroundColor: Color(0xff121212),
-        title: Text(_utxoObject.txName + ' Details', style: GoogleFonts.rubik(color: Colors.white)),
+        title: Text(_utxoObject.txName + ' Details',
+            style: GoogleFonts.rubik(color: Colors.white)),
         leading: IconButton(
           icon: Icon(Icons.arrow_back),
           onPressed: () => Navigator.pop(context),
@@ -328,20 +343,25 @@ class _UtxoDetailViewState extends State<UtxoDetailView> {
                 style: TextStyle(color: Colors.white),
               ),
               trailing: Text(
-                'Output #' + (_utxoObject.vout + 1).toString() + ' in Transaction',
+                'Output #' +
+                    (_utxoObject.vout + 1).toString() +
+                    ' in Transaction',
                 style: TextStyle(color: Colors.white),
               ),
               onTap: () {},
             ),
             ListTile(
-              title: Text('Copy Transaction ID', style: TextStyle(color: Colors.cyanAccent)),
+              title: Text('Copy Transaction ID',
+                  style: TextStyle(color: Colors.cyanAccent)),
               onTap: () {
                 Clipboard.setData(new ClipboardData(text: _utxoObject.txid));
-                Toast.show('ID copied to clipboard', context, duration: Toast.LENGTH_LONG, gravity: Toast.BOTTOM);
+                Toast.show('ID copied to clipboard', context,
+                    duration: Toast.LENGTH_LONG, gravity: Toast.BOTTOM);
               },
             ),
             ListTile(
-              title: Text('Rename Output', style: TextStyle(color: Colors.cyanAccent)),
+              title: Text('Rename Output',
+                  style: TextStyle(color: Colors.cyanAccent)),
               onTap: () {
                 showModal(
                   context: context,
@@ -413,7 +433,8 @@ class _RenameOutputDialog extends StatelessWidget {
 
             final labels = await Hive.openBox('labels');
             await labels.put(txid, textEditingController.text);
-            final BitcoinService bitcoinService = Provider.of<BitcoinService>(context);
+            final BitcoinService bitcoinService =
+                Provider.of<BitcoinService>(context);
             bitcoinService.renameOutput(txid, textEditingController.text);
             Navigator.pop(context);
           },
@@ -474,7 +495,9 @@ Text buildBlockButtonForOutput(bool blockStatus) {
 }
 
 class SendListTile extends StatefulWidget {
-  SendListTile({Key key, this.amount, this.currentValue, this.previousValue, this.tx}) : super(key: key);
+  SendListTile(
+      {Key key, this.amount, this.currentValue, this.previousValue, this.tx})
+      : super(key: key);
 
   final String amount;
   final String currentValue;
@@ -531,7 +554,9 @@ class _SendListTileState extends State<SendListTile> {
 }
 
 class ReceiveListTile extends StatefulWidget {
-  const ReceiveListTile({Key key, this.amount, this.currentValue, this.previousValue, this.tx}) : super(key: key);
+  const ReceiveListTile(
+      {Key key, this.amount, this.currentValue, this.previousValue, this.tx})
+      : super(key: key);
 
   final String amount;
   final String currentValue;
@@ -549,9 +574,12 @@ class _ReceiveListTileState extends State<ReceiveListTile> {
     return Container(
       decoration: new BoxDecoration(color: Color(0xff121212)),
       child: ListTile(
-        onTap: () =>
-            Navigator.push(context, CupertinoPageRoute(builder: (BuildContext _) => _ReceiveDetailsPage(widget.tx))),
-        leading: Icon(Icons.keyboard_arrow_down, color: Colors.cyanAccent, size: 40),
+        onTap: () => Navigator.push(
+            context,
+            CupertinoPageRoute(
+                builder: (BuildContext _) => _ReceiveDetailsPage(widget.tx))),
+        leading:
+            Icon(Icons.keyboard_arrow_down, color: Colors.cyanAccent, size: 40),
         title: Text(
           'Received',
           style: TextStyle(color: Colors.white),
@@ -587,10 +615,13 @@ String formatSatoshiBalance(int satoshiBalance) {
 }
 
 class PurchaseListTile extends StatelessWidget {
-  const PurchaseListTile({Key key, this.purchaseAmount, this.valueAtTimeOfPurchase}) : super(key: key);
+  const PurchaseListTile(
+      {Key key, this.purchaseAmount, this.valueAtTimeOfPurchase})
+      : super(key: key);
 
   final String purchaseAmount; // Denominated in BTC
-  final String valueAtTimeOfPurchase; // USD value of purchaseAmount at the time of the purchase
+  final String
+      valueAtTimeOfPurchase; // USD value of purchaseAmount at the time of the purchase
 
   @override
   Widget build(BuildContext context) {
@@ -672,7 +703,9 @@ class __SendDetailsPageState extends State<_SendDetailsPage> {
             Container(
                 height: MediaQuery.of(context).size.width / 2,
                 color: Color(0xff121212),
-                child: Center(child: FlareActor('assets/rive/success.flr', animation: 'Untitled'))),
+                child: Center(
+                    child: FlareActor('assets/rive/success.flr',
+                        animation: 'Untitled'))),
             ListTile(
               title: Text(
                 'Date & Time:',
@@ -756,13 +789,16 @@ class __SendDetailsPageState extends State<_SendDetailsPage> {
               },
             ),
             ListTile(
-                title: Text('Copy transaction ID', style: TextStyle(color: Colors.cyanAccent)),
+                title: Text('Copy transaction ID',
+                    style: TextStyle(color: Colors.cyanAccent)),
                 onTap: () {
                   Clipboard.setData(new ClipboardData(text: widget._tx.txid));
-                  Toast.show('ID copied to clipboard', context, duration: Toast.LENGTH_LONG, gravity: Toast.BOTTOM);
+                  Toast.show('ID copied to clipboard', context,
+                      duration: Toast.LENGTH_LONG, gravity: Toast.BOTTOM);
                 }),
             ListTile(
-              title: Text('Verify on blockchain', style: TextStyle(color: Colors.cyanAccent)),
+              title: Text('Verify on blockchain',
+                  style: TextStyle(color: Colors.cyanAccent)),
               onTap: () {
                 _launchTransactionUrl(context, widget._tx.txid);
               },
@@ -833,24 +869,28 @@ class __ReceiveDetailsPageState extends State<_ReceiveDetailsPage> {
                 height: MediaQuery.of(context).size.width / 2,
                 color: Color(0xff121212),
                 child: Center(
-                  child: FlareActor('assets/rive/success.flr', animation: 'Untitled'),
+                  child: FlareActor('assets/rive/success.flr',
+                      animation: 'Untitled'),
                 )),
             ListTile(
               title: Text(
                 'Date & Time:',
                 style: TextStyle(color: Colors.white),
               ),
-              trailing: Text(_buildDateTimeForTx(widget._tx.timestamp), style: TextStyle(color: Colors.white)),
+              trailing: Text(_buildDateTimeForTx(widget._tx.timestamp),
+                  style: TextStyle(color: Colors.white)),
               onTap: () {},
             ),
             ListTile(
               title: Text('Action:', style: TextStyle(color: Colors.white)),
-              trailing: Text(widget._tx.txType, style: TextStyle(color: Colors.white)),
+              trailing: Text(widget._tx.txType,
+                  style: TextStyle(color: Colors.white)),
               onTap: () {},
             ),
             ListTile(
               title: Text('Amount:', style: TextStyle(color: Colors.white)),
-              trailing: Text(buildAmount(), style: TextStyle(color: Colors.white)),
+              trailing:
+                  Text(buildAmount(), style: TextStyle(color: Colors.white)),
               onTap: () {
                 setState(() {
                   if (viewDenomination == 0) {
@@ -863,17 +903,21 @@ class __ReceiveDetailsPageState extends State<_ReceiveDetailsPage> {
             ),
             ListTile(
               title: Text('Worth now:', style: TextStyle(color: Colors.white)),
-              trailing: Text(widget._tx.worthNow, style: TextStyle(color: Colors.white)),
+              trailing: Text(widget._tx.worthNow,
+                  style: TextStyle(color: Colors.white)),
               onTap: () {},
             ),
             ListTile(
-              title: Text('Worth when received:', style: TextStyle(color: Colors.white)),
-              trailing: Text(widget._tx.worthAtBlockTimestamp, style: TextStyle(color: Colors.white)),
+              title: Text('Worth when received:',
+                  style: TextStyle(color: Colors.white)),
+              trailing: Text(widget._tx.worthAtBlockTimestamp,
+                  style: TextStyle(color: Colors.white)),
               onTap: () {},
             ),
             ListTile(
               title: Text('Fee paid:', style: TextStyle(color: Colors.white)),
-              trailing: Text(buildFeeAmount(), style: TextStyle(color: Colors.white)),
+              trailing:
+                  Text(buildFeeAmount(), style: TextStyle(color: Colors.white)),
               onTap: () {
                 setState(() {
                   if (viewDenomination == 0) {
@@ -891,7 +935,8 @@ class __ReceiveDetailsPageState extends State<_ReceiveDetailsPage> {
               ),
               onTap: () {
                 Clipboard.setData(new ClipboardData(text: widget._tx.txid));
-                Toast.show('ID copied to clipboard', context, duration: Toast.LENGTH_LONG, gravity: Toast.BOTTOM);
+                Toast.show('ID copied to clipboard', context,
+                    duration: Toast.LENGTH_LONG, gravity: Toast.BOTTOM);
               },
             ),
             ListTile(
@@ -920,6 +965,7 @@ void _launchTransactionUrl(BuildContext context, String txid) async {
   if (await canLaunch(url)) {
     await launch(url);
   } else {
-    Toast.show('Cannot launch url', context, duration: Toast.LENGTH_LONG, gravity: Toast.BOTTOM);
+    Toast.show('Cannot launch url', context,
+        duration: Toast.LENGTH_LONG, gravity: Toast.BOTTOM);
   }
 }

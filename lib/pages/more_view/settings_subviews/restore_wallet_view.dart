@@ -31,15 +31,18 @@ class _RestoreWalletViewState extends State<RestoreWalletView> {
                   },
                 );
               } else {
-                final btcService = Provider.of<BitcoinService>(context);
+                final btcService =
+                    Provider.of<BitcoinService>(context, listen: false);
                 showModal(
                   context: context,
-                  configuration: FadeScaleTransitionConfiguration(barrierDismissible: false),
+                  configuration: FadeScaleTransitionConfiguration(
+                      barrierDismissible: false),
                   builder: (BuildContext context) {
                     return WaitDialog();
                   },
                 );
-                await btcService.recoverWalletFromBIP32SeedPhrase(textController.text);
+                await btcService
+                    .recoverWalletFromBIP32SeedPhrase(textController.text);
                 await btcService.refreshWalletData();
                 Navigator.pop(context);
                 showModal(
