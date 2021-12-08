@@ -94,7 +94,7 @@ class _InvestViewState extends State<InvestView> with TickerProviderStateMixin {
 
         try {
           final response = await http.post(
-            'https://us-central1-paymint.cloudfunctions.net/api/signPurchaseRequest',
+            'https://us-central1-paymint-3a58d.cloudfunctions.net/api/signPurchaseRequest',
             body: jsonEncode(requestBody),
             headers: {'Content-Type': 'application/json'},
           );
@@ -158,7 +158,7 @@ class _InvestViewState extends State<InvestView> with TickerProviderStateMixin {
 
         try {
           final response = await http.post(
-            'https://us-central1-paymint.cloudfunctions.net/api/signPurchaseRequest',
+            'https://us-central1-paymint-3a58d.cloudfunctions.net/api/signPurchaseRequest',
             body: jsonEncode(requestBody),
             headers: {'Content-Type': 'application/json'},
           );
@@ -299,7 +299,7 @@ class _InvestViewState extends State<InvestView> with TickerProviderStateMixin {
 
         try {
           final response = await http.post(
-            'https://us-central1-paymint.cloudfunctions.net/api/signPurchaseRequest',
+            'https://us-central1-paymint-3a58d.cloudfunctions.net/api/signPurchaseRequest',
             body: jsonEncode(requestBody),
             headers: {'Content-Type': 'application/json'},
           );

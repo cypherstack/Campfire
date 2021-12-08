@@ -85,7 +85,7 @@ class _TransactionsViewState extends State<TransactionsView> {
           backgroundColor: Color(0xff81D4FA),
           onPressed: () async {
             final BitcoinService bitcoinService =
-                Provider.of<BitcoinService>(context);
+                Provider.of<BitcoinService>(context, listen: false);
 
             showModal(
               context: context,

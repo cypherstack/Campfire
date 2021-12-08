@@ -9,7 +9,8 @@ import 'dart:io';
 
 class ExportTransactionCsvView extends StatefulWidget {
   @override
-  _ExportTransactionCsvViewState createState() => _ExportTransactionCsvViewState();
+  _ExportTransactionCsvViewState createState() =>
+      _ExportTransactionCsvViewState();
 }
 
 class _ExportTransactionCsvViewState extends State<ExportTransactionCsvView> {
@@ -45,7 +46,8 @@ class _ExportTransactionCsvViewState extends State<ExportTransactionCsvView> {
             child: Center(
               child: FutureBuilder(
                 future: bitcoinService.transactionData,
-                builder: (BuildContext context, AsyncSnapshot<TransactionData> snapshot) {
+                builder: (BuildContext context,
+                    AsyncSnapshot<TransactionData> snapshot) {
                   if (snapshot.connectionState == ConnectionState.done) {
                     return MaterialButton(
                       onPressed: () async {
@@ -53,7 +55,8 @@ class _ExportTransactionCsvViewState extends State<ExportTransactionCsvView> {
                       },
                       color: Colors.amber,
                       textColor: Color(0xff121212),
-                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(18.0)),
+                      shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(18.0)),
                       child: Row(
                         mainAxisSize: MainAxisSize.min,
                         children: [
@@ -79,7 +82,8 @@ class _ExportTransactionCsvViewState extends State<ExportTransactionCsvView> {
     if (txData.txChunks.length == 0) {
       _scaffoldKey.currentState.showSnackBar(SnackBar(
         backgroundColor: Colors.red,
-        content: Text('No transaction data to export', style: TextStyle(color: Colors.white)),
+        content: Text('No transaction data to export',
+            style: TextStyle(color: Colors.white)),
       ));
 
       return 0;
@@ -119,7 +123,8 @@ class _ExportTransactionCsvViewState extends State<ExportTransactionCsvView> {
 
     _scaffoldKey.currentState.showSnackBar(SnackBar(
       backgroundColor: Colors.green,
-      content: Text('Transaction data successfully exported to CSV', style: TextStyle(color: Colors.white)),
+      content: Text('Transaction data successfully exported to CSV',
+          style: TextStyle(color: Colors.white)),
     ));
 
     return 1;

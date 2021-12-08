@@ -23,19 +23,22 @@ class _RestoreOutputCsvViewState extends State<RestoreOutputCsvView> {
 
   initFilePicker() async {
     final BitcoinService bitcoinService = Provider.of<BitcoinService>(context);
-    final String filePath = await FilePicker.getFilePath(type: FileType.custom, allowedExtensions: ['csv']);
+    final String filePath = await FilePicker.getFilePath(
+        type: FileType.custom, allowedExtensions: ['csv']);
 
     if (filePath == null) return 1;
 
     final wallet = await Hive.openBox('wallet');
 
     final String csvFile = await File(filePath).readAsString();
-    List<List<dynamic>> rowsAsListOfValues = CsvToListConverter().convert(csvFile);
+    List<List<dynamic>> rowsAsListOfValues =
+        CsvToListConverter().convert(csvFile);
     print(rowsAsListOfValues);
 
     showModal(
       context: context,
-      configuration: FadeScaleTransitionConfiguration(barrierDismissible: false),
+      configuration:
+          FadeScaleTransitionConfiguration(barrierDismissible: false),
       builder: (BuildContext _) {
         return showLoadingModal(_);
       },
@@ -72,7 +75,8 @@ class _RestoreOutputCsvViewState extends State<RestoreOutputCsvView> {
 
     showModal(
       context: context,
-      configuration: FadeScaleTransitionConfiguration(barrierDismissible: false),
+      configuration:
+          FadeScaleTransitionConfiguration(barrierDismissible: false),
       builder: (BuildContext _) {
         return restorationSuccessModal(_);
       },
@@ -123,7 +127,8 @@ class _RestoreOutputCsvViewState extends State<RestoreOutputCsvView> {
                   color: Color(0xff121212),
                 ),
                 SizedBox(width: 12),
-                Text('Restore from CSV', style: TextStyle(color: Color(0xff121212)))
+                Text('Restore from CSV',
+                    style: TextStyle(color: Color(0xff121212)))
               ],
             ),
             onPressed: () async => await initFilePicker(),
@@ -144,13 +149,15 @@ AlertDialog showLoadingModal(BuildContext _) {
         Text('Restoring data', style: TextStyle(color: Colors.white)),
       ],
     ),
-    content: Text('Please be patient...', style: TextStyle(color: Colors.white)),
+    content:
+        Text('Please be patient...', style: TextStyle(color: Colors.white)),
   );
 }
 
 AlertDialog restorationSuccessModal(BuildContext _) {
   return AlertDialog(
-    title: Text('Data successfully restored', style: TextStyle(color: Colors.white)),
+    title: Text('Data successfully restored',
+        style: TextStyle(color: Colors.white)),
     actions: [FlatButton(onPressed: () => Navigator.pop(_), child: Text('OK'))],
   );
 }

@@ -19,7 +19,8 @@ class _BroadcastRawHexViewState extends State<BroadcastRawHexView> {
       backgroundColor: Color(0xff121212),
       appBar: AppBar(
         backgroundColor: Color(0xff121212),
-        title: Text('Broadcast raw hex', style: GoogleFonts.rubik(color: Colors.white)),
+        title: Text('Broadcast raw hex',
+            style: GoogleFonts.rubik(color: Colors.white)),
         leading: IconButton(
           icon: Icon(
             Icons.arrow_back,
@@ -114,10 +115,12 @@ class _TransactionSuccessDialog extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return AlertDialog(
-      title: Text('Transaction successful!', style: TextStyle(color: Colors.white)),
+      title: Text('Transaction successful!',
+          style: TextStyle(color: Colors.white)),
       content: Container(
         height: 80,
-        child: Center(child: Icon(Icons.check_circle, color: Colors.green, size: 70)),
+        child: Center(
+            child: Icon(Icons.check_circle, color: Colors.green, size: 70)),
       ),
       actions: <Widget>[
         FlatButton(
