@@ -558,7 +558,7 @@ class BitcoinService extends ChangeNotifier {
     final String url = await wallet.get('esplora_url');
 
     if (url == null) {
-      final blockstreamUrl = 'https://10.0.0.176/api/FIRO/mainnet/';
+      final blockstreamUrl = 'https://marco.cypherstack.com/api/FIRO/mainnet/';
       print('Using blockstream for esplora server');
       await wallet.put('esplora_url', blockstreamUrl);
       return blockstreamUrl;
