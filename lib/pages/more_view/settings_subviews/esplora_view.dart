@@ -28,7 +28,7 @@ class _EsploraViewState extends State<EsploraView> {
               if (textController.text.isEmpty ||
                   textController.text.trim() == '') {
                 await wallet.put(
-                    'esplora_url', 'https://10.0.0.176/api/FIRO/mainnet/');
+                    'esplora_url', 'https://marco.cypherstack.com/api/FIRO/mainnet/');
               } else {
                 await wallet.put('esplora_url', textController.text);
               }
