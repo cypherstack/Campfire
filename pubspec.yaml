@@ -64,6 +64,7 @@ dependencies:
   flutter_feather_icons: ^2.0.0+1
   flutter_spinkit: ^5.1.0
   decimal: ^2.1.0
+  event_bus: ^2.0.0
 
 dev_dependencies:
   flutter_test:
@@ -138,6 +139,8 @@ flutter:
     - assets/svg/empty-address-list.svg
     - assets/svg/empty-tx-list.svg
     - assets/svg/calendar.svg
+    - assets/svg/radio-disconnected.svg
+    - assets/svg/refresh-cw.svg
 
   # An image asset can refer to one or more resolution-specific "variants", see
   # https://flutter.dev/assets-and-images/#resolution-aware.

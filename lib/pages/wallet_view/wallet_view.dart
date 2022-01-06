@@ -7,6 +7,8 @@ import 'package:google_fonts/google_fonts.dart';
 import 'package:paymint/models/models.dart';
 import 'package:paymint/pages/transaction_subviews/transaction_search_view.dart';
 import 'package:paymint/services/bitcoin_service.dart';
+import 'package:paymint/services/event_bus/events/node_connection_status_changed_event.dart';
+import 'package:paymint/services/event_bus/wallet_connection_event_bus.dart';
 import 'package:paymint/services/utils/currency_utils.dart';
 import 'package:paymint/utilities/cfcolors.dart';
 import 'package:paymint/utilities/shared_utilities.dart';
@@ -24,6 +26,19 @@ class WalletView extends StatefulWidget {
 }
 
 class _WalletViewState extends State<WalletView> {
+  NodeConnectionStatus _nodeStatus = NodeConnectionStatus.disconnected;
+
+  @override
+  void initState() {
+    // add listener
+    GlobalEventBus.instance.on<NodeConnectionStatusChangedEvent>().listen((event) {
+      setState(() {
+        _nodeStatus = event.newStatus;
+      });
+    });
+    super.initState();
+  }
+
   @override
   Widget build(BuildContext context) {
     final BitcoinService bitcoinService = Provider.of<BitcoinService>(context);
@@ -56,7 +71,7 @@ class _WalletViewState extends State<WalletView> {
                 "$balance ${CurrencyUtilities.coinName}",
                 style: GoogleFonts.workSans(
                   color: CFColors.white,
-                  fontSize: 28, // ScalingUtils.fontScaled(context, 28),
+                  fontSize: 28,
                   fontWeight: FontWeight.w600,
                   letterSpacing: -0.5,
                 ),
@@ -125,10 +140,17 @@ class _WalletViewState extends State<WalletView> {
                           // _balanceLoadingStatus = LoadingStatus.loaded;
 
                           // _balanceLoaded = true;
-                          return _buildBalance(
-                            fiatBalance: utxoData.data.totalUserCurrency,
-                            balance: utxoData.data.bitcoinBalance.toString(),
-                          );
+                          if (_nodeStatus == NodeConnectionStatus.synced)
+                            return _buildBalance(
+                              fiatBalance: utxoData.data.totalUserCurrency,
+                              balance: utxoData.data.bitcoinBalance.toString(),
+                            );
+                          else {
+                            return _buildBalance(
+                              balance: "...",
+                              fiatBalance: "...",
+                            );
+                          }
                         } else {
                           // TODO: Implement synchronising progress at top of safe area
                           // return buildBalanceInformationLoadingWidget();

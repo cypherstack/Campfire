@@ -31,8 +31,6 @@ class TransactionChunk {
     var txArray = json['transactions'] as List;
     List<Transaction> txList = txArray.map((tx) => Transaction.fromJson(tx)).toList();
 
-    print(txArray);
-
     return TransactionChunk(timestamp: json['timestamp'], transactions: txList);
   }
 }

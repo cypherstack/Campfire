@@ -1,8 +1,10 @@
 import 'dart:io';
 
+import 'package:animations/animations.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
+import 'package:flutter_spinkit/flutter_spinkit.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:hive/hive.dart';
 import 'package:local_auth/local_auth.dart';
@@ -227,30 +229,38 @@ class _CreatePinViewState extends State<CreatePinView> {
 
                               // need to pop another screen in appbar button if the below is uncommented
 
-                              // showModal(
-                              //   context: context,
-                              //   configuration: FadeScaleTransitionConfiguration(
-                              //       barrierDismissible: false),
-                              //   builder: (BuildContext context) {
-                              //     return AlertDialog(
-                              //       backgroundColor: CFColors.spark,
-                              //       title: Row(
-                              //         children: <Widget>[
-                              //           CircularProgressIndicator(),
-                              //           // SizedBox(width: 16),
-                              //           // Text('Please do not exit',
-                              //           //     style: TextStyle(color: Colors.white)),
-                              //         ],
-                              //       ),
-                              //       content: Text(
-                              //         "Generating Backup Key",
-                              //         style: TextStyle(color: Colors.white),
-                              //       ),
-                              //     );
-                              //   },
-                              // );
+                              // TODO replace this with something else
+                              showModal(
+                                context: context,
+                                configuration: FadeScaleTransitionConfiguration(
+                                    barrierDismissible: false),
+                                builder: (BuildContext context) {
+                                  return AlertDialog(
+                                    backgroundColor: CFColors.white,
+                                    title: Row(
+                                      children: <Widget>[
+                                        SpinKitThreeBounce(
+                                          color: CFColors.spark,
+                                          size: 30,
+                                        )
+                                        // SizedBox(width: 16),
+                                        // Text('Please do not exit',
+                                        //     style: TextStyle(color: Colors.white)),
+                                      ],
+                                    ),
+                                    content: Text(
+                                      "Generating Backup Key",
+                                      style: TextStyle(color: CFColors.spark),
+                                    ),
+                                  );
+                                },
+                              );
 
+                              // TODO do this differently - causes short lockup of UI
                               await bitcoinService.initializeWallet(widget.walletName);
+                              await Future.delayed(Duration(seconds: 3));
+
+                              Navigator.pop(context);
                             }
 
                             // String message;

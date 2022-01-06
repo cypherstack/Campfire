@@ -9,11 +9,14 @@ import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 import 'package:hive/hive.dart';
 import 'package:http/http.dart' as http;
 import 'package:paymint/models/models.dart';
+import 'package:paymint/services/event_bus/events/wallet_name_changed_event.dart';
+import 'package:paymint/services/event_bus/wallet_connection_event_bus.dart';
 import 'package:paymint/services/globals.dart';
 import 'package:paymint/services/utils/currency_utils.dart';
 import 'package:paymint/services/wallets_service.dart';
 
 import './utils/dev_utils.dart';
+import 'events.dart';
 
 class BitcoinService extends ChangeNotifier {
   /// Holds final balances, all utxos under control
@@ -70,7 +73,8 @@ class BitcoinService extends ChangeNotifier {
     final wallet = await Hive.openBox(_currentWallet);
     final entries = await wallet.get('addressBookEntries');
     print("Address book entries fetched");
-    return Map<String, String>.from(entries);
+    print(entries);
+    return entries == null ? <String, String>{} : Map<String, String>.from(entries);
   }
 
   /// Add address book contact entry to db
@@ -108,13 +112,28 @@ class BitcoinService extends ChangeNotifier {
       wif: 0xd2);
 
   BitcoinService() {
+    // notify even listeners that syncing/loading has started
+    GlobalEventBus.instance
+        .fire(NodeConnectionStatusChangedEvent(NodeConnectionStatus.loading));
+
+    // add listener for active wallet changed
+    GlobalEventBus.instance.on<ActiveWalletNameChangedEvent>().listen((event) {
+      _currentWalletName = Future(() => event.currentWallet);
+    });
+
     _currency = CurrencyUtilities.fetchPreferredCurrency();
 
-    _initializeBitcoinWallet().whenComplete(() {
-      _utxoData = _fetchUtxoData();
-      _transactionData = _fetchTransactionData();
-      DevUtilities.checkReceivingAndChangeArrays();
-    }).whenComplete(() => checkReceivingAddressForTransactions());
+    _initializeBitcoinWallet()
+        .whenComplete(() {
+          _utxoData = _fetchUtxoData();
+          _transactionData = _fetchTransactionData();
+          DevUtilities.checkReceivingAndChangeArrays();
+        })
+        .whenComplete(() => checkReceivingAddressForTransactions())
+        .then((_) {
+          GlobalEventBus.instance
+              .fire(NodeConnectionStatusChangedEvent(NodeConnectionStatus.synced));
+        });
   }
 
   /// Initializes the user's wallet and sets class getters. Will create a wallet if one does not
@@ -133,6 +152,8 @@ class BitcoinService extends ChangeNotifier {
         () async => await wallet.get('use_biometrics'),
       );
     }
+    GlobalEventBus.instance
+        .fire(NodeConnectionStatusChangedEvent(NodeConnectionStatus.synced));
   }
 
   /// Initializes the wallet [name], set [currentWalletName] and sets class getters. Will create a wallet if one does not
@@ -171,6 +192,8 @@ class BitcoinService extends ChangeNotifier {
 
   /// Refreshes display data for the wallet
   refreshWalletData() async {
+    GlobalEventBus.instance
+        .fire(NodeConnectionStatusChangedEvent(NodeConnectionStatus.loading));
     final newAddressBookEntries = await _fetchAddressBookEntries();
     final UtxoData newUtxoData = await _fetchUtxoData();
     final TransactionData newTxData = await _fetchTransactionData();
@@ -187,6 +210,8 @@ class BitcoinService extends ChangeNotifier {
     this._bitcoinPrice = Future(() => newBtcPrice);
     this._feeObject = Future(() => feeObj);
     this._marketInfo = Future(() => marketInfo);
+    GlobalEventBus.instance
+        .fire(NodeConnectionStatusChangedEvent(NodeConnectionStatus.synced));
     notifyListeners();
   }
 
@@ -595,8 +620,6 @@ class BitcoinService extends ChangeNotifier {
 
     // Add transaction inputs
     for (var i = 0; i < utxosToUse.length; i++) {
-      print("i = $i");
-      print("outputDataArray.length = ${outputDataArray.length}");
       txb.addInput(utxosToUse[i].txid, utxosToUse[i].vout, null, outputDataArray[i]);
     }
     // Add transaction outputs
@@ -828,6 +851,7 @@ class BitcoinService extends ChangeNotifier {
     if (response.statusCode == 200 || response.statusCode == 201) {
       notifyListeners();
       print('Current BTC Price: ' + response.body.toString());
+      //TODO julian got a json parse error here which caused a hang up
       return json.decode(response.body);
     } else {
       throw Exception(

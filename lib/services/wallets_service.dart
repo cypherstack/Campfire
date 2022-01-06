@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 import 'package:hive/hive.dart';
+import 'package:paymint/services/event_bus/events/wallet_name_changed_event.dart';
+import 'package:paymint/services/event_bus/wallet_connection_event_bus.dart';
 
 class WalletsService extends ChangeNotifier {
   Future<List<String>> _walletNames;
@@ -35,6 +37,9 @@ class WalletsService extends ChangeNotifier {
     final wallets = await Hive.openBox('wallets');
     final currentName = await wallets.get('currentWalletName');
     print("Fetched current name: $currentName");
+    if (_currentWalletName != currentName) {
+      GlobalEventBus.instance.fire(ActiveWalletNameChangedEvent(currentName));
+    }
     return currentName;
   }
 
@@ -91,6 +96,7 @@ class WalletsService extends ChangeNotifier {
     final currentName = await _fetchCurrentWalletName();
     this._currentWalletName = Future(() => currentName);
     notifyListeners();
+    GlobalEventBus.instance.fire(ActiveWalletNameChangedEvent(currentName));
   }
 
   refreshWallets() async {

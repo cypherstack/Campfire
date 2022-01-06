@@ -5,6 +5,8 @@ import 'package:flutter_svg/flutter_svg.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:paymint/pages/settings_view/settings_view.dart';
 import 'package:paymint/services/bitcoin_service.dart';
+import 'package:paymint/services/event_bus/wallet_connection_event_bus.dart';
+import 'package:paymint/services/events.dart';
 import 'package:paymint/utilities/cfcolors.dart';
 import 'package:paymint/utilities/sizing_utilities.dart';
 import 'package:provider/provider.dart';
@@ -21,6 +23,7 @@ class MainView extends StatefulWidget {
 }
 
 class _MainViewState extends State<MainView> {
+  NodeConnectionStatus nodeState = NodeConnectionStatus.connecting;
   int _currentIndex = 1;
   final double _navBarRadius = SizingUtilities.circularBorderRadius * 1.8;
 
@@ -87,6 +90,15 @@ class _MainViewState extends State<MainView> {
         // statusBarBrightness: Brightness.dark,
       ),
     );
+
+    GlobalEventBus.instance.on<NodeConnectionStatusChangedEvent>().listen((event) {
+      setState(() {
+        nodeState = event.newStatus;
+      });
+    });
+
+    Provider.of<BitcoinService>(context, listen: false).refreshWalletData();
+
     super.initState();
   }
 
@@ -163,19 +175,53 @@ class _MainViewState extends State<MainView> {
           child: AppBarIconButton(
             size: 36,
             onPressed: () {
-              print("leading appbar radio button pressed");
+              // TODO integrate check network connection to node and implement global status provider
+              bitcoinService.refreshWalletData();
             },
             circularBorderRadius: 8,
-            icon: SvgPicture.asset(
-              "assets/svg/radio.svg",
-              color: CFColors.twilight,
-              width: 24,
-              height: 24,
-            ),
+            icon: _selectIconAsset(),
           ),
         ),
       ),
     );
+  }
+
+  _selectIconAsset() {
+    switch (nodeState) {
+      case NodeConnectionStatus.synced:
+        return SvgPicture.asset(
+          "assets/svg/radio.svg",
+          color: CFColors.twilight,
+          width: 24,
+          height: 24,
+        );
+
+      case NodeConnectionStatus.connecting:
+        return SvgPicture.asset(
+          "assets/svg/refresh-cw.svg",
+          color: CFColors.twilight,
+          width: 24,
+          height: 24,
+        );
+
+      case NodeConnectionStatus.disconnected:
+        return SvgPicture.asset(
+          "assets/svg/radio-disconnected.svg",
+          color: CFColors.twilight,
+          width: 24,
+          height: 24,
+        );
+
+      case NodeConnectionStatus.loading:
+        return SizedBox(
+          height: 24,
+          width: 24,
+          child: CircularProgressIndicator(
+            color: CFColors.twilight,
+            strokeWidth: 2,
+          ),
+        );
+    }
   }
 
   @override
