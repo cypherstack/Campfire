@@ -60,6 +60,10 @@ dependencies:
   rounded_loading_button: ^2.0.9
   pinput: ^1.2.1
   modal_bottom_sheet: ^2.0.0
+  flutter_svg: ^0.19.3
+  flutter_feather_icons: ^2.0.0+1
+  flutter_spinkit: ^5.1.0
+  decimal: ^2.1.0
 
 dev_dependencies:
   flutter_test:
@@ -105,9 +109,36 @@ flutter:
     - assets/images/404image.png
     - assets/images/twitter-icon.png
     - assets/images/telegram-icon.png
+    - assets/images/logo.png
     - assets/rive/success.flr
     - assets/icon/icon.png
     - google_fonts/
+    - assets/svg/check-circle.svg
+    - assets/svg/check-circle2.svg
+    - assets/svg/chevronLeft.svg
+    - assets/svg/chevron-right.svg
+    - assets/svg/close.svg
+    - assets/svg/copy.svg
+    - assets/svg/groupLogo.svg
+    - assets/svg/menu.svg
+    - assets/svg/radio.svg
+    - assets/svg/receive.svg
+    - assets/svg/send.svg
+    - assets/svg/wallet.svg
+    - assets/svg/x.svg
+    - assets/svg/book-open.svg
+    - assets/svg/qr-code.svg
+    - assets/svg/search.svg
+    - assets/svg/splash.svg
+    - assets/svg/plus.svg
+    - assets/svg/log-out.svg
+    - assets/svg/key.svg
+    - assets/svg/settings.svg
+    - assets/svg/dollar-sign.svg
+    - assets/svg/empty-address-list.svg
+    - assets/svg/empty-tx-list.svg
+    - assets/svg/calendar.svg
+
   # An image asset can refer to one or more resolution-specific "variants", see
   # https://flutter.dev/assets-and-images/#resolution-aware.
   # For details regarding adding assets from package dependencies, see
