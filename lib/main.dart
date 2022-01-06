@@ -1,14 +1,20 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:hive/hive.dart';
 import 'package:hive_flutter/hive_flutter.dart';
-import 'pages/pages.dart';
-import 'package:paymint/models/models.dart';
-import 'package:provider/provider.dart';
 import 'package:path_provider/path_provider.dart' as path;
+import 'package:paymint/models/models.dart';
+import 'package:paymint/pages/loading_view.dart';
+import 'package:paymint/pages/lockscreen.dart';
+import 'package:paymint/pages/onboarding_view/onboarding_view.dart';
 import 'package:paymint/services/services.dart';
+import 'package:paymint/services/wallets_service.dart';
+import 'package:paymint/utilities/cfcolors.dart';
+import 'package:paymint/utilities/sizing_utilities.dart';
+import 'package:provider/provider.dart';
+
 import 'route_generator.dart';
-import 'package:flutter/services.dart';
 
 // main() is the entry point to the app. It initializes Hive (local database),
 // runs the MyApp widget and checks for new users, caching the value in the
@@ -30,6 +36,8 @@ void main() async {
   Hive.registerAdapter(UtxoObjectAdapter());
   Hive.registerAdapter(StatusAdapter());
 
+  SystemChrome.setEnabledSystemUIMode(SystemUiMode.manual,
+      overlays: [SystemUiOverlay.bottom]);
   runApp(MyApp());
 }
 
@@ -41,6 +49,9 @@ class MyApp extends StatelessWidget {
       providers: [
         ChangeNotifierProvider(
           create: (_) => BitcoinService(),
+        ),
+        ChangeNotifierProvider(
+          create: (_) => WalletsService(),
         )
       ],
       child: MaterialAppWithTheme(),
@@ -65,61 +76,95 @@ class _MaterialAppWithThemeState extends State<MaterialAppWithTheme> {
     super.initState();
   }
 
-  /// Returns true if the user has never setup the PIN code before, returns false otherwise
-  Future<bool> checkForLockscreen() async {
-    final misc = await Hive.openBox('miscellaneous_v2');
-
-    if (misc.isEmpty) {
+  /// Returns true if the user has never set up any wallets before
+  Future<bool> _checkForWallets() async {
+    final wallets = await Hive.openBox('wallets');
+    if (wallets.isEmpty) {
       return true;
     } else {
       return false;
     }
   }
 
+  OutlineInputBorder _buildOutlineInputBorder(Color color) {
+    return OutlineInputBorder(
+      borderSide: BorderSide(
+        width: 1,
+        color: color,
+      ),
+      borderRadius: BorderRadius.circular(SizingUtilities.circularBorderRadius),
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     return MaterialApp(
-      title: 'Paymint',
+      title: 'Campfire',
       onGenerateRoute: RouteGenerator.generateRoute,
       theme: ThemeData(
         brightness: Brightness.dark,
-        textTheme: GoogleFonts.rubikTextTheme(),
-        primaryColor: Colors.cyan,
-        accentColor: Colors.cyanAccent,
+        fontFamily: GoogleFonts.workSans().fontFamily,
+        textTheme: GoogleFonts.workSansTextTheme(),
+        primaryColor: CFColors.spark,
+        checkboxTheme: CheckboxThemeData(
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(SizingUtilities.checkboxBorderRadius),
+          ),
+          checkColor: MaterialStateColor.resolveWith(
+            (state) {
+              if (state.contains(MaterialState.selected)) {
+                return CFColors.white;
+              }
+              return CFColors.fog;
+            },
+          ),
+          fillColor: MaterialStateColor.resolveWith(
+            (states) {
+              if (states.contains(MaterialState.selected)) {
+                return CFColors.spark;
+              }
+              return CFColors.dew;
+            },
+          ),
+        ),
         appBarTheme: AppBarTheme(
           centerTitle: true,
-          color: Color(0xff121212),
+          color: CFColors.starryNight,
           elevation: 0,
+        ),
+        inputDecorationTheme: InputDecorationTheme(
+          fillColor: CFColors.fog,
+          filled: true,
+          contentPadding: EdgeInsets.symmetric(vertical: 12, horizontal: 16),
+          hintStyle: GoogleFonts.workSans(
+            color: CFColors.twilight,
+            fontWeight: FontWeight.w400,
+            fontSize: 16,
+          ),
+          enabledBorder: _buildOutlineInputBorder(CFColors.twilight),
+          focusedBorder: _buildOutlineInputBorder(CFColors.focusedBorder),
+          errorBorder: _buildOutlineInputBorder(CFColors.errorBorder),
+          disabledBorder: _buildOutlineInputBorder(CFColors.twilight),
+          focusedErrorBorder: _buildOutlineInputBorder(CFColors.errorBorder),
         ),
       ),
       home: FutureBuilder(
-        future: checkForLockscreen(),
-        builder: (BuildContext context, AsyncSnapshot<bool> shouldRouteToLockSetup) {
-          if (shouldRouteToLockSetup.connectionState == ConnectionState.done) {
-            if (shouldRouteToLockSetup.data) {
-              return SetUpLockscreenView();
+        future: _checkForWallets(),
+        builder: (BuildContext context, AsyncSnapshot<bool> shouldRouteToOnboarding) {
+          if (shouldRouteToOnboarding.connectionState == ConnectionState.done) {
+            if (shouldRouteToOnboarding.data) {
+              // return SetUpLockscreenView();
+              return OnboardingView();
             } else {
               return LockscreenView();
+              // return OnboardingView();
             }
           } else {
-            return buildLoadingView();
+            // return buildLoadingView(context);
+            return LoadingView();
           }
         },
       ),
     );
   }
-}
-
-Widget buildLoadingView() {
-  return Scaffold(
-    body: Container(
-      color: Color(0xff121212),
-      child: Center(
-        child: Image.asset(
-          'assets/images/splash.png',
-          height: 125,
-        ),
-      ),
-    ),
-  );
 }

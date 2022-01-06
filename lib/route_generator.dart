@@ -1,5 +1,7 @@
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
+import 'package:paymint/pages/address_book_view/subviews/add_address_book_entry_view.dart';
+
 import './pages/pages.dart';
 
 class RouteGenerator {
@@ -18,12 +20,14 @@ class RouteGenerator {
         return CupertinoPageRoute(builder: (_) => SendView());
       case '/addressbook':
         return CupertinoPageRoute(builder: (_) => AddressBookView());
+      case '/addaddressbookentry':
+        return CupertinoPageRoute(builder: (_) => AddAddressBookEntryView());
       case '/generalview':
         return CupertinoPageRoute(builder: (_) => GeneralView());
       case '/advancedview':
         return CupertinoPageRoute(builder: (_) => AdvancedView());
       case '/restorewalletview':
-        return CupertinoPageRoute(builder: (_) => RestoreWalletView());
+        return CupertinoPageRoute(builder: (_) => RestoreWalletViewOLD());
       case '/changecurrency':
         return CupertinoPageRoute(builder: (_) => ChangeCurrencyView());
       case '/esploraview':
@@ -38,6 +42,7 @@ class RouteGenerator {
         return CupertinoPageRoute(builder: (_) => BroadcastRawHexView());
       case '/restoreoutputcsv':
         return CupertinoPageRoute(builder: (_) => RestoreOutputCsvView());
+
       default:
         return _routeError();
     }
@@ -70,7 +75,8 @@ Route<dynamic> _routeError() {
       title: Text('Navigation error'),
     ),
     body: Center(
-      child: Text('Error handling route, this is not supposed to happen. Try restarting the app.'),
+      child: Text(
+          'Error handling route, this is not supposed to happen. Try restarting the app.'),
     ),
   );
 

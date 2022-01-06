@@ -1,9 +1,10 @@
-import 'package:flutter/material.dart';
-import 'package:local_auth/local_auth.dart';
 import 'dart:io';
+
+import 'package:flutter/material.dart';
 import 'package:hive/hive.dart';
-import 'package:url_launcher/url_launcher.dart';
+import 'package:local_auth/local_auth.dart';
 import 'package:toast/toast.dart';
+import 'package:url_launcher/url_launcher.dart';
 
 class MoreView extends StatefulWidget {
   @override
@@ -63,8 +64,9 @@ class _MoreViewState extends State<MoreView> {
                 bool canCheckBiometrics = await localAuth.canCheckBiometrics;
 
                 // If useBiometrics is enabled, then show fingerprint auth screen
-                if (useBiometrics && canCheckBiometrics) {
-                  List<BiometricType> availableSystems = await localAuth.getAvailableBiometrics();
+                if (useBiometrics != null && useBiometrics && canCheckBiometrics) {
+                  List<BiometricType> availableSystems =
+                      await localAuth.getAvailableBiometrics();
 
                   if (Platform.isIOS) {
                     if (availableSystems.contains(BiometricType.face)) {
@@ -112,8 +114,10 @@ class _MoreViewState extends State<MoreView> {
                 showAboutDialog(
                   context: context,
                   applicationName: 'Paymint',
-                  applicationIcon: Image.asset('assets/icon/icon.png', height: 40, width: 40),
-                  applicationLegalese: 'All rights reserved © Ready Systems Ltd.\n\nPaymint Labs',
+                  applicationIcon:
+                      Image.asset('assets/icon/icon.png', height: 40, width: 40),
+                  applicationLegalese:
+                      'All rights reserved © Ready Systems Ltd.\n\nPaymint Labs',
                   applicationVersion: '1.2.2',
                 );
               },
@@ -139,7 +143,8 @@ class _MoreViewState extends State<MoreView> {
                         ],
                       ),
                       SizedBox(height: 16),
-                      Text('Made with ❤ in Hong Kong', style: TextStyle(color: Colors.white)),
+                      Text('Made with ❤ in Hong Kong',
+                          style: TextStyle(color: Colors.white)),
                     ],
                   ),
                 ),
@@ -157,7 +162,8 @@ void _launchTwitter(BuildContext context) async {
   if (await canLaunch(url)) {
     await launch(url);
   } else {
-    Toast.show('Cannot launch url', context, duration: Toast.LENGTH_LONG, gravity: Toast.BOTTOM);
+    Toast.show('Cannot launch url', context,
+        duration: Toast.LENGTH_LONG, gravity: Toast.BOTTOM);
   }
 }
 
@@ -166,7 +172,8 @@ void _launchToS(BuildContext context) async {
   if (await canLaunch(url)) {
     await launch(url);
   } else {
-    Toast.show('Cannot launch url', context, duration: Toast.LENGTH_LONG, gravity: Toast.BOTTOM);
+    Toast.show('Cannot launch url', context,
+        duration: Toast.LENGTH_LONG, gravity: Toast.BOTTOM);
   }
 }
 
@@ -175,7 +182,8 @@ void _launchPrivacyPolicy(BuildContext context) async {
   if (await canLaunch(url)) {
     await launch(url);
   } else {
-    Toast.show('Cannot launch url', context, duration: Toast.LENGTH_LONG, gravity: Toast.BOTTOM);
+    Toast.show('Cannot launch url', context,
+        duration: Toast.LENGTH_LONG, gravity: Toast.BOTTOM);
   }
 }
 
@@ -184,6 +192,7 @@ void _launchTelegram(BuildContext context) async {
   if (await canLaunch(url)) {
     await launch(url);
   } else {
-    Toast.show('Cannot launch url', context, duration: Toast.LENGTH_LONG, gravity: Toast.BOTTOM);
+    Toast.show('Cannot launch url', context,
+        duration: Toast.LENGTH_LONG, gravity: Toast.BOTTOM);
   }
 }

@@ -4,26 +4,23 @@ import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
-import 'package:flutter_spinkit/flutter_spinkit.dart';
 import 'package:flutter_svg/flutter_svg.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:hive/hive.dart';
 import 'package:local_auth/local_auth.dart';
 import 'package:paymint/notifications/overlay_notification.dart';
-import 'package:paymint/pages/wallet_selection_view.dart';
 import 'package:paymint/services/wallets_service.dart';
 import 'package:paymint/utilities/cfcolors.dart';
-import 'package:paymint/utilities/sizing_utilities.dart';
 import 'package:paymint/widgets/custom_buttons/app_bar_icon_button.dart';
 import 'package:paymint/widgets/custom_pin_put/custom_pin_put.dart';
 import 'package:provider/provider.dart';
 
-class LockscreenView extends StatefulWidget {
+class Lockscreen2View extends StatefulWidget {
   @override
-  _LockscreenViewState createState() => _LockscreenViewState();
+  _Lockscreen2ViewState createState() => _Lockscreen2ViewState();
 }
 
-class _LockscreenViewState extends State<LockscreenView> {
+class _Lockscreen2ViewState extends State<Lockscreen2View> {
   _checkUseBiometrics() async {
     final walletsService = Provider.of<WalletsService>(context, listen: false);
     final currentWallet = await walletsService.currentWalletName;
@@ -92,37 +89,31 @@ class _LockscreenViewState extends State<LockscreenView> {
       backgroundColor: CFColors.white,
       appBar: AppBar(
         backgroundColor: CFColors.white,
-        actions: [
-          Padding(
-            padding: EdgeInsets.only(
-              top: 10,
-              bottom: 10,
-              right: 20,
-            ),
-            child: AspectRatio(
-              aspectRatio: 1,
-              child: AppBarIconButton(
-                size: 36,
-                icon: SvgPicture.asset(
-                  "assets/svg/log-out.svg",
-                  color: CFColors.twilight,
-                ),
-                circularBorderRadius: SizingUtilities.circularBorderRadius,
-                onPressed: () {
-                  Navigator.pushReplacement(
-                    context,
-                    CupertinoPageRoute(
-                      builder: (_) {
-                        return WalletSelectionView();
-                      },
-                    ),
-                  );
-                  print("lockscreen appbar button pressed.");
-                },
+        leadingWidth: 36.0 + 20.0, // account for 20 padding
+
+        leading: Padding(
+          padding: EdgeInsets.only(
+            top: 10,
+            bottom: 10,
+            left: 20,
+          ),
+          child: AspectRatio(
+            aspectRatio: 1,
+            child: AppBarIconButton(
+              size: 36,
+              onPressed: () {
+                Navigator.pop(context);
+              },
+              circularBorderRadius: 8,
+              icon: SvgPicture.asset(
+                "assets/svg/chevronLeft.svg",
+                color: CFColors.twilight,
+                width: 24,
+                height: 24,
               ),
             ),
           ),
-        ],
+        ),
       ),
       body: SafeArea(
         child: Column(
@@ -164,10 +155,9 @@ class _LockscreenViewState extends State<LockscreenView> {
                       ),
                     );
                   } else {
-                    //TODO: change the loading display?
-                    return SpinKitThreeBounce(
+                    return CircularProgressIndicator(
                       color: CFColors.spark,
-                      size: 20,
+                      strokeWidth: 2,
                     );
                   }
                 },
@@ -223,7 +213,7 @@ class _LockscreenViewState extends State<LockscreenView> {
                     OverlayNotification.showSuccess(
                       context,
                       "PIN code correct. Unlocking wallet...",
-                      Duration(milliseconds: 1200),
+                      Duration(milliseconds: 2200),
                     );
 
                     await Future.delayed(Duration(milliseconds: 600));

@@ -1,22 +1,21 @@
+import 'package:animations/animations.dart';
 import 'package:flutter/material.dart';
-import 'package:google_fonts/google_fonts.dart';
-import 'package:provider/provider.dart';
 import 'package:flutter_inner_drawer/inner_drawer.dart';
-import 'package:sticky_headers/sticky_headers.dart';
-import 'package:paymint/services/services.dart';
+import 'package:google_fonts/google_fonts.dart';
 import 'package:paymint/models/models.dart';
 import 'package:paymint/services/globals.dart';
-import 'package:timeago/timeago.dart' as timeago;
+import 'package:paymint/services/services.dart';
 import 'package:paymint/widgets/widgets.dart';
-import 'package:animations/animations.dart';
-import 'package:modal_bottom_sheet/modal_bottom_sheet.dart';
+import 'package:provider/provider.dart';
+import 'package:sticky_headers/sticky_headers.dart';
+import 'package:timeago/timeago.dart' as timeago;
 
-class TransactionsView extends StatefulWidget {
+class TransactionsViewOld extends StatefulWidget {
   @override
-  _TransactionsViewState createState() => _TransactionsViewState();
+  _TransactionsViewOldState createState() => _TransactionsViewOldState();
 }
 
-class _TransactionsViewState extends State<TransactionsView> {
+class _TransactionsViewOldState extends State<TransactionsViewOld> {
   final GlobalKey<InnerDrawerState> _drawerKey = GlobalKey<InnerDrawerState>();
   final GlobalKey<ScaffoldState> _scaffoldKey = GlobalKey<ScaffoldState>();
 

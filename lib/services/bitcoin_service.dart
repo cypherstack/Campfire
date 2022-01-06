@@ -1,15 +1,18 @@
-import 'dart:typed_data';
-import 'package:flutter/material.dart';
 import 'dart:convert';
-import 'package:http/http.dart' as http;
-import 'package:paymint/models/models.dart';
-import 'package:hive/hive.dart';
-import 'package:flutter_secure_storage/flutter_secure_storage.dart';
-import 'package:bitcoin_flutter/bitcoin_flutter.dart';
+import 'dart:typed_data';
+
 import 'package:bip32/bip32.dart' as bip32;
 import 'package:bip39/bip39.dart' as bip39;
+import 'package:bitcoin_flutter/bitcoin_flutter.dart';
+import 'package:flutter/material.dart';
+import 'package:flutter_secure_storage/flutter_secure_storage.dart';
+import 'package:hive/hive.dart';
+import 'package:http/http.dart' as http;
+import 'package:paymint/models/models.dart';
 import 'package:paymint/services/globals.dart';
 import 'package:paymint/services/utils/currency_utils.dart';
+import 'package:paymint/services/wallets_service.dart';
+
 import './utils/dev_utils.dart';
 
 class BitcoinService extends ChangeNotifier {
@@ -41,8 +44,7 @@ class BitcoinService extends ChangeNotifier {
 
   /// Holds preferred fiat currency
   Future<String> _currency;
-  Future<String> get currency =>
-      _currency ??= CurrencyUtilities.fetchPreferredCurrency();
+  Future<String> get currency => _currency ??= CurrencyUtilities.fetchPreferredCurrency();
 
   /// Holds updated receiving address
   Future<String> _currentReceivingAddress;
@@ -50,6 +52,52 @@ class BitcoinService extends ChangeNotifier {
 
   Future<bool> _useBiomterics;
   Future<bool> get useBiometrics => _useBiomterics;
+
+  Future<String> _currentWalletName;
+  Future<String> get currentWalletName =>
+      _currentWalletName ??= WalletsService().currentWalletName;
+
+  /// Holds address book contact entries
+  /// map of contact <address, name>
+  /// address is used as key due to uniqueness
+  Future<Map<String, String>> _addressBookEntries;
+  Future<Map<String, String>> get addressBookEntries =>
+      _addressBookEntries ??= _fetchAddressBookEntries();
+
+  // Load address book contact entries
+  Future<Map<String, String>> _fetchAddressBookEntries() async {
+    final _currentWallet = await currentWalletName;
+    final wallet = await Hive.openBox(_currentWallet);
+    final entries = await wallet.get('addressBookEntries');
+    print("Address book entries fetched");
+    return Map<String, String>.from(entries);
+  }
+
+  /// Add address book contact entry to db
+  addAddressBookEntry(String address, String name) async {
+    final _currentWallet = await currentWalletName;
+    final wallet = await Hive.openBox(_currentWallet);
+    final entries = await wallet.get('addressBookEntries');
+    entries[address] = name;
+    await wallet.put('addressBookEntries', entries);
+    print("address book entry saved");
+  }
+
+  /// Remove address book contact entry from db
+  removeAddressBookEntry(String address) async {
+    final _currentWallet = await currentWalletName;
+    final wallet = await Hive.openBox(_currentWallet);
+    final entries = await wallet.get('addressBookEntries');
+    entries.remove(address);
+    await wallet.put('addressBookEntries', entries);
+    print("address book entry removed");
+  }
+
+  refreshAddressBookEntries() async {
+    final newAddressBookEntries = await _fetchAddressBookEntries();
+    this._addressBookEntries = Future(() => newAddressBookEntries);
+    notifyListeners();
+  }
 
   final firo = new NetworkType(
       messagePrefix: '\x18Zcoin Signed Message:\n',
@@ -72,7 +120,9 @@ class BitcoinService extends ChangeNotifier {
   /// Initializes the user's wallet and sets class getters. Will create a wallet if one does not
   /// already exist.
   Future<void> _initializeBitcoinWallet() async {
-    final wallet = await Hive.openBox('wallet');
+    final _currentWallet = await currentWalletName;
+    final wallet = await Hive.openBox(_currentWallet);
+
     if (wallet.isEmpty) {
       // Triggers for new users automatically. Generates new wallet
       await _generateNewWallet(wallet);
@@ -85,10 +135,20 @@ class BitcoinService extends ChangeNotifier {
     }
   }
 
+  /// Initializes the wallet [name], set [currentWalletName] and sets class getters. Will create a wallet if one does not
+  /// already exist.
+  Future<void> initializeWallet(String name) async {
+    print("initializeBitcoinWallet called manually");
+    this._currentWalletName = Future(() => name);
+    await _initializeBitcoinWallet();
+  }
+
   /// Generates initial wallet values such as mnemonic, chain (receive/change) arrays and indexes.
   Future<void> _generateNewWallet(Box<dynamic> wallet) async {
+    final _currentWallet = await currentWalletName;
     final secureStore = new FlutterSecureStorage();
-    await secureStore.write(key: 'mnemonic', value: bip39.generateMnemonic());
+    await secureStore.write(
+        key: '${_currentWallet}_mnemonic', value: bip39.generateMnemonic());
     // Set relevant indexes
     await wallet.put('receivingIndex', 0);
     await wallet.put('use_biometrics', false);
@@ -96,6 +156,8 @@ class BitcoinService extends ChangeNotifier {
     await wallet.put('blocked_tx_hashes', [
       "0xdefault"
     ]); // A list of transaction hashes to represent frozen utxos in wallet
+    // initialize address book entries
+    await wallet.put('addressBookEntries', <String, String>{});
     // Generate and add addresses to relevant arrays
     final initialReceivingAddress = await generateAddressForChain(0, 0);
     final initialChangeAddress = await generateAddressForChain(1, 0);
@@ -109,13 +171,17 @@ class BitcoinService extends ChangeNotifier {
 
   /// Refreshes display data for the wallet
   refreshWalletData() async {
+    final newAddressBookEntries = await _fetchAddressBookEntries();
     final UtxoData newUtxoData = await _fetchUtxoData();
     final TransactionData newTxData = await _fetchTransactionData();
     final dynamic newBtcPrice = await getBitcoinPrice();
     final FeeObject feeObj = await getFees();
     final String marketInfo = await getMarketInfo();
+    final String currentName = await WalletsService().currentWalletName;
     await checkReceivingAddressForTransactions();
 
+    this._currentWalletName = Future(() => currentName);
+    this._addressBookEntries = Future(() => newAddressBookEntries);
     this._utxoData = Future(() => newUtxoData);
     this._transactionData = Future(() => newTxData);
     this._bitcoinPrice = Future(() => newBtcPrice);
@@ -128,8 +194,10 @@ class BitcoinService extends ChangeNotifier {
   /// [chain] - Use 0 for receiving (external), 1 for change (internal). Should not be any other value!
   /// [index] - This can be any integer >= 0
   Future<String> generateAddressForChain(int chain, int index) async {
+    final _currentWallet = await currentWalletName;
     final secureStore = new FlutterSecureStorage();
-    final seed = bip39.mnemonicToSeed(await secureStore.read(key: 'mnemonic'));
+    final seed =
+        bip39.mnemonicToSeed(await secureStore.read(key: '${_currentWallet}_mnemonic'));
     final root = bip32.BIP32.fromSeed(seed);
     final node = root.derivePath("m/44'/136'/0'/$chain/$index");
 
@@ -141,7 +209,8 @@ class BitcoinService extends ChangeNotifier {
   /// Increases the index for either the internal or external chain, depending on [chain].
   /// [chain] - Use 0 for receiving (external), 1 for change (internal). Should not be any other value!
   Future<void> incrementAddressIndexForChain(int chain) async {
-    final wallet = await Hive.openBox('wallet');
+    final _currentWallet = await currentWalletName;
+    final wallet = await Hive.openBox(_currentWallet);
     if (chain == 0) {
       final newIndex = wallet.get('receivingIndex') + 1;
       await wallet.put('receivingIndex', newIndex);
@@ -156,7 +225,8 @@ class BitcoinService extends ChangeNotifier {
   /// [address] - Expects a standard native segwit address
   /// [chain] - Use 0 for receiving (external), 1 for change (internal). Should not be any other value!
   Future<void> addToAddressesArrayForChain(String address, int chain) async {
-    final wallet = await Hive.openBox('wallet');
+    final _currentWallet = await currentWalletName;
+    final wallet = await Hive.openBox(_currentWallet);
     String chainArray = '';
     if (chain == 0) {
       chainArray = 'receivingAddresses';
@@ -181,7 +251,8 @@ class BitcoinService extends ChangeNotifier {
   /// Returns the latest receiving/change (external/internal) address for the wallet depending on [chain]
   /// [chain] - Use 0 for receiving (external), 1 for change (internal). Should not be any other value!
   Future<String> _getCurrentAddressForChain(int chain) async {
-    final wallet = await Hive.openBox('wallet');
+    final _currentWallet = await currentWalletName;
+    final wallet = await Hive.openBox(_currentWallet);
     if (chain == 0) {
       final externalChainArray = await wallet.get('receivingAddresses');
       return externalChainArray.last;
@@ -222,7 +293,8 @@ class BitcoinService extends ChangeNotifier {
   /// Changes the biometrics auth setting used on the lockscreen as an alternative
   /// to the pattern lock
   updateBiometricsUsage() async {
-    final wallet = await Hive.openBox('wallet');
+    final _currentWallet = await currentWalletName;
+    final wallet = await Hive.openBox(_currentWallet);
     final bool useBio = await wallet.get('use_biometrics');
 
     if (useBio) {
@@ -247,7 +319,8 @@ class BitcoinService extends ChangeNotifier {
   /// and checks for the txid associated with the utxo being blocked and marks it accordingly.
   /// Now also checks for output labeling.
   _sortOutputs(List<UtxoObject> utxos) async {
-    final wallet = await Hive.openBox('wallet');
+    final _currentWallet = await currentWalletName;
+    final wallet = await Hive.openBox(_currentWallet);
     final blockedHashArray = wallet.get('blocked_tx_hashes');
     final lst = new List();
     blockedHashArray.forEach((hash) => lst.add(hash));
@@ -280,8 +353,8 @@ class BitcoinService extends ChangeNotifier {
   /// with [satoshiAmountToSend] and [selectedTxFee]. If so, it will call buildTrasaction() and return
   /// a map containing the tx hex along with other important information. If not, then it will return
   /// an integer (1 or 2)
-  dynamic coinSelection(int satoshiAmountToSend, dynamic selectedTxFee,
-      String _recipientAddress) async {
+  dynamic coinSelection(
+      int satoshiAmountToSend, dynamic selectedTxFee, String _recipientAddress) async {
     final List<UtxoObject> availableOutputs = this.allOutputs;
     final List<UtxoObject> spendableOutputs = new List();
     int spendableSatoshiValue = 0;
@@ -327,15 +400,13 @@ class BitcoinService extends ChangeNotifier {
     // https://bitcoin.stackexchange.com/questions/1195/how-to-calculate-transaction-size-before-sending-legacy-non-segwit-p2pkh-p2sh/3011#3011
     // Assume 1 output, only for recipient and no change
     final feeForOneOutput =
-        ((((inputsBeingConsumed * 180 + 1 * 34 + 10 + inputsBeingConsumed) /
-                        1024.0) *
+        ((((inputsBeingConsumed * 180 + 1 * 34 + 10 + inputsBeingConsumed) / 1024.0) *
                     selectedTxFee) *
                 100000000)
             .ceil();
     // Assume 2 outputs, one for recipient and one for change
     final feeForTwoOutputs =
-        ((((inputsBeingConsumed * 180 + 2 * 34 + 10 + inputsBeingConsumed) /
-                        1024.0) *
+        ((((inputsBeingConsumed * 180 + 2 * 34 + 10 + inputsBeingConsumed) / 1024.0) *
                     selectedTxFee) *
                 100000000)
             .ceil();
@@ -344,8 +415,7 @@ class BitcoinService extends ChangeNotifier {
       if (satoshisBeingUsed - satoshiAmountToSend > feeForOneOutput + 293) {
         // Here, we know that theoretically, we may be able to include another output(change) but we first need to
         // factor in the value of this output in satoshis.
-        int changeOutputSize =
-            satoshisBeingUsed - satoshiAmountToSend - feeForTwoOutputs;
+        int changeOutputSize = satoshisBeingUsed - satoshiAmountToSend - feeForTwoOutputs;
         // We check to see if the user can pay for the new transaction with 2 outputs instead of one. Iff they can and
         // the second output's size > 293 satoshis, we perform the mechanics required to properly generate and use a new
         // change address.
@@ -353,10 +423,10 @@ class BitcoinService extends ChangeNotifier {
             satoshisBeingUsed - satoshiAmountToSend - changeOutputSize ==
                 feeForTwoOutputs) {
           await incrementAddressIndexForChain(1);
-          final wallet = await Hive.openBox('wallet');
+          final _currentWallet = await currentWalletName;
+          final wallet = await Hive.openBox(_currentWallet);
           final int changeIndex = await wallet.get('changeIndex');
-          final String newChangeAddress =
-              await generateAddressForChain(1, changeIndex);
+          final String newChangeAddress = await generateAddressForChain(1, changeIndex);
           await addToAddressesArrayForChain(newChangeAddress, 1);
           recipientsArray.add(newChangeAddress);
           recipientsAmtArray.add(changeOutputSize);
@@ -406,8 +476,8 @@ class BitcoinService extends ChangeNotifier {
             (satoshisBeingUsed - satoshiAmountToSend).toString() +
             ' sats');
         print('Actual fee: $feeForOneOutput');
-        dynamic hex = await buildTransaction(
-            utxoObjectsToUse, recipientsArray, recipientsAmtArray);
+        dynamic hex =
+            await buildTransaction(utxoObjectsToUse, recipientsArray, recipientsAmtArray);
         Map<String, dynamic> transactionObject = {
           "hex": hex,
           "recipient": recipientsArray[0],
@@ -426,8 +496,8 @@ class BitcoinService extends ChangeNotifier {
       print('Fee being paid: ' +
           (satoshisBeingUsed - satoshiAmountToSend).toString() +
           ' sats');
-      dynamic hex = await buildTransaction(
-          utxoObjectsToUse, recipientsArray, recipientsAmtArray);
+      dynamic hex =
+          await buildTransaction(utxoObjectsToUse, recipientsArray, recipientsAmtArray);
       Map<String, dynamic> transactionObject = {
         "hex": hex,
         "recipient": recipientsArray[0],
@@ -445,8 +515,8 @@ class BitcoinService extends ChangeNotifier {
   }
 
   /// Builds and signs a transaction
-  Future<dynamic> buildTransaction(List<UtxoObject> utxosToUse,
-      List<String> recipients, List<int> satoshisPerRecipient) async {
+  Future<dynamic> buildTransaction(List<UtxoObject> utxosToUse, List<String> recipients,
+      List<int> satoshisPerRecipient) async {
     List<String> addressesToDerive = new List();
 
     // Populating the addresses to derive
@@ -466,18 +536,18 @@ class BitcoinService extends ChangeNotifier {
       if (response.statusCode == 200 || response.statusCode == 201) {
         addressesToDerive.add(json.decode(response.body));
       } else {
-        throw Exception('Something happened: ' +
-            response.statusCode.toString() +
-            response.body);
+        throw Exception(
+            'Something happened: ' + response.statusCode.toString() + response.body);
       }
     }
 
+    final _currentWallet = await currentWalletName;
     final secureStore = new FlutterSecureStorage();
-    final seed = bip39.mnemonicToSeed(await secureStore.read(key: 'mnemonic'));
+    final seed =
+        bip39.mnemonicToSeed(await secureStore.read(key: '${_currentWallet}_mnemonic'));
 
     final _FIRO = new bip32.NetworkType(
-        wif: 0xd2,
-        bip32: new bip32.Bip32Type(public: 0x0488b21e, private: 0x0488ade4));
+        wif: 0xd2, bip32: new bip32.Bip32Type(public: 0x0488b21e, private: 0x0488ade4));
     final root = bip32.BIP32.fromSeed(seed, _FIRO);
 
     List<ECPair> elipticCurvePairArray = new List();
@@ -486,41 +556,34 @@ class BitcoinService extends ChangeNotifier {
     for (var i = 0; i < addressesToDerive.length; i++) {
       final addressToCheckFor = addressesToDerive[i];
 
+      // TODO: where does '2000' come from?
       for (var i = 0; i < 2000; i++) {
         final nodeReceiving = root.derivePath("m/44'/136'/0'/0/$i");
         final nodeChange = root.derivePath("m/44'/136'/0'/1/$i");
 
-        if (P2PKH(
-                    network: firo,
-                    data: new PaymentData(pubkey: nodeReceiving.publicKey))
+        if (P2PKH(network: firo, data: new PaymentData(pubkey: nodeReceiving.publicKey))
                 .data
                 .address ==
             addressToCheckFor) {
           print('Receiving found on loop $i');
-          elipticCurvePairArray
-              .add(ECPair.fromWIF(nodeReceiving.toWIF(), network: firo));
-          outputDataArray.add(P2PKH(
-                  network: firo,
-                  data: new PaymentData(pubkey: nodeReceiving.publicKey))
-              .data
-              .output);
+          elipticCurvePairArray.add(ECPair.fromWIF(nodeReceiving.toWIF(), network: firo));
+          outputDataArray.add(
+              P2PKH(network: firo, data: new PaymentData(pubkey: nodeReceiving.publicKey))
+                  .data
+                  .output);
           break;
         }
-        if (P2PKH(
-                    network: firo,
-                    data: new PaymentData(pubkey: nodeChange.publicKey))
+        if (P2PKH(network: firo, data: new PaymentData(pubkey: nodeChange.publicKey))
                 .data
                 .address ==
             addressToCheckFor) {
           print('Change found on loop $i');
-          elipticCurvePairArray
-              .add(ECPair.fromWIF(nodeChange.toWIF(), network: firo));
+          elipticCurvePairArray.add(ECPair.fromWIF(nodeChange.toWIF(), network: firo));
 
-          outputDataArray.add(P2PKH(
-                  network: firo,
-                  data: new PaymentData(pubkey: nodeChange.publicKey))
-              .data
-              .output);
+          outputDataArray.add(
+              P2PKH(network: firo, data: new PaymentData(pubkey: nodeChange.publicKey))
+                  .data
+                  .output);
           break;
         }
       }
@@ -532,8 +595,9 @@ class BitcoinService extends ChangeNotifier {
 
     // Add transaction inputs
     for (var i = 0; i < utxosToUse.length; i++) {
-      txb.addInput(
-          utxosToUse[i].txid, utxosToUse[i].vout, null, outputDataArray[i]);
+      print("i = $i");
+      print("outputDataArray.length = ${outputDataArray.length}");
+      txb.addInput(utxosToUse[i].txid, utxosToUse[i].vout, null, outputDataArray[i]);
     }
     // Add transaction outputs
     for (var i = 0; i < recipients.length; i++) {
@@ -554,7 +618,8 @@ class BitcoinService extends ChangeNotifier {
   }
 
   Future<String> getEsploraUrl() async {
-    final wallet = await Hive.openBox('wallet');
+    final _currentWallet = await currentWalletName;
+    final wallet = await Hive.openBox(_currentWallet);
     final String url = await wallet.get('esplora_url');
 
     if (url == null) {
@@ -589,7 +654,8 @@ class BitcoinService extends ChangeNotifier {
   }
 
   Future<UtxoData> _fetchUtxoData() async {
-    final wallet = await Hive.openBox('wallet');
+    final _currentWallet = await currentWalletName;
+    final wallet = await Hive.openBox(_currentWallet);
     final List<String> allAddresses = new List();
     final String currency = await CurrencyUtilities.fetchPreferredCurrency();
     print('currency: ' + currency);
@@ -668,7 +734,8 @@ class BitcoinService extends ChangeNotifier {
   }
 
   Future<TransactionData> _fetchTransactionData() async {
-    final wallet = await Hive.openBox('wallet');
+    final _currentWallet = await currentWalletName;
+    final wallet = await Hive.openBox(_currentWallet);
     final List<String> allAddresses = new List();
     final String currency = await CurrencyUtilities.fetchPreferredCurrency();
     final List receivingAddresses = await wallet.get('receivingAddresses');
@@ -698,8 +765,8 @@ class BitcoinService extends ChangeNotifier {
       if (response.statusCode == 200 || response.statusCode == 201) {
         print('Transactions fetched');
         notifyListeners();
-        await wallet.put('latest_tx_model',
-            TransactionData.fromJson(json.decode(response.body)));
+        await wallet.put(
+            'latest_tx_model', TransactionData.fromJson(json.decode(response.body)));
         return TransactionData.fromJson(json.decode(response.body));
       } else {
         print("Transaction fetch unsuccessful");
@@ -742,9 +809,8 @@ class BitcoinService extends ChangeNotifier {
     if (response.statusCode == 200 || response.statusCode == 201) {
       return ChartModel.fromJson(json.decode(response.body));
     } else {
-      throw Exception('Something happened: ' +
-          response.statusCode.toString() +
-          response.body);
+      throw Exception(
+          'Something happened: ' + response.statusCode.toString() + response.body);
     }
   }
 
@@ -764,9 +830,8 @@ class BitcoinService extends ChangeNotifier {
       print('Current BTC Price: ' + response.body.toString());
       return json.decode(response.body);
     } else {
-      throw Exception('Something happened: ' +
-          response.statusCode.toString() +
-          response.body);
+      throw Exception(
+          'Something happened: ' + response.statusCode.toString() + response.body);
     }
   }
 
@@ -788,24 +853,23 @@ class BitcoinService extends ChangeNotifier {
       print('Number of txs for current receiving addr: ' + numtxs.toString());
 
       if (numtxs >= 1) {
-        final wallet = await Hive.openBox('wallet');
+        final _currentWallet = await currentWalletName;
+        final wallet = await Hive.openBox(_currentWallet);
 
-        await incrementAddressIndexForChain(
-            0); // First increment the receiving index
+        await incrementAddressIndexForChain(0); // First increment the receiving index
         final newReceivingIndex =
             await wallet.get('receivingIndex'); // Check the new receiving index
-        final newReceivingAddress = await generateAddressForChain(0,
-            newReceivingIndex); // Use new index to derive a new receiving address
+        final newReceivingAddress = await generateAddressForChain(
+            0, newReceivingIndex); // Use new index to derive a new receiving address
         await addToAddressesArrayForChain(newReceivingAddress,
             0); // Add that new receiving address to the array of receiving addresses
-        this._currentReceivingAddress = Future(() =>
-            newReceivingAddress); // Set the new receiving address that the service
+        this._currentReceivingAddress = Future(
+            () => newReceivingAddress); // Set the new receiving address that the service
         notifyListeners();
       }
     } else {
-      throw Exception('Something happened: ' +
-          response.statusCode.toString() +
-          response.body);
+      throw Exception(
+          'Something happened: ' + response.statusCode.toString() + response.body);
     }
   }
 
@@ -822,9 +886,8 @@ class BitcoinService extends ChangeNotifier {
       final FeeObject feeObj = FeeObject.fromJson(json.decode(response.body));
       return feeObj;
     } else {
-      throw Exception('Something happened: ' +
-          response.statusCode.toString() +
-          response.body);
+      throw Exception(
+          'Something happened: ' + response.statusCode.toString() + response.body);
     }
   }
 
@@ -875,11 +938,10 @@ class BitcoinService extends ChangeNotifier {
       print(currentNode.toWIF());
       print(currentNode.publicKey);
       print(currentNode.privateKey);
-      final address = P2PKH(
-              network: firo,
-              data: new PaymentData(pubkey: currentNode.publicKey))
-          .data
-          .address;
+      final address =
+          P2PKH(network: firo, data: new PaymentData(pubkey: currentNode.publicKey))
+              .data
+              .address;
       print(address);
       final Map<String, String> requestBody = {
         "address": address,
@@ -901,9 +963,8 @@ class BitcoinService extends ChangeNotifier {
           receivingGapCounter += 1;
         }
       } else {
-        throw Exception('Something happened: ' +
-            response.statusCode.toString() +
-            response.body);
+        throw Exception(
+            'Something happened: ' + response.statusCode.toString() + response.body);
       }
     }
 
@@ -916,11 +977,10 @@ class BitcoinService extends ChangeNotifier {
       }
 
       final currentNode = root.derivePath("m/44'/136'/0'/1/$i");
-      final address = P2PKH(
-              network: firo,
-              data: new PaymentData(pubkey: currentNode.publicKey))
-          .data
-          .address;
+      final address =
+          P2PKH(network: firo, data: new PaymentData(pubkey: currentNode.publicKey))
+              .data
+              .address;
       final Map<String, String> requestBody = {
         "address": address,
         "url": await getEsploraUrl()
@@ -942,9 +1002,7 @@ class BitcoinService extends ChangeNotifier {
         }
       } else {
         throw Exception(
-          'Something happened: ' +
-              response.statusCode.toString() +
-              response.body,
+          'Something happened: ' + response.statusCode.toString() + response.body,
         );
       }
     }
@@ -952,27 +1010,28 @@ class BitcoinService extends ChangeNotifier {
     // If restoring a wallet that never received any funds, then set receivingArray manually
     // If we didn't do this, it'd store an empty array
     if (receivingIndex == 0) {
-      final String receivingAddress =
-          await generateAddressForChain(0, receivingIndex);
+      final String receivingAddress = await generateAddressForChain(0, receivingIndex);
       receivingAddressArray.add(receivingAddress);
     }
 
     // If restoring a wallet that never sent any funds with change, then set changeArray
     // manually. If we didn't do this, it'd store an empty array.
     if (changeIndex == 0) {
-      final String changeAddress =
-          await generateAddressForChain(1, changeIndex);
+      final String changeAddress = await generateAddressForChain(1, changeIndex);
       changeAddressArray.add(changeAddress);
     }
 
-    final wallet = await Hive.openBox('wallet');
+    final _currentWallet = await currentWalletName;
+
+    final wallet = await Hive.openBox(_currentWallet);
     await wallet.put('receivingAddresses', receivingAddressArray);
     await wallet.put('changeAddresses', changeAddressArray);
     await wallet.put('receivingIndex', receivingIndex);
     await wallet.put('changeIndex', changeIndex);
 
     final secureStore = new FlutterSecureStorage();
-    await secureStore.write(key: 'mnemonic', value: suppliedMnemonic.trim());
+    await secureStore.write(
+        key: '${_currentWallet}_mnemonic', value: suppliedMnemonic.trim());
     notifyListeners();
   }
 }

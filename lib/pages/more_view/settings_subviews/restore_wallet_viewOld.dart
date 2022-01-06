@@ -1,16 +1,16 @@
-import 'package:flutter/material.dart';
 import 'package:animations/animations.dart';
-import 'package:provider/provider.dart';
 import 'package:bip39/bip39.dart' as bip39;
-import 'package:paymint/services/services.dart';
 import 'package:flutter/cupertino.dart';
+import 'package:flutter/material.dart';
+import 'package:paymint/services/services.dart';
+import 'package:provider/provider.dart';
 
-class RestoreWalletView extends StatefulWidget {
+class RestoreWalletViewOLD extends StatefulWidget {
   @override
-  _RestoreWalletViewState createState() => _RestoreWalletViewState();
+  _RestoreWalletViewOLDState createState() => _RestoreWalletViewOLDState();
 }
 
-class _RestoreWalletViewState extends State<RestoreWalletView> {
+class _RestoreWalletViewOLDState extends State<RestoreWalletViewOLD> {
   TextEditingController textController = new TextEditingController();
 
   @override
@@ -31,18 +31,16 @@ class _RestoreWalletViewState extends State<RestoreWalletView> {
                   },
                 );
               } else {
-                final btcService =
-                    Provider.of<BitcoinService>(context, listen: false);
+                final btcService = Provider.of<BitcoinService>(context, listen: false);
                 showModal(
                   context: context,
-                  configuration: FadeScaleTransitionConfiguration(
-                      barrierDismissible: false),
+                  configuration:
+                      FadeScaleTransitionConfiguration(barrierDismissible: false),
                   builder: (BuildContext context) {
                     return WaitDialog();
                   },
                 );
-                await btcService
-                    .recoverWalletFromBIP32SeedPhrase(textController.text);
+                await btcService.recoverWalletFromBIP32SeedPhrase(textController.text);
                 await btcService.refreshWalletData();
                 Navigator.pop(context);
                 showModal(

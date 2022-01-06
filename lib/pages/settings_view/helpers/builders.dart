@@ -1,0 +1,61 @@
+import 'package:flutter/material.dart';
+import 'package:flutter_svg/svg.dart';
+import 'package:google_fonts/google_fonts.dart';
+import 'package:paymint/utilities/cfcolors.dart';
+import 'package:paymint/widgets/custom_buttons/app_bar_icon_button.dart';
+
+AppBar buildSettingsAppBar(BuildContext context, String title,
+    {Widget rightButton, TextStyle titleStyle, bool disableBackButton}) {
+  final List<Widget> actions = rightButton == null ? [] : [rightButton];
+
+  bool _disableBackButton = disableBackButton == null ? false : disableBackButton;
+
+  final TextStyle _titleStyle = titleStyle == null
+      ? GoogleFonts.workSans(
+          color: CFColors.spark,
+          fontSize: 16,
+          fontWeight: FontWeight.w600,
+        )
+      : titleStyle;
+
+  return AppBar(
+    backgroundColor: CFColors.white,
+    title: Text(
+      title,
+      style: _titleStyle,
+    ),
+
+    actions: actions,
+
+    // leading appbar button
+    leadingWidth: _disableBackButton ? null : 36.0 + 20.0, // account for 20 padding
+
+    leading: _disableBackButton
+        ? null
+        : Padding(
+            padding: EdgeInsets.only(
+              top: 10,
+              bottom: 10,
+              left: 20,
+            ),
+            child: AspectRatio(
+              aspectRatio: 1,
+              child: AppBarIconButton(
+                size: 36,
+                onPressed: () async {
+                  FocusScope.of(context).unfocus();
+                  await Future.delayed(Duration(milliseconds: 50));
+                  Navigator.pop(context);
+                },
+                circularBorderRadius: 8,
+                icon: SvgPicture.asset(
+                  "assets/svg/chevronLeft.svg",
+                  color: CFColors.twilight,
+                  width: 24,
+                  height: 24,
+                ),
+              ),
+            ),
+          ),
+  );
+}

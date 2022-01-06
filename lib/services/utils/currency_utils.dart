@@ -28,4 +28,7 @@ class CurrencyUtilities {
 
     await prefs.put('banking', newCountry);
   }
+
+  // constants
+  static const String coinName = "FIRO";
 }

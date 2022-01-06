@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 import 'package:google_fonts/google_fonts.dart';
+import 'package:paymint/services/wallets_service.dart';
+import 'package:provider/provider.dart';
 
 class BackupView extends StatefulWidget {
   @override
@@ -9,8 +11,10 @@ class BackupView extends StatefulWidget {
 
 class _BackupViewState extends State<BackupView> {
   _setMnemonic() async {
+    final walletsService = Provider.of<WalletsService>(context, listen: false);
+    final _currentWallet = await walletsService.currentWalletName;
     final secureStore = new FlutterSecureStorage();
-    final mnemonicString = await secureStore.read(key: 'mnemonic');
+    final mnemonicString = await secureStore.read(key: '${_currentWallet}_mnemonic');
     final List<String> data = mnemonicString.split(' ');
     return data;
   }

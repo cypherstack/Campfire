@@ -7,7 +7,7 @@ const darkThemeScript = r'''
         // CommonJS
         factory(exports, require('echarts'));
     } else {
-        // Browser globals
+        // Browser global
         factory({}, root.echarts);
     }
 }(this, function (exports, echarts) {

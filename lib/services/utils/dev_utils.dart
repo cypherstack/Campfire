@@ -1,16 +1,19 @@
-import 'package:hive/hive.dart';
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
+import 'package:hive/hive.dart';
+
+import '../wallets_service.dart';
 
 class DevUtilities {
   static debugPrintWalletState() async {
-    final wallet = await Hive.openBox('wallet');
+    final _currentWallet = await WalletsService().currentWalletName;
+    final wallet = await Hive.openBox(_currentWallet);
     final ra = wallet.get('receivingAddresses');
     final ca = wallet.get('changeAddresses');
     final ri = wallet.get('receivingIndex');
     final ci = wallet.get('changeIndex');
 
     final secureStore = new FlutterSecureStorage();
-    final mnemonic = await secureStore.read(key: 'mnemonic');
+    final mnemonic = await secureStore.read(key: '${_currentWallet}_mnemonic');
 
     print("""
     ===========================================================================

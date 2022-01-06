@@ -11,9 +11,8 @@ class TransactionData {
 
   factory TransactionData.fromJson(Map<String, dynamic> json) {
     var dateTimeChunks = json['dateTimeChunks'] as List;
-    List<TransactionChunk> chunksList = dateTimeChunks
-        .map((txChunk) => TransactionChunk.fromJson(txChunk))
-        .toList();
+    List<TransactionChunk> chunksList =
+        dateTimeChunks.map((txChunk) => TransactionChunk.fromJson(txChunk)).toList();
 
     return TransactionData(txChunks: chunksList);
   }
@@ -30,8 +29,9 @@ class TransactionChunk {
 
   factory TransactionChunk.fromJson(Map<String, dynamic> json) {
     var txArray = json['transactions'] as List;
-    List<Transaction> txList =
-        txArray.map((tx) => Transaction.fromJson(tx)).toList();
+    List<Transaction> txList = txArray.map((tx) => Transaction.fromJson(tx)).toList();
+
+    print(txArray);
 
     return TransactionChunk(timestamp: json['timestamp'], transactions: txList);
   }
@@ -89,8 +89,7 @@ class Transaction {
     var inputArray = json['inputs'] as List;
     var outputArray = json['outputs'] as List;
 
-    List<Input> inputList =
-        inputArray.map((input) => Input.fromJson(input)).toList();
+    List<Input> inputList = inputArray.map((input) => Input.fromJson(input)).toList();
     List<Output> outputList =
         outputArray.map((output) => Output.fromJson(output)).toList();
 

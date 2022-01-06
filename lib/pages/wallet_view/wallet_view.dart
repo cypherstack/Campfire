@@ -1,13 +1,20 @@
+import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
-import 'package:provider/provider.dart';
-import 'package:paymint/services/bitcoin_service.dart';
+import 'package:flutter_feather_icons/flutter_feather_icons.dart';
+import 'package:flutter_spinkit/flutter_spinkit.dart';
+import 'package:flutter_svg/svg.dart';
+import 'package:google_fonts/google_fonts.dart';
 import 'package:paymint/models/models.dart';
-import 'package:marquee/marquee.dart';
-import 'dart:convert';
-import 'package:paymint/services/globals.dart';
-import 'package:flutter_money_formatter/flutter_money_formatter.dart';
-import 'package:flutter_echarts/flutter_echarts.dart';
-import 'dark_theme_script.dart' show darkThemeScript;
+import 'package:paymint/pages/transaction_subviews/transaction_search_view.dart';
+import 'package:paymint/services/bitcoin_service.dart';
+import 'package:paymint/services/utils/currency_utils.dart';
+import 'package:paymint/utilities/cfcolors.dart';
+import 'package:paymint/utilities/shared_utilities.dart';
+import 'package:paymint/utilities/sizing_utilities.dart';
+import 'package:paymint/widgets/custom_buttons/text_switch_button.dart';
+import 'package:paymint/widgets/gradient_card.dart';
+import 'package:paymint/widgets/transaction_card.dart';
+import 'package:provider/provider.dart';
 
 class WalletView extends StatefulWidget {
   WalletView({Key key}) : super(key: key);
@@ -21,170 +28,208 @@ class _WalletViewState extends State<WalletView> {
   Widget build(BuildContext context) {
     final BitcoinService bitcoinService = Provider.of<BitcoinService>(context);
 
-    return SafeArea(
-      child: Scaffold(
-        backgroundColor: Color(0xff121212),
-        body: Column(
-          children: <Widget>[
-            SizedBox(height: 8),
+    final double _bodyHeight = MediaQuery.of(context).size.height -
+        MediaQuery.of(context).padding.top -
+        kToolbarHeight -
+        SizingUtilities.bottomToolBarHeight;
 
-            // Market information Marquee widget
-
-            FutureBuilder(
-              future: bitcoinService.marketInfo,
-              builder:
-                  (BuildContext context, AsyncSnapshot<String> marketInfo) {
-                if (marketInfo.connectionState == ConnectionState.done) {
-                  return Container(
-                    height: 16,
-                    child: Marquee(
-                      fadingEdgeStartFraction: 0.2,
-                      fadingEdgeEndFraction: 0.2,
-                      text: marketInfo.data ??
-                          'Unable to fetch Market metadata    ',
-                      style: TextStyle(color: Colors.white),
-                    ),
-                  );
-                } else {
-                  return Container(
-                    height: 16,
-                    child: Center(
-                      child: Text(
-                        'Fetching market metadata...',
-                        style: TextStyle(color: Colors.white),
-                      ),
-                    ),
-                  );
-                }
-              },
-            ),
-
-            // UtxoData Widget - Top half of Wallet View
-
+    Widget _buildBalance({String fiatBalance, String balance}) {
+      return Padding(
+        padding: const EdgeInsets.all(20.0),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
             Container(
-              height: (MediaQuery.of(context).size.height - 46) / 3,
-              child: FutureBuilder(
-                future: bitcoinService.utxoData,
-                builder:
-                    (BuildContext context, AsyncSnapshot<UtxoData> utxoData) {
-                  if (utxoData.connectionState == ConnectionState.done) {
-                    if (utxoData == null || utxoData.hasError) {
-                      return Container(
-                        child: Center(
-                          child: Text(
-                            'Unable to fetch balance data.\nPlease check connection',
-                            style: TextStyle(color: Colors.white),
-                          ),
-                        ),
-                      );
-                    }
-
-                    return Column(
-                      mainAxisAlignment: MainAxisAlignment.center,
-                      children: <Widget>[
-                        Text(
-                          utxoData.data.totalUserCurrency,
-                          textScaleFactor: 2.7,
-                          style: TextStyle(color: Colors.white),
-                        ),
-                        SizedBox(height: 16),
-                        Text(
-                          formatSatoshiBalance(utxoData.data.satoshiBalance),
-                          textScaleFactor: 1.5,
-                          style: TextStyle(color: Colors.white),
-                        ),
-                      ],
-                    );
-                  } else {
-                    return buildBalanceInformationLoadingWidget();
-                  }
+              height: 18,
+              width: 126,
+              child: TextSwitchButton(
+                buttonStateChanged: (state) {
+                  print("balance switch button changed to: $state");
                 },
               ),
             ),
+            SizedBox(
+              height: 14,
+            ),
+            FittedBox(
+              child: Text(
+                "$balance ${CurrencyUtilities.coinName}",
+                style: GoogleFonts.workSans(
+                  color: CFColors.white,
+                  fontSize: 28, // ScalingUtils.fontScaled(context, 28),
+                  fontWeight: FontWeight.w600,
+                  letterSpacing: -0.5,
+                ),
+              ),
+            ),
+            SizedBox(
+              height: 5,
+            ),
+            FittedBox(
+              child: Text(
+                fiatBalance,
+                style: GoogleFonts.workSans(
+                  color: CFColors.white,
+                  fontSize: 14,
+                  fontWeight: FontWeight.w600,
+                ),
+              ),
+            ),
+          ],
+        ),
+      );
+    }
 
-            // Charting widget - bottom half of Wallet View
+    return Scaffold(
+      extendBody: true,
+      backgroundColor: CFColors.white,
+      body: Container(
+        height: _bodyHeight - 10, // needed to fit content on screen. Magic numbers \o/
+        color: CFColors.white,
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          children: [
+            Padding(
+              padding: EdgeInsets.symmetric(
+                vertical: 10,
+                horizontal: SizingUtilities.standardPadding,
+              ),
+              child: GradientCard(
+                circularBorderRadius: SizingUtilities.circularBorderRadius,
+                gradient: CFColors.fireGradientVerticalLight,
+                child: Stack(
+                  children: [
+                    FutureBuilder(
+                      future: bitcoinService.utxoData,
+                      builder: (BuildContext context, AsyncSnapshot<UtxoData> utxoData) {
+                        if (utxoData.connectionState == ConnectionState.done) {
+                          if (utxoData == null || utxoData.hasError) {
+                            // _balanceLoadingStatus = LoadingStatus.error;
+                            // _balanceLoaded = false;
 
-            Expanded(
-              child: FutureBuilder(
-                future: bitcoinService.chartData,
-                builder: (BuildContext context,
-                    AsyncSnapshot<ChartModel> chartData) {
-                  if (chartData.connectionState == ConnectionState.done) {
-                    return FutureBuilder(
-                      future: bitcoinService.currency,
-                      builder: (BuildContext context,
-                          AsyncSnapshot<String> currency) {
-                        if (currency.connectionState == ConnectionState.done) {
-                          if (chartData == null || chartData.hasError) {
-                            return Container(
-                              child: Center(
-                                child: Text(
-                                  'Cannot fetch chart data. Please check connection',
-                                  style: TextStyle(color: Colors.white),
-                                ),
-                              ),
+                            return _buildBalance(
+                              balance: "...",
+                              fiatBalance: "...",
                             );
+                            // return Container(
+                            //   child: Center(
+                            //     child: Text(
+                            //       // TODO: implement could not connect overlay
+                            //       'Unable to fetch balance data.\nPlease check connection',
+                            //       style: TextStyle(color: Colors.blue),
+                            //     ),
+                            //   ),
+                            // );
                           }
-                          return FutureBuilder(
-                            future: bitcoinService.bitcoinPrice,
-                            builder: (BuildContext context,
-                                AsyncSnapshot<dynamic> price) {
-                              if (price.connectionState ==
-                                  ConnectionState.done) {
-                                final symbol = currency.data;
-                                final midDate = chartData.data
-                                    .xAxis[chartData.data.xAxis.length - 35];
 
-                                FlutterMoneyFormatter fmf =
-                                    FlutterMoneyFormatter(
-                                        amount: price.data + .00);
+                          // _balanceLoadingStatus = LoadingStatus.loaded;
 
-                                final String displayPrice =
-                                    currencyMap[symbol] +
-                                            fmf.output.nonSymbol ??
-                                        '???';
-
-                                return Padding(
-                                  padding:
-                                      const EdgeInsets.fromLTRB(0, 0, 0, 0),
-                                  child: Echarts(
-                                    extensions: [darkThemeScript],
-                                    theme: 'dark',
-                                    option: json.encode({
-                                      "title": {
-                                        "text": "BTC/$symbol @ $displayPrice",
-                                        "left": 15
-                                      },
-                                      "tooltip": {
-                                        "trigger": 'axis',
-                                        "axisPointer": {"type": 'cross'}
-                                      },
-                                      "xAxis": {"data": chartData.data.xAxis},
-                                      "yAxis": {"show": false, "scale": true},
-                                      "dataZoom": buildDataZoomOptions(midDate),
-                                      "series": [
-                                        {
-                                          "type": 'k',
-                                          "itemStyle":
-                                              buildCandleStickColorData(),
-                                          "data": chartData.data.candleData,
-                                        }
-                                      ]
-                                    }),
-                                  ),
-                                );
-                              } else {
-                                return Center(child: buildChartLoadingWidget());
-                              }
-                            },
+                          // _balanceLoaded = true;
+                          return _buildBalance(
+                            fiatBalance: utxoData.data.totalUserCurrency,
+                            balance: utxoData.data.bitcoinBalance.toString(),
                           );
                         } else {
-                          return Center(child: buildChartLoadingWidget());
+                          // TODO: Implement synchronising progress at top of safe area
+                          // return buildBalanceInformationLoadingWidget();
+
+                          // _balanceLoadingStatus = LoadingStatus.loading;
+
+                          // _balanceLoaded = false;
+                          return _buildBalance(
+                            balance: "...",
+                            fiatBalance: "...",
+                          );
                         }
                       },
-                    );
+                    ),
+                    Row(
+                      mainAxisAlignment: MainAxisAlignment.end,
+                      children: [
+                        Opacity(
+                          opacity: 0.5,
+                          child: SvgPicture.asset(
+                            "assets/svg/groupLogo.svg",
+                          ),
+                        ),
+                      ],
+                    ),
+                  ],
+                ),
+              ),
+            ),
+            Padding(
+              padding: EdgeInsets.symmetric(
+                vertical: 0,
+                horizontal: SizingUtilities.standardPadding,
+              ),
+              child: Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                children: [
+                  Text(
+                    "TRANSACTIONS",
+                    style: GoogleFonts.workSans(
+                      color: CFColors.twilight,
+                      fontSize: 12,
+                      fontWeight: FontWeight.w600,
+                      letterSpacing: 0.25,
+                    ),
+                  ),
+                  IconButton(
+                    // TODO: implement transaction search
+                    onPressed: () {
+                      showDialog(
+                          context: context,
+                          useSafeArea: false,
+                          barrierDismissible: false,
+                          builder: (context) {
+                            return TransactionSearchView();
+                          });
+                      // Navigator.push(
+                      //   context,
+                      //   CupertinoPageRoute(builder: (_) {
+                      //     return TransactionSearchView();
+                      //   }),
+                    },
+                    icon: Icon(
+                      FeatherIcons.search,
+                      color: CFColors.twilight,
+                      size: 20,
+                    ),
+                  ),
+                ],
+              ),
+            ),
+            Expanded(
+              child: FutureBuilder(
+                future: bitcoinService.transactionData,
+                builder: (context, txData) {
+                  if (txData.connectionState == ConnectionState.done) {
+                    // _transactionsLoadingStatus = LoadingStatus.loaded;
+                    final data = txData.data;
+                    // _transactionsLoaded = true;
+                    return _buildTransactionList(context, data);
                   } else {
-                    return Center(child: buildChartLoadingWidget());
+                    //TODO: different transactions loading progress?
+                    // _transactionsLoaded = false;
+
+                    // _transactionsLoadingStatus = LoadingStatus.loading;
+                    return Center(
+                      child: SpinKitThreeBounce(
+                        color: CFColors.spark,
+                        size: MediaQuery.of(context).size.width * 0.1,
+                      ),
+                    );
+                    // return Center(
+                    //   child: Container(
+                    //     height: 50,
+                    //     width: 50,
+                    //     child: CircularProgressIndicator(
+                    //       color: CFColors.spark,
+                    //       strokeWidth: 2,
+                    //     ),
+                    //   ),
+                    // );
                   }
                 },
               ),
@@ -196,86 +241,66 @@ class _WalletViewState extends State<WalletView> {
   }
 }
 
-// Wallet View Helper Functions
+// build transaction list after loading data
+Widget _buildTransactionList(BuildContext context, TransactionData txData) {
+  // No transactions in wallet
+  if (txData.txChunks.length == 0) {
+    return Center(
+      child: Column(
+        // mainAxisAlignment: MainAxisAlignment.center,
+        children: [
+          // SizedBox(
+          //   height: 32,
+          // ),
+          SvgPicture.asset(
+            "assets/svg/empty-tx-list.svg",
+            width: MediaQuery.of(context).size.width * 0.52,
+          ),
+          SizedBox(
+            height: 8,
+          ),
+          FittedBox(
+            child: Text(
+              "NO TRANSACTIONS YET",
+              style: GoogleFonts.workSans(
+                color: CFColors.dew,
+                fontWeight: FontWeight.w600,
+                fontSize: 12,
+                letterSpacing: 0.25,
+              ),
+            ),
+          )
+        ],
+      ),
+    );
+  } else {
+    // flatten transactions into single list
+    List<Transaction> txList =
+        txData.txChunks.expand((element) => element.transactions).toList();
 
-/// Adds necessary commas (,) to [satoshiBalance] and returns string
-///
-/// >>> formatSatoshiBalance(123456)
-/// '123,456'
-String formatSatoshiBalance(int satoshiBalance) {
-  RegExp reg = new RegExp(r'(\d{1,3})(?=(\d{3})+(?!\d))');
-  Function mathFunc = (Match match) => '${match[1]},';
-
-  return satoshiBalance.toString().replaceAllMapped(reg, mathFunc) + ' sats';
-}
-
-Widget buildBalanceInformationLoadingWidget() {
-  return Center(
-    child: Column(
-      mainAxisAlignment: MainAxisAlignment.center,
-      children: <Widget>[
-        Text(
-          'Fetching balance...',
-          style: TextStyle(color: Colors.white),
-        ),
-        SizedBox(height: 24),
-        SizedBox(
-          width: 150,
-          child: LinearProgressIndicator(),
-        )
-      ],
-    ),
-  );
-}
-
-Widget buildChartLoadingWidget() {
-  return Center(
-    child: Column(
-      mainAxisAlignment: MainAxisAlignment.center,
-      children: <Widget>[
-        Text(
-          'Fetching chart data...',
-          style: TextStyle(color: Colors.white),
-        ),
-        SizedBox(height: 24),
-        SizedBox(
-          width: 150,
-          child: LinearProgressIndicator(),
-        )
-      ],
-    ),
-  );
-}
-
-List buildDataZoomOptions(String midValue) {
-  return [
-    {
-      "startValue": midValue,
-      "textStyle": {"color": '#8392A5'},
-      "handleIcon":
-          'M10.7,11.9v-1.3H9.3v1.3c-4.9,0.3-8.8,4.4-8.8,9.4c0,5,3.9,9.1,8.8,9.4v1.3h1.3v-1.3c4.9-0.3,8.8-4.4,8.8-9.4C19.5,16.3,15.6,12.2,10.7,11.9z M13.3,24.4H6.7V23h6.6V24.4z M13.3,19.6H6.7v-1.4h6.6V19.6z',
-      "handleSize": '80%',
-      "dataBackground": {
-        "areaStyle": {"color": '#8392A5'},
-        "lineStyle": {"opacity": 0.8, "color": '#8392A5'}
-      },
-      "handleStyle": {
-        "color": '#fff',
-        "shadowBlur": 3,
-        "shadowColor": 'rgba(0, 0, 0, 0.6)',
-        "shadowOffsetX": 2,
-        "shadowOffsetY": 2
-      }
-    },
-    {"type": 'inside'}
-  ];
-}
-
-Map<String, String> buildCandleStickColorData() {
-  return {
-    "color": '#15F4EE',
-    "color0": '#FF0266',
-    "borderColor": '#15F4EE',
-    "borderColor0": '#FF0266'
-  };
+    return Container(
+      padding: EdgeInsets.symmetric(
+        vertical: 0,
+        horizontal: 16,
+      ),
+      child: ListView.builder(
+        itemCount: txList.length,
+        itemBuilder: (context, index) {
+          return Padding(
+            padding: EdgeInsets.all(
+              SizingUtilities.listItemSpacing / 2,
+            ),
+            child: TransactionCard(
+              transaction: txList[index],
+              txType: txList[index].txType,
+              date: Utilities.extractDateFrom(txList[index].timestamp),
+              amount:
+                  "${Utilities.satoshisToAmount(txList[index].amount)} ${CurrencyUtilities.coinName}",
+              fiatValue: txList[index].worthNow,
+            ),
+          );
+        },
+      ),
+    );
+  }
 }
