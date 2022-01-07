@@ -72,21 +72,23 @@ class _CurrencyViewState extends State<CurrencyView> {
   }
 
   _buildCurrencyList(BuildContext context, String currentCurrency) {
+    // create temp list to modify so that the currently selected
+    // currency always appears at the top of the list
     final currenciesWithoutSelected = currencyList.toList();
     currenciesWithoutSelected.remove(currentCurrency);
     currenciesWithoutSelected.insert(0, currentCurrency);
 
+    final currenciesCount = currenciesWithoutSelected.length;
+
     return ListView.separated(
-      separatorBuilder: (context, index) => Divider(
-        color: CFColors.fog,
+      separatorBuilder: (context, index) => Container(
         height: 1,
+        color: CFColors.fog,
       ),
-      itemCount: currenciesWithoutSelected.length,
+      itemCount: currenciesCount,
       itemBuilder: (BuildContext context, int index) {
-        return MaterialButton(
-          color: index == 0 ? CFColors.fog : CFColors.white,
-          materialTapTargetSize: MaterialTapTargetSize.shrinkWrap,
-          onPressed: () async {
+        return GestureDetector(
+          onTap: () async {
             if (index == 0) {
               // ignore if already selected currency
               return;
@@ -106,6 +108,7 @@ class _CurrencyViewState extends State<CurrencyView> {
             // Navigator.pop(context);
           },
           child: Container(
+            color: index == 0 ? CFColors.fog : CFColors.white,
             child: Padding(
               padding: EdgeInsets.symmetric(
                 horizontal: 12,
