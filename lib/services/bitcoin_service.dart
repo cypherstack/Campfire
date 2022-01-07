@@ -199,7 +199,10 @@ class BitcoinService extends ChangeNotifier {
     final TransactionData newTxData = await _fetchTransactionData();
     final dynamic newBtcPrice = await getBitcoinPrice();
     final FeeObject feeObj = await getFees();
-    final String marketInfo = await getMarketInfo();
+
+    // not needed in campfire
+    // final String marketInfo = await getMarketInfo();
+
     final String currentName = await WalletsService().currentWalletName;
     await checkReceivingAddressForTransactions();
 
@@ -209,7 +212,10 @@ class BitcoinService extends ChangeNotifier {
     this._transactionData = Future(() => newTxData);
     this._bitcoinPrice = Future(() => newBtcPrice);
     this._feeObject = Future(() => feeObj);
-    this._marketInfo = Future(() => marketInfo);
+
+    // not needed in campfire
+    // this._marketInfo = Future(() => marketInfo);
+
     GlobalEventBus.instance
         .fire(NodeConnectionStatusChangedEvent(NodeConnectionStatus.synced));
     notifyListeners();
@@ -851,7 +857,8 @@ class BitcoinService extends ChangeNotifier {
     if (response.statusCode == 200 || response.statusCode == 201) {
       notifyListeners();
       print('Current BTC Price: ' + response.body.toString());
-      //TODO julian got a json parse error here which caused a hang up
+      //TODO got a json parse error here which caused a hang up
+      // E/flutter (16131): [ERROR:flutter/lib/ui/ui_dart_state.cc(209)] Unhandled Exception: FormatException: Unexpected end of input (at character 1)
       return json.decode(response.body);
     } else {
       throw Exception(
