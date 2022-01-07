@@ -5,7 +5,10 @@ import 'package:paymint/utilities/cfcolors.dart';
 import 'package:paymint/widgets/custom_buttons/app_bar_icon_button.dart';
 
 AppBar buildSettingsAppBar(BuildContext context, String title,
-    {Widget rightButton, TextStyle titleStyle, bool disableBackButton}) {
+    {Widget rightButton,
+    TextStyle titleStyle,
+    bool disableBackButton,
+    VoidCallback onBackPressed}) {
   final List<Widget> actions = rightButton == null ? [] : [rightButton];
 
   bool _disableBackButton = disableBackButton == null ? false : disableBackButton;
@@ -45,6 +48,7 @@ AppBar buildSettingsAppBar(BuildContext context, String title,
                 onPressed: () async {
                   FocusScope.of(context).unfocus();
                   await Future.delayed(Duration(milliseconds: 50));
+                  if (onBackPressed != null) onBackPressed();
                   Navigator.pop(context);
                 },
                 circularBorderRadius: 8,
