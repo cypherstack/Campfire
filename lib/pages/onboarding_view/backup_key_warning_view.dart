@@ -2,6 +2,7 @@ import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:paymint/pages/onboarding_view/BackupKeyView.dart';
+import 'package:paymint/services/bitcoin_service.dart';
 import 'package:paymint/services/utils/backup_key_warning.dart';
 import 'package:paymint/services/wallets_service.dart';
 import 'package:paymint/utilities/cfcolors.dart';
@@ -27,6 +28,7 @@ class _BackupKeyWarningViewState extends State<BackupKeyWarningView> {
   void _rollbackWalletAndPinCreation(BuildContext context) async {
     final walletsService = Provider.of<WalletsService>(context, listen: false);
     await walletsService.deleteWallet(widget.walletName);
+    Provider.of<BitcoinService>(context, listen: false).refreshWalletData();
   }
 
   @override
