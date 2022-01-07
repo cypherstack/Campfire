@@ -180,6 +180,7 @@ class _RestoreWalletFormViewState extends State<RestoreWalletFormView> {
   void _deleteUnusedWalletNameAndPIN(BuildContext context) async {
     final walletsService = Provider.of<WalletsService>(context, listen: false);
     await walletsService.deleteWallet(widget.walletName);
+    Provider.of<BitcoinService>(context, listen: false).refreshWalletData();
   }
 
   _buildRestoreButton() {

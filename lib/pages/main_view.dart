@@ -23,9 +23,11 @@ class MainView extends StatefulWidget {
 }
 
 class _MainViewState extends State<MainView> {
-  NodeConnectionStatus nodeState = NodeConnectionStatus.connecting;
+  NodeConnectionStatus nodeState = NodeConnectionStatus.loading;
   int _currentIndex = 1;
   final double _navBarRadius = SizingUtilities.circularBorderRadius * 1.8;
+
+  bool _hasSynced = false;
 
   GlobalKey<ScaffoldState> _key = GlobalKey<ScaffoldState>();
 
@@ -33,8 +35,6 @@ class _MainViewState extends State<MainView> {
     SendView(),
     WalletView(),
     ReceiveView(),
-    // TransactionsViewOld(),
-    // TransferView(),
     MoreView(),
   ];
 
@@ -96,8 +96,6 @@ class _MainViewState extends State<MainView> {
         nodeState = event.newStatus;
       });
     });
-
-    Provider.of<BitcoinService>(context, listen: false).refreshWalletData();
 
     super.initState();
   }
@@ -226,13 +224,6 @@ class _MainViewState extends State<MainView> {
 
   @override
   Widget build(BuildContext context) {
-    // return AnnotatedRegion(
-    // value: SystemUiOverlayStyle(
-    //   statusBarColor: Colors.transparent,
-    //   statusBarIconBrightness: Brightness.dark,
-    // ),
-    // child:
-    //
     return Scaffold(
       key: _key,
       backgroundColor: CFColors.white,
@@ -306,35 +297,98 @@ class _MainViewState extends State<MainView> {
                   style: _buildTextStyle(5),
                 ),
               ),
-              // BottomNavigationBarItem(
-              //   icon: Icon(
-              //     Icons.menu,
-              //     color: _buildIconColor(3), // Index 2
-              //   ),
-              //   title: Text(
-              //     "Transaction",
-              //     style: _buildTextStyle(3),
-              //   ),
-              // ),
-              // BottomNavigationBarItem(
-              //   icon: Icon(
-              //     Icons.menu,
-              //     color: _buildIconColor(4), // Index 2
-              //   ),
-              //   title: Text(
-              //     "Transfer",
-              //     style: _buildTextStyle(4),
-              //   ),
-              // ),
             ],
           ),
         ),
       ),
-      body: IndexedStack(
-        children: children,
-        index: _currentIndex,
+      body: Stack(
+        children: [
+          IndexedStack(
+            children: children,
+            index: _currentIndex,
+          ),
+          if (nodeState == NodeConnectionStatus.loading) _buildSyncing(),
+          if (nodeState == NodeConnectionStatus.synced) _buildConnected(),
+          if (nodeState == NodeConnectionStatus.disconnected) _buildDisconnected(),
+        ],
       ),
       // ),
+    );
+  }
+
+  Column _buildDisconnected() {
+    return Column(
+      children: [
+        _buildDropDown(
+            context, "Could not connect. Tap to retry.", CFColors.dropdownError),
+      ],
+    );
+  }
+
+  Widget _buildConnected() {
+    if (_hasSynced) {
+      return Container();
+    }
+    return Column(
+      children: [
+        FutureBuilder(
+          future: Future.delayed(Duration(seconds: 3)),
+          builder: (context, snapshot) {
+            // return empty container to clear message after some time
+            if (snapshot.connectionState == ConnectionState.done) {
+              _hasSynced = true;
+              return Container();
+            } else {
+              return _buildDropDown(context, "Connected", CFColors.notificationSuccess);
+            }
+          },
+        ),
+      ],
+    );
+  }
+
+  Column _buildSyncing() {
+    _hasSynced = false;
+    return Column(
+      children: [
+        _buildDropDown(context, "Synchronizing", CFColors.dropdownSynchronizing),
+      ],
+    );
+  }
+
+  Container _buildDropDown(BuildContext context, String message, Color backgroundColor) {
+    return Container(
+      width: MediaQuery.of(context).size.width,
+      decoration: BoxDecoration(
+          color: backgroundColor,
+          borderRadius: BorderRadius.only(
+            bottomLeft: Radius.circular(SizingUtilities.circularBorderRadius),
+            bottomRight: Radius.circular(SizingUtilities.circularBorderRadius),
+          ),
+          boxShadow: [
+            BoxShadow(
+              color: CFColors.shadowColor,
+              spreadRadius: 0.2,
+              blurRadius: 1,
+              offset: Offset(0, 2),
+            )
+          ]),
+      child: Padding(
+        padding: const EdgeInsets.all(16),
+        child: Center(
+          child: FittedBox(
+            child: Text(
+              message,
+              style: GoogleFonts.workSans(
+                decoration: TextDecoration.none,
+                color: CFColors.dusk,
+                fontWeight: FontWeight.w500,
+                fontSize: 14,
+              ),
+            ),
+          ),
+        ),
+      ),
     );
   }
 }
