@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_svg/svg.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:paymint/pages/address_book_view/address_book_view.dart';
+import 'package:paymint/pages/settings_view/settings_subviews/currency_view.dart';
 import 'package:paymint/pages/settings_view/settings_subviews/network_settings_view.dart';
 import 'package:paymint/utilities/cfcolors.dart';
 import 'package:paymint/utilities/sizing_utilities.dart';
@@ -103,14 +104,9 @@ class SettingsView extends StatelessWidget {
                 "assets/svg/book-open.svg",
                 "Address Book",
                 () {
-                  Navigator.push(
-                    context,
-                    CupertinoPageRoute(
-                      builder: (context) {
-                        return AddressBookView();
-                      },
-                    ),
-                  );
+                  Navigator.push(context, CupertinoPageRoute(builder: (context) {
+                    return AddressBookView();
+                  }));
                 },
               ),
               Container(
@@ -123,14 +119,9 @@ class SettingsView extends StatelessWidget {
                 "assets/svg/radio.svg",
                 "Network",
                 () {
-                  Navigator.push(
-                    context,
-                    CupertinoPageRoute(
-                      builder: (context) {
-                        return NetworkSettingsView();
-                      },
-                    ),
-                  );
+                  Navigator.push(context, CupertinoPageRoute(builder: (context) {
+                    return NetworkSettingsView();
+                  }));
                 },
               ),
               Container(
@@ -143,14 +134,9 @@ class SettingsView extends StatelessWidget {
                 "assets/svg/key.svg",
                 "Wallet Backup",
                 () {
-                  Navigator.push(
-                    context,
-                    CupertinoPageRoute(
-                      builder: (context) {
-                        return AddressBookView();
-                      },
-                    ),
-                  );
+                  Navigator.push(context, CupertinoPageRoute(builder: (context) {
+                    return AddressBookView();
+                  }));
                 },
               ),
               Container(
@@ -163,14 +149,9 @@ class SettingsView extends StatelessWidget {
                 "assets/svg/settings.svg",
                 "Wallet Settings",
                 () {
-                  Navigator.push(
-                    context,
-                    CupertinoPageRoute(
-                      builder: (context) {
-                        return AddressBookView();
-                      },
-                    ),
-                  );
+                  Navigator.push(context, CupertinoPageRoute(builder: (context) {
+                    return AddressBookView();
+                  }));
                 },
               ),
               Container(
@@ -183,14 +164,9 @@ class SettingsView extends StatelessWidget {
                 "assets/svg/dollar-sign.svg",
                 "Currency",
                 () {
-                  Navigator.push(
-                    context,
-                    CupertinoPageRoute(
-                      builder: (context) {
-                        return AddressBookView();
-                      },
-                    ),
-                  );
+                  Navigator.push(context, CupertinoPageRoute(builder: (context) {
+                    return CurrencyView();
+                  }));
                 },
               ),
             ],
