@@ -8,7 +8,6 @@ export './more_view/settings_subviews/esplora_view.dart';
 export './more_view/settings_subviews/export_output_csv_view.dart';
 export './more_view/settings_subviews/export_tx_csv_view.dart';
 export './more_view/settings_subviews/general_view.dart';
-export './more_view/settings_subviews/network_view.dart';
 export './more_view/settings_subviews/restore_output_csv_view.dart';
 export './more_view/settings_subviews/restore_wallet_viewOld.dart';
 export './wallet_view/wallet_view.dart';
