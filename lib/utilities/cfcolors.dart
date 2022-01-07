@@ -25,6 +25,11 @@ class CFColors {
   static const Color notificationError = Color(0xFFFAC3C3);
   static const Color notificationSuccess = Color(0xFFC6E8DC);
 
+  // network status overlay colors
+  static const Color dropdownConnected = Color(0xFFC6E8DC);
+  static const Color dropdownSynchronizing = Color(0xFFFCEAC8);
+  static const Color dropdownError = Color(0xFFFAC2C2);
+
   // focused textfield border
   static const Color focusedBorder = Color(0x80F5595C); // flame with 50% opacity
   static const Color errorBorder = error;
