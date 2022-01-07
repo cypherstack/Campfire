@@ -119,9 +119,6 @@ class _WalletViewState extends State<WalletView> {
                       builder: (BuildContext context, AsyncSnapshot<UtxoData> utxoData) {
                         if (utxoData.connectionState == ConnectionState.done) {
                           if (utxoData == null || utxoData.hasError) {
-                            // _balanceLoadingStatus = LoadingStatus.error;
-                            // _balanceLoaded = false;
-
                             return _buildBalance(
                               balance: "...",
                               fiatBalance: "...",
@@ -137,9 +134,6 @@ class _WalletViewState extends State<WalletView> {
                             // );
                           }
 
-                          // _balanceLoadingStatus = LoadingStatus.loaded;
-
-                          // _balanceLoaded = true;
                           if (_nodeStatus == NodeConnectionStatus.synced)
                             return _buildBalance(
                               fiatBalance: utxoData.data.totalUserCurrency,
@@ -152,12 +146,6 @@ class _WalletViewState extends State<WalletView> {
                             );
                           }
                         } else {
-                          // TODO: Implement synchronising progress at top of safe area
-                          // return buildBalanceInformationLoadingWidget();
-
-                          // _balanceLoadingStatus = LoadingStatus.loading;
-
-                          // _balanceLoaded = false;
                           return _buildBalance(
                             balance: "...",
                             fiatBalance: "...",
@@ -207,11 +195,6 @@ class _WalletViewState extends State<WalletView> {
                           builder: (context) {
                             return TransactionSearchView();
                           });
-                      // Navigator.push(
-                      //   context,
-                      //   CupertinoPageRoute(builder: (_) {
-                      //     return TransactionSearchView();
-                      //   }),
                     },
                     icon: Icon(
                       FeatherIcons.search,
@@ -227,31 +210,24 @@ class _WalletViewState extends State<WalletView> {
                 future: bitcoinService.transactionData,
                 builder: (context, txData) {
                   if (txData.connectionState == ConnectionState.done) {
-                    // _transactionsLoadingStatus = LoadingStatus.loaded;
                     final data = txData.data;
-                    // _transactionsLoaded = true;
-                    return _buildTransactionList(context, data);
+                    if (_nodeStatus == NodeConnectionStatus.synced) {
+                      return _buildTransactionList(context, data);
+                    } else {
+                      return Center(
+                        child: SpinKitThreeBounce(
+                          color: CFColors.spark,
+                          size: MediaQuery.of(context).size.width * 0.1,
+                        ),
+                      );
+                    }
                   } else {
-                    //TODO: different transactions loading progress?
-                    // _transactionsLoaded = false;
-
-                    // _transactionsLoadingStatus = LoadingStatus.loading;
                     return Center(
                       child: SpinKitThreeBounce(
                         color: CFColors.spark,
                         size: MediaQuery.of(context).size.width * 0.1,
                       ),
                     );
-                    // return Center(
-                    //   child: Container(
-                    //     height: 50,
-                    //     width: 50,
-                    //     child: CircularProgressIndicator(
-                    //       color: CFColors.spark,
-                    //       strokeWidth: 2,
-                    //     ),
-                    //   ),
-                    // );
                   }
                 },
               ),
