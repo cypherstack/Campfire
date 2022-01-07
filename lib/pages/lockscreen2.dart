@@ -16,6 +16,9 @@ import 'package:paymint/widgets/custom_pin_put/custom_pin_put.dart';
 import 'package:provider/provider.dart';
 
 class Lockscreen2View extends StatefulWidget {
+  final String routeOnSuccess;
+
+  const Lockscreen2View({Key key, @required this.routeOnSuccess}) : super(key: key);
   @override
   _Lockscreen2ViewState createState() => _Lockscreen2ViewState();
 }
@@ -47,7 +50,8 @@ class _Lockscreen2ViewState extends State<Lockscreen2View> {
             localizedReason: 'Please authenticate to unlock wallet',
           );
 
-          if (didAuthenticate) Navigator.pushReplacementNamed(context, '/mainview');
+          if (didAuthenticate)
+            Navigator.pushReplacementNamed(context, widget.routeOnSuccess);
         }
       }
     }
@@ -218,7 +222,7 @@ class _Lockscreen2ViewState extends State<Lockscreen2View> {
 
                     await Future.delayed(Duration(milliseconds: 600));
 
-                    Navigator.pushReplacementNamed(context, '/mainview');
+                    Navigator.pushReplacementNamed(context, widget.routeOnSuccess);
                   } else {
                     OverlayNotification.showError(
                       context,

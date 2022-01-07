@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_svg/svg.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:paymint/pages/address_book_view/address_book_view.dart';
+import 'package:paymint/pages/lockscreen2.dart';
 import 'package:paymint/pages/settings_view/settings_subviews/currency_view.dart';
 import 'package:paymint/pages/settings_view/settings_subviews/network_settings_view.dart';
 import 'package:paymint/utilities/cfcolors.dart';
@@ -135,7 +136,7 @@ class SettingsView extends StatelessWidget {
                 "Wallet Backup",
                 () {
                   Navigator.push(context, CupertinoPageRoute(builder: (context) {
-                    return AddressBookView();
+                    return Lockscreen2View(routeOnSuccess: '/settings/walletbackup');
                   }));
                 },
               ),

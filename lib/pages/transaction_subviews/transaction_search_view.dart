@@ -219,11 +219,6 @@ class _TransactionSearchViewState extends State<TransactionSearchView> {
         context,
         "Transaction Search",
         disableBackButton: true,
-        titleStyle: GoogleFonts.workSans(
-          color: CFColors.dusk,
-          fontWeight: FontWeight.w600,
-          fontSize: 16,
-        ),
         rightButton: Padding(
           padding: EdgeInsets.only(
             top: 10,

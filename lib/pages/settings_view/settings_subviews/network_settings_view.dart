@@ -28,6 +28,7 @@ class _NetworkSettingsViewState extends State<NetworkSettingsView> {
     letterSpacing: 0.25,
   );
 
+  //TODO add listener to this class to setState for updating this label
   String _blockchainStatusLabel = "Synchronized";
 
   // _addNode(BuildContext context) {}

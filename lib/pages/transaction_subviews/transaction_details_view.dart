@@ -155,11 +155,6 @@ class TransactionDetailsView extends StatelessWidget {
       appBar: buildSettingsAppBar(
         context,
         "Transaction Details",
-        titleStyle: GoogleFonts.workSans(
-          color: CFColors.dusk,
-          fontWeight: FontWeight.w600,
-          fontSize: 16,
-        ),
       ),
       body: Padding(
         padding: EdgeInsets.symmetric(

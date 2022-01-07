@@ -5,21 +5,16 @@ import 'package:paymint/utilities/cfcolors.dart';
 import 'package:paymint/widgets/custom_buttons/app_bar_icon_button.dart';
 
 AppBar buildSettingsAppBar(BuildContext context, String title,
-    {Widget rightButton,
-    TextStyle titleStyle,
-    bool disableBackButton,
-    VoidCallback onBackPressed}) {
+    {Widget rightButton, bool disableBackButton, VoidCallback onBackPressed}) {
   final List<Widget> actions = rightButton == null ? [] : [rightButton];
 
   bool _disableBackButton = disableBackButton == null ? false : disableBackButton;
 
-  final TextStyle _titleStyle = titleStyle == null
-      ? GoogleFonts.workSans(
-          color: CFColors.spark,
-          fontSize: 16,
-          fontWeight: FontWeight.w600,
-        )
-      : titleStyle;
+  final TextStyle _titleStyle = GoogleFonts.workSans(
+    color: CFColors.dusk,
+    fontSize: 16,
+    fontWeight: FontWeight.w600,
+  );
 
   return AppBar(
     backgroundColor: CFColors.white,

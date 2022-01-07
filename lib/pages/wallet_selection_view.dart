@@ -122,7 +122,9 @@ class _WalletSelectionViewState extends State<WalletSelectionView> {
                     Navigator.of(context).push(
                       CupertinoPageRoute(
                         builder: (context) {
-                          return Lockscreen2View();
+                          return Lockscreen2View(
+                            routeOnSuccess: '/mainview',
+                          );
                         },
                       ),
                     );

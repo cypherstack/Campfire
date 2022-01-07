@@ -9,6 +9,7 @@ import 'package:paymint/pages/onboarding_view/helpers/builders.dart';
 import 'package:paymint/pages/onboarding_view/verify_backup_key_view.dart';
 import 'package:paymint/services/bitcoin_service.dart';
 import 'package:paymint/utilities/cfcolors.dart';
+import 'package:paymint/utilities/misc_global_constants.dart';
 import 'package:paymint/utilities/sizing_utilities.dart';
 import 'package:paymint/utilities/text_styles.dart';
 import 'package:paymint/widgets/custom_buttons/gradient_button.dart';
@@ -213,8 +214,6 @@ class _BackupKeyViewState extends State<BackupKeyView> {
 
   @override
   Widget build(BuildContext context) {
-    final BitcoinService bitcoinService = Provider.of<BitcoinService>(context);
-    final _roundQr = true;
     final _qrSize = MediaQuery.of(context).size.width * 0.42;
 
     return Scaffold(
@@ -324,17 +323,17 @@ class _BackupKeyViewState extends State<BackupKeyView> {
                                           ),
                                         ),
                                         child: FutureBuilder(
-                                          future: bitcoinService.currentReceivingAddress,
+                                          future: _getMnemonic(context),
                                           builder: (BuildContext context,
-                                              AsyncSnapshot<String> currentAddress) {
-                                            if (currentAddress.connectionState ==
+                                              AsyncSnapshot<List<String>> snapshot) {
+                                            if (snapshot.connectionState ==
                                                 ConnectionState.done) {
                                               return Center(
                                                 child: PrettyQr(
-                                                  data: currentAddress.data,
-                                                  roundEdges: _roundQr,
+                                                  data: snapshot.data.join(' '),
+                                                  roundEdges: Constants.roundedQrCode,
                                                   elementColor: CFColors.midnight,
-                                                  typeNumber: 4,
+                                                  typeNumber: 5,
                                                   size: _qrSize,
                                                 ),
                                               );
