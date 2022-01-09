@@ -124,6 +124,7 @@ class _AddAddressBookEntryViewState extends State<AddAddressBookEntryView> {
                       suffixIcon: UnconstrainedBox(
                         child: GestureDetector(
                           onTap: () {
+                            // TODO implement read qr code
                             print("read qr code icon button tapped");
                           },
                           child: SvgPicture.asset(

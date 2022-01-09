@@ -26,7 +26,6 @@ class _AddressBookViewState extends State<AddressBookView> {
   Widget build(BuildContext context) {
     final BitcoinService bitcoinService = Provider.of<BitcoinService>(context);
 
-    print(MediaQuery.of(context).padding.bottom);
     return Scaffold(
       backgroundColor: CFColors.white,
       appBar: AppBar(
@@ -62,12 +61,7 @@ class _AddressBookViewState extends State<AddressBookView> {
                 // ),
                 circularBorderRadius: SizingUtilities.circularBorderRadius,
                 onPressed: () {
-                  Navigator.pushNamed(context, "/addaddressbookentry").then((value) {
-                    setState(() {
-                      bitcoinService.refreshAddressBookEntries();
-                    });
-                    // handle update of address contacts list update if not done via future/service
-                  });
+                  Navigator.pushNamed(context, "/addaddressbookentry");
                 },
               ),
             ),

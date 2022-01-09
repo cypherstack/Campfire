@@ -16,6 +16,7 @@ import 'package:paymint/services/utils/currency_utils.dart';
 import 'package:paymint/services/wallets_service.dart';
 
 import './utils/dev_utils.dart';
+import 'event_bus/events/address_book_changed_event.dart';
 import 'events.dart';
 
 class BitcoinService extends ChangeNotifier {
@@ -84,6 +85,8 @@ class BitcoinService extends ChangeNotifier {
     entries[address] = name;
     await wallet.put('addressBookEntries', entries);
     print("address book entry saved");
+    await _refreshAddressBookEntries();
+    GlobalEventBus.instance.fire(AddressBookChangedEvent("entry added"));
   }
 
   /// Remove address book contact entry from db
@@ -94,12 +97,13 @@ class BitcoinService extends ChangeNotifier {
     entries.remove(address);
     await wallet.put('addressBookEntries', entries);
     print("address book entry removed");
+    await _refreshAddressBookEntries();
+    GlobalEventBus.instance.fire(AddressBookChangedEvent("entry removed"));
   }
 
-  refreshAddressBookEntries() async {
+  _refreshAddressBookEntries() async {
     final newAddressBookEntries = await _fetchAddressBookEntries();
     this._addressBookEntries = Future(() => newAddressBookEntries);
-    notifyListeners();
   }
 
   final firo = new NetworkType(

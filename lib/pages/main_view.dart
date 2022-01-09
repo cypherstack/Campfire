@@ -101,18 +101,13 @@ class _MainViewState extends State<MainView> {
       nodeState = NodeConnectionStatus.synced;
     }
 
-    final args = widget.args;
-    print("MainView initialized with args: $args");
-    if (args != null) {
-      final index = args["mainViewIndex"];
-      if (index != null) {
-        _currentIndex = index;
-      }
+    if (widget.pageIndex != null) {
+      _currentIndex = widget.pageIndex;
     }
 
     children = [
       SendView(
-        autofillArgs: args,
+        autofillArgs: widget.args,
       ),
       WalletView(),
       ReceiveView(),

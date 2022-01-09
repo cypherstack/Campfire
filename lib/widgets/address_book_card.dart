@@ -151,13 +151,12 @@ class _AddressBookCardState extends State<AddressBookCard> {
                         context,
                         CupertinoPageRoute(builder: (context) {
                           return MainView(
-                            pageIndex: 0,
+                            pageIndex: 0, // 0 for send page index
                             args: {
                               "addressBookEntry": {
                                 "name": widget.name,
                                 "address": widget.address,
                               },
-                              "mainViewIndex": 0, // 0 tells indexedStack to go to Send
                             },
                             disableRefreshOnInit: true,
                           );
@@ -188,7 +187,7 @@ class _AddressBookCardState extends State<AddressBookCard> {
                     () {
                       print("details");
                       Navigator.of(context).push(
-                        MaterialPageRoute(
+                        CupertinoPageRoute(
                           builder: (context) {
                             return AddressBookEntryDetailsView(
                                 name: widget.name, address: widget.address);
