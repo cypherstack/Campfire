@@ -7,7 +7,7 @@ import 'package:flutter_svg/flutter_svg.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:paymint/pages/settings_view/settings_view.dart';
 import 'package:paymint/services/bitcoin_service.dart';
-import 'package:paymint/services/event_bus/wallet_connection_event_bus.dart';
+import 'package:paymint/services/event_bus/global_event_bus.dart';
 import 'package:paymint/services/events.dart';
 import 'package:paymint/utilities/cfcolors.dart';
 import 'package:paymint/utilities/sizing_utilities.dart';

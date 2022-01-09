@@ -10,7 +10,7 @@ import 'package:hive/hive.dart';
 import 'package:http/http.dart' as http;
 import 'package:paymint/models/models.dart';
 import 'package:paymint/services/event_bus/events/wallet_name_changed_event.dart';
-import 'package:paymint/services/event_bus/wallet_connection_event_bus.dart';
+import 'package:paymint/services/event_bus/global_event_bus.dart';
 import 'package:paymint/services/globals.dart';
 import 'package:paymint/services/utils/currency_utils.dart';
 import 'package:paymint/services/wallets_service.dart';

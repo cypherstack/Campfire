@@ -2,7 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 import 'package:hive/hive.dart';
 import 'package:paymint/services/event_bus/events/wallet_name_changed_event.dart';
-import 'package:paymint/services/event_bus/wallet_connection_event_bus.dart';
+import 'package:paymint/services/event_bus/global_event_bus.dart';
 
 class WalletsService extends ChangeNotifier {
   Future<List<String>> _walletNames;
