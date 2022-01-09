@@ -329,6 +329,7 @@ class _MainViewState extends State<MainView> {
     if (_hasSynced) {
       return Container();
     }
+    _hasSynced = true;
     return Column(
       children: [
         FutureBuilder(
@@ -336,7 +337,6 @@ class _MainViewState extends State<MainView> {
           builder: (context, snapshot) {
             // return empty container to clear message after some time
             if (snapshot.connectionState == ConnectionState.done) {
-              _hasSynced = true;
               return Container();
             } else {
               return _buildDropDown(context, "Connected", CFColors.notificationSuccess);
