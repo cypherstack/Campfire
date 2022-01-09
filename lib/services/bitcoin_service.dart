@@ -72,8 +72,7 @@ class BitcoinService extends ChangeNotifier {
     final _currentWallet = await currentWalletName;
     final wallet = await Hive.openBox(_currentWallet);
     final entries = await wallet.get('addressBookEntries');
-    print("Address book entries fetched");
-    print(entries);
+    print("Address book entries fetched: $entries");
     return entries == null ? <String, String>{} : Map<String, String>.from(entries);
   }
 
@@ -112,10 +111,6 @@ class BitcoinService extends ChangeNotifier {
       wif: 0xd2);
 
   BitcoinService() {
-    // notify even listeners that syncing/loading has started
-    GlobalEventBus.instance
-        .fire(NodeConnectionStatusChangedEvent(NodeConnectionStatus.loading));
-
     // add listener for active wallet changed
     GlobalEventBus.instance.on<ActiveWalletNameChangedEvent>().listen((event) {
       _currentWalletName = Future(() => event.currentWallet);
@@ -123,17 +118,11 @@ class BitcoinService extends ChangeNotifier {
 
     _currency = CurrencyUtilities.fetchPreferredCurrency();
 
-    _initializeBitcoinWallet()
-        .whenComplete(() {
-          _utxoData = _fetchUtxoData();
-          _transactionData = _fetchTransactionData();
-          DevUtilities.checkReceivingAndChangeArrays();
-        })
-        .whenComplete(() => checkReceivingAddressForTransactions())
-        .then((_) {
-          GlobalEventBus.instance
-              .fire(NodeConnectionStatusChangedEvent(NodeConnectionStatus.synced));
-        });
+    _initializeBitcoinWallet().whenComplete(() {
+      _utxoData = _fetchUtxoData();
+      _transactionData = _fetchTransactionData();
+      DevUtilities.checkReceivingAndChangeArrays();
+    }).whenComplete(() => checkReceivingAddressForTransactions());
   }
 
   /// Initializes the user's wallet and sets class getters. Will create a wallet if one does not
@@ -152,8 +141,6 @@ class BitcoinService extends ChangeNotifier {
         () async => await wallet.get('use_biometrics'),
       );
     }
-    GlobalEventBus.instance
-        .fire(NodeConnectionStatusChangedEvent(NodeConnectionStatus.synced));
   }
 
   /// Initializes the wallet [name], set [currentWalletName] and sets class getters. Will create a wallet if one does not
@@ -857,9 +844,12 @@ class BitcoinService extends ChangeNotifier {
     if (response.statusCode == 200 || response.statusCode == 201) {
       notifyListeners();
       print('Current BTC Price: ' + response.body.toString());
-      //TODO got a json parse error here which caused a hang up
+      print("response.body.toString().isEmpty: ${response.body.toString().isEmpty}");
+      //TODO randomly get a json parse error here (due to empty body i think)
       // E/flutter (16131): [ERROR:flutter/lib/ui/ui_dart_state.cc(209)] Unhandled Exception: FormatException: Unexpected end of input (at character 1)
-      return json.decode(response.body);
+      final result = json.decode(response.body);
+      print("json bitcoin price result: $result");
+      return result;
     } else {
       throw Exception(
           'Something happened: ' + response.statusCode.toString() + response.body);
