@@ -99,7 +99,7 @@ class _TermsAndConditionsViewState extends State<TermsAndConditionsView> {
                   child: FittedBox(
                     child: Text(
                       "I ACCEPT",
-                      style: CFTextStyles.gradientButton,
+                      style: CFTextStyles.button,
                     ),
                   ),
                 ),

@@ -131,7 +131,7 @@ class _NameYourWalletViewState extends State<NameYourWalletView> {
                 },
                 child: Text(
                   "NEXT",
-                  style: CFTextStyles.gradientButton,
+                  style: CFTextStyles.button,
                 ),
               ),
             ),

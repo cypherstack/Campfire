@@ -412,7 +412,7 @@ class _TransactionSearchViewState extends State<TransactionSearchView> {
                                   },
                                   child: Text(
                                     "Cancel",
-                                    style: CFTextStyles.gradientButton.copyWith(
+                                    style: CFTextStyles.button.copyWith(
                                       color: CFColors.dusk,
                                     ),
                                   ),
@@ -429,7 +429,7 @@ class _TransactionSearchViewState extends State<TransactionSearchView> {
                                   onTap: () {},
                                   child: Text(
                                     "Apply",
-                                    style: CFTextStyles.gradientButton,
+                                    style: CFTextStyles.button,
                                   ),
                                 ),
                               ),

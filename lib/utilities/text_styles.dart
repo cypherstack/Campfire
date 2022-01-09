@@ -3,7 +3,7 @@ import 'package:google_fonts/google_fonts.dart';
 import 'package:paymint/utilities/cfcolors.dart';
 
 class CFTextStyles {
-  static final TextStyle gradientButton = GoogleFonts.workSans(
+  static final TextStyle button = GoogleFonts.workSans(
     color: CFColors.white,
     fontWeight: FontWeight.w600,
     fontSize: 16,

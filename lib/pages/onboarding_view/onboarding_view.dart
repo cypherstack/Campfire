@@ -69,7 +69,7 @@ class OnboardingView extends StatelessWidget {
                       child: FittedBox(
                         child: Text(
                           "CREATE NEW WALLET",
-                          style: CFTextStyles.gradientButton,
+                          style: CFTextStyles.button,
                         ),
                       ),
                     ),
@@ -97,7 +97,7 @@ class OnboardingView extends StatelessWidget {
                       child: FittedBox(
                         child: Text(
                           "RESTORE WALLET",
-                          style: CFTextStyles.gradientButton,
+                          style: CFTextStyles.button,
                         ),
                       ),
                     ),

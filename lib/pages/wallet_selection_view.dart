@@ -250,7 +250,7 @@ class _WalletSelectionViewState extends State<WalletSelectionView> {
                           },
                           child: Text(
                             "CREATE NEW WALLET",
-                            style: CFTextStyles.gradientButton,
+                            style: CFTextStyles.button,
                           ),
                         ),
                       ),
