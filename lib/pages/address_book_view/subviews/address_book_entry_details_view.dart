@@ -3,11 +3,13 @@ import 'package:flutter/material.dart';
 import 'package:flutter_feather_icons/flutter_feather_icons.dart';
 import 'package:flutter_svg/svg.dart';
 import 'package:google_fonts/google_fonts.dart';
+import 'package:paymint/services/address_book_service.dart';
 import 'package:paymint/utilities/cfcolors.dart';
 import 'package:paymint/utilities/sizing_utilities.dart';
 import 'package:paymint/utilities/text_styles.dart';
 import 'package:paymint/widgets/custom_buttons/app_bar_icon_button.dart';
 import 'package:paymint/widgets/custom_buttons/gradient_button.dart';
+import 'package:provider/provider.dart';
 
 import '../../main_view.dart';
 
@@ -168,6 +170,7 @@ class _AddressBookEntryDetailsViewState extends State<AddressBookEntryDetailsVie
   }
 
   _buildPopupMenu(BuildContext context) {
+    final addressService = Provider.of<AddressBookService>(context, listen: false);
     return Stack(
       children: [
         Positioned(
@@ -183,11 +186,14 @@ class _AddressBookEntryDetailsViewState extends State<AddressBookEntryDetailsVie
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 GestureDetector(
-                  onTap: () {
+                  onTap: () async {
                     // TODO show alert asking for delete confirmation
                     print("delete address pressed");
+                    await addressService.removeAddressBookEntry(widget.address);
 
-                    Navigator.pop(context);
+                    final navigator = Navigator.of(context);
+                    navigator.pop();
+                    navigator.pop();
                   },
                   child: Padding(
                     padding: const EdgeInsets.only(

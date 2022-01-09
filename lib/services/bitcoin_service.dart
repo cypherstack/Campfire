@@ -16,7 +16,6 @@ import 'package:paymint/services/utils/currency_utils.dart';
 import 'package:paymint/services/wallets_service.dart';
 
 import './utils/dev_utils.dart';
-import 'event_bus/events/address_book_changed_event.dart';
 import 'events.dart';
 
 class BitcoinService extends ChangeNotifier {
@@ -60,51 +59,6 @@ class BitcoinService extends ChangeNotifier {
   Future<String> _currentWalletName;
   Future<String> get currentWalletName =>
       _currentWalletName ??= WalletsService().currentWalletName;
-
-  /// Holds address book contact entries
-  /// map of contact <address, name>
-  /// address is used as key due to uniqueness
-  Future<Map<String, String>> _addressBookEntries;
-  Future<Map<String, String>> get addressBookEntries =>
-      _addressBookEntries ??= _fetchAddressBookEntries();
-
-  // Load address book contact entries
-  Future<Map<String, String>> _fetchAddressBookEntries() async {
-    final _currentWallet = await currentWalletName;
-    final wallet = await Hive.openBox(_currentWallet);
-    final entries = await wallet.get('addressBookEntries');
-    print("Address book entries fetched: $entries");
-    return entries == null ? <String, String>{} : Map<String, String>.from(entries);
-  }
-
-  /// Add address book contact entry to db
-  addAddressBookEntry(String address, String name) async {
-    final _currentWallet = await currentWalletName;
-    final wallet = await Hive.openBox(_currentWallet);
-    final entries = await wallet.get('addressBookEntries');
-    entries[address] = name;
-    await wallet.put('addressBookEntries', entries);
-    print("address book entry saved");
-    await _refreshAddressBookEntries();
-    GlobalEventBus.instance.fire(AddressBookChangedEvent("entry added"));
-  }
-
-  /// Remove address book contact entry from db
-  removeAddressBookEntry(String address) async {
-    final _currentWallet = await currentWalletName;
-    final wallet = await Hive.openBox(_currentWallet);
-    final entries = await wallet.get('addressBookEntries');
-    entries.remove(address);
-    await wallet.put('addressBookEntries', entries);
-    print("address book entry removed");
-    await _refreshAddressBookEntries();
-    GlobalEventBus.instance.fire(AddressBookChangedEvent("entry removed"));
-  }
-
-  _refreshAddressBookEntries() async {
-    final newAddressBookEntries = await _fetchAddressBookEntries();
-    this._addressBookEntries = Future(() => newAddressBookEntries);
-  }
 
   final firo = new NetworkType(
       messagePrefix: '\x18Zcoin Signed Message:\n',
@@ -185,27 +139,19 @@ class BitcoinService extends ChangeNotifier {
   refreshWalletData() async {
     GlobalEventBus.instance
         .fire(NodeConnectionStatusChangedEvent(NodeConnectionStatus.loading));
-    final newAddressBookEntries = await _fetchAddressBookEntries();
+
     final UtxoData newUtxoData = await _fetchUtxoData();
     final TransactionData newTxData = await _fetchTransactionData();
     final dynamic newBtcPrice = await getBitcoinPrice();
     final FeeObject feeObj = await getFees();
-
-    // not needed in campfire
-    // final String marketInfo = await getMarketInfo();
-
     final String currentName = await WalletsService().currentWalletName;
     await checkReceivingAddressForTransactions();
 
     this._currentWalletName = Future(() => currentName);
-    this._addressBookEntries = Future(() => newAddressBookEntries);
     this._utxoData = Future(() => newUtxoData);
     this._transactionData = Future(() => newTxData);
     this._bitcoinPrice = Future(() => newBtcPrice);
     this._feeObject = Future(() => feeObj);
-
-    // not needed in campfire
-    // this._marketInfo = Future(() => marketInfo);
 
     GlobalEventBus.instance
         .fire(NodeConnectionStatusChangedEvent(NodeConnectionStatus.synced));

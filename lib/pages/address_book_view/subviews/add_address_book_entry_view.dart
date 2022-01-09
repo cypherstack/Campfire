@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_svg/svg.dart';
 import 'package:google_fonts/google_fonts.dart';
-import 'package:paymint/services/bitcoin_service.dart';
+import 'package:paymint/services/address_book_service.dart';
 import 'package:paymint/utilities/cfcolors.dart';
 import 'package:paymint/utilities/sizing_utilities.dart';
 import 'package:paymint/widgets/custom_buttons/app_bar_icon_button.dart';
@@ -21,8 +21,7 @@ class _AddAddressBookEntryViewState extends State<AddAddressBookEntryView> {
   TextEditingController nameTextController = TextEditingController();
 
   void _saveNewAddressEntry(BuildContext context) {
-    final BitcoinService bitcoinService =
-        Provider.of<BitcoinService>(context, listen: false);
+    final addressService = Provider.of<AddressBookService>(context, listen: false);
 
     final name = nameTextController.text;
     final address = addressTextController.text;
@@ -52,7 +51,7 @@ class _AddAddressBookEntryViewState extends State<AddAddressBookEntryView> {
             );
           });
     } else {
-      bitcoinService.addAddressBookEntry(address, name);
+      addressService.addAddressBookEntry(address, name);
 
       // on success pop back to address book
       Navigator.pop(context);

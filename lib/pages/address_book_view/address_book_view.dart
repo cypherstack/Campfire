@@ -3,7 +3,7 @@ import 'package:flutter_feather_icons/flutter_feather_icons.dart';
 import 'package:flutter_spinkit/flutter_spinkit.dart';
 import 'package:flutter_svg/flutter_svg.dart';
 import 'package:google_fonts/google_fonts.dart';
-import 'package:paymint/services/bitcoin_service.dart';
+import 'package:paymint/services/address_book_service.dart';
 import 'package:paymint/utilities/cfcolors.dart';
 import 'package:paymint/utilities/sizing_utilities.dart';
 import 'package:paymint/widgets/address_book_card.dart';
@@ -24,7 +24,7 @@ class _AddressBookViewState extends State<AddressBookView> {
 
   @override
   Widget build(BuildContext context) {
-    final BitcoinService bitcoinService = Provider.of<BitcoinService>(context);
+    final addressService = Provider.of<AddressBookService>(context);
 
     return Scaffold(
       backgroundColor: CFColors.white,
@@ -122,7 +122,7 @@ class _AddressBookViewState extends State<AddressBookView> {
             ),
             Expanded(
               child: FutureBuilder(
-                future: bitcoinService.addressBookEntries,
+                future: addressService.addressBookEntries,
                 builder: (context, entries) {
                   if (entries.connectionState == ConnectionState.done) {
                     return _buildAddressBookEntryList(context, entries);

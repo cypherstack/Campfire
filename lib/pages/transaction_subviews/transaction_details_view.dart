@@ -2,7 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:paymint/models/models.dart';
 import 'package:paymint/pages/settings_view/helpers/builders.dart';
-import 'package:paymint/services/bitcoin_service.dart';
+import 'package:paymint/services/address_book_service.dart';
 import 'package:paymint/utilities/cfcolors.dart';
 import 'package:paymint/utilities/shared_utilities.dart';
 import 'package:paymint/utilities/sizing_utilities.dart';
@@ -60,7 +60,7 @@ class TransactionDetailsView extends StatelessWidget {
 
   // TODO need to store sent to address for transactions on server for this
   _buildSentToItem(BuildContext context) {
-    final bitcoinService = Provider.of<BitcoinService>(context, listen: false);
+    final addressService = Provider.of<AddressBookService>(context, listen: false);
     return Column(
       children: [
         Align(
@@ -76,7 +76,7 @@ class TransactionDetailsView extends StatelessWidget {
           height: 8,
         ),
         FutureBuilder(
-          future: bitcoinService.addressBookEntries,
+          future: addressService.addressBookEntries,
           builder: (BuildContext context, AsyncSnapshot<Map<String, String>> snapshot) {
             if (snapshot.connectionState == ConnectionState.done) {
               // TODO: need address to match up and find contact name
