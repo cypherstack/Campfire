@@ -104,7 +104,7 @@ class _NetworkSettingsViewState extends State<NetworkSettingsView> {
             SingleChildScrollView(
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.stretch,
-                children: [],
+                // children: _buildNodeList(context),
               ),
             ),
           ],
@@ -112,4 +112,69 @@ class _NetworkSettingsViewState extends State<NetworkSettingsView> {
       ),
     );
   }
+
+  // _buildNodeList(BuildContext context) {
+  //   List<Widget> list = [];
+  //   // TODO fetch nodes and build list of _buildNodeListItem
+  //
+  //   list.add(_buildNodeListItem(context, "test name", true));
+  //   list.add(_buildNodeListItem(context, "test name2", false));
+  //   list.add(_buildNodeListItem(context, "test name3", true));
+  //
+  //   return list;
+  // }
+  //
+  // _buildNodeListItem(BuildContext context, String nodeName, bool isConnected) {
+  //   var color = CFColors.white;
+  //   return GestureDetector(
+//        onTapDown
+  //     onTap: () {
+  //       setState(() {
+  //         color = CFColors.fog;
+  //       });
+  //     },
+  //     child: Container(
+  //       color: color,
+  //       child: Padding(
+  //         padding: EdgeInsets.symmetric(horizontal: 6, vertical: 14),
+  //         child: Row(
+  //           children: [
+  //             SvgPicture.asset(
+  //               "assets/svg/globe.svg",
+  //               height: 24,
+  //               width: 24,
+  //               color: CFColors.twilight,
+  //             ),
+  //             SizedBox(
+  //               width: 18,
+  //             ),
+  //             Column(
+  //               crossAxisAlignment: CrossAxisAlignment.start,
+  //               children: [
+  //                 Text(
+  //                   nodeName,
+  //                   style: GoogleFonts.workSans(
+  //                     color: CFColors.starryNight,
+  //                     fontWeight: FontWeight.w600,
+  //                     fontSize: 14,
+  //                     letterSpacing: 0.25,
+  //                   ),
+  //                 ),
+  //                 if (isConnected)
+  //                   Text(
+  //                     "Connected",
+  //                     style: GoogleFonts.workSans(
+  //                       color: CFColors.twilight,
+  //                       fontWeight: FontWeight.w500,
+  //                       fontSize: 12,
+  //                     ),
+  //                   )
+  //               ],
+  //             )
+  //           ],
+  //         ),
+  //       ),
+  //     ),
+  //   );
+  // }
 }

@@ -141,6 +141,8 @@ flutter:
     - assets/svg/calendar.svg
     - assets/svg/radio-disconnected.svg
     - assets/svg/refresh-cw.svg
+    - assets/svg/more-vertical.svg
+    - assets/svg/globe.svg
 
   # An image asset can refer to one or more resolution-specific "variants", see
   # https://flutter.dev/assets-and-images/#resolution-aware.

@@ -122,6 +122,7 @@ class SettingsView extends StatelessWidget {
                 () {
                   Navigator.push(context, CupertinoPageRoute(builder: (context) {
                     return NetworkSettingsView();
+                    // return NodeDetailsView(isEdit: false);
                   }));
                 },
               ),
