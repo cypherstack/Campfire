@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
@@ -16,7 +18,12 @@ import '../widgets/custom_buttons/app_bar_icon_button.dart';
 
 /// MainView refers to the main tab bar navigation and view system in place
 class MainView extends StatefulWidget {
-  MainView({Key key}) : super(key: key);
+  MainView({Key key, this.pageIndex, this.args, this.disableRefreshOnInit})
+      : super(key: key);
+
+  final int pageIndex;
+  final Map<String, dynamic> args;
+  final bool disableRefreshOnInit;
 
   @override
   _MainViewState createState() => _MainViewState();
@@ -28,15 +35,11 @@ class _MainViewState extends State<MainView> {
   final double _navBarRadius = SizingUtilities.circularBorderRadius * 1.8;
 
   bool _hasSynced = false;
+  bool _disableRefreshOnInit = false;
 
   GlobalKey<ScaffoldState> _key = GlobalKey<ScaffoldState>();
 
-  List<Widget> children = [
-    SendView(),
-    WalletView(),
-    ReceiveView(),
-    MoreView(),
-  ];
+  List<Widget> children;
 
   /// Tab icon color based on tab selection
   Color _buildIconColor(int index) {
@@ -77,6 +80,8 @@ class _MainViewState extends State<MainView> {
     });
   }
 
+  StreamSubscription _nodeConnectionStatusChangedEventListener;
+
   @override
   void initState() {
     // show system status bar
@@ -91,13 +96,49 @@ class _MainViewState extends State<MainView> {
       ),
     );
 
-    GlobalEventBus.instance.on<NodeConnectionStatusChangedEvent>().listen((event) {
-      setState(() {
-        nodeState = event.newStatus;
-      });
+    if (widget.disableRefreshOnInit != null) {
+      _disableRefreshOnInit = widget.disableRefreshOnInit;
+      nodeState = NodeConnectionStatus.synced;
+    }
+
+    final args = widget.args;
+    print("MainView initialized with args: $args");
+    if (args != null) {
+      final index = args["mainViewIndex"];
+      if (index != null) {
+        _currentIndex = index;
+      }
+    }
+
+    children = [
+      SendView(
+        autofillArgs: args,
+      ),
+      WalletView(),
+      ReceiveView(),
+      MoreView(),
+    ];
+
+    _nodeConnectionStatusChangedEventListener =
+        GlobalEventBus.instance.on<NodeConnectionStatusChangedEvent>().listen((event) {
+      if (nodeState != event.newStatus) {
+        setState(() {
+          nodeState = event.newStatus;
+        });
+      }
     });
 
+    if (!_disableRefreshOnInit) {
+      Provider.of<BitcoinService>(context, listen: false).refreshWalletData();
+    }
+
     super.initState();
+  }
+
+  @override
+  dispose() {
+    _nodeConnectionStatusChangedEventListener.cancel();
+    super.dispose();
   }
 
   AppBar buildAppBar(BuildContext context) {
@@ -173,6 +214,7 @@ class _MainViewState extends State<MainView> {
           child: AppBarIconButton(
             size: 36,
             onPressed: () {
+              _disableRefreshOnInit = false;
               // TODO integrate check network connection to node and implement global status provider
               bitcoinService.refreshWalletData();
             },
@@ -307,9 +349,12 @@ class _MainViewState extends State<MainView> {
             children: children,
             index: _currentIndex,
           ),
-          if (nodeState == NodeConnectionStatus.loading) _buildSyncing(),
-          if (nodeState == NodeConnectionStatus.synced) _buildConnected(),
-          if (nodeState == NodeConnectionStatus.disconnected) _buildDisconnected(),
+          if (nodeState == NodeConnectionStatus.loading && !_disableRefreshOnInit)
+            _buildSyncing(),
+          if (nodeState == NodeConnectionStatus.synced && !_disableRefreshOnInit)
+            _buildConnected(),
+          if (nodeState == NodeConnectionStatus.disconnected && !_disableRefreshOnInit)
+            _buildDisconnected(),
         ],
       ),
       // ),

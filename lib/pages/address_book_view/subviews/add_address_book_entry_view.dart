@@ -7,6 +7,7 @@ import 'package:paymint/utilities/sizing_utilities.dart';
 import 'package:paymint/widgets/custom_buttons/app_bar_icon_button.dart';
 import 'package:paymint/widgets/custom_buttons/gradient_button.dart';
 import 'package:paymint/widgets/custom_buttons/simple_button.dart';
+import 'package:provider/provider.dart';
 
 class AddAddressBookEntryView extends StatefulWidget {
   const AddAddressBookEntryView({Key key}) : super(key: key);
@@ -21,7 +22,7 @@ class _AddAddressBookEntryViewState extends State<AddAddressBookEntryView> {
 
   void _saveNewAddressEntry(BuildContext context) {
     final BitcoinService bitcoinService =
-        BitcoinService(); //Provider.of<BitcoinService>(context);
+        Provider.of<BitcoinService>(context, listen: false);
 
     final name = nameTextController.text;
     final address = addressTextController.text;

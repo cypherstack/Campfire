@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_feather_icons/flutter_feather_icons.dart';
@@ -28,15 +30,26 @@ class WalletView extends StatefulWidget {
 class _WalletViewState extends State<WalletView> {
   NodeConnectionStatus _nodeStatus = NodeConnectionStatus.disconnected;
 
+  StreamSubscription _nodeConnectionStatusChangedEventListener;
+
   @override
   void initState() {
     // add listener
-    GlobalEventBus.instance.on<NodeConnectionStatusChangedEvent>().listen((event) {
-      setState(() {
-        _nodeStatus = event.newStatus;
-      });
+    _nodeConnectionStatusChangedEventListener =
+        GlobalEventBus.instance.on<NodeConnectionStatusChangedEvent>().listen((event) {
+      if (_nodeStatus != event.newStatus) {
+        setState(() {
+          _nodeStatus = event.newStatus;
+        });
+      }
     });
     super.initState();
+  }
+
+  @override
+  void dispose() {
+    _nodeConnectionStatusChangedEventListener.cancel();
+    super.dispose();
   }
 
   @override

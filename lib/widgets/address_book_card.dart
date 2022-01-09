@@ -1,9 +1,11 @@
+import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_feather_icons/flutter_feather_icons.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:paymint/notifications/overlay_notification.dart';
 import 'package:paymint/pages/address_book_view/subviews/address_book_entry_details_view.dart';
+import 'package:paymint/pages/main_view.dart';
 import 'package:paymint/utilities/sizing_utilities.dart';
 
 import '../utilities/cfcolors.dart';
@@ -145,6 +147,23 @@ class _AddressBookCardState extends State<AddressBookCard> {
                     "SEND FIRO",
                     () {
                       print("send firo");
+                      Navigator.pushAndRemoveUntil(
+                        context,
+                        CupertinoPageRoute(builder: (context) {
+                          return MainView(
+                            pageIndex: 0,
+                            args: {
+                              "addressBookEntry": {
+                                "name": widget.name,
+                                "address": widget.address,
+                              },
+                              "mainViewIndex": 0, // 0 tells indexedStack to go to Send
+                            },
+                            disableRefreshOnInit: true,
+                          );
+                        }),
+                        ModalRoute.withName("/mainview"),
+                      );
                     },
                   ),
 

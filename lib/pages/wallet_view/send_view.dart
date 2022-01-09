@@ -13,14 +13,18 @@ import 'package:paymint/widgets/gradient_card.dart';
 import 'package:provider/provider.dart';
 
 class SendView extends StatefulWidget {
-  SendView({Key key}) : super(key: key);
+  SendView({Key key, this.autofillArgs}) : super(key: key);
+
+  final Map<String, dynamic> autofillArgs;
 
   @override
-  _SendViewState createState() => _SendViewState();
+  _SendViewState createState() => _SendViewState(autofillArgs);
 }
 
 class _SendViewState extends State<SendView> {
   final _scaffoldKey = GlobalKey<ScaffoldState>();
+
+  final autofillArgs;
 
   TextEditingController _recipientAddressTextController = TextEditingController();
 
@@ -33,10 +37,51 @@ class _SendViewState extends State<SendView> {
   double _fee = 0;
   double _totalAmount = 0;
 
+  bool _autofill = false;
+  String _address;
+  String _contactName;
+
   bool _cryptoAmountHasFocus = false;
   bool _fiatAmountHasFocus = false;
 
+  _SendViewState(this.autofillArgs);
+
   bool get _amountHasFocus => _cryptoAmountHasFocus || _fiatAmountHasFocus;
+
+  /// parse args and autofill fill form
+  void _parseArgs(Map<String, dynamic> args) async {
+    final addressBookEntry = args["addressBookEntry"] as Map<String, String>;
+    if (addressBookEntry == null) {
+      throw Exception("SendView addressBookEntry argument must not be null!");
+    }
+
+    _address = addressBookEntry["address"];
+    _contactName = addressBookEntry["name"];
+    _autofill = true;
+    setState(() {
+      _recipientAddressTextController.text = _contactName;
+      print("setState called with address = $_address");
+    });
+
+    final cryptoAmount = args["cryptoAmount"] as double;
+    if (cryptoAmount == null) {
+      return;
+    }
+
+    _firoAmount = cryptoAmount;
+    setState(() {
+      _firoAmountController.text = cryptoAmount.toStringAsFixed(8);
+    });
+  }
+
+  @override
+  initState() {
+    print("SendView args: $autofillArgs");
+    if (autofillArgs != null) {
+      _parseArgs(autofillArgs);
+    }
+    super.initState();
+  }
 
   Widget _buildTxFeeInfo() {
     return Column(
@@ -566,10 +611,16 @@ class _SendViewState extends State<SendView> {
                           widget,
                           animation,
                         ) {
+                          // set address to textfield value if it was not auto filled from address book
+                          // OR if it was but the textfield value does not match anymore
+                          if (!_autofill ||
+                              _recipientAddressTextController.text != _contactName) {
+                            _address = _recipientAddressTextController.text;
+                          }
                           return ConfirmSendView(
                             amount: _firoAmount,
                             note: _noteTextController.text,
-                            address: _recipientAddressTextController.text,
+                            address: _address,
                             fee: _fee,
                           );
                         },
