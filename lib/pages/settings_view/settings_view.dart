@@ -6,6 +6,7 @@ import 'package:paymint/pages/address_book_view/address_book_view.dart';
 import 'package:paymint/pages/lockscreen2.dart';
 import 'package:paymint/pages/settings_view/settings_subviews/currency_view.dart';
 import 'package:paymint/pages/settings_view/settings_subviews/network_settings_view.dart';
+import 'package:paymint/pages/settings_view/settings_subviews/wallet_settings_view.dart';
 import 'package:paymint/utilities/cfcolors.dart';
 import 'package:paymint/utilities/sizing_utilities.dart';
 
@@ -152,7 +153,7 @@ class SettingsView extends StatelessWidget {
                 "Wallet Settings",
                 () {
                   Navigator.push(context, CupertinoPageRoute(builder: (context) {
-                    return AddressBookView();
+                    return WalletSettingsView();
                   }));
                 },
               ),
