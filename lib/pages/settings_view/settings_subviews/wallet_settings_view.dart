@@ -1,10 +1,18 @@
+import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_svg/svg.dart';
 import 'package:google_fonts/google_fonts.dart';
+import 'package:paymint/notifications/modal_popup_dialog.dart';
 import 'package:paymint/pages/settings_view/helpers/builders.dart';
+import 'package:paymint/pages/wallet_selection_view.dart';
+import 'package:paymint/services/bitcoin_service.dart';
 import 'package:paymint/utilities/cfcolors.dart';
 import 'package:paymint/utilities/sizing_utilities.dart';
+import 'package:paymint/utilities/text_styles.dart';
 import 'package:paymint/widgets/custom_buttons/app_bar_icon_button.dart';
+import 'package:paymint/widgets/custom_buttons/gradient_button.dart';
+import 'package:paymint/widgets/custom_buttons/simple_button.dart';
+import 'package:provider/provider.dart';
 
 class WalletSettingsView extends StatefulWidget {
   const WalletSettingsView({Key key}) : super(key: key);
@@ -53,6 +61,91 @@ class _WalletSettingsViewState extends State<WalletSettingsView> {
               circularBorderRadius: 8,
               onPressed: () async {
                 // TODO implement logout and return to wallet selection screen
+
+                final walletName =
+                    await Provider.of<BitcoinService>(context, listen: false)
+                        .currentWalletName;
+
+                showDialog(
+                    context: context,
+                    builder: (context) {
+                      return ModalPopupDialog(
+                        child: Column(
+                          children: [
+                            Padding(
+                              padding: const EdgeInsets.symmetric(
+                                horizontal: 24,
+                                vertical: 28,
+                              ),
+                              child: Text(
+                                "Do you want to log out from $walletName Wallet?",
+                                style: GoogleFonts.workSans(
+                                  color: CFColors.dusk,
+                                  fontWeight: FontWeight.w600,
+                                  fontSize: 18,
+                                ),
+                              ),
+                            ),
+                            Padding(
+                              padding: const EdgeInsets.only(
+                                top: 4,
+                                left: SizingUtilities.standardPadding,
+                                right: SizingUtilities.standardPadding,
+                                bottom: SizingUtilities.standardPadding,
+                              ),
+                              child: Row(
+                                children: [
+                                  Expanded(
+                                    child: SizedBox(
+                                      height: SizingUtilities.standardButtonHeight,
+                                      child: SimpleButton(
+                                        child: FittedBox(
+                                          child: Text(
+                                            "CANCEL",
+                                            style: CFTextStyles.button.copyWith(
+                                              color: CFColors.dusk,
+                                            ),
+                                          ),
+                                        ),
+                                        onTap: () {
+                                          Navigator.pop(context);
+                                        },
+                                      ),
+                                    ),
+                                  ),
+                                  SizedBox(
+                                    width: 16,
+                                  ),
+                                  Expanded(
+                                    child: SizedBox(
+                                      height: SizingUtilities.standardButtonHeight,
+                                      child: GradientButton(
+                                        child: FittedBox(
+                                          child: Text(
+                                            "LOG OUT",
+                                            style: CFTextStyles.button,
+                                          ),
+                                        ),
+                                        onTap: () {
+                                          print("log out pressed");
+                                          Navigator.pushAndRemoveUntil(
+                                            context,
+                                            CupertinoPageRoute(
+                                              builder: (_) => WalletSelectionView(),
+                                            ),
+                                            (_) => false,
+                                          );
+                                        },
+                                      ),
+                                    ),
+                                  )
+                                ],
+                              ),
+                            )
+                          ],
+                        ),
+                      );
+                    });
                 // FocusScope.of(context).unfocus();
                 // await Future.delayed(Duration(milliseconds: 50));
                 //
