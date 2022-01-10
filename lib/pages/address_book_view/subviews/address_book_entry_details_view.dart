@@ -3,12 +3,14 @@ import 'package:flutter/material.dart';
 import 'package:flutter_feather_icons/flutter_feather_icons.dart';
 import 'package:flutter_svg/svg.dart';
 import 'package:google_fonts/google_fonts.dart';
+import 'package:paymint/notifications/modal_popup_dialog.dart';
 import 'package:paymint/services/address_book_service.dart';
 import 'package:paymint/utilities/cfcolors.dart';
 import 'package:paymint/utilities/sizing_utilities.dart';
 import 'package:paymint/utilities/text_styles.dart';
 import 'package:paymint/widgets/custom_buttons/app_bar_icon_button.dart';
 import 'package:paymint/widgets/custom_buttons/gradient_button.dart';
+import 'package:paymint/widgets/custom_buttons/simple_button.dart';
 import 'package:provider/provider.dart';
 
 import '../../main_view.dart';
@@ -170,7 +172,6 @@ class _AddressBookEntryDetailsViewState extends State<AddressBookEntryDetailsVie
   }
 
   _buildPopupMenu(BuildContext context) {
-    final addressService = Provider.of<AddressBookService>(context, listen: false);
     return Stack(
       children: [
         Positioned(
@@ -187,13 +188,13 @@ class _AddressBookEntryDetailsViewState extends State<AddressBookEntryDetailsVie
               children: [
                 GestureDetector(
                   onTap: () async {
-                    // TODO show alert asking for delete confirmation
-                    print("delete address pressed");
-                    await addressService.removeAddressBookEntry(widget.address);
-
-                    final navigator = Navigator.of(context);
-                    navigator.pop();
-                    navigator.pop();
+                    showDialog(
+                      useSafeArea: false,
+                      barrierColor: Colors.transparent,
+                      barrierDismissible: false,
+                      context: context,
+                      builder: (context) => _buildAddressDeleteConfirmDialog(),
+                    );
                   },
                   child: Padding(
                     padding: const EdgeInsets.only(
@@ -251,6 +252,83 @@ class _AddressBookEntryDetailsViewState extends State<AddressBookEntryDetailsVie
             ModalRoute.withName("/mainview"),
           );
         },
+      ),
+    );
+  }
+
+  _buildAddressDeleteConfirmDialog() {
+    final addressService = Provider.of<AddressBookService>(context, listen: false);
+
+    return ModalPopupDialog(
+      child: Column(
+        children: [
+          Padding(
+            padding: const EdgeInsets.only(
+              top: 28,
+              left: 24,
+              right: 24,
+              bottom: 12,
+            ),
+            child: Text(
+              "Do you want to delete ${widget.name}?",
+              style: GoogleFonts.workSans(
+                color: CFColors.dusk,
+                fontWeight: FontWeight.w600,
+                fontSize: 18,
+              ),
+            ),
+          ),
+          Padding(
+            padding: const EdgeInsets.all(SizingUtilities.standardPadding),
+            child: Row(
+              children: [
+                Expanded(
+                  child: SizedBox(
+                    height: SizingUtilities.standardButtonHeight,
+                    child: SimpleButton(
+                      child: FittedBox(
+                        child: Text(
+                          "CANCEL",
+                          style: CFTextStyles.button.copyWith(
+                            color: CFColors.dusk,
+                          ),
+                        ),
+                      ),
+                      onTap: () {
+                        final navigator = Navigator.of(context);
+                        navigator.pop();
+                        navigator.pop();
+                      },
+                    ),
+                  ),
+                ),
+                SizedBox(
+                  width: 16,
+                ),
+                Expanded(
+                  child: SizedBox(
+                    height: SizingUtilities.standardButtonHeight,
+                    child: GradientButton(
+                      child: FittedBox(
+                        child: Text(
+                          "DELETE",
+                          style: CFTextStyles.button,
+                        ),
+                      ),
+                      onTap: () async {
+                        await addressService.removeAddressBookEntry(widget.address);
+                        final navigator = Navigator.of(context);
+                        navigator.pop();
+                        navigator.pop();
+                        navigator.pop();
+                      },
+                    ),
+                  ),
+                )
+              ],
+            ),
+          )
+        ],
       ),
     );
   }
