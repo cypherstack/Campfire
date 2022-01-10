@@ -136,15 +136,6 @@ class _WalletViewState extends State<WalletView> {
                               balance: "...",
                               fiatBalance: "...",
                             );
-                            // return Container(
-                            //   child: Center(
-                            //     child: Text(
-                            //       // TODO: implement could not connect overlay
-                            //       'Unable to fetch balance data.\nPlease check connection',
-                            //       style: TextStyle(color: Colors.blue),
-                            //     ),
-                            //   ),
-                            // );
                           }
 
                           if (_nodeStatus == NodeConnectionStatus.synced)

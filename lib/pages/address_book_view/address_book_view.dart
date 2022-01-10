@@ -101,7 +101,7 @@ class _AddressBookViewState extends State<AddressBookView> {
         child: Column(
           children: [
             // search field
-            // TODO: implement search
+            // TODO: implement address book search
             Padding(
               padding: const EdgeInsets.only(
                 top: 10,

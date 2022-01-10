@@ -210,7 +210,6 @@ class _MainViewState extends State<MainView> {
             size: 36,
             onPressed: () {
               _disableRefreshOnInit = false;
-              // TODO integrate check network connection to node and implement global status provider
               bitcoinService.refreshWalletData();
             },
             circularBorderRadius: 8,

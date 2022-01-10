@@ -56,7 +56,7 @@ class _WalletSelectionViewState extends State<WalletSelectionView> {
     if (snapshot.data.length == 0) {
       return Center(
         child: Container(
-          // TODO: ask designers for svg to be displayed here
+          // TODO: ask designers for svg to be displayed here?
           // this should never occur as there should be at least one
           // wallet when this is displayed
           child: Text(

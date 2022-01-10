@@ -401,6 +401,7 @@ class _SendViewState extends State<SendView> {
                             );
                           } else {
                             //TODO: wallet balance loading progress
+                            // currently hidden by synchronizing overlay
                             return SizedBox(
                               height: 20,
                               width: 100,

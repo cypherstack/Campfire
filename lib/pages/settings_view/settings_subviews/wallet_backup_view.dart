@@ -489,7 +489,7 @@ class WalletBackUpView extends StatelessWidget {
                         height: 48,
                         child: GradientButton(
                           onTap: () {
-                            //TODO: implement save
+                            //TODO: implement save qr code to file
                             print("SAVE mnemonic key pressed");
                           },
                           child: FittedBox(

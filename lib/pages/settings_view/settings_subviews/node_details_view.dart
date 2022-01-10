@@ -201,7 +201,7 @@ class _NodeDetailsViewState extends State<NodeDetailsView> {
                 ),
                 GestureDetector(
                   onTap: () {
-                    // TODO implement delete node and possibly show alert asking for delete confirmation
+                    // TODO implement delete node and show alert asking for delete confirmation
                     print(
                         "delete node pressed. // TODO implement delete node and possibly show alert asking for delete confirmation");
 

@@ -307,7 +307,7 @@ class _BackupKeyViewState extends State<BackupKeyView> {
                     height: 48,
                     child: GradientButton(
                       onTap: () {
-                        // TODO implement save
+                        // TODO implement save QR Code to file
                         print("SAVE mnemonic key pressed");
                       },
                       child: FittedBox(

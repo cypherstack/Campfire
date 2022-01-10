@@ -199,7 +199,7 @@ class _ConfirmSendViewState extends State<ConfirmSendView> {
                       if (txHexOrError is int) {
                         // Here, we assume that transaction crafting returned an error
                         if (txHexOrError == 1) {
-                          //TODO: handle this properly
+                          //TODO: handle send transaction errors
                           print("Insufficient balance!");
                           // Navigator.pop(context);
                           // showModal(
@@ -210,7 +210,6 @@ class _ConfirmSendViewState extends State<ConfirmSendView> {
                           //   },
                           // );
                         } else if (txHexOrError == 2) {
-                          //TODO: handle this properly
                           print("Insufficient funds to pay for tx fee");
                           // Navigator.pop(context);
                           // showModal(
