@@ -1,6 +1,7 @@
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:paymint/pages/address_book_view/subviews/add_address_book_entry_view.dart';
+import 'package:paymint/pages/settings_view/settings_subviews/delete_wallet_warning_view.dart';
 import 'package:paymint/pages/settings_view/settings_subviews/wallet_backup_view.dart';
 
 import './pages/pages.dart';
@@ -45,6 +46,8 @@ class RouteGenerator {
         return CupertinoPageRoute(builder: (_) => RestoreOutputCsvView());
       case '/settings/walletbackup':
         return CupertinoPageRoute(builder: (_) => WalletBackUpView());
+      case '/settings/deletewalletwarningview':
+        return CupertinoPageRoute(builder: (_) => DeleteWalletWarningView());
 
       default:
         return _routeError();
