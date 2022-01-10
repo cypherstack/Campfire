@@ -60,25 +60,3 @@ buildOnboardingBody(BuildContext context, Widget child) {
     child: child,
   );
 }
-
-buildModalDialog(BuildContext context, Widget child) {
-  return Material(
-    color: CFColors.starryNight.withOpacity(0.8),
-    child: Column(
-      children: [
-        Spacer(),
-        Padding(
-          padding: EdgeInsets.all(SizingUtilities.standardPadding),
-          child: Container(
-            decoration: BoxDecoration(
-              color: CFColors.white,
-              borderRadius:
-                  BorderRadius.circular(SizingUtilities.circularBorderRadius * 2),
-            ),
-            child: child,
-          ),
-        ),
-      ],
-    ),
-  );
-}

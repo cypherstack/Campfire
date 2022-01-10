@@ -4,8 +4,8 @@ import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 import 'package:flutter_spinkit/flutter_spinkit.dart';
 import 'package:flutter_svg/svg.dart';
 import 'package:google_fonts/google_fonts.dart';
+import 'package:paymint/notifications/modal_popup_dialog.dart';
 import 'package:paymint/notifications/overlay_notification.dart';
-import 'package:paymint/pages/onboarding_view/helpers/builders.dart';
 import 'package:paymint/services/bitcoin_service.dart';
 import 'package:paymint/utilities/cfcolors.dart';
 import 'package:paymint/utilities/misc_global_constants.dart';
@@ -395,9 +395,8 @@ class WalletBackUpView extends StatelessWidget {
       useSafeArea: false,
       barrierDismissible: false,
       builder: (context) {
-        return buildModalDialog(
-          context,
-          Column(
+        return ModalPopupDialog(
+          child: Column(
             children: [
               SizedBox(
                 height: 28,

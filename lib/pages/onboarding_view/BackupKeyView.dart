@@ -4,6 +4,7 @@ import 'package:flutter/services.dart';
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 import 'package:flutter_svg/flutter_svg.dart';
 import 'package:google_fonts/google_fonts.dart';
+import 'package:paymint/notifications/modal_popup_dialog.dart';
 import 'package:paymint/notifications/overlay_notification.dart';
 import 'package:paymint/pages/onboarding_view/helpers/builders.dart';
 import 'package:paymint/pages/onboarding_view/verify_backup_key_view.dart';
@@ -212,10 +213,127 @@ class _BackupKeyViewState extends State<BackupKeyView> {
     );
   }
 
+  _buildQrCodePopup(BuildContext context) {
+    final _qrSize = MediaQuery.of(context).size.width * 0.42;
+    return ModalPopupDialog(
+      child: Column(
+        children: [
+          SizedBox(
+            height: 28,
+          ),
+          FittedBox(
+            child: Text(
+              "Backup Key QR Code",
+              style: CFTextStyles.pinkHeader.copyWith(
+                fontSize: 16,
+              ),
+            ),
+          ),
+          SizedBox(
+            height: 16,
+          ),
+          Container(
+            height: _qrSize * 1.1,
+            width: _qrSize * 1.1,
+            color: CFColors.white,
+            child: Material(
+              color: CFColors.white,
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(SizingUtilities.circularBorderRadius),
+                side: BorderSide(
+                  color: CFColors.smoke,
+                  width: 1,
+                ),
+              ),
+              child: FutureBuilder(
+                future: _getMnemonic(context),
+                builder: (BuildContext context, AsyncSnapshot<List<String>> snapshot) {
+                  if (snapshot.connectionState == ConnectionState.done) {
+                    return Center(
+                      child: PrettyQr(
+                        data: snapshot.data.join(' '),
+                        roundEdges: Constants.roundedQrCode,
+                        elementColor: CFColors.midnight,
+                        typeNumber: 5,
+                        size: _qrSize,
+                      ),
+                    );
+                  } else {
+                    return Container(
+                      height: _qrSize,
+                      child: Center(
+                        child: CircularProgressIndicator(),
+                      ),
+                    );
+                  }
+                },
+              ),
+            ),
+          ),
+          SizedBox(
+            height: 12,
+          ),
+          Padding(
+            padding: const EdgeInsets.all(24),
+            child: Row(
+              // crossAxisAlignment: CrossAxisAlignment.stretch,
+              children: [
+                Expanded(
+                  child: SizedBox(
+                    height: 48,
+                    child: SimpleButton(
+                      onTap: () {
+                        Navigator.of(context).pop();
+                      },
+                      child: FittedBox(
+                        child: Text(
+                          "CANCEL",
+                          style: GoogleFonts.workSans(
+                            color: CFColors.dusk,
+                            fontWeight: FontWeight.w600,
+                            fontSize: 16,
+                            letterSpacing: 0.5,
+                          ),
+                        ),
+                      ),
+                    ),
+                  ),
+                ),
+                SizedBox(
+                  width: 16,
+                ),
+                Expanded(
+                  child: SizedBox(
+                    height: 48,
+                    child: GradientButton(
+                      onTap: () {
+                        // TODO implement save
+                        print("SAVE mnemonic key pressed");
+                      },
+                      child: FittedBox(
+                        child: Text(
+                          "SAVE",
+                          style: GoogleFonts.workSans(
+                            color: CFColors.white,
+                            fontWeight: FontWeight.w600,
+                            fontSize: 16,
+                            letterSpacing: 0.5,
+                          ),
+                        ),
+                      ),
+                    ),
+                  ),
+                )
+              ],
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
-    final _qrSize = MediaQuery.of(context).size.width * 0.42;
-
     return Scaffold(
       backgroundColor: CFColors.starryNight,
       appBar: buildOnboardingAppBar(context),
@@ -290,125 +408,7 @@ class _BackupKeyViewState extends State<BackupKeyView> {
                             useSafeArea: false,
                             barrierDismissible: false,
                             builder: (context) {
-                              return buildModalDialog(
-                                context,
-                                Column(
-                                  children: [
-                                    SizedBox(
-                                      height: 28,
-                                    ),
-                                    FittedBox(
-                                      child: Text(
-                                        "Backup Key QR Code",
-                                        style: CFTextStyles.pinkHeader.copyWith(
-                                          fontSize: 16,
-                                        ),
-                                      ),
-                                    ),
-                                    SizedBox(
-                                      height: 16,
-                                    ),
-                                    Container(
-                                      height: _qrSize * 1.1,
-                                      width: _qrSize * 1.1,
-                                      color: CFColors.white,
-                                      child: Material(
-                                        color: CFColors.white,
-                                        shape: RoundedRectangleBorder(
-                                          borderRadius: BorderRadius.circular(
-                                              SizingUtilities.circularBorderRadius),
-                                          side: BorderSide(
-                                            color: CFColors.smoke,
-                                            width: 1,
-                                          ),
-                                        ),
-                                        child: FutureBuilder(
-                                          future: _getMnemonic(context),
-                                          builder: (BuildContext context,
-                                              AsyncSnapshot<List<String>> snapshot) {
-                                            if (snapshot.connectionState ==
-                                                ConnectionState.done) {
-                                              return Center(
-                                                child: PrettyQr(
-                                                  data: snapshot.data.join(' '),
-                                                  roundEdges: Constants.roundedQrCode,
-                                                  elementColor: CFColors.midnight,
-                                                  typeNumber: 5,
-                                                  size: _qrSize,
-                                                ),
-                                              );
-                                            } else {
-                                              return Container(
-                                                height: _qrSize,
-                                                child: Center(
-                                                  child: CircularProgressIndicator(),
-                                                ),
-                                              );
-                                            }
-                                          },
-                                        ),
-                                      ),
-                                    ),
-                                    SizedBox(
-                                      height: 12,
-                                    ),
-                                    Padding(
-                                      padding: const EdgeInsets.all(24),
-                                      child: Row(
-                                        // crossAxisAlignment: CrossAxisAlignment.stretch,
-                                        children: [
-                                          Expanded(
-                                            child: SizedBox(
-                                              height: 48,
-                                              child: SimpleButton(
-                                                onTap: () {
-                                                  Navigator.of(context).pop();
-                                                },
-                                                child: FittedBox(
-                                                  child: Text(
-                                                    "CANCEL",
-                                                    style: GoogleFonts.workSans(
-                                                      color: CFColors.dusk,
-                                                      fontWeight: FontWeight.w600,
-                                                      fontSize: 16,
-                                                      letterSpacing: 0.5,
-                                                    ),
-                                                  ),
-                                                ),
-                                              ),
-                                            ),
-                                          ),
-                                          SizedBox(
-                                            width: 16,
-                                          ),
-                                          Expanded(
-                                            child: SizedBox(
-                                              height: 48,
-                                              child: GradientButton(
-                                                onTap: () {
-                                                  // TODO implement save
-                                                  print("SAVE mnemonic key pressed");
-                                                },
-                                                child: FittedBox(
-                                                  child: Text(
-                                                    "SAVE",
-                                                    style: GoogleFonts.workSans(
-                                                      color: CFColors.white,
-                                                      fontWeight: FontWeight.w600,
-                                                      fontSize: 16,
-                                                      letterSpacing: 0.5,
-                                                    ),
-                                                  ),
-                                                ),
-                                              ),
-                                            ),
-                                          )
-                                        ],
-                                      ),
-                                    ),
-                                  ],
-                                ),
-                              );
+                              return _buildQrCodePopup(context);
                             },
                           );
                         },

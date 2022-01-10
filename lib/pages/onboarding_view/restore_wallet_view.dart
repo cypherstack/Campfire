@@ -7,6 +7,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_svg/flutter_svg.dart';
 import 'package:google_fonts/google_fonts.dart';
+import 'package:paymint/notifications/modal_popup_dialog.dart';
 import 'package:paymint/services/bitcoin_service.dart';
 import 'package:paymint/services/wallets_service.dart';
 import 'package:paymint/utilities/cfcolors.dart';
@@ -462,9 +463,8 @@ class RecoveryCompleteDialog extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return buildModalDialog(
-      context,
-      Column(
+    return ModalPopupDialog(
+      child: Column(
         children: [
           SizedBox(
             height: 28,
@@ -533,9 +533,8 @@ class WaitDialog extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return buildModalDialog(
-      context,
-      Column(
+    return ModalPopupDialog(
+      child: Column(
         children: [
           SizedBox(
             height: 28,
