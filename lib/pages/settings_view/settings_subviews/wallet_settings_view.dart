@@ -65,6 +65,7 @@ class _WalletSettingsViewState extends State<WalletSettingsView> {
                         .currentWalletName;
 
                 showDialog(
+                  useSafeArea: false,
                   barrierColor: Colors.transparent,
                   context: context,
                   builder: (context) {
