@@ -6,6 +6,7 @@ import 'package:flutter_svg/svg.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:paymint/notifications/modal_popup_dialog.dart';
 import 'package:paymint/notifications/overlay_notification.dart';
+import 'package:paymint/pages/onboarding_view/onboarding_view.dart';
 import 'package:paymint/pages/settings_view/helpers/builders.dart';
 import 'package:paymint/services/bitcoin_service.dart';
 import 'package:paymint/services/wallets_service.dart';
@@ -171,15 +172,27 @@ class WalletDeleteMnemonicView extends StatelessWidget {
                         final walletsService =
                             Provider.of<WalletsService>(context, listen: false);
                         final walletName = await walletsService.currentWalletName;
-                        await walletsService.deleteWallet(walletName);
-
-                        Navigator.pushAndRemoveUntil(
-                          context,
-                          CupertinoPageRoute(
-                            builder: (_) => WalletSelectionView(),
-                          ),
-                          (_) => false,
-                        );
+                        int result = await walletsService.deleteWallet(walletName);
+                        print("delete result: $result");
+                        // check if last wallet was deleted
+                        if (result == 2) {
+                          Navigator.pushAndRemoveUntil(
+                            context,
+                            CupertinoPageRoute(
+                              maintainState: false,
+                              builder: (_) => OnboardingView(),
+                            ),
+                            (_) => false,
+                          );
+                        } else {
+                          Navigator.pushAndRemoveUntil(
+                            context,
+                            CupertinoPageRoute(
+                              builder: (_) => WalletSelectionView(),
+                            ),
+                            (_) => false,
+                          );
+                        }
                       },
                     ),
                   ),
@@ -494,7 +507,7 @@ class WalletDeleteMnemonicView extends StatelessWidget {
                     return Center(
                       child: PrettyQr(
                         data: snapshot.data.join(' '),
-                        roundEdges: Constants.roundedQrCode,
+                        roundEdges: CampfireConstants.roundedQrCode,
                         elementColor: CFColors.midnight,
                         typeNumber: 5,
                         size: _qrSize,

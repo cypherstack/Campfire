@@ -3,12 +3,13 @@ import 'dart:collection';
 
 import 'package:bip39/bip39.dart' as bip39;
 import 'package:bip39/src/wordlists/english.dart' as bip39wordlist;
+import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_svg/flutter_svg.dart';
 import 'package:google_fonts/google_fonts.dart';
-import 'package:hive/hive.dart';
 import 'package:paymint/notifications/modal_popup_dialog.dart';
+import 'package:paymint/pages/onboarding_view/onboarding_view.dart';
 import 'package:paymint/services/bitcoin_service.dart';
 import 'package:paymint/services/wallets_service.dart';
 import 'package:paymint/utilities/cfcolors.dart';
@@ -179,12 +180,6 @@ class _RestoreWalletFormViewState extends State<RestoreWalletFormView> {
     );
   }
 
-  void _deleteUnusedWalletNameAndPIN(BuildContext context) async {
-    final walletsService = Provider.of<WalletsService>(context, listen: false);
-    await walletsService.deleteWallet(widget.walletName);
-    Provider.of<BitcoinService>(context, listen: false).refreshWalletData();
-  }
-
   _buildRestoreButton() {
     return Padding(
       padding: const EdgeInsets.only(
@@ -284,14 +279,30 @@ class _RestoreWalletFormViewState extends State<RestoreWalletFormView> {
         context,
         backButtonPressed: () async {
           // delete created wallet name and pin
-          _deleteUnusedWalletNameAndPIN(context);
 
-          FocusScope.of(context).unfocus();
-          await Future.delayed(Duration(milliseconds: 100));
+          final walletsService = Provider.of<WalletsService>(context, listen: false);
+          int result = await walletsService.deleteWallet(widget.walletName);
 
-          final nav = Navigator.of(context);
-          nav.pop();
-          nav.pop();
+          // check if last wallet was deleted
+          if (result == 2) {
+            Navigator.pushAndRemoveUntil(
+              context,
+              CupertinoPageRoute(
+                maintainState: false,
+                builder: (_) => OnboardingView(),
+              ),
+              (_) => false,
+            );
+          } else {
+            Provider.of<BitcoinService>(context, listen: false).refreshWalletData();
+
+            FocusScope.of(context).unfocus();
+            await Future.delayed(Duration(milliseconds: 100));
+
+            final nav = Navigator.of(context);
+            nav.pop();
+            nav.pop();
+          }
         },
       ),
       body: buildOnboardingBody(
@@ -600,16 +611,27 @@ class WaitDialog extends StatelessWidget {
                     print("cancel restore wallet pressed");
                     final walletsService =
                         Provider.of<WalletsService>(context, listen: false);
-                    await walletsService
-                        .deleteWallet(await walletsService.currentWalletName);
-                    final wallets = await Hive.openBox('wallets');
-                    print("wallets: ${wallets.toMap()}");
-                    final navigator = Navigator.of(context);
-                    navigator.pop();
-                    navigator.pop();
-                    navigator.pop();
-                    navigator.pop();
-                    navigator.pop();
+                    final name = await walletsService.currentWalletName;
+                    int result = await walletsService.deleteWallet(name);
+
+                    // check if last wallet was deleted
+                    if (result == 2) {
+                      Navigator.pushAndRemoveUntil(
+                        context,
+                        CupertinoPageRoute(
+                          maintainState: false,
+                          builder: (_) => OnboardingView(),
+                        ),
+                        (_) => false,
+                      );
+                    } else {
+                      final navigator = Navigator.of(context);
+                      navigator.pop();
+                      navigator.pop();
+                      navigator.pop();
+                      navigator.pop();
+                      navigator.pop();
+                    }
                   },
                   child: FittedBox(
                     child: Text(

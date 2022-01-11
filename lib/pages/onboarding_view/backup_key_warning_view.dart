@@ -12,6 +12,7 @@ import 'package:paymint/widgets/custom_buttons/gradient_button.dart';
 import 'package:provider/provider.dart';
 
 import 'helpers/builders.dart';
+import 'onboarding_view.dart';
 
 class BackupKeyWarningView extends StatefulWidget {
   const BackupKeyWarningView({Key key, @required this.walletName}) : super(key: key);
@@ -25,25 +26,35 @@ class BackupKeyWarningView extends StatefulWidget {
 class _BackupKeyWarningViewState extends State<BackupKeyWarningView> {
   bool _checkboxIsChecked = false;
 
-  void _rollbackWalletAndPinCreation(BuildContext context) async {
-    final walletsService = Provider.of<WalletsService>(context, listen: false);
-    await walletsService.deleteWallet(widget.walletName);
-    Provider.of<BitcoinService>(context, listen: false).refreshWalletData();
-  }
-
   @override
   Widget build(BuildContext context) {
     return Scaffold(
       backgroundColor: CFColors.starryNight,
       appBar: buildOnboardingAppBar(
         context,
-        backButtonPressed: () {
+        backButtonPressed: () async {
           // delete created wallet name and pin
-          _rollbackWalletAndPinCreation(context);
+          final walletsService = Provider.of<WalletsService>(context, listen: false);
+          int result = await walletsService.deleteWallet(widget.walletName);
 
-          final nav = Navigator.of(context);
-          nav.pop();
-          nav.pop();
+          print("delete result: $result");
+          // check if last wallet was deleted
+          if (result == 2) {
+            Navigator.pushAndRemoveUntil(
+              context,
+              CupertinoPageRoute(
+                maintainState: false,
+                builder: (_) => OnboardingView(),
+              ),
+              (_) => false,
+            );
+          } else {
+            Provider.of<BitcoinService>(context, listen: false).refreshWalletData();
+
+            final nav = Navigator.of(context);
+            nav.pop();
+            nav.pop();
+          }
         },
       ),
       body: buildOnboardingBody(

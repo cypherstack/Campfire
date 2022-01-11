@@ -78,7 +78,14 @@ class WalletsService extends ChangeNotifier {
 
   Future<bool> addNewWalletName(String name) async {
     final wallets = await Hive.openBox('wallets');
-    final names = await wallets.get('names');
+    final _names = await wallets.get('names');
+
+    Map<String, String> names;
+    if (_names == null) {
+      names = {};
+    } else {
+      names = Map<String, String>.from(_names);
+    }
     // Prevent overwriting or storing empty names
     if (name.isEmpty || names.keys.contains(name)) {
       return false;
@@ -95,6 +102,9 @@ class WalletsService extends ChangeNotifier {
   Future<bool> checkForDuplicate(String name) async {
     final wallets = await Hive.openBox('wallets');
     final names = await wallets.get('names');
+    if (names == null) {
+      return false;
+    }
     return names.keys.contains(name);
   }
 
@@ -121,6 +131,8 @@ class WalletsService extends ChangeNotifier {
     if (names.length == 0) {
       Hive.deleteBoxFromDisk('wallets');
       this._currentWalletName = Future(() => "No wallets found!");
+      this._walletNames = Future(() => {});
+      notifyListeners();
       return 2; // error code no wallets on device
     }
 
