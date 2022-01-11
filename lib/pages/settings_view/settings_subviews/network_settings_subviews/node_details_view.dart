@@ -2,12 +2,14 @@ import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_svg/svg.dart';
 import 'package:google_fonts/google_fonts.dart';
+import 'package:paymint/services/node_service.dart';
 import 'package:paymint/utilities/cfcolors.dart';
 import 'package:paymint/utilities/sizing_utilities.dart';
 import 'package:paymint/utilities/text_styles.dart';
 import 'package:paymint/widgets/custom_buttons/app_bar_icon_button.dart';
 import 'package:paymint/widgets/custom_buttons/gradient_button.dart';
 import 'package:paymint/widgets/custom_buttons/simple_button.dart';
+import 'package:provider/provider.dart';
 
 class NodeDetailsView extends StatefulWidget {
   const NodeDetailsView({
@@ -43,11 +45,29 @@ class _NodeDetailsViewState extends State<NodeDetailsView> {
 
   _NodeDetailsViewState(this._isEditing);
 
-  //TODO load and fill in fields
+  void _onSavePressed() async {
+    final name = _nameController.text;
+    final ipAddress = _addressController.text;
+    final port = _portController.text;
 
-  void _onSavePressed() {
-    // TODO implement save node
-    print("Save node settings pressed. // TODO implement save node");
+    final nodesService = Provider.of<NodeService>(context, listen: false);
+    final id = widget.nodeData["id"];
+    final success = nodesService.editNode(
+      id: id,
+      originalName: widget.nodeName,
+      updatedName: name,
+      updatedIpAddress: ipAddress,
+      updatedPort: port,
+    );
+
+    // check for duplicate node name
+    if (success) {
+      FocusScope.of(context).unfocus();
+      await Future.delayed(Duration(milliseconds: 200));
+      Navigator.pop(context);
+    } else {
+      //TODO show alert telling user they cannot use a name of another existing node
+    }
   }
 
   void _onTestPressed() {

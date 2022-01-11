@@ -48,9 +48,11 @@ class _NodeCardState extends State<NodeCard> {
             return _buildPopupMenu(context, tapDownDetails.globalPosition);
           },
         ).then((_) {
-          setState(() {
-            _backgroundColor = CFColors.white;
-          });
+          if (mounted) {
+            setState(() {
+              _backgroundColor = CFColors.white;
+            });
+          }
         });
       },
       onTap: () {
