@@ -1,9 +1,17 @@
+import 'dart:async';
+
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_svg/flutter_svg.dart';
 import 'package:google_fonts/google_fonts.dart';
+import 'package:paymint/pages/settings_view/settings_subviews/network_settings_subviews/node_card.dart';
+import 'package:paymint/services/event_bus/events/node_connection_status_changed_event.dart';
+import 'package:paymint/services/event_bus/global_event_bus.dart';
+import 'package:paymint/services/node_service.dart';
 import 'package:paymint/utilities/cfcolors.dart';
 import 'package:paymint/utilities/sizing_utilities.dart';
+import 'package:paymint/widgets/custom_buttons/app_bar_icon_button.dart';
+import 'package:provider/provider.dart';
 
 import '../helpers/builders.dart';
 
@@ -28,10 +36,45 @@ class _NetworkSettingsViewState extends State<NetworkSettingsView> {
     letterSpacing: 0.25,
   );
 
-  //TODO add listener to this class to setState for updating this label
-  String _blockchainStatusLabel = "Synchronized";
+  String _statusLabel = "Synchronized";
+  StreamSubscription _nodeConnectionStatusChangedEventListener;
 
-  // _addNode(BuildContext context) {}
+  @override
+  initState() {
+    // TODO add animations and other icons based on status
+    _nodeConnectionStatusChangedEventListener =
+        GlobalEventBus.instance.on<NodeConnectionStatusChangedEvent>().listen((event) {
+      print("event caught");
+      String newLabel;
+      switch (event.newStatus) {
+        case NodeConnectionStatus.synced:
+          newLabel = "Synchronized";
+          break;
+        case NodeConnectionStatus.loading:
+          newLabel = "Synchronizing";
+          break;
+        case NodeConnectionStatus.disconnected:
+          newLabel = "Disconnected";
+          break;
+        case NodeConnectionStatus.connecting:
+          newLabel = "Connecting";
+          break;
+      }
+      if (newLabel != _statusLabel) {
+        setState(() {
+          _statusLabel = newLabel;
+        });
+      }
+    });
+
+    super.initState();
+  }
+
+  @override
+  dispose() {
+    _nodeConnectionStatusChangedEventListener.cancel();
+    super.dispose();
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -40,13 +83,30 @@ class _NetworkSettingsViewState extends State<NetworkSettingsView> {
       appBar: buildSettingsAppBar(
         context,
         "Settings",
+        rightButton: Padding(
+          padding: EdgeInsets.only(
+            top: 10,
+            bottom: 10,
+            right: 20,
+          ),
+          child: AspectRatio(
+            aspectRatio: 1,
+            child: AppBarIconButton(
+              size: 36,
+              icon: SvgPicture.asset(
+                "assets/svg/plus.svg",
+                color: CFColors.twilight,
+              ),
+              circularBorderRadius: SizingUtilities.circularBorderRadius,
+              onPressed: () {
+                Navigator.pushNamed(context, "/settings/addcustomnode");
+              },
+            ),
+          ),
+        ),
       ),
       body: Padding(
-        padding: EdgeInsets.only(
-          top: SizingUtilities.standardPadding,
-          left: SizingUtilities.standardPadding,
-          right: SizingUtilities.standardPadding,
-        ),
+        padding: EdgeInsets.all(SizingUtilities.standardPadding),
         child: Column(
           children: [
             Align(
@@ -78,7 +138,7 @@ class _NetworkSettingsViewState extends State<NetworkSettingsView> {
                     alignment: Alignment.centerLeft,
                     child: FittedBox(
                       child: Text(
-                        _blockchainStatusLabel,
+                        _statusLabel,
                         style: _itemTextStyle,
                       ),
                     ),
@@ -101,10 +161,9 @@ class _NetworkSettingsViewState extends State<NetworkSettingsView> {
             SizedBox(
               height: 8,
             ),
-            SingleChildScrollView(
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.stretch,
-                // children: _buildNodeList(context),
+            Expanded(
+              child: ListView(
+                children: _buildNodeList(context),
               ),
             ),
           ],
@@ -113,68 +172,24 @@ class _NetworkSettingsViewState extends State<NetworkSettingsView> {
     );
   }
 
-  // _buildNodeList(BuildContext context) {
-  //   List<Widget> list = [];
-  //   // TODO fetch nodes and build list of _buildNodeListItem
-  //
-  //   list.add(_buildNodeListItem(context, "test name", true));
-  //   list.add(_buildNodeListItem(context, "test name2", false));
-  //   list.add(_buildNodeListItem(context, "test name3", true));
-  //
-  //   return list;
-  // }
-  //
-  // _buildNodeListItem(BuildContext context, String nodeName, bool isConnected) {
-  //   var color = CFColors.white;
-  //   return GestureDetector(
-//        onTapDown
-  //     onTap: () {
-  //       setState(() {
-  //         color = CFColors.fog;
-  //       });
-  //     },
-  //     child: Container(
-  //       color: color,
-  //       child: Padding(
-  //         padding: EdgeInsets.symmetric(horizontal: 6, vertical: 14),
-  //         child: Row(
-  //           children: [
-  //             SvgPicture.asset(
-  //               "assets/svg/globe.svg",
-  //               height: 24,
-  //               width: 24,
-  //               color: CFColors.twilight,
-  //             ),
-  //             SizedBox(
-  //               width: 18,
-  //             ),
-  //             Column(
-  //               crossAxisAlignment: CrossAxisAlignment.start,
-  //               children: [
-  //                 Text(
-  //                   nodeName,
-  //                   style: GoogleFonts.workSans(
-  //                     color: CFColors.starryNight,
-  //                     fontWeight: FontWeight.w600,
-  //                     fontSize: 14,
-  //                     letterSpacing: 0.25,
-  //                   ),
-  //                 ),
-  //                 if (isConnected)
-  //                   Text(
-  //                     "Connected",
-  //                     style: GoogleFonts.workSans(
-  //                       color: CFColors.twilight,
-  //                       fontWeight: FontWeight.w500,
-  //                       fontSize: 12,
-  //                     ),
-  //                   )
-  //               ],
-  //             )
-  //           ],
-  //         ),
-  //       ),
-  //     ),
-  //   );
-  // }
+  _buildNodeList(BuildContext context) {
+    List<Widget> list = [];
+    final nodeService = Provider.of<NodeService>(context);
+
+    nodeService.nodes.forEach(
+      (key, value) {
+        // final isConnected = key == nodeService.activeNodeName;
+        list.add(
+          NodeCard(
+            key: ValueKey(key),
+            nodeName: key,
+            nodeData: Map<String, dynamic>.from(value),
+            // isConnected: isConnected,
+          ),
+        );
+      },
+    );
+
+    return list;
+  }
 }

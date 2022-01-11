@@ -248,7 +248,7 @@ class _BackupKeyViewState extends State<BackupKeyView> {
                     return Center(
                       child: PrettyQr(
                         data: snapshot.data.join(' '),
-                        roundEdges: Constants.roundedQrCode,
+                        roundEdges: CampfireConstants.roundedQrCode,
                         elementColor: CFColors.midnight,
                         typeNumber: 5,
                         size: _qrSize,

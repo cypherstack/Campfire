@@ -14,8 +14,11 @@ import 'package:paymint/services/event_bus/global_event_bus.dart';
 import 'package:paymint/services/globals.dart';
 import 'package:paymint/services/utils/currency_utils.dart';
 import 'package:paymint/services/wallets_service.dart';
+import 'package:paymint/utilities/misc_global_constants.dart';
+import 'package:uuid/uuid.dart';
 
 import './utils/dev_utils.dart';
+import 'event_bus/events/nodes_changed_event.dart';
 import 'events.dart';
 
 class BitcoinService extends ChangeNotifier {
@@ -72,6 +75,11 @@ class BitcoinService extends ChangeNotifier {
     // add listener for active wallet changed
     GlobalEventBus.instance.on<ActiveWalletNameChangedEvent>().listen((event) {
       _currentWalletName = Future(() => event.currentWallet);
+    });
+
+    // add listener for nodes changed
+    GlobalEventBus.instance.on<NodesChangedEvent>().listen((event) {
+      refreshWalletData();
     });
 
     _currency = CurrencyUtilities.fetchPreferredCurrency();
@@ -148,6 +156,18 @@ class BitcoinService extends ChangeNotifier {
     ]); // A list of transaction hashes to represent frozen utxos in wallet
     // initialize address book entries
     await wallet.put('addressBookEntries', <String, String>{});
+
+    // initialize default node
+    final nodes = <String, dynamic>{};
+    nodes.addAll({
+      CampfireConstants.defaultNodeName: {
+        "id": Uuid().v1(),
+        "ipAddress": CampfireConstants.defaultIpAddress,
+        "port": "",
+      }
+    });
+    await wallet.put('nodes', nodes);
+    await wallet.put('activeNodeName', CampfireConstants.defaultNodeName);
     // Generate and add addresses to relevant arrays
     final initialReceivingAddress = await generateAddressForChain(0, 0);
     final initialChangeAddress = await generateAddressForChain(1, 0);
@@ -614,10 +634,10 @@ class BitcoinService extends ChangeNotifier {
     final String url = await wallet.get('esplora_url');
 
     if (url == null) {
-      final blockstreamUrl = 'https://marco.cypherstack.com/api/FIRO/mainnet/';
+      // final blockstreamUrl = 'https://marco.cypherstack.com/api/FIRO/mainnet/';
       print('Using blockstream for esplora server');
-      await wallet.put('esplora_url', blockstreamUrl);
-      return blockstreamUrl;
+      await wallet.put('esplora_url', CampfireConstants.defaultNodeUrl);
+      return CampfireConstants.defaultNodeUrl;
     } else {
       return url;
     }

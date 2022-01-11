@@ -9,6 +9,7 @@ import 'package:paymint/pages/loading_view.dart';
 import 'package:paymint/pages/lockscreen.dart';
 import 'package:paymint/pages/onboarding_view/onboarding_view.dart';
 import 'package:paymint/services/address_book_service.dart';
+import 'package:paymint/services/node_service.dart';
 import 'package:paymint/services/services.dart';
 import 'package:paymint/services/wallets_service.dart';
 import 'package:paymint/utilities/cfcolors.dart';
@@ -56,6 +57,9 @@ class MyApp extends StatelessWidget {
         ),
         ChangeNotifierProvider(
           create: (_) => AddressBookService(),
+        ),
+        ChangeNotifierProvider(
+          create: (_) => NodeService(),
         ),
       ],
       child: MaterialAppWithTheme(),

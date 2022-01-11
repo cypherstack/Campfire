@@ -27,7 +27,8 @@ class AddressBookService extends ChangeNotifier {
   addAddressBookEntry(String address, String name) async {
     final _currentWallet = await currentWalletName;
     final wallet = await Hive.openBox(_currentWallet);
-    final entries = await wallet.get('addressBookEntries');
+    final _entries = await wallet.get('addressBookEntries');
+    final entries = _entries == null ? <String, String>{} : _entries;
     entries[address] = name;
     await wallet.put('addressBookEntries', entries);
     print("address book entry saved");

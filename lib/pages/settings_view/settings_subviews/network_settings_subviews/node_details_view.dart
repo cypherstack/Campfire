@@ -10,24 +10,29 @@ import 'package:paymint/widgets/custom_buttons/gradient_button.dart';
 import 'package:paymint/widgets/custom_buttons/simple_button.dart';
 
 class NodeDetailsView extends StatefulWidget {
-  const NodeDetailsView({Key key, @required this.isEdit}) : super(key: key);
+  const NodeDetailsView({
+    Key key,
+    @required this.isEdit,
+    @required this.nodeName,
+    @required this.nodeData,
+  }) : super(key: key);
 
   final bool isEdit;
+  final String nodeName;
+  final Map<String, dynamic> nodeData;
 
   @override
   _NodeDetailsViewState createState() => _NodeDetailsViewState(isEdit);
 }
 
 class _NodeDetailsViewState extends State<NodeDetailsView> {
-  String _title = "Node Details";
-
   final _nameController = TextEditingController();
   final _addressController = TextEditingController();
   final _portController = TextEditingController();
-  final _usernameController = TextEditingController();
-  final _passwordController = TextEditingController();
+  // final _usernameController = TextEditingController();
+  // final _passwordController = TextEditingController();
 
-  var _useSSL = false;
+  // var _useSSL = false;
   final _isEditing;
 
   final TextStyle _titleStyle = GoogleFonts.workSans(
@@ -48,6 +53,14 @@ class _NodeDetailsViewState extends State<NodeDetailsView> {
   void _onTestPressed() {
     // TODO implement test connection
     print("test connection pressed. // TODO implement test connection ");
+  }
+
+  @override
+  void initState() {
+    _nameController.text = widget.nodeName;
+    _addressController.text = widget.nodeData["ipAddress"];
+    _portController.text = widget.nodeData["port"];
+    super.initState();
   }
 
   @override
@@ -106,10 +119,14 @@ class _NodeDetailsViewState extends State<NodeDetailsView> {
           child: AppBarIconButton(
             size: 36,
             onPressed: () async {
-              FocusScope.of(context).unfocus();
-              await Future.delayed(Duration(milliseconds: 50));
+              if (_isEditing) {
+                FocusScope.of(context).unfocus();
+                await Future.delayed(Duration(milliseconds: 50));
+              }
 
-              Navigator.pop(context);
+              final navigator = Navigator.of(context);
+              navigator.pop();
+              navigator.pop();
             },
             circularBorderRadius: 8,
             icon: SvgPicture.asset(
@@ -121,42 +138,41 @@ class _NodeDetailsViewState extends State<NodeDetailsView> {
           ),
         ),
       ),
-      actions: _isEditing
-          ? []
-          : [
-              Padding(
-                padding: EdgeInsets.only(
-                  top: 10,
-                  bottom: 10,
-                  right: 20,
+      actions: [
+        if (_isEditing)
+          Padding(
+            padding: EdgeInsets.only(
+              top: 10,
+              bottom: 10,
+              right: 20,
+            ),
+            child: AspectRatio(
+              aspectRatio: 1,
+              child: AppBarIconButton(
+                size: 36,
+                icon: SvgPicture.asset(
+                  "assets/svg/more-vertical.svg",
+                  color: CFColors.twilight,
+                  width: 24,
+                  height: 24,
                 ),
-                child: AspectRatio(
-                  aspectRatio: 1,
-                  child: AppBarIconButton(
-                    size: 36,
-                    icon: SvgPicture.asset(
-                      "assets/svg/more-vertical.svg",
-                      color: CFColors.twilight,
-                      width: 24,
-                      height: 24,
-                    ),
-                    circularBorderRadius: 8,
-                    onPressed: () async {
-                      FocusScope.of(context).unfocus();
-                      await Future.delayed(Duration(milliseconds: 50));
+                circularBorderRadius: 8,
+                onPressed: () async {
+                  FocusScope.of(context).unfocus();
+                  await Future.delayed(Duration(milliseconds: 50));
 
-                      showDialog(
-                        barrierColor: Colors.transparent,
-                        context: context,
-                        builder: (context) {
-                          return _buildPopupMenu(context);
-                        },
-                      );
+                  showDialog(
+                    barrierColor: Colors.transparent,
+                    context: context,
+                    builder: (context) {
+                      return _buildPopupMenu(context);
                     },
-                  ),
-                ),
+                  );
+                },
               ),
-            ],
+            ),
+          ),
+      ],
     );
   }
 
@@ -262,42 +278,42 @@ class _NodeDetailsViewState extends State<NodeDetailsView> {
             ),
           ],
         ),
-        SizedBox(
-          height: 12,
-        ),
-        TextField(
-          enabled: _isEditing,
-          controller: _usernameController,
-        ),
-        SizedBox(
-          height: 12,
-        ),
-        TextField(
-          enabled: _isEditing,
-          controller: _passwordController,
-        ),
-        Row(
-          children: [
-            Checkbox(
-              value: _useSSL,
-              onChanged: _isEditing
-                  ? (newValue) {
-                      setState(() {
-                        _useSSL = newValue;
-                      });
-                    }
-                  : null,
-            ),
-            Text(
-              "Use SSL",
-              style: GoogleFonts.workSans(
-                color: CFColors.dusk,
-                fontWeight: FontWeight.w400,
-                fontSize: 14,
-              ),
-            )
-          ],
-        ),
+        // SizedBox(
+        //   height: 12,
+        // ),
+        // TextField(
+        //   enabled: _isEditing,
+        //   controller: _usernameController,
+        // ),
+        // SizedBox(
+        //   height: 12,
+        // ),
+        // TextField(
+        //   enabled: _isEditing,
+        //   controller: _passwordController,
+        // ),
+        // Row(
+        //   children: [
+        //     Checkbox(
+        //       value: _useSSL,
+        //       onChanged: _isEditing
+        //           ? (newValue) {
+        //               setState(() {
+        //                 _useSSL = newValue;
+        //               });
+        //             }
+        //           : null,
+        //     ),
+        //     Text(
+        //       "Use SSL",
+        //       style: GoogleFonts.workSans(
+        //         color: CFColors.dusk,
+        //         fontWeight: FontWeight.w400,
+        //         fontSize: 14,
+        //       ),
+        //     )
+        //   ],
+        // ),
       ],
     );
   }
