@@ -211,7 +211,8 @@ class _Lockscreen2ViewState extends State<Lockscreen2View> {
                   final store = new FlutterSecureStorage();
 
                   final walletName = await walletsService.currentWalletName;
-                  final storedPin = await store.read(key: '${walletName}_pin');
+                  final id = await walletsService.getWalletId(walletName);
+                  final storedPin = await store.read(key: '${id}_pin');
 
                   if (storedPin == pin) {
                     OverlayNotification.showSuccess(

@@ -1,7 +1,6 @@
 import 'dart:math';
 
 import 'package:flutter/material.dart';
-import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:paymint/notifications/overlay_notification.dart';
 import 'package:paymint/pages/onboarding_view/helpers/builders.dart';
@@ -24,11 +23,8 @@ class _VerifyBackupKeyViewState extends State<VerifyBackupKeyView> {
 
   Future<List<String>> _getMnemonic(BuildContext context) async {
     final bitcoinService = Provider.of<BitcoinService>(context, listen: false);
-    final _currentWallet = await bitcoinService.currentWalletName;
-    final secureStore = new FlutterSecureStorage();
-    final mnemonicString = await secureStore.read(key: '${_currentWallet}_mnemonic');
-    final List<String> data = mnemonicString.split(' ');
-    return data;
+    final mnemonic = await bitcoinService.getMnemonicList();
+    return mnemonic;
   }
 
   Future<bool> _verifyMnemonicContains(

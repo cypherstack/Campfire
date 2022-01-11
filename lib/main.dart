@@ -83,6 +83,7 @@ class _MaterialAppWithThemeState extends State<MaterialAppWithTheme> {
   /// Returns true if the user has never set up any wallets before
   Future<bool> _checkForWallets() async {
     final wallets = await Hive.openBox('wallets');
+    print("wallets: ${wallets.toMap()}");
     if (wallets.isEmpty) {
       return true;
     } else {

@@ -218,10 +218,9 @@ class _CreatePinViewState extends State<CreatePinView> {
                                 Provider.of<WalletsService>(context, listen: false);
                             final store = new FlutterSecureStorage();
 
-                            await store.write(
-                                key: "${widget.walletName}_pin", value: pin);
-
                             await walletService.addNewWalletName(widget.walletName);
+                            final id = await walletService.getWalletId(widget.walletName);
+                            await store.write(key: "${id}_pin", value: pin);
 
                             if (widget.type == CreateWalletType.NEW) {
                               final bitcoinService =

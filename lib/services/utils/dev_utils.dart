@@ -6,14 +6,17 @@ import '../wallets_service.dart';
 class DevUtilities {
   static debugPrintWalletState() async {
     final _currentWallet = await WalletsService().currentWalletName;
-    final wallet = await Hive.openBox(_currentWallet);
+    final wallets = await Hive.openBox('wallets');
+    final names = await wallets.get('names');
+    final id = names[_currentWallet];
+    final wallet = await Hive.openBox(id);
     final ra = wallet.get('receivingAddresses');
     final ca = wallet.get('changeAddresses');
     final ri = wallet.get('receivingIndex');
     final ci = wallet.get('changeIndex');
 
     final secureStore = new FlutterSecureStorage();
-    final mnemonic = await secureStore.read(key: '${_currentWallet}_mnemonic');
+    final mnemonic = await secureStore.read(key: '${id}_mnemonic');
 
     print("""
     ===========================================================================

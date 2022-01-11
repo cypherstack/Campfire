@@ -2,7 +2,7 @@ import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:paymint/pages/settings_view/helpers/builders.dart';
-import 'package:paymint/pages/settings_view/settings_subviews/wallet_delete_mnemonic_view.dart';
+import 'package:paymint/pages/settings_view/settings_subviews/wallet_settings_subviews/wallet_delete_mnemonic_view.dart';
 import 'package:paymint/utilities/cfcolors.dart';
 import 'package:paymint/utilities/sizing_utilities.dart';
 import 'package:paymint/utilities/text_styles.dart';

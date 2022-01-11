@@ -50,17 +50,18 @@ class _WalletSelectionViewState extends State<WalletSelectionView> {
 
   _buildWalletsList(
     BuildContext context,
-    AsyncSnapshot<List<String>> snapshot,
+    AsyncSnapshot<Map<String, String>> snapshot,
     WalletsService walletsService,
   ) {
-    if (snapshot.data.length == 0) {
+    final names = snapshot.data.keys.toList();
+    if (names.length == 0) {
       return Center(
         child: Container(
           // TODO: ask designers for svg to be displayed here?
           // this should never occur as there should be at least one
           // wallet when this is displayed
           child: Text(
-            'No transactions found...',
+            'No wallets found...',
             textScaleFactor: 1.1,
             style: TextStyle(color: CFColors.warning),
           ),
@@ -73,7 +74,7 @@ class _WalletSelectionViewState extends State<WalletSelectionView> {
           horizontal: 16,
         ),
         child: ListView.builder(
-          itemCount: snapshot.data.length,
+          itemCount: names.length,
           itemBuilder: (context, index) {
             return Padding(
               padding: EdgeInsets.all(
@@ -104,7 +105,7 @@ class _WalletSelectionViewState extends State<WalletSelectionView> {
                     mainAxisAlignment: MainAxisAlignment.spaceBetween,
                     children: [
                       Text(
-                        snapshot.data[index],
+                        names[index],
                         style: GoogleFonts.workSans(
                           color: CFColors.dusk,
                           fontWeight: FontWeight.w600,
@@ -118,7 +119,7 @@ class _WalletSelectionViewState extends State<WalletSelectionView> {
                     ],
                   ),
                   onPressed: () async {
-                    await walletsService.setCurrentWalletName(snapshot.data[index]);
+                    await walletsService.setCurrentWalletName(names[index]);
                     Navigator.of(context).push(
                       CupertinoPageRoute(
                         builder: (context) {
@@ -217,7 +218,7 @@ class _WalletSelectionViewState extends State<WalletSelectionView> {
                         future: walletsService.walletNames,
                         builder: (
                           BuildContext context,
-                          AsyncSnapshot<List<String>> snapshot,
+                          AsyncSnapshot<Map<String, String>> snapshot,
                         ) {
                           if (snapshot.connectionState == ConnectionState.done) {
                             return _buildWalletsList(context, snapshot, walletsService);

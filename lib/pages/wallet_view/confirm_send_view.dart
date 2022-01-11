@@ -173,11 +173,14 @@ class _ConfirmSendViewState extends State<ConfirmSendView> {
                   onSubmit: (String pin) async {
                     final BitcoinService bitcoinService =
                         Provider.of<BitcoinService>(context, listen: false);
+                    final walletsService =
+                        Provider.of<WalletsService>(context, listen: false);
 
                     final store = new FlutterSecureStorage();
 
                     final walletName = await bitcoinService.currentWalletName;
-                    final storedPin = await store.read(key: '${walletName}_pin');
+                    final id = await walletsService.getWalletId(walletName);
+                    final storedPin = await store.read(key: '${id}_pin');
 
                     if (storedPin == pin) {
                       final rawAmount = (widget.amount * 100000000).toInt();

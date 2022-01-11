@@ -1,6 +1,5 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
-import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 import 'package:flutter_spinkit/flutter_spinkit.dart';
 import 'package:flutter_svg/svg.dart';
 import 'package:google_fonts/google_fonts.dart';
@@ -22,11 +21,8 @@ class WalletBackUpView extends StatelessWidget {
 
   Future<List<String>> _getMnemonic(BuildContext context) async {
     final bitcoinService = Provider.of<BitcoinService>(context, listen: false);
-    final _currentWallet = await bitcoinService.currentWalletName;
-    final secureStore = new FlutterSecureStorage();
-    final mnemonicString = await secureStore.read(key: '${_currentWallet}_mnemonic');
-    final List<String> data = mnemonicString.split(' ');
-    return data;
+    final mnemonic = await bitcoinService.getMnemonicList();
+    return mnemonic;
   }
 
   @override

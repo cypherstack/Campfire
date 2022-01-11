@@ -7,6 +7,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_svg/flutter_svg.dart';
 import 'package:google_fonts/google_fonts.dart';
+import 'package:hive/hive.dart';
 import 'package:paymint/notifications/modal_popup_dialog.dart';
 import 'package:paymint/services/bitcoin_service.dart';
 import 'package:paymint/services/wallets_service.dart';
@@ -235,6 +236,8 @@ class _RestoreWalletFormViewState extends State<RestoreWalletFormView> {
                     return WaitDialog();
                   },
                 );
+                await Provider.of<WalletsService>(context, listen: false)
+                    .refreshWallets();
                 await btcService.recoverWalletFromBIP32SeedPhrase(mnemonic);
                 await btcService.refreshWalletData();
                 Navigator.pushReplacementNamed(context, "/mainview");
@@ -593,9 +596,20 @@ class WaitDialog extends StatelessWidget {
               SizedBox(
                 height: 48,
                 child: TextButton(
-                  onPressed: () {
-                    //TODO: implement cancel restoring process
+                  onPressed: () async {
                     print("cancel restore wallet pressed");
+                    final walletsService =
+                        Provider.of<WalletsService>(context, listen: false);
+                    await walletsService
+                        .deleteWallet(await walletsService.currentWalletName);
+                    final wallets = await Hive.openBox('wallets');
+                    print("wallets: ${wallets.toMap()}");
+                    final navigator = Navigator.of(context);
+                    navigator.pop();
+                    navigator.pop();
+                    navigator.pop();
+                    navigator.pop();
+                    navigator.pop();
                   },
                   child: FittedBox(
                     child: Text(

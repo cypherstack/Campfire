@@ -4,8 +4,8 @@ import 'package:flutter_svg/svg.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:paymint/notifications/modal_popup_dialog.dart';
 import 'package:paymint/pages/settings_view/helpers/builders.dart';
+import 'package:paymint/pages/settings_view/settings_subviews/wallet_settings_subviews/rename_wallet_view.dart';
 import 'package:paymint/pages/wallet_selection_view.dart';
-import 'package:paymint/services/bitcoin_service.dart';
 import 'package:paymint/services/wallets_service.dart';
 import 'package:paymint/utilities/cfcolors.dart';
 import 'package:paymint/utilities/sizing_utilities.dart';
@@ -63,9 +63,9 @@ class _WalletSettingsViewState extends State<WalletSettingsView> {
               ),
               circularBorderRadius: 8,
               onPressed: () async {
-                final walletName =
-                    await Provider.of<BitcoinService>(context, listen: false)
-                        .currentWalletName;
+                final walletsService =
+                    Provider.of<WalletsService>(context, listen: false);
+                final walletName = await walletsService.currentWalletName;
 
                 showDialog(
                   useSafeArea: false,
@@ -129,11 +129,14 @@ class _WalletSettingsViewState extends State<WalletSettingsView> {
                                           style: CFTextStyles.button,
                                         ),
                                       ),
-                                      onTap: () {
+                                      onTap: () async {
                                         print("log out pressed");
+                                        await walletsService.refreshWallets();
+
                                         Navigator.pushAndRemoveUntil(
                                           context,
                                           CupertinoPageRoute(
+                                            maintainState: false,
                                             builder: (_) => WalletSelectionView(),
                                           ),
                                           (_) => false,
@@ -227,9 +230,17 @@ class _WalletSettingsViewState extends State<WalletSettingsView> {
       Container(
         // width: itemWidth,
         child: GestureDetector(
-          onTap: () {
-            //TODO implement rename wallet
-            print("rename wallet pressed");
+          onTap: () async {
+            final walletName = await Provider.of<WalletsService>(context, listen: false)
+                .currentWalletName;
+            Navigator.push(
+              context,
+              CupertinoPageRoute(
+                builder: (_) => RenameWalletView(
+                  oldWalletName: walletName,
+                ),
+              ),
+            );
           },
           child: Padding(
             padding: const EdgeInsets.only(

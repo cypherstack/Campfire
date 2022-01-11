@@ -1,7 +1,6 @@
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
-import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 import 'package:flutter_spinkit/flutter_spinkit.dart';
 import 'package:flutter_svg/svg.dart';
 import 'package:google_fonts/google_fonts.dart';
@@ -19,18 +18,15 @@ import 'package:paymint/widgets/custom_buttons/simple_button.dart';
 import 'package:pretty_qr_code/pretty_qr_code.dart';
 import 'package:provider/provider.dart';
 
-import '../../wallet_selection_view.dart';
+import '../../../wallet_selection_view.dart';
 
 class WalletDeleteMnemonicView extends StatelessWidget {
   const WalletDeleteMnemonicView({Key key}) : super(key: key);
 
   Future<List<String>> _getMnemonic(BuildContext context) async {
     final bitcoinService = Provider.of<BitcoinService>(context, listen: false);
-    final _currentWallet = await bitcoinService.currentWalletName;
-    final secureStore = new FlutterSecureStorage();
-    final mnemonicString = await secureStore.read(key: '${_currentWallet}_mnemonic');
-    final List<String> data = mnemonicString.split(' ');
-    return data;
+    final mnemonic = await bitcoinService.getMnemonicList();
+    return mnemonic;
   }
 
   @override
@@ -176,7 +172,6 @@ class WalletDeleteMnemonicView extends StatelessWidget {
                             Provider.of<WalletsService>(context, listen: false);
                         final walletName = await walletsService.currentWalletName;
                         await walletsService.deleteWallet(walletName);
-                        await walletsService.refreshWallets();
 
                         Navigator.pushAndRemoveUntil(
                           context,

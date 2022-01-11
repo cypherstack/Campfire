@@ -58,7 +58,7 @@ class BitcoinService extends ChangeNotifier {
 
   Future<String> _currentWalletName;
   Future<String> get currentWalletName =>
-      _currentWalletName ??= WalletsService().currentWalletName;
+      _currentWalletName ??= _fetchCurrentWalletName();
 
   final firo = new NetworkType(
       messagePrefix: '\x18Zcoin Signed Message:\n',
@@ -83,15 +83,40 @@ class BitcoinService extends ChangeNotifier {
     }).whenComplete(() => checkReceivingAddressForTransactions());
   }
 
+  Future<String> _fetchCurrentWalletName() async {
+    final wallets = await Hive.openBox('wallets');
+    final currentName = await wallets.get('currentWalletName');
+    return currentName;
+  }
+
+  // TODO cache this
+  Future<String> _getWalletId() async {
+    final _currentWallet = await currentWalletName;
+    print("_getWalletId for: $_currentWallet");
+    final wallets = await Hive.openBox('wallets');
+    final names = await wallets.get('names');
+    final id = names[_currentWallet];
+    return id;
+  }
+
+  Future<List<String>> getMnemonicList() async {
+    final id = await _getWalletId();
+    final secureStore = new FlutterSecureStorage();
+    final mnemonicString = await secureStore.read(key: '${id}_mnemonic');
+    final List<String> data = mnemonicString.split(' ');
+    return data;
+  }
+
   /// Initializes the user's wallet and sets class getters. Will create a wallet if one does not
   /// already exist.
   Future<void> _initializeBitcoinWallet() async {
-    final _currentWallet = await currentWalletName;
-    final wallet = await Hive.openBox(_currentWallet);
+    final id = await _getWalletId();
+    final wallet = await Hive.openBox(id);
 
     if (wallet.isEmpty) {
       // Triggers for new users automatically. Generates new wallet
       await _generateNewWallet(wallet);
+      wallet.put("id", id);
     } else {
       // Wallet already exists, triggers for a returning user
       this._currentReceivingAddress = _getCurrentAddressForChain(0);
@@ -111,10 +136,9 @@ class BitcoinService extends ChangeNotifier {
 
   /// Generates initial wallet values such as mnemonic, chain (receive/change) arrays and indexes.
   Future<void> _generateNewWallet(Box<dynamic> wallet) async {
-    final _currentWallet = await currentWalletName;
+    final id = await _getWalletId();
     final secureStore = new FlutterSecureStorage();
-    await secureStore.write(
-        key: '${_currentWallet}_mnemonic', value: bip39.generateMnemonic());
+    await secureStore.write(key: '${id}_mnemonic', value: bip39.generateMnemonic());
     // Set relevant indexes
     await wallet.put('receivingIndex', 0);
     await wallet.put('use_biometrics', false);
@@ -162,10 +186,12 @@ class BitcoinService extends ChangeNotifier {
   /// [chain] - Use 0 for receiving (external), 1 for change (internal). Should not be any other value!
   /// [index] - This can be any integer >= 0
   Future<String> generateAddressForChain(int chain, int index) async {
-    final _currentWallet = await currentWalletName;
+    final id = await _getWalletId();
     final secureStore = new FlutterSecureStorage();
-    final seed =
-        bip39.mnemonicToSeed(await secureStore.read(key: '${_currentWallet}_mnemonic'));
+    final mnemonic = await secureStore.read(key: '${id}_mnemonic');
+    print("id=$id");
+    print("mnemonic=$mnemonic");
+    final seed = bip39.mnemonicToSeed(mnemonic);
     final root = bip32.BIP32.fromSeed(seed);
     final node = root.derivePath("m/44'/136'/0'/$chain/$index");
 
@@ -177,8 +203,8 @@ class BitcoinService extends ChangeNotifier {
   /// Increases the index for either the internal or external chain, depending on [chain].
   /// [chain] - Use 0 for receiving (external), 1 for change (internal). Should not be any other value!
   Future<void> incrementAddressIndexForChain(int chain) async {
-    final _currentWallet = await currentWalletName;
-    final wallet = await Hive.openBox(_currentWallet);
+    final id = await _getWalletId();
+    final wallet = await Hive.openBox(id);
     if (chain == 0) {
       final newIndex = wallet.get('receivingIndex') + 1;
       await wallet.put('receivingIndex', newIndex);
@@ -193,8 +219,8 @@ class BitcoinService extends ChangeNotifier {
   /// [address] - Expects a standard native segwit address
   /// [chain] - Use 0 for receiving (external), 1 for change (internal). Should not be any other value!
   Future<void> addToAddressesArrayForChain(String address, int chain) async {
-    final _currentWallet = await currentWalletName;
-    final wallet = await Hive.openBox(_currentWallet);
+    final id = await _getWalletId();
+    final wallet = await Hive.openBox(id);
     String chainArray = '';
     if (chain == 0) {
       chainArray = 'receivingAddresses';
@@ -219,8 +245,8 @@ class BitcoinService extends ChangeNotifier {
   /// Returns the latest receiving/change (external/internal) address for the wallet depending on [chain]
   /// [chain] - Use 0 for receiving (external), 1 for change (internal). Should not be any other value!
   Future<String> _getCurrentAddressForChain(int chain) async {
-    final _currentWallet = await currentWalletName;
-    final wallet = await Hive.openBox(_currentWallet);
+    final id = await _getWalletId();
+    final wallet = await Hive.openBox(id);
     if (chain == 0) {
       final externalChainArray = await wallet.get('receivingAddresses');
       return externalChainArray.last;
@@ -261,8 +287,8 @@ class BitcoinService extends ChangeNotifier {
   /// Changes the biometrics auth setting used on the lockscreen as an alternative
   /// to the pattern lock
   updateBiometricsUsage() async {
-    final _currentWallet = await currentWalletName;
-    final wallet = await Hive.openBox(_currentWallet);
+    final id = await _getWalletId();
+    final wallet = await Hive.openBox(id);
     final bool useBio = await wallet.get('use_biometrics');
 
     if (useBio) {
@@ -287,8 +313,8 @@ class BitcoinService extends ChangeNotifier {
   /// and checks for the txid associated with the utxo being blocked and marks it accordingly.
   /// Now also checks for output labeling.
   _sortOutputs(List<UtxoObject> utxos) async {
-    final _currentWallet = await currentWalletName;
-    final wallet = await Hive.openBox(_currentWallet);
+    final id = await _getWalletId();
+    final wallet = await Hive.openBox(id);
     final blockedHashArray = wallet.get('blocked_tx_hashes');
     final lst = new List();
     blockedHashArray.forEach((hash) => lst.add(hash));
@@ -391,8 +417,8 @@ class BitcoinService extends ChangeNotifier {
             satoshisBeingUsed - satoshiAmountToSend - changeOutputSize ==
                 feeForTwoOutputs) {
           await incrementAddressIndexForChain(1);
-          final _currentWallet = await currentWalletName;
-          final wallet = await Hive.openBox(_currentWallet);
+          final id = await _getWalletId();
+          final wallet = await Hive.openBox(id);
           final int changeIndex = await wallet.get('changeIndex');
           final String newChangeAddress = await generateAddressForChain(1, changeIndex);
           await addToAddressesArrayForChain(newChangeAddress, 1);
@@ -509,10 +535,9 @@ class BitcoinService extends ChangeNotifier {
       }
     }
 
-    final _currentWallet = await currentWalletName;
+    final id = await _getWalletId();
     final secureStore = new FlutterSecureStorage();
-    final seed =
-        bip39.mnemonicToSeed(await secureStore.read(key: '${_currentWallet}_mnemonic'));
+    final seed = bip39.mnemonicToSeed(await secureStore.read(key: '${id}_mnemonic'));
 
     final _FIRO = new bip32.NetworkType(
         wif: 0xd2, bip32: new bip32.Bip32Type(public: 0x0488b21e, private: 0x0488ade4));
@@ -584,8 +609,8 @@ class BitcoinService extends ChangeNotifier {
   }
 
   Future<String> getEsploraUrl() async {
-    final _currentWallet = await currentWalletName;
-    final wallet = await Hive.openBox(_currentWallet);
+    final id = await _getWalletId();
+    final wallet = await Hive.openBox(id);
     final String url = await wallet.get('esplora_url');
 
     if (url == null) {
@@ -620,8 +645,8 @@ class BitcoinService extends ChangeNotifier {
   }
 
   Future<UtxoData> _fetchUtxoData() async {
-    final _currentWallet = await currentWalletName;
-    final wallet = await Hive.openBox(_currentWallet);
+    final id = await _getWalletId();
+    final wallet = await Hive.openBox(id);
     final List<String> allAddresses = new List();
     final String currency = await CurrencyUtilities.fetchPreferredCurrency();
     print('currency: ' + currency);
@@ -700,8 +725,8 @@ class BitcoinService extends ChangeNotifier {
   }
 
   Future<TransactionData> _fetchTransactionData() async {
-    final _currentWallet = await currentWalletName;
-    final wallet = await Hive.openBox(_currentWallet);
+    final id = await _getWalletId();
+    final wallet = await Hive.openBox(id);
     final List<String> allAddresses = new List();
     final String currency = await CurrencyUtilities.fetchPreferredCurrency();
     final List receivingAddresses = await wallet.get('receivingAddresses');
@@ -795,7 +820,12 @@ class BitcoinService extends ChangeNotifier {
       notifyListeners();
       print('Current BTC Price: ' + response.body.toString());
       print("response.body.toString().isEmpty: ${response.body.toString().isEmpty}");
-      //TODO randomly get a json parse error here (due to empty body i think)
+      if (response.body.toString().isEmpty) {
+        throw Exception('Something happened: ' +
+            response.statusCode.toString() +
+            " response.body is empty!");
+      }
+      //TODO randomly get a json parse error here (due to empty response body)
       // E/flutter (16131): [ERROR:flutter/lib/ui/ui_dart_state.cc(209)] Unhandled Exception: FormatException: Unexpected end of input (at character 1)
       final result = json.decode(response.body);
       print("json bitcoin price result: $result");
@@ -824,8 +854,8 @@ class BitcoinService extends ChangeNotifier {
       print('Number of txs for current receiving addr: ' + numtxs.toString());
 
       if (numtxs >= 1) {
-        final _currentWallet = await currentWalletName;
-        final wallet = await Hive.openBox(_currentWallet);
+        final id = await _getWalletId();
+        final wallet = await Hive.openBox(id);
 
         await incrementAddressIndexForChain(0); // First increment the receiving index
         final newReceivingIndex =
@@ -978,12 +1008,18 @@ class BitcoinService extends ChangeNotifier {
       }
     }
 
+    final name = await _currentWalletName;
+    final _id = await _getWalletId();
+    print(name + "=====" + _id + ":::::::" + mnemonic);
+
+    print("==========_0of3");
     // If restoring a wallet that never received any funds, then set receivingArray manually
     // If we didn't do this, it'd store an empty array
     if (receivingIndex == 0) {
       final String receivingAddress = await generateAddressForChain(0, receivingIndex);
       receivingAddressArray.add(receivingAddress);
     }
+    print("==========_1of3");
 
     // If restoring a wallet that never sent any funds with change, then set changeArray
     // manually. If we didn't do this, it'd store an empty array.
@@ -992,17 +1028,18 @@ class BitcoinService extends ChangeNotifier {
       changeAddressArray.add(changeAddress);
     }
 
-    final _currentWallet = await currentWalletName;
+    print("==========_2of3");
+    final id = await _getWalletId();
+    print("==========_3of3");
 
-    final wallet = await Hive.openBox(_currentWallet);
+    final wallet = await Hive.openBox(id);
     await wallet.put('receivingAddresses', receivingAddressArray);
     await wallet.put('changeAddresses', changeAddressArray);
     await wallet.put('receivingIndex', receivingIndex);
     await wallet.put('changeIndex', changeIndex);
 
     final secureStore = new FlutterSecureStorage();
-    await secureStore.write(
-        key: '${_currentWallet}_mnemonic', value: suppliedMnemonic.trim());
+    await secureStore.write(key: '${id}_mnemonic', value: suppliedMnemonic.trim());
     notifyListeners();
   }
 }
