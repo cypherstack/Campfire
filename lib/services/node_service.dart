@@ -136,7 +136,15 @@ class NodeService extends ChangeNotifier {
 
     final removedNode = nodes.remove(name);
     await wallet.put('nodes', nodes);
-    refresh();
+
+    // connect to default node if active connected node is deleted
+    if (_activeNodeName == name) {
+      setCurrentNode(CampfireConstants.defaultNodeName);
+    } else {
+      // refresh here as setCurrentNode already call refresh on completion
+      refresh();
+    }
+
     return removedNode != null;
   }
 }

@@ -2,6 +2,7 @@ import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_svg/svg.dart';
 import 'package:google_fonts/google_fonts.dart';
+import 'package:paymint/notifications/modal_popup_dialog.dart';
 import 'package:paymint/services/node_service.dart';
 import 'package:paymint/utilities/cfcolors.dart';
 import 'package:paymint/utilities/sizing_utilities.dart';
@@ -159,7 +160,7 @@ class _NodeDetailsViewState extends State<NodeDetailsView> {
         ),
       ),
       actions: [
-        if (_isEditing)
+        if (!_isEditing)
           Padding(
             padding: EdgeInsets.only(
               top: 10,
@@ -214,8 +215,16 @@ class _NodeDetailsViewState extends State<NodeDetailsView> {
                 GestureDetector(
                   onTap: () {
                     Navigator.push(context, CupertinoPageRoute(builder: (context) {
-                      return NodeDetailsView(isEdit: true);
-                    })).then((_) => Navigator.pop(context));
+                      return NodeDetailsView(
+                        isEdit: true,
+                        nodeData: widget.nodeData,
+                        nodeName: widget.nodeName,
+                      );
+                    })).then((_) {
+                      final navigator = Navigator.of(context);
+                      navigator.pop();
+                      navigator.pop();
+                    });
                   },
                   child: Padding(
                     padding: const EdgeInsets.only(
@@ -237,11 +246,13 @@ class _NodeDetailsViewState extends State<NodeDetailsView> {
                 ),
                 GestureDetector(
                   onTap: () {
-                    // TODO implement delete node and show alert asking for delete confirmation
-                    print(
-                        "delete node pressed. // TODO implement delete node and possibly show alert asking for delete confirmation");
-
-                    Navigator.pop(context);
+                    showDialog(
+                      useSafeArea: false,
+                      barrierColor: Colors.transparent,
+                      barrierDismissible: false,
+                      context: context,
+                      builder: (context) => _buildNodeDeleteConfirmDialog(),
+                    );
                   },
                   child: Padding(
                     padding: const EdgeInsets.only(
@@ -266,6 +277,87 @@ class _NodeDetailsViewState extends State<NodeDetailsView> {
           ),
         ),
       ],
+    );
+  }
+
+  _buildNodeDeleteConfirmDialog() {
+    final nodeService = Provider.of<NodeService>(context, listen: false);
+    return ModalPopupDialog(
+      child: Column(
+        children: [
+          Padding(
+            padding: const EdgeInsets.only(
+              top: 28,
+              left: 24,
+              right: 24,
+              bottom: 12,
+            ),
+            child: Text(
+              "Do you want to delete ${widget.nodeName}?",
+              style: GoogleFonts.workSans(
+                color: CFColors.dusk,
+                fontWeight: FontWeight.w600,
+                fontSize: 18,
+              ),
+            ),
+          ),
+          Padding(
+            padding: const EdgeInsets.all(SizingUtilities.standardPadding),
+            child: Row(
+              children: [
+                Expanded(
+                  child: SizedBox(
+                    height: SizingUtilities.standardButtonHeight,
+                    child: SimpleButton(
+                      child: FittedBox(
+                        child: Text(
+                          "CANCEL",
+                          style: CFTextStyles.button.copyWith(
+                            color: CFColors.dusk,
+                          ),
+                        ),
+                      ),
+                      onTap: () {
+                        final navigator = Navigator.of(context);
+                        navigator.pop();
+                        navigator.pop();
+                      },
+                    ),
+                  ),
+                ),
+                SizedBox(
+                  width: 16,
+                ),
+                Expanded(
+                  child: SizedBox(
+                    height: SizingUtilities.standardButtonHeight,
+                    child: GradientButton(
+                      child: FittedBox(
+                        child: Text(
+                          "DELETE",
+                          style: CFTextStyles.button,
+                        ),
+                      ),
+                      onTap: () async {
+                        bool success = await nodeService.deleteNode(widget.nodeName);
+                        if (success) {
+                          final navigator = Navigator.of(context);
+                          navigator.pop();
+                          navigator.pop();
+                          navigator.pop();
+                          navigator.pop();
+                        } else {
+                          // TODO show alert delete failed
+                        }
+                      },
+                    ),
+                  ),
+                )
+              ],
+            ),
+          )
+        ],
+      ),
     );
   }
 
