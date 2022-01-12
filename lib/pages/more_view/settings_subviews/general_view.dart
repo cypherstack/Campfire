@@ -1,9 +1,10 @@
+import 'dart:io' show Platform;
+
 import 'package:animations/animations.dart';
 import 'package:flutter/material.dart';
+import 'package:local_auth/local_auth.dart';
 import 'package:paymint/services/bitcoin_service.dart';
 import 'package:provider/provider.dart';
-import 'dart:io' show Platform;
-import 'package:local_auth/local_auth.dart';
 
 class GeneralView extends StatefulWidget {
   @override
@@ -85,29 +86,35 @@ class _GeneralViewState extends State<GeneralView> {
                     onTap: () async {
                       // Insert logic to first authenticate biometrics before enabling
                       if (useBio.data) {
-                        await bitcoinService.updateBiometricsUsage();
+                        await bitcoinService.updateBiometricsUsage(false);
                       } else {
-                        final LocalAuthentication localAuthentication = LocalAuthentication();
+                        final LocalAuthentication localAuthentication =
+                            LocalAuthentication();
 
-                        bool canCheckBiometrics = await localAuthentication.canCheckBiometrics;
+                        bool canCheckBiometrics =
+                            await localAuthentication.canCheckBiometrics;
 
                         if (canCheckBiometrics) {
-                          List<BiometricType> availableSystems = await localAuthentication.getAvailableBiometrics();
+                          List<BiometricType> availableSystems =
+                              await localAuthentication.getAvailableBiometrics();
 
                           if (Platform.isIOS) {
                             if (availableSystems.contains(BiometricType.face)) {
                               // Write iOS specific code when required
-                            } else if (availableSystems.contains(BiometricType.fingerprint)) {
+                            } else if (availableSystems
+                                .contains(BiometricType.fingerprint)) {
                               // Write iOS specific code when required
                             }
                           } else if (Platform.isAndroid) {
                             if (availableSystems.contains(BiometricType.fingerprint)) {
-                              bool didAuthenticate = await localAuthentication.authenticateWithBiometrics(
-                                localizedReason: 'Please authenticate to enable biometric lock',
+                              bool didAuthenticate =
+                                  await localAuthentication.authenticateWithBiometrics(
+                                localizedReason:
+                                    'Please authenticate to enable biometric lock',
                                 stickyAuth: true,
                               );
                               if (didAuthenticate) {
-                                await bitcoinService.updateBiometricsUsage();
+                                await bitcoinService.updateBiometricsUsage(true);
                               }
                             }
                           }
@@ -136,7 +143,8 @@ class _GeneralViewState extends State<GeneralView> {
               onTap: () async {
                 showModal(
                   context: context,
-                  configuration: FadeScaleTransitionConfiguration(barrierDismissible: false),
+                  configuration:
+                      FadeScaleTransitionConfiguration(barrierDismissible: false),
                   builder: (BuildContext context) {
                     return showLoadingDialog(context);
                   },
