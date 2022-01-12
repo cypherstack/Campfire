@@ -183,6 +183,9 @@ class _WalletSettingsViewState extends State<WalletSettingsView> {
           onTap: () {
             //TODO implement change pin
             print("change pin pressed");
+            Navigator.push(context, CupertinoPageRoute(builder: (context) {
+              return Lockscreen2View(routeOnSuccess: '/settings/changepinview');
+            }));
           },
           child: Padding(
             padding: const EdgeInsets.only(

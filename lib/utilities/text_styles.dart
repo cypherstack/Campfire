@@ -3,6 +3,12 @@ import 'package:google_fonts/google_fonts.dart';
 import 'package:paymint/utilities/cfcolors.dart';
 
 class CFTextStyles {
+  static final TextStyle body = GoogleFonts.workSans(
+    color: CFColors.dusk,
+    fontWeight: FontWeight.w400,
+    fontSize: 16,
+  );
+
   static final TextStyle button = GoogleFonts.workSans(
     color: CFColors.white,
     fontWeight: FontWeight.w600,
