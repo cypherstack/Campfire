@@ -6,6 +6,7 @@ import 'package:bip39/src/wordlists/english.dart' as bip39wordlist;
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 import 'package:flutter_svg/flutter_svg.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:paymint/notifications/modal_popup_dialog.dart';
@@ -231,8 +232,17 @@ class _RestoreWalletFormViewState extends State<RestoreWalletFormView> {
                     return WaitDialog();
                   },
                 );
-                await Provider.of<WalletsService>(context, listen: false)
-                    .refreshWallets();
+
+                final walletsService =
+                    Provider.of<WalletsService>(context, listen: false);
+                await walletsService.refreshWallets();
+
+                final walletId = await walletsService
+                    .getWalletId(await walletsService.currentWalletName);
+
+                final secureStore = new FlutterSecureStorage();
+                await secureStore.write(
+                    key: '${walletId}_mnemonic', value: mnemonic.trim());
                 await btcService.recoverWalletFromBIP32SeedPhrase(mnemonic);
                 await btcService.refreshWalletData();
                 Navigator.pushReplacementNamed(context, "/mainview");
