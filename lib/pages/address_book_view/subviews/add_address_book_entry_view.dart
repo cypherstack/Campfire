@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_svg/svg.dart';
 import 'package:google_fonts/google_fonts.dart';
+import 'package:majascan/majascan.dart';
 import 'package:paymint/services/address_book_service.dart';
 import 'package:paymint/utilities/cfcolors.dart';
 import 'package:paymint/utilities/sizing_utilities.dart';
@@ -122,9 +123,17 @@ class _AddAddressBookEntryViewState extends State<AddAddressBookEntryView> {
                       ),
                       suffixIcon: UnconstrainedBox(
                         child: GestureDetector(
-                          onTap: () {
-                            // TODO implement read qr code
-                            print("read qr code icon button tapped");
+                          onTap: () async {
+                            // TODO implement parse qr code
+                            String qrResult = await MajaScan.startScan(
+                              title: "Scan address QR Code",
+                              barColor: CFColors.white,
+                              titleColor: CFColors.dusk,
+                              qRCornerColor: CFColors.spark,
+                              qRScannerColor: CFColors.midnight,
+                              flashlightEnable: true,
+                              scanAreaScale: 0.7,
+                            );
                           },
                           child: SvgPicture.asset(
                             "assets/svg/qr-code.svg",

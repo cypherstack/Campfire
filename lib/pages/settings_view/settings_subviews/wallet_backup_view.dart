@@ -11,7 +11,6 @@ import 'package:paymint/utilities/misc_global_constants.dart';
 import 'package:paymint/utilities/sizing_utilities.dart';
 import 'package:paymint/utilities/text_styles.dart';
 import 'package:paymint/widgets/custom_buttons/app_bar_icon_button.dart';
-import 'package:paymint/widgets/custom_buttons/gradient_button.dart';
 import 'package:paymint/widgets/custom_buttons/simple_button.dart';
 import 'package:pretty_qr_code/pretty_qr_code.dart';
 import 'package:provider/provider.dart';
@@ -459,6 +458,7 @@ class WalletBackUpView extends StatelessWidget {
                     Expanded(
                       child: SizedBox(
                         height: 48,
+                        width: MediaQuery.of(context).size.width / 2,
                         child: SimpleButton(
                           onTap: () {
                             Navigator.of(context).pop();
@@ -477,31 +477,31 @@ class WalletBackUpView extends StatelessWidget {
                         ),
                       ),
                     ),
-                    SizedBox(
-                      width: 16,
-                    ),
-                    Expanded(
-                      child: SizedBox(
-                        height: 48,
-                        child: GradientButton(
-                          onTap: () {
-                            //TODO: implement save qr code to file
-                            print("SAVE mnemonic key pressed");
-                          },
-                          child: FittedBox(
-                            child: Text(
-                              "SAVE",
-                              style: GoogleFonts.workSans(
-                                color: CFColors.white,
-                                fontWeight: FontWeight.w600,
-                                fontSize: 16,
-                                letterSpacing: 0.5,
-                              ),
-                            ),
-                          ),
-                        ),
-                      ),
-                    )
+                    // SizedBox(
+                    //   width: 16,
+                    // ),
+                    // Expanded(
+                    //   child: SizedBox(
+                    //     height: 48,
+                    //     child: GradientButton(
+                    //       onTap: () {
+                    //         //TODO: implement save qr code to file
+                    //         print("SAVE mnemonic key pressed");
+                    //       },
+                    //       child: FittedBox(
+                    //         child: Text(
+                    //           "SAVE",
+                    //           style: GoogleFonts.workSans(
+                    //             color: CFColors.white,
+                    //             fontWeight: FontWeight.w600,
+                    //             fontSize: 16,
+                    //             letterSpacing: 0.5,
+                    //           ),
+                    //         ),
+                    //       ),
+                    //     ),
+                    //   ),
+                    // )
                   ],
                 ),
               ),

@@ -277,6 +277,7 @@ class _BackupKeyViewState extends State<BackupKeyView> {
                 Expanded(
                   child: SizedBox(
                     height: 48,
+                    width: MediaQuery.of(context).size.width / 2,
                     child: SimpleButton(
                       onTap: () {
                         Navigator.of(context).pop();
@@ -295,31 +296,31 @@ class _BackupKeyViewState extends State<BackupKeyView> {
                     ),
                   ),
                 ),
-                SizedBox(
-                  width: 16,
-                ),
-                Expanded(
-                  child: SizedBox(
-                    height: 48,
-                    child: GradientButton(
-                      onTap: () {
-                        // TODO implement save QR Code to file
-                        print("SAVE mnemonic key pressed");
-                      },
-                      child: FittedBox(
-                        child: Text(
-                          "SAVE",
-                          style: GoogleFonts.workSans(
-                            color: CFColors.white,
-                            fontWeight: FontWeight.w600,
-                            fontSize: 16,
-                            letterSpacing: 0.5,
-                          ),
-                        ),
-                      ),
-                    ),
-                  ),
-                )
+                // SizedBox(
+                //   width: 16,
+                // ),
+                // Expanded(
+                //   child: SizedBox(
+                //     height: 48,
+                //     child: GradientButton(
+                //       onTap: () {
+                //         // TODO implement save QR Code to file
+                //         print("SAVE mnemonic key pressed");
+                //       },
+                //       child: FittedBox(
+                //         child: Text(
+                //           "SAVE",
+                //           style: GoogleFonts.workSans(
+                //             color: CFColors.white,
+                //             fontWeight: FontWeight.w600,
+                //             fontSize: 16,
+                //             letterSpacing: 0.5,
+                //           ),
+                //         ),
+                //       ),
+                //     ),
+                //   ),
+                // )
               ],
             ),
           ),

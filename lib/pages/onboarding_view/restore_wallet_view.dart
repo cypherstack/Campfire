@@ -9,6 +9,7 @@ import 'package:flutter/services.dart';
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 import 'package:flutter_svg/flutter_svg.dart';
 import 'package:google_fonts/google_fonts.dart';
+import 'package:majascan/majascan.dart';
 import 'package:paymint/notifications/modal_popup_dialog.dart';
 import 'package:paymint/pages/onboarding_view/onboarding_view.dart';
 import 'package:paymint/services/bitcoin_service.dart';
@@ -355,9 +356,21 @@ class _RestoreWalletFormViewState extends State<RestoreWalletFormView> {
                     child: SizedBox(
                       height: 48,
                       child: SimpleButton(
-                        onTap: () {
-                          // TODO implement scan QR code and fill form
+                        onTap: () async {
                           print("Scan qr code");
+                          // TODO implement parse qr code
+                          String qrResult = await MajaScan.startScan(
+                            title: "Scan seed QR Code",
+                            barColor: CFColors.white,
+                            titleColor: CFColors.dusk,
+                            qRCornerColor: CFColors.spark,
+                            qRScannerColor: CFColors.midnight,
+                            flashlightEnable: true,
+                            scanAreaScale: 0.7,
+                          );
+
+                          // Navigator.push(context,
+                          //     MaterialPageRoute(builder: (_) => QrScannerView()));
                         },
                         child: FittedBox(
                           child: Row(

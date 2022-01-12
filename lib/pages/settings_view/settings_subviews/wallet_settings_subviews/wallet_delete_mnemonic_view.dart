@@ -536,6 +536,7 @@ class WalletDeleteMnemonicView extends StatelessWidget {
                 Expanded(
                   child: SizedBox(
                     height: 48,
+                    width: MediaQuery.of(context).size.width / 2,
                     child: SimpleButton(
                       onTap: () {
                         Navigator.of(context).pop();
@@ -551,26 +552,26 @@ class WalletDeleteMnemonicView extends StatelessWidget {
                     ),
                   ),
                 ),
-                SizedBox(
-                  width: 16,
-                ),
-                Expanded(
-                  child: SizedBox(
-                    height: 48,
-                    child: GradientButton(
-                      onTap: () {
-                        // TODO implement save QR Code to file
-                        print("SAVE mnemonic key pressed");
-                      },
-                      child: FittedBox(
-                        child: Text(
-                          "SAVE",
-                          style: CFTextStyles.button,
-                        ),
-                      ),
-                    ),
-                  ),
-                )
+                // SizedBox(
+                //   width: 16,
+                // ),
+                // Expanded(
+                //   child: SizedBox(
+                //     height: 48,
+                //     child: GradientButton(
+                //       onTap: () {
+                //         // TODO implement save QR Code to file
+                //         print("SAVE mnemonic key pressed");
+                //       },
+                //       child: FittedBox(
+                //         child: Text(
+                //           "SAVE",
+                //           style: CFTextStyles.button,
+                //         ),
+                //       ),
+                //     ),
+                //   ),
+                // )
               ],
             ),
           ),
