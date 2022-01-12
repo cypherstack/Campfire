@@ -2,6 +2,7 @@ import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_svg/svg.dart';
 import 'package:google_fonts/google_fonts.dart';
+import 'package:paymint/notifications/campfire_alert.dart';
 import 'package:paymint/notifications/modal_popup_dialog.dart';
 import 'package:paymint/services/node_service.dart';
 import 'package:paymint/utilities/cfcolors.dart';
@@ -309,7 +310,14 @@ class _NodeCardState extends State<NodeCard> {
                           navigator.pop();
                           navigator.pop();
                         } else {
-                          // TODO show alert delete failed
+                          showDialog(
+                            useSafeArea: false,
+                            barrierDismissible: false,
+                            context: context,
+                            builder: (_) => CampfireAlert(
+                                message:
+                                    "Error: Could not delete node named \"$_name\"!"),
+                          );
                         }
                       },
                     ),

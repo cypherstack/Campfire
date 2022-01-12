@@ -134,7 +134,7 @@ class _Lockscreen2ViewState extends State<Lockscreen2View> {
                         snapshot.hasError ||
                         snapshot.data == null ||
                         snapshot.data.isEmpty) {
-                      // TODO: display error notification
+                      // TODO: display error notification?
                       return FittedBox(
                         child: Text(
                           "failed to load wallet",

@@ -55,13 +55,12 @@ class _WalletSelectionViewState extends State<WalletSelectionView> {
   ) {
     final names = snapshot.data.keys.toList();
     if (names.length == 0) {
+      // this should never actually appear as when the last wallet is
+      // deleted the user then gets sent back to the welcome screen
       return Center(
         child: Container(
-          // TODO: ask designers for svg to be displayed here?
-          // this should never occur as there should be at least one
-          // wallet when this is displayed
           child: Text(
-            'No wallets found...',
+            'An Error occurred. No wallets found...',
             textScaleFactor: 1.1,
             style: TextStyle(color: CFColors.warning),
           ),

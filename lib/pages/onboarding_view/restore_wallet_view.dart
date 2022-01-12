@@ -10,6 +10,7 @@ import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 import 'package:flutter_svg/flutter_svg.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:majascan/majascan.dart';
+import 'package:paymint/notifications/campfire_alert.dart';
 import 'package:paymint/notifications/modal_popup_dialog.dart';
 import 'package:paymint/pages/onboarding_view/onboarding_view.dart';
 import 'package:paymint/services/bitcoin_service.dart';
@@ -199,11 +200,6 @@ class _RestoreWalletFormViewState extends State<RestoreWalletFormView> {
             await Future.delayed(Duration(milliseconds: 100));
 
             if (_formKey.currentState.validate()) {
-              //TODO show proper notification
-              ScaffoldMessenger.of(context).showSnackBar(
-                const SnackBar(content: Text('Processing Data')),
-              );
-
               String mnemonic = "";
               _controllers.forEach(
                 (element) {
@@ -413,8 +409,14 @@ class _RestoreWalletFormViewState extends State<RestoreWalletFormView> {
                           final content = data.text.trim();
                           final list = content.split(" ");
                           if (list.length != _controllers.length) {
-                            print("Invalid mnemonic length!");
-                            // TODO: throw error or show dialog?
+                            print("Pasted Invalid mnemonic length!");
+                            showDialog(
+                              useSafeArea: false,
+                              barrierDismissible: false,
+                              context: context,
+                              builder: (_) =>
+                                  CampfireAlert(message: "Invalid seed phrase length!"),
+                            );
                             return;
                           }
                           for (int i = 0; i < _controllers.length; i++) {

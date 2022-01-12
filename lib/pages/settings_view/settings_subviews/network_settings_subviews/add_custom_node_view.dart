@@ -2,6 +2,7 @@ import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_svg/svg.dart';
 import 'package:google_fonts/google_fonts.dart';
+import 'package:paymint/notifications/campfire_alert.dart';
 import 'package:paymint/services/node_service.dart';
 import 'package:paymint/utilities/cfcolors.dart';
 import 'package:paymint/utilities/sizing_utilities.dart';
@@ -53,7 +54,13 @@ class _AddCustomNodeViewState extends State<AddCustomNodeView> {
       await Future.delayed(Duration(milliseconds: 200));
       Navigator.pop(context);
     } else {
-      //TODO show alert telling user they cannot use a name of an existing node
+      showDialog(
+        useSafeArea: false,
+        barrierDismissible: false,
+        context: context,
+        builder: (_) =>
+            CampfireAlert(message: "A node with the name \"$name\" already exists!"),
+      );
     }
   }
 

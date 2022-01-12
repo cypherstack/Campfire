@@ -4,6 +4,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:local_auth/local_auth.dart';
+import 'package:paymint/notifications/campfire_alert.dart';
 import 'package:paymint/notifications/overlay_notification.dart';
 import 'package:paymint/services/bitcoin_service.dart';
 import 'package:paymint/services/wallets_service.dart';
@@ -201,24 +202,22 @@ class _ConfirmSendViewState extends State<ConfirmSendView> {
                         if (txHexOrError == 1) {
                           //TODO: handle send transaction errors
                           print("Insufficient balance!");
-                          // Navigator.pop(context);
-                          // showModal(
-                          //   context: context,
-                          //   configuration: FadeScaleTransitionConfiguration(),
-                          //   builder: (BuildContext context) {
-                          //     return notEnoughBalanceDialog(context);
-                          //   },
-                          // );
+                          showDialog(
+                            useSafeArea: false,
+                            barrierDismissible: false,
+                            context: context,
+                            builder: (_) =>
+                                CampfireAlert(message: "Insufficient balance!"),
+                          );
                         } else if (txHexOrError == 2) {
                           print("Insufficient funds to pay for tx fee");
-                          // Navigator.pop(context);
-                          // showModal(
-                          //   context: context,
-                          //   configuration: FadeScaleTransitionConfiguration(),
-                          //   builder: (BuildContext context) {
-                          //     return notEnoughForFeesDialog(context);
-                          //   },
-                          // );
+                          showDialog(
+                            useSafeArea: false,
+                            barrierDismissible: false,
+                            context: context,
+                            builder: (_) => CampfireAlert(
+                                message: "Insufficient funds to pay for tx fee!"),
+                          );
                         }
                       } else {
                         print(txHexOrError.toString());

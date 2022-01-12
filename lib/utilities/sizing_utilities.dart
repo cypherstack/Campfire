@@ -9,6 +9,7 @@ class SizingUtilities {
   static const double standardPadding = 20.0;
 
   static const double standardButtonHeight = 48.0;
+  static const double standardFixedButtonWidth = 204.0;
 
   static const double bottomToolBarHeight = 77.0;
 
