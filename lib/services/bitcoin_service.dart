@@ -307,7 +307,8 @@ class BitcoinService extends ChangeNotifier {
   updateBiometricsUsage() async {
     final id = await _getWalletId();
     final wallet = await Hive.openBox(id);
-    final bool useBio = await wallet.get('use_biometrics');
+    bool useBio = await wallet.get('use_biometrics');
+    useBio = useBio == null ? false : useBio;
 
     if (useBio) {
       _useBiomterics = Future(() => false);

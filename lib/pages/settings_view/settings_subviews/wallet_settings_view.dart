@@ -1,11 +1,15 @@
+import 'dart:io' show Platform;
+
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_svg/svg.dart';
 import 'package:google_fonts/google_fonts.dart';
+import 'package:local_auth/local_auth.dart';
 import 'package:paymint/notifications/modal_popup_dialog.dart';
 import 'package:paymint/pages/settings_view/helpers/builders.dart';
 import 'package:paymint/pages/settings_view/settings_subviews/wallet_settings_subviews/rename_wallet_view.dart';
 import 'package:paymint/pages/wallet_selection_view.dart';
+import 'package:paymint/services/bitcoin_service.dart';
 import 'package:paymint/services/wallets_service.dart';
 import 'package:paymint/utilities/cfcolors.dart';
 import 'package:paymint/utilities/sizing_utilities.dart';
@@ -32,8 +36,7 @@ class _WalletSettingsViewState extends State<WalletSettingsView> {
     letterSpacing: 0.25,
   );
 
-  // TODO load in data from db
-  bool _biometricsSwitchIsActive = false;
+  bool _useBiometrics = false;
 
   @override
   Widget build(BuildContext context) {
@@ -176,13 +179,12 @@ class _WalletSettingsViewState extends State<WalletSettingsView> {
   }
 
   List<Widget> _buildOptionsList(BuildContext context, double itemWidth) {
+    final bitcoinService = Provider.of<BitcoinService>(context);
     return [
       Container(
         // width: itemWidth,
         child: GestureDetector(
           onTap: () {
-            //TODO implement change pin
-            print("change pin pressed");
             Navigator.push(context, CupertinoPageRoute(builder: (context) {
               return Lockscreen2View(routeOnSuccess: '/settings/changepinview');
             }));
@@ -202,12 +204,38 @@ class _WalletSettingsViewState extends State<WalletSettingsView> {
       ),
       _buildDivider(itemWidth),
       GestureDetector(
-        onTap: () {
-          //TODO implement Enable biometric authentication
-          print("Enable biometric authentication: $_biometricsSwitchIsActive");
-          setState(() {
-            _biometricsSwitchIsActive = !_biometricsSwitchIsActive;
-          });
+        onTap: () async {
+          if (_useBiometrics) {
+            await bitcoinService.updateBiometricsUsage();
+          } else {
+            final LocalAuthentication localAuthentication = LocalAuthentication();
+
+            bool canCheckBiometrics = await localAuthentication.canCheckBiometrics;
+
+            if (canCheckBiometrics) {
+              List<BiometricType> availableSystems =
+                  await localAuthentication.getAvailableBiometrics();
+
+              if (Platform.isIOS) {
+                if (availableSystems.contains(BiometricType.face)) {
+                  // Write iOS specific code when required
+                } else if (availableSystems.contains(BiometricType.fingerprint)) {
+                  // Write iOS specific code when required
+                }
+              } else if (Platform.isAndroid) {
+                if (availableSystems.contains(BiometricType.fingerprint)) {
+                  bool didAuthenticate =
+                      await localAuthentication.authenticateWithBiometrics(
+                    localizedReason: 'Please authenticate to enable biometric lock',
+                    stickyAuth: true,
+                  );
+                  if (didAuthenticate) {
+                    await bitcoinService.updateBiometricsUsage();
+                  }
+                }
+              }
+            }
+          }
         },
         child: Row(
           children: [
@@ -225,7 +253,18 @@ class _WalletSettingsViewState extends State<WalletSettingsView> {
               ),
             ),
             Spacer(),
-            _buildSwitch(context, 18, 36),
+            FutureBuilder(
+              future: bitcoinService.useBiometrics,
+              builder: (context, AsyncSnapshot<bool> snapshot) {
+                if (snapshot.connectionState == ConnectionState.done) {
+                  _useBiometrics = snapshot.data == null ? false : snapshot.data;
+                  return _buildSwitch(context, 18, 36, _useBiometrics);
+                } else {
+                  // possibly display loading animation here but likely not needed
+                  return _buildSwitch(context, 18, 36, false);
+                }
+              },
+            ),
           ],
         ),
       ),
@@ -288,7 +327,7 @@ class _WalletSettingsViewState extends State<WalletSettingsView> {
     ];
   }
 
-  _buildSwitch(BuildContext context, double height, double width) {
+  _buildSwitch(BuildContext context, double height, double width, bool isActive) {
     return Container(
       height: height,
       width: width,
@@ -298,10 +337,10 @@ class _WalletSettingsViewState extends State<WalletSettingsView> {
             width: width,
             height: height,
             decoration: BoxDecoration(
-              color: _biometricsSwitchIsActive ? CFColors.spark : CFColors.fog,
+              color: isActive ? CFColors.spark : CFColors.fog,
               borderRadius: BorderRadius.circular(height / 2),
               border: Border.all(
-                color: _biometricsSwitchIsActive ? CFColors.spark : CFColors.dew,
+                color: isActive ? CFColors.spark : CFColors.dew,
                 width: 2,
               ),
             ),
@@ -310,9 +349,8 @@ class _WalletSettingsViewState extends State<WalletSettingsView> {
             height: height,
             width: width,
             child: Row(
-              mainAxisAlignment: _biometricsSwitchIsActive
-                  ? MainAxisAlignment.end
-                  : MainAxisAlignment.start,
+              mainAxisAlignment:
+                  isActive ? MainAxisAlignment.end : MainAxisAlignment.start,
               children: [
                 // if (_enabled) Spacer(),
                 Container(
@@ -322,7 +360,7 @@ class _WalletSettingsViewState extends State<WalletSettingsView> {
                     color: CFColors.white,
                     borderRadius: BorderRadius.circular(height / 2),
                     border: Border.all(
-                      color: _biometricsSwitchIsActive ? CFColors.spark : CFColors.dew,
+                      color: isActive ? CFColors.spark : CFColors.dew,
                       width: 2,
                     ),
                   ),
