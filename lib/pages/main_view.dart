@@ -111,7 +111,7 @@ class _MainViewState extends State<MainView> {
       ),
       WalletView(),
       ReceiveView(),
-      MoreView(),
+      // MoreView(),
     ];
 
     _nodeConnectionStatusChangedEventListener =
@@ -323,16 +323,16 @@ class _MainViewState extends State<MainView> {
                   style: _buildTextStyle(2),
                 ),
               ),
-              BottomNavigationBarItem(
-                icon: Icon(
-                  Icons.menu,
-                  color: _buildIconColor(5), // Index 2
-                ),
-                title: Text(
-                  "More",
-                  style: _buildTextStyle(5),
-                ),
-              ),
+              // BottomNavigationBarItem(
+              //   icon: Icon(
+              //     Icons.menu,
+              //     color: _buildIconColor(5), // Index 2
+              //   ),
+              //   title: Text(
+              //     "More",
+              //     style: _buildTextStyle(5),
+              //   ),
+              // ),
             ],
           ),
         ),
