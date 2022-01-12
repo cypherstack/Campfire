@@ -57,7 +57,7 @@ class BitcoinService extends ChangeNotifier {
   Future<String> get currentReceivingAddress => _currentReceivingAddress;
 
   Future<bool> _useBiomterics;
-  Future<bool> get useBiometrics => _useBiomterics;
+  Future<bool> get useBiometrics => _useBiomterics ??= _fetchUseBiometrics();
 
   Future<String> _currentWalletName;
   Future<String> get currentWalletName =>
@@ -128,9 +128,6 @@ class BitcoinService extends ChangeNotifier {
     } else {
       // Wallet already exists, triggers for a returning user
       this._currentReceivingAddress = _getCurrentAddressForChain(0);
-      this._useBiomterics = Future(
-        () async => await wallet.get('use_biometrics'),
-      );
     }
   }
 
@@ -174,9 +171,13 @@ class BitcoinService extends ChangeNotifier {
     await addToAddressesArrayForChain(initialReceivingAddress, 0);
     await addToAddressesArrayForChain(initialChangeAddress, 1);
     this._currentReceivingAddress = Future(() => initialReceivingAddress);
-    this._useBiomterics = Future(
-      () async => await wallet.get('use_biometrics'),
-    );
+  }
+
+  Future<bool> _fetchUseBiometrics() async {
+    final id = await _getWalletId();
+    final wallet = await Hive.openBox(id);
+    final useBiometrics = await wallet.get('use_biometrics');
+    return useBiometrics;
   }
 
   /// Refreshes display data for the wallet
@@ -190,12 +191,14 @@ class BitcoinService extends ChangeNotifier {
     final FeeObject feeObj = await getFees();
     final String currentName = await WalletsService().currentWalletName;
     await checkReceivingAddressForTransactions();
+    final useBiometrics = await _fetchUseBiometrics();
 
     this._currentWalletName = Future(() => currentName);
     this._utxoData = Future(() => newUtxoData);
     this._transactionData = Future(() => newTxData);
     this._bitcoinPrice = Future(() => newBtcPrice);
     this._feeObject = Future(() => feeObj);
+    this._useBiomterics = Future(() => useBiometrics);
 
     GlobalEventBus.instance
         .fire(NodeConnectionStatusChangedEvent(NodeConnectionStatus.synced));
@@ -304,19 +307,13 @@ class BitcoinService extends ChangeNotifier {
 
   /// Changes the biometrics auth setting used on the lockscreen as an alternative
   /// to the pattern lock
-  updateBiometricsUsage() async {
+  updateBiometricsUsage(bool enabled) async {
     final id = await _getWalletId();
     final wallet = await Hive.openBox(id);
-    bool useBio = await wallet.get('use_biometrics');
-    useBio = useBio == null ? false : useBio;
 
-    if (useBio) {
-      _useBiomterics = Future(() => false);
-      await wallet.put('use_biometrics', false);
-    } else {
-      _useBiomterics = Future(() => true);
-      await wallet.put('use_biometrics', true);
-    }
+    await wallet.put('use_biometrics', enabled);
+    _useBiomterics = Future(() => enabled);
+
     notifyListeners();
   }
 

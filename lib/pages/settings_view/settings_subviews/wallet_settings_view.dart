@@ -206,7 +206,7 @@ class _WalletSettingsViewState extends State<WalletSettingsView> {
       GestureDetector(
         onTap: () async {
           if (_useBiometrics) {
-            await bitcoinService.updateBiometricsUsage();
+            await bitcoinService.updateBiometricsUsage(false);
           } else {
             final LocalAuthentication localAuthentication = LocalAuthentication();
 
@@ -230,7 +230,7 @@ class _WalletSettingsViewState extends State<WalletSettingsView> {
                     stickyAuth: true,
                   );
                   if (didAuthenticate) {
-                    await bitcoinService.updateBiometricsUsage();
+                    await bitcoinService.updateBiometricsUsage(true);
                   }
                 }
               }

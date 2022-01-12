@@ -3,7 +3,6 @@ import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 import 'package:google_fonts/google_fonts.dart';
-import 'package:hive/hive.dart';
 import 'package:local_auth/local_auth.dart';
 import 'package:paymint/notifications/overlay_notification.dart';
 import 'package:paymint/services/bitcoin_service.dart';
@@ -33,10 +32,8 @@ class ConfirmSendView extends StatefulWidget {
 
 class _ConfirmSendViewState extends State<ConfirmSendView> {
   _checkUseBiometrics() async {
-    final walletsService = Provider.of<WalletsService>(context, listen: false);
-    final currentWallet = await walletsService.currentWalletName;
-    final wallet = await Hive.openBox(currentWallet);
-    final bool useBiometrics = await wallet.get('use_biometrics');
+    final bitcoinService = Provider.of<BitcoinService>(context, listen: false);
+    final bool useBiometrics = await bitcoinService.useBiometrics;
     final LocalAuthentication localAuth = LocalAuthentication();
 
     bool canCheckBiometrics = await localAuth.canCheckBiometrics;
