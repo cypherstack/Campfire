@@ -1,7 +1,7 @@
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
-import 'package:flutter_feather_icons/flutter_feather_icons.dart';
+import 'package:flutter_svg/flutter_svg.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:paymint/notifications/overlay_notification.dart';
 import 'package:paymint/pages/address_book_view/subviews/address_book_entry_details_view.dart';
@@ -46,17 +46,18 @@ class _AddressBookCardState extends State<AddressBookCard> {
     }
   }
 
-  Widget _buildSubButton(IconData icon, String label, VoidCallback onTap) {
+  Widget _buildSubButton(String svgAsset, String label, VoidCallback onTap) {
     return MaterialButton(
       materialTapTargetSize: MaterialTapTargetSize.shrinkWrap,
       padding: EdgeInsets.all(8),
       onPressed: onTap,
       child: Row(
         children: [
-          Icon(
-            icon,
+          SvgPicture.asset(
+            svgAsset,
             color: CFColors.dusk,
-            size: 16,
+            width: 16,
+            height: 16,
           ),
           SizedBox(
             width: 6,
@@ -100,15 +101,15 @@ class _AddressBookCardState extends State<AddressBookCard> {
                       height: 36,
                       width: 36,
                       decoration: BoxDecoration(
-                        gradient: CFColors.fireGradientVertical,
+                        gradient: CFColors.fireGradientVerticalLight,
                         borderRadius:
                             BorderRadius.circular(18), // half with for perfect circle
                       ),
                       child: Center(
-                        child: Icon(
-                          FeatherIcons.user,
+                        child: SvgPicture.asset(
+                          "assets/svg/address-contact.svg",
                           color: CFColors.white,
-                          size: 20,
+                          // size: 20,
                         ),
                       ),
                     ),
@@ -143,7 +144,7 @@ class _AddressBookCardState extends State<AddressBookCard> {
                 children: [
                   // send
                   _buildSubButton(
-                    FeatherIcons.upload,
+                    "assets/svg/upload-2.svg",
                     "SEND FIRO",
                     () {
                       print("send firo");
@@ -168,7 +169,7 @@ class _AddressBookCardState extends State<AddressBookCard> {
 
                   // copy
                   _buildSubButton(
-                    FeatherIcons.copy,
+                    "assets/svg/copy-2.svg",
                     "COPY",
                     () {
                       Clipboard.setData(new ClipboardData(text: widget.address));
@@ -182,7 +183,7 @@ class _AddressBookCardState extends State<AddressBookCard> {
 
                   // details
                   _buildSubButton(
-                    FeatherIcons.eye,
+                    "assets/svg/eye.svg",
                     "DETAILS",
                     () {
                       print("details");

@@ -126,8 +126,8 @@ class _NetworkSettingsViewState extends State<NetworkSettingsView> {
                     width: 8,
                   ),
                   SvgPicture.asset(
-                    "assets/svg/check-circle2.svg",
-                    color: CFColors.success,
+                    "assets/svg/check-circle3.svg",
+                    color: CFColors.twilight,
                     width: 24,
                     height: 24,
                   ),

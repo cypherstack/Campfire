@@ -294,7 +294,7 @@ class _MainViewState extends State<MainView> {
             items: [
               BottomNavigationBarItem(
                 icon: SvgPicture.asset(
-                  "assets/svg/send.svg",
+                  "assets/svg/upload-2.svg",
                   color: _buildIconColor(0), // Index 0 -> send view
                   semanticsLabel: "send navigation logo",
                 ),
@@ -305,7 +305,7 @@ class _MainViewState extends State<MainView> {
               ),
               BottomNavigationBarItem(
                 icon: SvgPicture.asset(
-                  "assets/svg/wallet.svg",
+                  "assets/svg/wallet-2.svg",
                   color: _buildIconColor(1), // Index 1 -> wallet view
                 ),
                 title: Text(
@@ -315,7 +315,7 @@ class _MainViewState extends State<MainView> {
               ),
               BottomNavigationBarItem(
                 icon: SvgPicture.asset(
-                  "assets/svg/receive.svg",
+                  "assets/svg/download-2.svg",
                   color: _buildIconColor(2), // Index 2 -> receive view
                 ),
                 title: Text(

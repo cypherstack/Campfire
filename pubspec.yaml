@@ -125,8 +125,6 @@ flutter:
     - assets/svg/groupLogo.svg
     - assets/svg/menu.svg
     - assets/svg/radio.svg
-    - assets/svg/receive.svg
-    - assets/svg/send.svg
     - assets/svg/wallet.svg
     - assets/svg/x.svg
     - assets/svg/book-open.svg
@@ -145,6 +143,19 @@ flutter:
     - assets/svg/refresh-cw.svg
     - assets/svg/more-vertical.svg
     - assets/svg/globe.svg
+    - assets/svg/check-circle3.svg
+    - assets/svg/copy-2.svg
+    - assets/svg/download-2.svg
+    - assets/svg/edit-4.svg
+    - assets/svg/fingerprint.svg
+    - assets/svg/lock.svg
+    - assets/svg/menu-2.svg
+    - assets/svg/node.svg
+    - assets/svg/upload-2.svg
+    - assets/svg/usd-circle.svg
+    - assets/svg/address-contact.svg
+    - assets/svg/eye.svg
+    - assets/svg/wallet-2.svg
 
   # An image asset can refer to one or more resolution-specific "variants", see
   # https://flutter.dev/assets-and-images/#resolution-aware.

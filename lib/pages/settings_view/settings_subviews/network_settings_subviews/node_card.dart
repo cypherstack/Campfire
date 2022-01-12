@@ -67,7 +67,7 @@ class _NodeCardState extends State<NodeCard> {
           child: Row(
             children: [
               SvgPicture.asset(
-                "assets/svg/globe.svg",
+                "assets/svg/node.svg",
                 height: 24,
                 width: 24,
                 color: CFColors.twilight,

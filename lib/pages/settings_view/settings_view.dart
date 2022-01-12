@@ -134,7 +134,7 @@ class SettingsView extends StatelessWidget {
               ),
               // address book item
               _buildItem(
-                "assets/svg/key.svg",
+                "assets/svg/lock.svg",
                 "Wallet Backup",
                 () {
                   Navigator.push(context, CupertinoPageRoute(builder: (context) {
@@ -164,7 +164,7 @@ class SettingsView extends StatelessWidget {
               ),
               // address book item
               _buildItem(
-                "assets/svg/dollar-sign.svg",
+                "assets/svg/usd-circle.svg",
                 "Currency",
                 () {
                   Navigator.push(context, CupertinoPageRoute(builder: (context) {
