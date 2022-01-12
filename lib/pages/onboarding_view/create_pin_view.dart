@@ -6,7 +6,6 @@ import 'package:flutter/material.dart';
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 import 'package:flutter_spinkit/flutter_spinkit.dart';
 import 'package:google_fonts/google_fonts.dart';
-import 'package:hive/hive.dart';
 import 'package:local_auth/local_auth.dart';
 import 'package:paymint/notifications/overlay_notification.dart';
 import 'package:paymint/pages/onboarding_view/helpers/builders.dart';
@@ -34,44 +33,6 @@ class CreatePinView extends StatefulWidget {
 }
 
 class _CreatePinViewState extends State<CreatePinView> {
-  _checkUseBiometrics() async {
-    final walletsService = Provider.of<WalletsService>(context, listen: false);
-    final currentWallet = await walletsService.currentWalletName;
-    final wallet = await Hive.openBox(currentWallet);
-    final bool useBiometrics = await wallet.get('use_biometrics');
-    final LocalAuthentication localAuth = LocalAuthentication();
-
-    bool canCheckBiometrics = await localAuth.canCheckBiometrics;
-
-    // If useBiometrics is enabled, then show fingerprint auth screen
-    if (useBiometrics != null && useBiometrics && canCheckBiometrics) {
-      List<BiometricType> availableSystems = await localAuth.getAvailableBiometrics();
-
-      //TODO implement iOS biometrics
-      if (Platform.isIOS) {
-        if (availableSystems.contains(BiometricType.face)) {
-          // Write iOS specific code when required
-        } else if (availableSystems.contains(BiometricType.fingerprint)) {
-          // Write iOS specific code when required
-        }
-      } else if (Platform.isAndroid) {
-        if (availableSystems.contains(BiometricType.fingerprint)) {
-          bool didAuthenticate = await localAuth.authenticateWithBiometrics(
-            localizedReason: 'Please authenticate to unlock wallet',
-          );
-
-          if (didAuthenticate) Navigator.pushReplacementNamed(context, '/mainview');
-        }
-      }
-    }
-  }
-
-  @override
-  void initState() {
-    _checkUseBiometrics();
-    super.initState();
-  }
-
   BoxDecoration get _pinPutDecoration {
     return BoxDecoration(
       color: CFColors.fog,
@@ -214,6 +175,11 @@ class _CreatePinViewState extends State<CreatePinView> {
                         followingFieldDecoration: _pinPutDecoration,
                         onSubmit: (String pin) async {
                           if (_pinPutController1.text == _pinPutController2.text) {
+                            // ask if want to use biometrics
+                            final bool useBiometrics = await _enableBiometricsDialog();
+
+                            // handle wallet creation/initialization
+
                             final walletService =
                                 Provider.of<WalletsService>(context, listen: false);
                             final store = new FlutterSecureStorage();
@@ -257,6 +223,7 @@ class _CreatePinViewState extends State<CreatePinView> {
 
                               // TODO do this differently - causes short lockup of UI
                               await bitcoinService.initializeWallet(widget.walletName);
+                              await bitcoinService.updateBiometricsUsage(useBiometrics);
                               await Future.delayed(Duration(seconds: 3));
 
                               Navigator.pop(context);
@@ -323,5 +290,35 @@ class _CreatePinViewState extends State<CreatePinView> {
             ),
           ],
         ));
+  }
+
+  Future<bool> _enableBiometricsDialog() async {
+    final LocalAuthentication localAuth = LocalAuthentication();
+
+    bool canCheckBiometrics = await localAuth.canCheckBiometrics;
+
+    if (canCheckBiometrics) {
+      List<BiometricType> availableSystems = await localAuth.getAvailableBiometrics();
+
+      //TODO implement iOS biometrics
+      if (Platform.isIOS) {
+        if (availableSystems.contains(BiometricType.face)) {
+          // Write iOS specific code when required
+        } else if (availableSystems.contains(BiometricType.fingerprint)) {
+          // Write iOS specific code when required
+        }
+      } else if (Platform.isAndroid) {
+        if (availableSystems.contains(BiometricType.fingerprint)) {
+          bool didAuthenticate = await localAuth.authenticateWithBiometrics(
+            localizedReason: 'Enable fingerprint authentication',
+          );
+
+          if (didAuthenticate) {
+            return true;
+          }
+        }
+      }
+    }
+    return false;
   }
 }
