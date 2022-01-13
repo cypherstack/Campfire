@@ -19,6 +19,16 @@ environment:
 dependencies:
   flutter:
     sdk: flutter
+  ffi: ^1.1.2
+
+  lelantus:
+    path: ./crypto_plugins/flutter_liblelantus
+
+  firo_flutter:
+    git:
+      url: https://github.com/cypherstack/firo_flutter.git
+      ref: master
+#    path: ./crypto_plugins/firo_flutter
 
   # Utility plugins
   provider: ^6.0.1

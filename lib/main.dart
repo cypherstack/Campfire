@@ -38,8 +38,12 @@ void main() async {
   Hive.registerAdapter(UtxoObjectAdapter());
   Hive.registerAdapter(StatusAdapter());
 
+  // Registering Lelantus Model Adapters
+  Hive.registerAdapter(LelantusCoinAdapter());
+
   SystemChrome.setEnabledSystemUIMode(SystemUiMode.manual,
       overlays: [SystemUiOverlay.bottom]);
+
   runApp(MyApp());
 }
 
@@ -176,4 +180,18 @@ class _MaterialAppWithThemeState extends State<MaterialAppWithTheme> {
       ),
     );
   }
+}
+
+Widget buildLoadingView() {
+  return Scaffold(
+    body: Container(
+      color: Color(0xff121212),
+      child: Center(
+        child: Image.asset(
+          'assets/images/splash.png',
+          height: 125,
+        ),
+      ),
+    ),
+  );
 }

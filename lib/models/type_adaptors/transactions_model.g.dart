@@ -99,15 +99,17 @@ class TransactionAdapter extends TypeAdapter<Transaction> {
       fees: fields[8] as int,
       inputSize: fields[9] as int,
       outputSize: fields[10] as int,
-      inputs: (fields[11] as List)?.cast<Input>(),
-      outputs: (fields[12] as List)?.cast<Output>(),
+      inputs: (fields[11] as List).cast<Input>(),
+      outputs: (fields[12] as List).cast<Output>(),
+      address: fields[13] as String,
+      height: fields[14] as int,
     );
   }
 
   @override
   void write(BinaryWriter writer, Transaction obj) {
     writer
-      ..writeByte(13)
+      ..writeByte(15)
       ..writeByte(0)
       ..write(obj.txid)
       ..writeByte(1)
@@ -133,7 +135,11 @@ class TransactionAdapter extends TypeAdapter<Transaction> {
       ..writeByte(11)
       ..write(obj.inputs)
       ..writeByte(12)
-      ..write(obj.outputs);
+      ..write(obj.outputs)
+      ..writeByte(13)
+      ..write(obj.address)
+      ..writeByte(14)
+      ..write(obj.height);
   }
 
   @override

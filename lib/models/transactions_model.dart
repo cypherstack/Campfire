@@ -2,6 +2,18 @@ import 'package:hive/hive.dart';
 
 part 'type_adaptors/transactions_model.g.dart';
 
+String extractDateFromTimestamp(int timestamp) {
+  if (timestamp == 0) {
+    return 'Now...';
+  }
+
+  final int day = DateTime.fromMillisecondsSinceEpoch(timestamp * 1000).day;
+  final int month = DateTime.fromMillisecondsSinceEpoch(timestamp * 1000).month;
+  final int year = DateTime.fromMillisecondsSinceEpoch(timestamp * 1000).year;
+
+  return '$year${month < 10 ? "0" + month.toString() : month.toString()}${day < 10 ? "0" + day.toString() : day.toString()}';
+}
+
 // @HiveType(typeId: 1)
 class TransactionData {
   // @HiveField(0)
@@ -15,6 +27,50 @@ class TransactionData {
         dateTimeChunks.map((txChunk) => TransactionChunk.fromJson(txChunk)).toList();
 
     return TransactionData(txChunks: chunksList);
+  }
+
+  factory TransactionData.fromMap(Map<String, Transaction> transactions) {
+    Map<String, List<Transaction>> chunks = Map();
+    transactions.forEach((key, value) {
+      String date = extractDateFromTimestamp(value.timestamp);
+      if (!chunks.containsKey(date)) {
+        chunks[date] = [];
+      }
+      chunks[date].add(value);
+    });
+    List<TransactionChunk> chunksList = [];
+    chunks.forEach((key, value) {
+      value.sort((a, b) => b.timestamp.compareTo(a.timestamp));
+      chunksList.add(
+          TransactionChunk(timestamp: value[0].timestamp, transactions: value));
+    });
+    chunksList.sort((a, b) => b.timestamp.compareTo(a.timestamp));
+    return TransactionData(txChunks: chunksList);
+  }
+
+  Transaction findTransaction(String txid) {
+    for (var i = 0; i < txChunks.length; i++) {
+      var txChunk = txChunks[i].transactions;
+      for (var j = 0; j < txChunk.length; j++) {
+        var tx = txChunk[j];
+        if (tx.txid == txid) {
+          return tx;
+        }
+      }
+    }
+    return null;
+  }
+
+  Map<String, Transaction> getAllTransactions() {
+    Map<String, Transaction> transactions = Map();
+    for (var i = 0; i < txChunks.length; i++) {
+      var txChunk = txChunks[i].transactions;
+      for (var j = 0; j < txChunk.length; j++) {
+        var tx = txChunk[j];
+        transactions[tx.txid] = tx;
+      }
+    }
+    return transactions;
   }
 }
 
@@ -67,6 +123,10 @@ class Transaction {
   final List<Input> inputs;
   // @HiveField(12)
   final List<Output> outputs;
+  // @HiveField(13)
+  final String address;
+  // @HiveField(14)
+  final int height;
 
   Transaction(
       {this.txid,
@@ -81,7 +141,9 @@ class Transaction {
       this.inputSize,
       this.outputSize,
       this.inputs,
-      this.outputs});
+      this.outputs,
+      this.address,
+      this.height});
 
   factory Transaction.fromJson(Map<String, dynamic> json) {
     var inputArray = json['inputs'] as List;
@@ -104,7 +166,34 @@ class Transaction {
         inputSize: json['inputSize'],
         outputSize: json['outputSize'],
         inputs: inputList,
-        outputs: outputList);
+        outputs: outputList,
+        address: json['address'],
+        height: json['height']);
+  }
+
+  factory Transaction.fromLelantusJson(Map<String, dynamic> json) {
+    return Transaction(
+        txid: json['txid'],
+        confirmedStatus: json['confirmed_status'],
+        timestamp: json['timestamp'],
+        txType: json['txType'],
+        amount: (json['amount'] * 100000000).toInt(),
+        aliens: [],
+        worthNow: json['worthNow'],
+        worthAtBlockTimestamp: json['worthAtBlockTimestamp'],
+        fees: (json['fees'] * 100000000).toInt(),
+        inputSize: json['inputSize'],
+        outputSize: json['outputSize'],
+        inputs: [],
+        outputs: [],
+        address: json["address"],
+        height: json["height"]);
+  }
+
+  String toString() {
+    String transaction =
+        "{txid: $txid, type: $txType, value: $amount, fee: $fees, height: $height, confirm: $confirmedStatus, address: $address, inputs: $inputs }";
+    return transaction;
   }
 }
 
@@ -142,7 +231,7 @@ class Input {
 
   factory Input.fromJson(Map<String, dynamic> json) {
     return Input(
-        txid: json['txid'],
+        txid: json['mintTxid'],
         vout: json['vout'],
         prevout: Output.fromJson(json['prevout']),
         scriptsig: json['scriptsig'],
@@ -151,6 +240,11 @@ class Input {
         isCoinbase: json['is_coinbase'],
         sequence: json['sequence'],
         innerRedeemscriptAsm: json['innerRedeemscriptAsm']);
+  }
+
+  String toString() {
+    String transaction = "{txid: $txid}";
+    return transaction;
   }
 }
 
