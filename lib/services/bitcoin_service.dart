@@ -101,6 +101,11 @@ class BitcoinService extends ChangeNotifier {
       bip32: new bip32.Bip32Type(public: 0x0488b21e, private: 0x0488ade4));
 
   BitcoinService() {
+    final wallets = Hive.box('wallets');
+    final String currentName = wallets.get('currentWalletName');
+    if (currentName == null || currentName.isEmpty) {
+      return;
+    }
     // add listener for active wallet changed
     GlobalEventBus.instance.on<ActiveWalletNameChangedEvent>().listen((event) {
       _currentWalletName = Future(() => event.currentWallet);
@@ -1900,17 +1905,19 @@ class BitcoinService extends ChangeNotifier {
     final utxos = await utxoData;
     final price = await bitcoinPrice;
     double lelantusBalance = 0;
-    _lelantus_coins.forEach((key, value) {
-      if (!value.isUsed) {
-        lelantusBalance += value.value / 100000000;
-      }
-    });
+    if (_lelantus_coins != null) {
+      _lelantus_coins.forEach((key, value) {
+        if (!value.isUsed) {
+          lelantusBalance += value.value / 100000000;
+        }
+      });
+    }
+    final utxosValue = utxos == null ? 0 : utxos.bitcoinBalance;
     List<String> balances = List.empty(growable: true);
     balances.add(lelantusBalance.toString());
     balances.add((lelantusBalance * price).toStringAsFixed(8));
-    balances.add((lelantusBalance + utxos.bitcoinBalance).toString());
-    balances.add(
-        ((lelantusBalance + utxos.bitcoinBalance) * price).toStringAsFixed(8));
+    balances.add((lelantusBalance + utxosValue).toString());
+    balances.add(((lelantusBalance + utxosValue) * price).toStringAsFixed(8));
     return balances;
   }
 }
