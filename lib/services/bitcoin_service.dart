@@ -1,18 +1,21 @@
 import 'dart:async';
+import 'dart:convert';
 import 'dart:ffi';
 import 'dart:typed_data';
-import 'package:flutter/material.dart';
-import 'dart:convert';
-import 'package:http/http.dart' as http;
-import 'package:paymint/models/models.dart';
-import 'package:paymint/services/event_bus/events/wallet_name_changed_event.dart';
-import 'package:paymint/services/event_bus/global_event_bus.dart';
-import 'package:paymint/models/models.dart' as models;
-import 'package:hive/hive.dart';
-import 'package:flutter_secure_storage/flutter_secure_storage.dart';
-import 'package:firo_flutter/firo_flutter.dart';
+
 import 'package:bip32/bip32.dart' as bip32;
 import 'package:bip39/bip39.dart' as bip39;
+import 'package:ffi/ffi.dart';
+import 'package:firo_flutter/firo_flutter.dart';
+import 'package:flutter/material.dart';
+import 'package:flutter_secure_storage/flutter_secure_storage.dart';
+import 'package:hive/hive.dart';
+import 'package:http/http.dart' as http;
+import 'package:lelantus/lelantus.dart';
+import 'package:paymint/models/models.dart';
+import 'package:paymint/models/models.dart' as models;
+import 'package:paymint/services/event_bus/events/wallet_name_changed_event.dart';
+import 'package:paymint/services/event_bus/global_event_bus.dart';
 import 'package:paymint/services/globals.dart';
 import 'package:paymint/services/utils/currency_utils.dart';
 import 'package:paymint/services/wallets_service.dart';
@@ -20,11 +23,9 @@ import 'package:paymint/utilities/misc_global_constants.dart';
 import 'package:uuid/uuid.dart';
 
 import './utils/dev_utils.dart';
+import '../models/lelantus_coin.dart';
 import 'event_bus/events/nodes_changed_event.dart';
 import 'events.dart';
-import 'package:lelantus/lelantus.dart';
-import 'package:ffi/ffi.dart';
-import '../models/lelantus_coin.dart';
 
 const JMINT_INDEX = 5;
 const MINT_INDEX = 2;
