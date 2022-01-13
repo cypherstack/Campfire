@@ -30,6 +30,9 @@ void main() async {
   Hive.registerAdapter(UtxoObjectAdapter());
   Hive.registerAdapter(StatusAdapter());
 
+  // Registering Lelantus Model Adapters
+  Hive.registerAdapter(LelantusCoinAdapter());
+
   runApp(MyApp());
 }
 
@@ -94,7 +97,8 @@ class _MaterialAppWithThemeState extends State<MaterialAppWithTheme> {
       ),
       home: FutureBuilder(
         future: checkForLockscreen(),
-        builder: (BuildContext context, AsyncSnapshot<bool> shouldRouteToLockSetup) {
+        builder:
+            (BuildContext context, AsyncSnapshot<bool> shouldRouteToLockSetup) {
           if (shouldRouteToLockSetup.connectionState == ConnectionState.done) {
             if (shouldRouteToLockSetup.data) {
               return SetUpLockscreenView();

@@ -117,7 +117,7 @@ class _TransactionsViewState extends State<TransactionsView> {
           ),
         ),
         body: FutureBuilder(
-          future: bitcoinService.transactionData,
+          future: bitcoinService.lelantusTransactionData,
           builder:
               (BuildContext context, AsyncSnapshot<TransactionData> txData) {
             if (txData.connectionState == ConnectionState.done) {
