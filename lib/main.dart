@@ -168,32 +168,15 @@ class _MaterialAppWithThemeState extends State<MaterialAppWithTheme> {
             AsyncSnapshot<bool> shouldRouteToOnboarding) {
           if (shouldRouteToOnboarding.connectionState == ConnectionState.done) {
             if (shouldRouteToOnboarding.data) {
-              // return SetUpLockscreenView();
               return OnboardingView();
             } else {
               return LockscreenView();
-              // return OnboardingView();
             }
           } else {
-            // return buildLoadingView(context);
             return LoadingView();
           }
         },
       ),
     );
   }
-}
-
-Widget buildLoadingView() {
-  return Scaffold(
-    body: Container(
-      color: Color(0xff121212),
-      child: Center(
-        child: Image.asset(
-          'assets/images/splash.png',
-          height: 125,
-        ),
-      ),
-    ),
-  );
 }
