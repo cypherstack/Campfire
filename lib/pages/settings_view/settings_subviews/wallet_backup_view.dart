@@ -79,8 +79,12 @@ class WalletBackUpView extends StatelessWidget {
             SizedBox(
               height: 32,
             ),
-            _buildMnemonicView(context),
-            Spacer(),
+            Expanded(
+              child: _buildMnemonicView(context),
+            ),
+            SizedBox(
+              height: SizingUtilities.standardPadding,
+            ),
             _buildButtons(context),
           ],
         ),
@@ -434,7 +438,7 @@ class WalletBackUpView extends StatelessWidget {
                             data: snapshot.data.join(' '),
                             roundEdges: CampfireConstants.roundedQrCode,
                             elementColor: CFColors.midnight,
-                            typeNumber: 5,
+                            typeNumber: 9,
                             size: _qrSize,
                           ),
                         );
