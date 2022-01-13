@@ -16,6 +16,7 @@ import 'package:paymint/pages/onboarding_view/onboarding_view.dart';
 import 'package:paymint/services/bitcoin_service.dart';
 import 'package:paymint/services/wallets_service.dart';
 import 'package:paymint/utilities/cfcolors.dart';
+import 'package:paymint/utilities/misc_global_constants.dart';
 import 'package:paymint/utilities/sizing_utilities.dart';
 import 'package:paymint/utilities/text_styles.dart';
 import 'package:paymint/widgets/custom_buttons/gradient_button.dart';
@@ -31,7 +32,8 @@ enum InputStatus {
 }
 
 class RestoreWalletFormView extends StatefulWidget {
-  const RestoreWalletFormView({Key key, @required this.walletName}) : super(key: key);
+  const RestoreWalletFormView({Key key, @required this.walletName})
+      : super(key: key);
 
   final String walletName;
 
@@ -41,7 +43,7 @@ class RestoreWalletFormView extends StatefulWidget {
 
 class _RestoreWalletFormViewState extends State<RestoreWalletFormView> {
   final _formKey = GlobalKey<FormState>();
-  final _seedWordCount = 12;
+  final _seedWordCount = CampfireConstants.seedPhraseWordCount;
 
   final HashSet<String> _wordListHashSet = HashSet.from(bip39wordlist.WORDLIST);
 
@@ -191,7 +193,8 @@ class _RestoreWalletFormViewState extends State<RestoreWalletFormView> {
       ),
       child: SizedBox(
         height: 48,
-        width: MediaQuery.of(context).size.width - (SizingUtilities.standardPadding * 2),
+        width: MediaQuery.of(context).size.width -
+            (SizingUtilities.standardPadding * 2),
         child: GradientButton(
           onTap: () async {
             //TODO seems hacky fix for renderflex error
@@ -220,7 +223,8 @@ class _RestoreWalletFormViewState extends State<RestoreWalletFormView> {
                   },
                 );
               } else {
-                final btcService = Provider.of<BitcoinService>(context, listen: false);
+                final btcService =
+                    Provider.of<BitcoinService>(context, listen: false);
                 showDialog(
                   context: context,
                   useSafeArea: false,
@@ -287,7 +291,8 @@ class _RestoreWalletFormViewState extends State<RestoreWalletFormView> {
         backButtonPressed: () async {
           // delete created wallet name and pin
 
-          final walletsService = Provider.of<WalletsService>(context, listen: false);
+          final walletsService =
+              Provider.of<WalletsService>(context, listen: false);
           int result = await walletsService.deleteWallet(widget.walletName);
 
           // check if last wallet was deleted
@@ -301,7 +306,8 @@ class _RestoreWalletFormViewState extends State<RestoreWalletFormView> {
               (_) => false,
             );
           } else {
-            Provider.of<BitcoinService>(context, listen: false).refreshWalletData();
+            Provider.of<BitcoinService>(context, listen: false)
+                .refreshWalletData();
 
             FocusScope.of(context).unfocus();
             await Future.delayed(Duration(milliseconds: 100));
@@ -414,8 +420,8 @@ class _RestoreWalletFormViewState extends State<RestoreWalletFormView> {
                               useSafeArea: false,
                               barrierDismissible: false,
                               context: context,
-                              builder: (_) =>
-                                  CampfireAlert(message: "Invalid seed phrase length!"),
+                              builder: (_) => CampfireAlert(
+                                  message: "Invalid seed phrase length!"),
                             );
                             return;
                           }
@@ -554,8 +560,8 @@ class RecoveryCompleteDialog extends StatelessWidget {
             ),
           ),
           SizedBox(
-            width:
-                MediaQuery.of(context).size.width - (SizingUtilities.standardPadding * 2),
+            width: MediaQuery.of(context).size.width -
+                (SizingUtilities.standardPadding * 2),
             // add height of button and sized box from WaitDialog so
             // the center widget is at the same height as the
             // circular progress indicator in WaitDialog
