@@ -1889,4 +1889,27 @@ class BitcoinService extends ChangeNotifier {
       }
     }
   }
+
+  // index 0 and 1 for the funds available to spend.
+  // index 2 and 3 for all the funds in the wallet (including the undependable ones)
+  Future<dynamic> getFullBalance() async {
+    final id = await _getWalletId();
+    final wallet = await Hive.openBox(id);
+    final Map _lelantus_coins = await wallet.get('_lelantus_coins');
+    final utxos = await utxoData;
+    final price = await bitcoinPrice;
+    double lelantusBalance = 0;
+    _lelantus_coins.forEach((key, value) {
+      if (!value.isUsed) {
+        lelantusBalance += value.value / 100000000;
+      }
+    });
+    List<String> balances = List.empty(growable: true);
+    balances.add(lelantusBalance.toString());
+    balances.add((lelantusBalance * price).toStringAsFixed(8));
+    balances.add((lelantusBalance + utxos.bitcoinBalance).toString());
+    balances.add(
+        ((lelantusBalance + utxos.bitcoinBalance) * price).toStringAsFixed(8));
+    return balances;
+  }
 }

@@ -27,7 +27,8 @@ class _SendViewState extends State<SendView> {
 
   final autofillArgs;
 
-  TextEditingController _recipientAddressTextController = TextEditingController();
+  TextEditingController _recipientAddressTextController =
+      TextEditingController();
 
   TextEditingController _noteTextController = TextEditingController();
 
@@ -151,7 +152,8 @@ class _SendViewState extends State<SendView> {
     return Container(
       decoration: BoxDecoration(
         color: CFColors.fog,
-        borderRadius: BorderRadius.circular(SizingUtilities.circularBorderRadius),
+        borderRadius:
+            BorderRadius.circular(SizingUtilities.circularBorderRadius),
         border: Border.all(
           width: 1,
           color: _amountHasFocus ? CFColors.focusedBorder : CFColors.twilight,
@@ -171,8 +173,8 @@ class _SendViewState extends State<SendView> {
                   color: CFColors.dusk,
                 ),
                 controller: _firoAmountController,
-                keyboardType:
-                    TextInputType.numberWithOptions(signed: false, decimal: true),
+                keyboardType: TextInputType.numberWithOptions(
+                    signed: false, decimal: true),
                 inputFormatters: [
                   // regex to validate a crypto amount with 8 decimal places
                   TextInputFormatter.withFunction((oldValue, newValue) =>
@@ -182,7 +184,9 @@ class _SendViewState extends State<SendView> {
                           : oldValue),
                 ],
                 onChanged: (String firoAmount) {
-                  if (firoAmount.isNotEmpty && firoPrice != 0 && firoAmount != ".") {
+                  if (firoAmount.isNotEmpty &&
+                      firoPrice != 0 &&
+                      firoAmount != ".") {
                     _firoAmount = double.parse(firoAmount);
                     setState(() {
                       _totalAmount = _firoAmount + _fee;
@@ -236,7 +240,8 @@ class _SendViewState extends State<SendView> {
             ),
             Container(
               height: 1,
-              color: _amountHasFocus ? CFColors.focusedBorder : CFColors.twilight,
+              color:
+                  _amountHasFocus ? CFColors.focusedBorder : CFColors.twilight,
             ),
             Focus(
               onFocusChange: (hasFocus) {
@@ -249,8 +254,8 @@ class _SendViewState extends State<SendView> {
                   color: CFColors.dusk,
                 ),
                 controller: _fiatAmountController,
-                keyboardType:
-                    TextInputType.numberWithOptions(signed: false, decimal: true),
+                keyboardType: TextInputType.numberWithOptions(
+                    signed: false, decimal: true),
                 inputFormatters: [
                   // regex to validate a fiat amount with 2 decimal places
                   TextInputFormatter.withFunction((oldValue, newValue) =>
@@ -296,7 +301,8 @@ class _SendViewState extends State<SendView> {
                         child: FutureBuilder(
                           future: CurrencyUtilities.fetchPreferredCurrency(),
                           builder: (context, futureData) {
-                            if (futureData.connectionState == ConnectionState.done) {
+                            if (futureData.connectionState ==
+                                ConnectionState.done) {
                               return Text(
                                 futureData.data,
                                 style: TextStyle(
@@ -335,7 +341,6 @@ class _SendViewState extends State<SendView> {
   @override
   Widget build(BuildContext context) {
     final BitcoinService bitcoinService = Provider.of<BitcoinService>(context);
-
     return SafeArea(
       child: Scaffold(
         key: _scaffoldKey,
@@ -377,7 +382,8 @@ class _SendViewState extends State<SendView> {
                           BuildContext context,
                           AsyncSnapshot<UtxoData> utxoData,
                         ) {
-                          if (utxoData.connectionState == ConnectionState.done) {
+                          if (utxoData.connectionState ==
+                              ConnectionState.done) {
                             if (utxoData == null || utxoData.hasError) {
                               // TODO: Display failed overlay 'Unable to fetch balance data.\nPlease check connection'
                               return Text(
@@ -461,13 +467,16 @@ class _SendViewState extends State<SendView> {
                         children: [
                           GestureDetector(
                             onTap: () {
-                              Navigator.of(context).pushNamed("/addressbook").then(
+                              Navigator.of(context)
+                                  .pushNamed("/addressbook")
+                                  .then(
                                 (value) {
                                   if (value == null) {
                                     return;
                                   }
                                   if (value is String) {
-                                    _recipientAddressTextController.text = value;
+                                    _recipientAddressTextController.text =
+                                        value;
                                   }
                                 },
                               );
@@ -586,7 +595,8 @@ class _SendViewState extends State<SendView> {
 
               FutureBuilder(
                 future: bitcoinService.fees,
-                builder: (BuildContext context, AsyncSnapshot<FeeObject> feeObject) {
+                builder:
+                    (BuildContext context, AsyncSnapshot<FeeObject> feeObject) {
                   if (feeObject.connectionState == ConnectionState.done) {
                     if (feeObject == null || feeObject.hasError) {
                       // TODO: connection error notification
@@ -626,7 +636,8 @@ class _SendViewState extends State<SendView> {
                           // set address to textfield value if it was not auto filled from address book
                           // OR if it was but the textfield value does not match anymore
                           if (!_autofill ||
-                              _recipientAddressTextController.text != _contactName) {
+                              _recipientAddressTextController.text !=
+                                  _contactName) {
                             _address = _recipientAddressTextController.text;
                           }
                           return ConfirmSendView(

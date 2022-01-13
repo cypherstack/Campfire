@@ -35,8 +35,9 @@ class _WalletViewState extends State<WalletView> {
   @override
   void initState() {
     // add listener
-    _nodeConnectionStatusChangedEventListener =
-        GlobalEventBus.instance.on<NodeConnectionStatusChangedEvent>().listen((event) {
+    _nodeConnectionStatusChangedEventListener = GlobalEventBus.instance
+        .on<NodeConnectionStatusChangedEvent>()
+        .listen((event) {
       if (_nodeStatus != event.newStatus) {
         setState(() {
           _nodeStatus = event.newStatus;
@@ -112,7 +113,8 @@ class _WalletViewState extends State<WalletView> {
       extendBody: true,
       backgroundColor: CFColors.white,
       body: Container(
-        height: _bodyHeight - 10, // needed to fit content on screen. Magic numbers \o/
+        height: _bodyHeight -
+            10, // needed to fit content on screen. Magic numbers \o/
         color: CFColors.white,
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.stretch,
@@ -128,10 +130,13 @@ class _WalletViewState extends State<WalletView> {
                 child: Stack(
                   children: [
                     FutureBuilder(
-                      future: bitcoinService.utxoData,
-                      builder: (BuildContext context, AsyncSnapshot<UtxoData> utxoData) {
-                        if (utxoData.connectionState == ConnectionState.done) {
-                          if (utxoData == null || utxoData.hasError) {
+                      future: bitcoinService.getFullBalance(),
+                      builder: (BuildContext context,
+                          AsyncSnapshot<dynamic> balancesData) {
+                        print(balancesData.data);
+                        if (balancesData.connectionState ==
+                            ConnectionState.done) {
+                          if (balancesData == null || balancesData.hasError) {
                             return _buildBalance(
                               balance: "...",
                               fiatBalance: "...",
@@ -139,9 +144,10 @@ class _WalletViewState extends State<WalletView> {
                           }
 
                           if (_nodeStatus == NodeConnectionStatus.synced)
+                            //TODO make sure that the correct data[] is given depending on if this is all available or the full amount.
                             return _buildBalance(
-                              fiatBalance: utxoData.data.totalUserCurrency,
-                              balance: utxoData.data.bitcoinBalance.toString(),
+                              fiatBalance: balancesData.data[1].toString(),
+                              balance: balancesData.data[0].toString(),
                             );
                           else {
                             return _buildBalance(
