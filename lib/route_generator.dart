@@ -1,12 +1,14 @@
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
+import 'package:paymint/pages/address_book_view/address_book_view.dart';
 import 'package:paymint/pages/address_book_view/subviews/add_address_book_entry_view.dart';
+import 'package:paymint/pages/main_view.dart';
 import 'package:paymint/pages/settings_view/settings_subviews/network_settings_subviews/add_custom_node_view.dart';
 import 'package:paymint/pages/settings_view/settings_subviews/wallet_backup_view.dart';
 import 'package:paymint/pages/settings_view/settings_subviews/wallet_settings_subviews/change_pin_view.dart';
 import 'package:paymint/pages/settings_view/settings_subviews/wallet_settings_subviews/delete_wallet_warning_view.dart';
-
-import './pages/pages.dart';
+import 'package:paymint/pages/wallet_view/receive_view.dart';
+import 'package:paymint/pages/wallet_view/send_view.dart';
 
 class RouteGenerator {
   // This functions handles all top level routes in the app. Subrouting is handled individually
@@ -26,26 +28,6 @@ class RouteGenerator {
         return CupertinoPageRoute(builder: (_) => AddressBookView());
       case '/addaddressbookentry':
         return CupertinoPageRoute(builder: (_) => AddAddressBookEntryView());
-      case '/generalview':
-        return CupertinoPageRoute(builder: (_) => GeneralView());
-      case '/advancedview':
-        return CupertinoPageRoute(builder: (_) => AdvancedView());
-      case '/restorewalletview':
-        return CupertinoPageRoute(builder: (_) => RestoreWalletViewOLD());
-      case '/changecurrency':
-        return CupertinoPageRoute(builder: (_) => ChangeCurrencyView());
-      case '/esploraview':
-        return CupertinoPageRoute(builder: (_) => EsploraView());
-      case '/backupview':
-        return CupertinoPageRoute(builder: (_) => BackupView());
-      case '/exportoutput':
-        return CupertinoPageRoute(builder: (_) => ExportOutputCsvView());
-      case '/exporttx':
-        return CupertinoPageRoute(builder: (_) => ExportTransactionCsvView());
-      case '/broadcastrawhex':
-        return CupertinoPageRoute(builder: (_) => BroadcastRawHexView());
-      case '/restoreoutputcsv':
-        return CupertinoPageRoute(builder: (_) => RestoreOutputCsvView());
       case '/settings/walletbackup':
         return CupertinoPageRoute(builder: (_) => WalletBackUpView());
       case '/settings/deletewalletwarningview':
