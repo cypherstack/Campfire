@@ -232,6 +232,20 @@ packages:
       url: "https://pub.dartlang.org"
     source: hosted
     version: "0.5.0"
+  decimal:
+    dependency: "direct main"
+    description:
+      name: decimal
+      url: "https://pub.dartlang.org"
+    source: hosted
+    version: "2.1.0"
+  event_bus:
+    dependency: "direct main"
+    description:
+      name: event_bus
+      url: "https://pub.dartlang.org"
+    source: hosted
+    version: "2.0.0"
   fading_edge_scrollview:
     dependency: transitive
     description:
@@ -309,6 +323,13 @@ packages:
       url: "https://pub.dartlang.org"
     source: hosted
     version: "2.3.0"
+  flutter_feather_icons:
+    dependency: "direct main"
+    description:
+      name: flutter_feather_icons
+      url: "https://pub.dartlang.org"
+    source: hosted
+    version: "2.0.0+1"
   flutter_inappwebview:
     dependency: "direct main"
     description:
@@ -358,6 +379,20 @@ packages:
       url: "https://pub.dartlang.org"
     source: hosted
     version: "4.2.1"
+  flutter_spinkit:
+    dependency: "direct main"
+    description:
+      name: flutter_spinkit
+      url: "https://pub.dartlang.org"
+    source: hosted
+    version: "5.1.0"
+  flutter_svg:
+    dependency: "direct main"
+    description:
+      name: flutter_svg
+      url: "https://pub.dartlang.org"
+    source: hosted
+    version: "0.19.3"
   flutter_test:
     dependency: "direct dev"
     description: flutter
@@ -500,7 +535,14 @@ packages:
       name: logging
       url: "https://pub.dartlang.org"
     source: hosted
-    version: "1.0.2"
+    version: "0.11.4"
+  lottie:
+    dependency: "direct main"
+    description:
+      name: lottie
+      url: "https://pub.dartlang.org"
+    source: hosted
+    version: "0.7.0+1"
   majascan:
     dependency: "direct main"
     description:
@@ -578,6 +620,20 @@ packages:
       url: "https://pub.dartlang.org"
     source: hosted
     version: "1.8.0"
+  path_drawing:
+    dependency: transitive
+    description:
+      name: path_drawing
+      url: "https://pub.dartlang.org"
+    source: hosted
+    version: "0.4.1+1"
+  path_parsing:
+    dependency: transitive
+    description:
+      name: path_parsing
+      url: "https://pub.dartlang.org"
+    source: hosted
+    version: "0.1.4"
   path_provider:
     dependency: "direct main"
     description:
@@ -718,6 +774,13 @@ packages:
       url: "https://pub.dartlang.org"
     source: hosted
     version: "2.1.0"
+  rational:
+    dependency: transitive
+    description:
+      name: rational
+      url: "https://pub.dartlang.org"
+    source: hosted
+    version: "2.0.0"
   rounded_loading_button:
     dependency: "direct main"
     description:
@@ -898,6 +961,13 @@ packages:
       url: "https://pub.dartlang.org"
     source: hosted
     version: "2.0.2"
+  uuid:
+    dependency: "direct main"
+    description:
+      name: uuid
+      url: "https://pub.dartlang.org"
+    source: hosted
+    version: "2.2.2"
   vector_math:
     dependency: transitive
     description:

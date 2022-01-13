@@ -38,22 +38,6 @@ class FeeData {
   List<int> spendCoinIndexes;
   FeeData(this.changeToMint, this.fee, this.spendCoinIndexes);
 }
-import 'package:lelantus/lelantus.dart';
-import 'package:ffi/ffi.dart';
-import '../models/lelantus_coin.dart';
-
-const JMINT_INDEX = 5;
-const MINT_INDEX = 2;
-const TRANSACTION_LELANTUS = 8;
-const ANONYMITY_SET_EMPTY_ID = 0;
-const MIDDLE_SERVER = 'https://marcomiddle.cypherstack.com';
-
-class FeeData {
-  int changeToMint;
-  int fee;
-  List<int> spendCoinIndexes;
-  FeeData(this.changeToMint, this.fee, this.spendCoinIndexes);
-}
 
 class BitcoinService extends ChangeNotifier {
   /// Holds final balances, all utxos under control
@@ -188,7 +172,8 @@ class BitcoinService extends ChangeNotifier {
   }
 
   Future<TransactionData> getLelantusTransactionData() async {
-    final wallet = await Hive.openBox('wallet');
+    final id = await _getWalletId();
+    final wallet = await Hive.openBox(id);
 
     final latestModel = await wallet.get('latest_lelantus_tx_model');
 
@@ -266,7 +251,7 @@ class BitcoinService extends ChangeNotifier {
     this._bitcoinPrice = Future(() => newBtcPrice);
     this._feeObject = Future(() => feeObj);
     this._marketInfo = Future(() => marketInfo);
-    this._useBiomterics = Future(() => useBiometrics);
+    this._useBiometrics = Future(() => useBiometrics);
 
     GlobalEventBus.instance
         .fire(NodeConnectionStatusChangedEvent(NodeConnectionStatus.synced));
@@ -433,8 +418,8 @@ class BitcoinService extends ChangeNotifier {
   /// with [satoshiAmountToSend] and [selectedTxFee]. If so, it will call buildTrasaction() and return
   /// a map containing the tx hex along with other important information. If not, then it will return
   /// an integer (1 or 2)
-  dynamic coinSelection(
-      int satoshiAmountToSend, dynamic selectedTxFee, String _recipientAddress) async {
+  dynamic coinSelection(int satoshiAmountToSend, dynamic selectedTxFee,
+      String _recipientAddress) async {
     final List<UtxoObject> availableOutputs = this.allOutputs;
     final List<UtxoObject> spendableOutputs = [];
     int spendableSatoshiValue = 0;
@@ -628,7 +613,8 @@ class BitcoinService extends ChangeNotifier {
 
     final id = await _getWalletId();
     final secureStore = new FlutterSecureStorage();
-    final seed = bip39.mnemonicToSeed(await secureStore.read(key: '${id}_mnemonic'));
+    final seed =
+        bip39.mnemonicToSeed(await secureStore.read(key: '${id}_mnemonic'));
 
     final root = bip32.BIP32.fromSeed(seed, firoNetworkType);
 
@@ -726,7 +712,8 @@ class BitcoinService extends ChangeNotifier {
     //TODO save the the transactionInfo as a mint or as a joinsplit and a jmint.
     final success = await submitHexToNetwork(hex);
     if (success) {
-      final wallet = await Hive.openBox('wallet');
+      final id = await _getWalletId();
+      final wallet = await Hive.openBox(id);
       int index = await wallet.get('mintIndex');
       await wallet.put('mintIndex', index + 1);
       return true;
@@ -933,7 +920,8 @@ class BitcoinService extends ChangeNotifier {
     if (response.statusCode == 200 || response.statusCode == 201) {
       notifyListeners();
       print('Current BTC Price: ' + response.body.toString());
-      print("response.body.toString().isEmpty: ${response.body.toString().isEmpty}");
+      print(
+          "response.body.toString().isEmpty: ${response.body.toString().isEmpty}");
       if (response.body.toString().isEmpty) {
         throw Exception('Something happened: ' +
             response.statusCode.toString() +
@@ -945,8 +933,9 @@ class BitcoinService extends ChangeNotifier {
       print("json bitcoin price result: $result");
       return result;
     } else {
-      throw Exception(
-          'Something happened: ' + response.statusCode.toString() + response.body);
+      throw Exception('Something happened: ' +
+          response.statusCode.toString() +
+          response.body);
     }
   }
 
@@ -1191,7 +1180,8 @@ class BitcoinService extends ChangeNotifier {
       Uint8List(0),
     );
 
-    final wallet = await Hive.openBox('wallet');
+    final id = await _getWalletId();
+    final wallet = await Hive.openBox(id);
     final index = await wallet.get('mintIndex');
     final jmintKeyPair = await _getNode(MINT_INDEX, index);
 
@@ -1327,8 +1317,10 @@ class BitcoinService extends ChangeNotifier {
   }
 
   Future<bip32.BIP32> _getNode(int chain, int index) async {
+    final id = await _getWalletId();
     final secureStore = new FlutterSecureStorage();
-    final seed = bip39.mnemonicToSeed(await secureStore.read(key: 'mnemonic'));
+    final seed =
+        bip39.mnemonicToSeed(await secureStore.read(key: '${id}_mnemonic'));
     final root = bip32.BIP32.fromSeed(seed);
 
     final node = root.derivePath("m/44'/136'/0'/$chain/$index");
@@ -1336,7 +1328,8 @@ class BitcoinService extends ChangeNotifier {
   }
 
   _getUnspentCoins() async {
-    final wallet = await Hive.openBox('wallet');
+    final id = await _getWalletId();
+    final wallet = await Hive.openBox(id);
     final Map _lelantus_coins = await wallet.get('_lelantus_coins');
     List<LelantusCoin> coins = [];
     _lelantus_coins.forEach((key, value) {
@@ -1477,8 +1470,10 @@ class BitcoinService extends ChangeNotifier {
       }
     }
 
+    final id = await _getWalletId();
     final secureStore = new FlutterSecureStorage();
-    final seed = bip39.mnemonicToSeed(await secureStore.read(key: 'mnemonic'));
+    final seed =
+        bip39.mnemonicToSeed(await secureStore.read(key: '${id}_mnemonic'));
 
     final root = bip32.BIP32.fromSeed(seed, firoNetworkType);
 
@@ -1539,7 +1534,7 @@ class BitcoinService extends ChangeNotifier {
           utxosToUse[i].txid, utxosToUse[i].vout, null, outputDataArray[i]);
     }
 
-    final wallet = await Hive.openBox('wallet');
+    final wallet = await Hive.openBox(id);
     final index = await wallet.get('mintIndex');
     print("index of mint $index");
 
@@ -1687,7 +1682,8 @@ class BitcoinService extends ChangeNotifier {
     await wallet.put('changeIndex', changeIndex);
 
     final secureStore = new FlutterSecureStorage();
-    await secureStore.write(key: '${id}_mnemonic', value: suppliedMnemonic.trim());
+    await secureStore.write(
+        key: '${id}_mnemonic', value: suppliedMnemonic.trim());
     notifyListeners();
     await restore();
     notifyListeners();
@@ -1795,7 +1791,8 @@ class BitcoinService extends ChangeNotifier {
     print("mints $_lelantus_coins");
     print("jmints $spendTxIds");
 
-    final wallet = await Hive.openBox('wallet');
+    final id = await _getWalletId();
+    final wallet = await Hive.openBox(id);
     await wallet.put('mintIndex', lastFoundIndex + 1);
     await wallet.put('_lelantus_coins', _lelantus_coins);
 

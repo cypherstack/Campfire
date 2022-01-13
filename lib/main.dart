@@ -121,7 +121,8 @@ class _MaterialAppWithThemeState extends State<MaterialAppWithTheme> {
         primaryColor: CFColors.spark,
         checkboxTheme: CheckboxThemeData(
           shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(SizingUtilities.checkboxBorderRadius),
+            borderRadius:
+                BorderRadius.circular(SizingUtilities.checkboxBorderRadius),
           ),
           checkColor: MaterialStateColor.resolveWith(
             (state) {
@@ -163,7 +164,8 @@ class _MaterialAppWithThemeState extends State<MaterialAppWithTheme> {
       ),
       home: FutureBuilder(
         future: _checkForWallets(),
-        builder: (BuildContext context, AsyncSnapshot<bool> shouldRouteToOnboarding) {
+        builder: (BuildContext context,
+            AsyncSnapshot<bool> shouldRouteToOnboarding) {
           if (shouldRouteToOnboarding.connectionState == ConnectionState.done) {
             if (shouldRouteToOnboarding.data) {
               // return SetUpLockscreenView();
