@@ -53,6 +53,8 @@ class _WalletViewState extends State<WalletView> {
     super.dispose();
   }
 
+  TextSwitchButtonState _balanceToggleState = TextSwitchButtonState.available;
+
   @override
   Widget build(BuildContext context) {
     final BitcoinService bitcoinService = Provider.of<BitcoinService>(context);
@@ -62,7 +64,10 @@ class _WalletViewState extends State<WalletView> {
         kToolbarHeight -
         SizingUtilities.bottomToolBarHeight;
 
-    Widget _buildBalance({String fiatBalance, String balance}) {
+    /// list of balances with length of 4 is expected
+    // index 0 and 1 for the funds available to spend.
+    // index 2 and 3 for all the funds in the wallet (including the undependable ones)
+    Widget _buildBalance(List<String> balances) {
       return Padding(
         padding: const EdgeInsets.all(20.0),
         child: Column(
@@ -74,6 +79,9 @@ class _WalletViewState extends State<WalletView> {
               child: TextSwitchButton(
                 buttonStateChanged: (state) {
                   print("balance switch button changed to: $state");
+                  setState(() {
+                    _balanceToggleState = state;
+                  });
                 },
               ),
             ),
@@ -82,7 +90,9 @@ class _WalletViewState extends State<WalletView> {
             ),
             FittedBox(
               child: Text(
-                "$balance ${CurrencyUtilities.coinName}",
+                _balanceToggleState == TextSwitchButtonState.available
+                    ? "${balances[0]} ${CurrencyUtilities.coinName}"
+                    : "${balances[2]} ${CurrencyUtilities.coinName}",
                 style: GoogleFonts.workSans(
                   color: CFColors.white,
                   fontSize: 28,
@@ -95,13 +105,24 @@ class _WalletViewState extends State<WalletView> {
               height: 5,
             ),
             FittedBox(
-              child: Text(
-                fiatBalance,
-                style: GoogleFonts.workSans(
-                  color: CFColors.white,
-                  fontSize: 14,
-                  fontWeight: FontWeight.w600,
-                ),
+              child: FutureBuilder(
+                future: bitcoinService.currency,
+                builder: (context, AsyncSnapshot<String> snapshot) {
+                  String fiatTicker = "...";
+                  if (snapshot.connectionState == ConnectionState.done) {
+                    fiatTicker = snapshot.data;
+                  }
+                  return Text(
+                    _balanceToggleState == TextSwitchButtonState.available
+                        ? "${balances[1]} $fiatTicker"
+                        : "${balances[3]} $fiatTicker",
+                    style: GoogleFonts.workSans(
+                      color: CFColors.white,
+                      fontSize: 14,
+                      fontWeight: FontWeight.w600,
+                    ),
+                  );
+                },
               ),
             ),
           ],
@@ -137,29 +158,16 @@ class _WalletViewState extends State<WalletView> {
                         if (balancesData.connectionState ==
                             ConnectionState.done) {
                           if (balancesData == null || balancesData.hasError) {
-                            return _buildBalance(
-                              balance: "...",
-                              fiatBalance: "...",
-                            );
+                            return _buildBalance(["...", "...", "...", "..."]);
                           }
 
                           if (_nodeStatus == NodeConnectionStatus.synced)
-                            //TODO make sure that the correct data[] is given depending on if this is all available or the full amount.
-                            return _buildBalance(
-                              fiatBalance: balancesData.data[1].toString(),
-                              balance: balancesData.data[0].toString(),
-                            );
+                            return _buildBalance(balancesData.data);
                           else {
-                            return _buildBalance(
-                              balance: "...",
-                              fiatBalance: "...",
-                            );
+                            return _buildBalance(["...", "...", "...", "..."]);
                           }
                         } else {
-                          return _buildBalance(
-                            balance: "...",
-                            fiatBalance: "...",
-                          );
+                          return _buildBalance(["...", "...", "...", "..."]);
                         }
                       },
                     ),

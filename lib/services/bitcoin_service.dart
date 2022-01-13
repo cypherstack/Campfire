@@ -1914,10 +1914,10 @@ class BitcoinService extends ChangeNotifier {
     }
     final utxosValue = utxos == null ? 0 : utxos.bitcoinBalance;
     List<String> balances = List.empty(growable: true);
-    balances.add(lelantusBalance.toString());
-    balances.add((lelantusBalance * price).toStringAsFixed(8));
-    balances.add((lelantusBalance + utxosValue).toString());
-    balances.add(((lelantusBalance + utxosValue) * price).toStringAsFixed(8));
+    balances.add(lelantusBalance.toStringAsFixed(8));
+    balances.add((lelantusBalance * price).toStringAsFixed(2));
+    balances.add((lelantusBalance + utxosValue).toStringAsFixed(8));
+    balances.add(((lelantusBalance + utxosValue) * price).toStringAsFixed(2));
     return balances;
   }
 }
