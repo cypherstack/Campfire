@@ -35,9 +35,9 @@ class NotesService extends ChangeNotifier {
   }
 
   /// fetch note given a transaction ID
-  /// returns null if none found
   Future<String> getNoteFor({String txid}) async {
-    return (await _notes)[txid];
+    final note = (await notes)[txid];
+    return note == null ? "" : note;
   }
 
   // add note to db
@@ -54,7 +54,20 @@ class NotesService extends ChangeNotifier {
 
     notes[txid] = note;
     await wallet.put('notes', notes);
-    print("tx note saved");
+    print("addNote: tx note saved");
+    await _refreshNotes();
+  }
+
+  // edit or add new note
+  editOrAddNote({String txid, String note}) async {
+    final walletName = await currentWalletName;
+    final wallet = await Hive.openBox(walletName);
+    final _notes = await wallet.get('notes');
+    final notes = _notes == null ? <String, String>{} : _notes;
+
+    notes[txid] = note;
+    await wallet.put('notes', notes);
+    print("editOrAddNote: tx note saved");
     await _refreshNotes();
   }
 
