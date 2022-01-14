@@ -1,5 +1,6 @@
 import 'dart:async';
 import 'dart:collection';
+import 'dart:math';
 
 import 'package:bip39/bip39.dart' as bip39;
 import 'package:bip39/src/wordlists/english.dart' as bip39wordlist;
@@ -215,12 +216,11 @@ class _RestoreWalletFormViewState extends State<RestoreWalletFormView> {
 
               if (bip39.validateMnemonic(mnemonic) == false) {
                 showDialog(
-                  context: context,
                   useSafeArea: false,
                   barrierDismissible: false,
-                  builder: (context) {
-                    return InvalidInputDialog();
-                  },
+                  context: context,
+                  builder: (_) =>
+                      CampfireAlert(message: "Invalid seed phrase!"),
                 );
               } else {
                 final btcService =
@@ -414,18 +414,8 @@ class _RestoreWalletFormViewState extends State<RestoreWalletFormView> {
                               await Clipboard.getData(Clipboard.kTextPlain);
                           final content = data.text.trim();
                           final list = content.split(" ");
-                          if (list.length != _controllers.length) {
-                            print("Pasted Invalid mnemonic length!");
-                            showDialog(
-                              useSafeArea: false,
-                              barrierDismissible: false,
-                              context: context,
-                              builder: (_) => CampfireAlert(
-                                  message: "Invalid seed phrase length!"),
-                            );
-                            return;
-                          }
-                          for (int i = 0; i < _controllers.length; i++) {
+                          final count = min(_controllers.length, list.length);
+                          for (int i = 0; i < count; i++) {
                             _controllers[i].text = list[i];
                           }
                         },
