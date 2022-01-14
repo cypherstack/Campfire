@@ -929,9 +929,11 @@ class BitcoinService extends ChangeNotifier {
       print(
           "response.body.toString().isEmpty: ${response.body.toString().isEmpty}");
       if (response.body.toString().isEmpty) {
-        throw Exception('Something happened: ' +
-            response.statusCode.toString() +
-            " response.body is empty!");
+        // TODO change this (nice descriptive todo, i know)
+        return 1;
+        // throw Exception('Something happened: ' +
+        //     response.statusCode.toString() +
+        //     " response.body is empty!");
       }
       //TODO randomly get a json parse error here (due to empty response body)
       // E/flutter (16131): [ERROR:flutter/lib/ui/ui_dart_state.cc(209)] Unhandled Exception: FormatException: Unexpected end of input (at character 1)
@@ -1090,7 +1092,7 @@ class BitcoinService extends ChangeNotifier {
       '$MIDDLE_SERVER/getcoinsforrecovery',
       body: jsonEncode(requestBody),
       headers: {'Content-Type': 'application/json'},
-    ).timeout(Duration(minutes: 3));
+    ).timeout(Duration(minutes: 10));
 
     if (response.statusCode == 200 || response.statusCode == 201) {
       var tod = json.decode(response.body);
