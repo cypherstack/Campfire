@@ -204,7 +204,6 @@ class _WalletViewState extends State<WalletView> {
                     ),
                   ),
                   IconButton(
-                    // TODO: implement transaction search
                     onPressed: () {
                       showDialog(
                           context: context,

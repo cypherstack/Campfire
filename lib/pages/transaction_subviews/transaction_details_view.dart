@@ -9,7 +9,8 @@ import 'package:paymint/utilities/sizing_utilities.dart';
 import 'package:provider/provider.dart';
 
 class TransactionDetailsView extends StatelessWidget {
-  const TransactionDetailsView({Key key, @required this.transaction}) : super(key: key);
+  const TransactionDetailsView({Key key, @required this.transaction})
+      : super(key: key);
 
   final Transaction transaction;
 
@@ -60,7 +61,8 @@ class TransactionDetailsView extends StatelessWidget {
 
   // TODO need to store sent to address for transactions on server for this
   _buildSentToItem(BuildContext context) {
-    final addressService = Provider.of<AddressBookService>(context, listen: false);
+    final addressService =
+        Provider.of<AddressBookService>(context, listen: false);
     return Column(
       children: [
         Align(
@@ -77,7 +79,8 @@ class TransactionDetailsView extends StatelessWidget {
         ),
         FutureBuilder(
           future: addressService.addressBookEntries,
-          builder: (BuildContext context, AsyncSnapshot<Map<String, String>> snapshot) {
+          builder: (BuildContext context,
+              AsyncSnapshot<Map<String, String>> snapshot) {
             if (snapshot.connectionState == ConnectionState.done) {
               // TODO: need address to match up and find contact name
               final address = "";
@@ -170,7 +173,8 @@ class TransactionDetailsView extends StatelessWidget {
               height: SizingUtilities.standardButtonHeight,
               decoration: BoxDecoration(
                 color: CFColors.fog,
-                borderRadius: BorderRadius.circular(SizingUtilities.circularBorderRadius),
+                borderRadius:
+                    BorderRadius.circular(SizingUtilities.circularBorderRadius),
               ),
               child: Center(
                 child: FittedBox(
@@ -197,18 +201,22 @@ class TransactionDetailsView extends StatelessWidget {
                     _buildSeparator(),
                     // if (transaction.txType == "Sent") _buildSentToItem(context),
                     // _buildSeparator(),
-                    _buildItem("Amount:",
-                        Utilities.satoshiAmountToPrettyString(transaction.amount)),
+                    _buildItem(
+                        "Amount:",
+                        Utilities.satoshiAmountToPrettyString(
+                            transaction.amount)),
                     _buildSeparator(),
                     _buildItem(
-                        "Fee:", Utilities.satoshiAmountToPrettyString(transaction.fees)),
+                        "Fee:",
+                        Utilities.satoshiAmountToPrettyString(
+                            transaction.fees)),
                     _buildSeparator(),
-                    _buildItem("Date:", Utilities.extractDateFrom(transaction.timestamp)),
+                    _buildItem("Date:",
+                        Utilities.extractDateFrom(transaction.timestamp)),
                     _buildSeparator(),
                     _buildItem("Transaction ID:", transaction.txid),
                     _buildSeparator(),
-                    // TODO transaction block height
-                    _buildItem("Block Height:", "not implemented yet"),
+                    _buildItem("Block Height:", transaction.height.toString()),
                   ],
                 ),
               ),

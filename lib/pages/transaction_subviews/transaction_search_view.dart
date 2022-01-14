@@ -1,7 +1,9 @@
+import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_svg/svg.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:paymint/pages/settings_view/helpers/builders.dart';
+import 'package:paymint/pages/transaction_subviews/transaction_search_results_view.dart';
 import 'package:paymint/services/utils/currency_utils.dart';
 import 'package:paymint/utilities/cfcolors.dart';
 import 'package:paymint/utilities/shared_utilities.dart';
@@ -19,8 +21,8 @@ class TransactionSearchView extends StatefulWidget {
 }
 
 class _TransactionSearchViewState extends State<TransactionSearchView> {
-  final _amountTextEdittingController = TextEditingController();
-  final _keywordTextEdittingController = TextEditingController();
+  final _amountTextEditingController = TextEditingController();
+  final _keywordTextEditingController = TextEditingController();
 
   final _labelStyle = GoogleFonts.workSans(
     color: CFColors.twilight,
@@ -60,11 +62,9 @@ class _TransactionSearchViewState extends State<TransactionSearchView> {
     );
   }
 
-  //TODO pick a better initial date
-  // 2007 chosen as that is just before bitcoin launched
-  final _initialDate = DateTime(2007);
-  var _selectedFromDate = DateTime.now();
+  var _selectedFromDate = DateTime(2007);
   var _selectedToDate = DateTime.now();
+  bool _dateSelected = false;
 
   _buildDateRangePicker() {
     final middleSeparatorPadding = 2.0;
@@ -83,12 +83,17 @@ class _TransactionSearchViewState extends State<TransactionSearchView> {
           onTap: () async {
             final date = await showDatePicker(
               context: context,
-              initialDate: _selectedFromDate,
-              firstDate: _initialDate,
+              initialDate: DateTime.now(),
+              //TODO pick a better initial date
+              // 2007 chosen as that is just before bitcoin launched
+              firstDate: DateTime(2007),
               lastDate: DateTime.now(),
             );
             if (date != null && date != _selectedFromDate) {
               _selectedFromDate = date;
+
+              // flag for search
+              _dateSelected = true;
 
               // flag to adjust date so from date is always before to date
               final flag = !_selectedFromDate.isBefore(_selectedToDate);
@@ -109,7 +114,8 @@ class _TransactionSearchViewState extends State<TransactionSearchView> {
             width: width,
             decoration: BoxDecoration(
               color: CFColors.fog,
-              borderRadius: BorderRadius.circular(SizingUtilities.circularBorderRadius),
+              borderRadius:
+                  BorderRadius.circular(SizingUtilities.circularBorderRadius),
               border: Border.all(
                 color: CFColors.smoke,
                 width: 1,
@@ -151,12 +157,17 @@ class _TransactionSearchViewState extends State<TransactionSearchView> {
           onTap: () async {
             final date = await showDatePicker(
               context: context,
-              initialDate: _selectedToDate,
-              firstDate: _initialDate,
+              //TODO pick a better initial date
+              // 2007 chosen as that is just before bitcoin launched
+              initialDate: DateTime.now(),
+              firstDate: DateTime(2007),
               lastDate: DateTime.now(),
             );
             if (date != null && date != _selectedFromDate) {
               _selectedToDate = date;
+
+              // flag for search
+              _dateSelected = true;
 
               // flag to adjust date so from date is always before to date
               final flag = !_selectedToDate.isAfter(_selectedFromDate);
@@ -177,7 +188,8 @@ class _TransactionSearchViewState extends State<TransactionSearchView> {
             width: width,
             decoration: BoxDecoration(
               color: CFColors.fog,
-              borderRadius: BorderRadius.circular(SizingUtilities.circularBorderRadius),
+              borderRadius:
+                  BorderRadius.circular(SizingUtilities.circularBorderRadius),
               border: Border.all(
                 color: CFColors.smoke,
                 width: 1,
@@ -278,7 +290,8 @@ class _TransactionSearchViewState extends State<TransactionSearchView> {
                             height: 20,
                             width: 20,
                             child: Checkbox(
-                              materialTapTargetSize: MaterialTapTargetSize.shrinkWrap,
+                              materialTapTargetSize:
+                                  MaterialTapTargetSize.shrinkWrap,
                               value: _isActiveReceivedCheckbox,
                               onChanged: (newValue) {
                                 setState(() {
@@ -314,7 +327,8 @@ class _TransactionSearchViewState extends State<TransactionSearchView> {
                             height: 20,
                             width: 20,
                             child: Checkbox(
-                              materialTapTargetSize: MaterialTapTargetSize.shrinkWrap,
+                              materialTapTargetSize:
+                                  MaterialTapTargetSize.shrinkWrap,
                               value: _isActiveSentCheckbox,
                               onChanged: (newValue) {
                                 setState(() {
@@ -373,7 +387,7 @@ class _TransactionSearchViewState extends State<TransactionSearchView> {
                         height: 8,
                       ),
                       TextField(
-                        controller: _amountTextEdittingController,
+                        controller: _amountTextEditingController,
                       ),
                       SizedBox(
                         height: 24,
@@ -391,7 +405,7 @@ class _TransactionSearchViewState extends State<TransactionSearchView> {
                         height: 8,
                       ),
                       TextField(
-                        controller: _keywordTextEdittingController,
+                        controller: _keywordTextEditingController,
                       ),
                       Spacer(),
                       SizedBox(
@@ -407,7 +421,8 @@ class _TransactionSearchViewState extends State<TransactionSearchView> {
                                 child: SimpleButton(
                                   onTap: () async {
                                     FocusScope.of(context).unfocus();
-                                    await Future.delayed(Duration(milliseconds: 50));
+                                    await Future.delayed(
+                                        Duration(milliseconds: 50));
                                     Navigator.pop(context);
                                   },
                                   child: Text(
@@ -426,11 +441,29 @@ class _TransactionSearchViewState extends State<TransactionSearchView> {
                               child: SizedBox(
                                 height: 48,
                                 child: GradientButton(
-                                  onTap: () {},
                                   child: Text(
                                     "Apply",
                                     style: CFTextStyles.button,
                                   ),
+                                  onTap: () {
+                                    Navigator.push(context,
+                                        CupertinoPageRoute(builder: (_) {
+                                      return TransactionSearchResultsView(
+                                        start: _dateSelected
+                                            ? _selectedFromDate
+                                            : null,
+                                        end: _dateSelected
+                                            ? _selectedToDate
+                                            : null,
+                                        sent: _isActiveSentCheckbox,
+                                        received: _isActiveReceivedCheckbox,
+                                        amount: double.tryParse(
+                                            _amountTextEditingController.text),
+                                        keyword:
+                                            _keywordTextEditingController.text,
+                                      );
+                                    }));
+                                  },
                                 ),
                               ),
                             ),
