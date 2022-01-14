@@ -189,24 +189,20 @@ class _AddressBookEntryDetailsViewState
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
-            FittedBox(
-              child: SvgPicture.asset(
-                "assets/svg/empty-tx-list.svg",
-                width: MediaQuery.of(context).size.width * 0.52,
-              ),
+            SvgPicture.asset(
+              "assets/svg/empty-tx-list.svg",
+              width: MediaQuery.of(context).size.width * 0.52,
             ),
             SizedBox(
               height: 8,
             ),
-            FittedBox(
-              child: Text(
-                "NO TRANSACTIONS FOUND",
-                style: GoogleFonts.workSans(
-                  color: CFColors.dew,
-                  fontWeight: FontWeight.w600,
-                  fontSize: 12,
-                  letterSpacing: 0.25,
-                ),
+            Text(
+              "NO TRANSACTIONS FOUND",
+              style: GoogleFonts.workSans(
+                color: CFColors.dew,
+                fontWeight: FontWeight.w600,
+                fontSize: 12,
+                letterSpacing: 0.25,
               ),
             )
           ],
