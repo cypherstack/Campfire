@@ -6,6 +6,7 @@ import 'package:paymint/notifications/campfire_alert.dart';
 import 'package:paymint/notifications/modal_popup_dialog.dart';
 import 'package:paymint/services/node_service.dart';
 import 'package:paymint/utilities/cfcolors.dart';
+import 'package:paymint/utilities/misc_global_constants.dart';
 import 'package:paymint/utilities/sizing_utilities.dart';
 import 'package:paymint/utilities/text_styles.dart';
 import 'package:paymint/widgets/custom_buttons/app_bar_icon_button.dart';
@@ -72,8 +73,8 @@ class _NodeDetailsViewState extends State<NodeDetailsView> {
         useSafeArea: false,
         barrierDismissible: false,
         context: context,
-        builder: (_) =>
-            CampfireAlert(message: "A node with the name \"$name\" already exists!"),
+        builder: (_) => CampfireAlert(
+            message: "A node with the name \"$name\" already exists!"),
       );
     }
   }
@@ -167,7 +168,7 @@ class _NodeDetailsViewState extends State<NodeDetailsView> {
         ),
       ),
       actions: [
-        if (!_isEditing)
+        if (!_isEditing && widget.nodeName != CampfireConstants.defaultNodeName)
           Padding(
             padding: EdgeInsets.only(
               top: 10,
@@ -213,7 +214,8 @@ class _NodeDetailsViewState extends State<NodeDetailsView> {
           child: Container(
             decoration: BoxDecoration(
               color: CFColors.white,
-              borderRadius: BorderRadius.circular(SizingUtilities.circularBorderRadius),
+              borderRadius:
+                  BorderRadius.circular(SizingUtilities.circularBorderRadius),
               boxShadow: [CFColors.standardBoxShadow],
             ),
             child: Column(
@@ -221,7 +223,8 @@ class _NodeDetailsViewState extends State<NodeDetailsView> {
               children: [
                 GestureDetector(
                   onTap: () {
-                    Navigator.push(context, CupertinoPageRoute(builder: (context) {
+                    Navigator.push(context,
+                        CupertinoPageRoute(builder: (context) {
                       return NodeDetailsView(
                         isEdit: true,
                         nodeData: widget.nodeData,
@@ -346,7 +349,8 @@ class _NodeDetailsViewState extends State<NodeDetailsView> {
                         ),
                       ),
                       onTap: () async {
-                        bool success = await nodeService.deleteNode(widget.nodeName);
+                        bool success =
+                            await nodeService.deleteNode(widget.nodeName);
                         if (success) {
                           final navigator = Navigator.of(context);
                           navigator.pop();
@@ -447,7 +451,8 @@ class _NodeDetailsViewState extends State<NodeDetailsView> {
   _buildTestButton(BuildContext context) {
     return SizedBox(
       height: 48,
-      width: MediaQuery.of(context).size.width - (SizingUtilities.standardPadding * 2),
+      width: MediaQuery.of(context).size.width -
+          (SizingUtilities.standardPadding * 2),
       child: SimpleButton(
         child: FittedBox(
           child: Text(
@@ -467,7 +472,8 @@ class _NodeDetailsViewState extends State<NodeDetailsView> {
   _buildSaveButton(BuildContext context) {
     return SizedBox(
       height: 48,
-      width: MediaQuery.of(context).size.width - (SizingUtilities.standardPadding * 2),
+      width: MediaQuery.of(context).size.width -
+          (SizingUtilities.standardPadding * 2),
       child: GradientButton(
         child: Text(
           "SAVE",
