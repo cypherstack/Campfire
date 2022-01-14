@@ -4,13 +4,20 @@ import 'package:flutter_feather_icons/flutter_feather_icons.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:paymint/models/transactions_model.dart';
 import 'package:paymint/pages/transaction_subviews/transaction_details_view.dart';
+import 'package:paymint/services/notes_service.dart';
 import 'package:paymint/utilities/cfcolors.dart';
 import 'package:paymint/utilities/sizing_utilities.dart';
+import 'package:provider/provider.dart';
 
 class TransactionCard extends StatelessWidget {
-  const TransactionCard(
-      {Key key, this.txType, this.date, this.amount, this.fiatValue, this.transaction})
-      : super(key: key);
+  const TransactionCard({
+    Key key,
+    this.txType,
+    this.date,
+    this.amount,
+    this.fiatValue,
+    this.transaction,
+  }) : super(key: key);
 
   final String txType;
   final String date;
@@ -54,19 +61,26 @@ class TransactionCard extends StatelessWidget {
       );
     }
 
+    final notesService = Provider.of<NotesService>(context, listen: false);
+
     return Material(
       color: CFColors.white,
       elevation: 0,
       shape: RoundedRectangleBorder(
-        borderRadius: BorderRadius.circular(SizingUtilities.circularBorderRadius),
+        borderRadius:
+            BorderRadius.circular(SizingUtilities.circularBorderRadius),
       ),
       child: GestureDetector(
-        onTap: () {
+        onTap: () async {
+          final note = await notesService.getNoteFor(txid: transaction.txid);
           Navigator.push(
             context,
             CupertinoPageRoute(
               builder: (BuildContext context) {
-                return TransactionDetailsView(transaction: transaction);
+                return TransactionDetailsView(
+                  transaction: transaction,
+                  note: note,
+                );
               },
             ),
           );
@@ -74,7 +88,8 @@ class TransactionCard extends StatelessWidget {
         child: Container(
           decoration: BoxDecoration(
             color: CFColors.white,
-            borderRadius: BorderRadius.circular(SizingUtilities.circularBorderRadius),
+            borderRadius:
+                BorderRadius.circular(SizingUtilities.circularBorderRadius),
             boxShadow: [
               CFColors.standardBoxShadow,
             ],
@@ -94,7 +109,8 @@ class TransactionCard extends StatelessWidget {
               ),
               Expanded(
                 child: Padding(
-                  padding: const EdgeInsets.only(top: 16, bottom: 16, right: 14),
+                  padding:
+                      const EdgeInsets.only(top: 16, bottom: 16, right: 14),
                   child: Column(
                     mainAxisAlignment: MainAxisAlignment.spaceBetween,
                     // crossAxisAlignment: CrossAxisAlignment.stretch,
