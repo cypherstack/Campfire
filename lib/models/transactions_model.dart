@@ -23,8 +23,9 @@ class TransactionData {
 
   factory TransactionData.fromJson(Map<String, dynamic> json) {
     var dateTimeChunks = json['dateTimeChunks'] as List;
-    List<TransactionChunk> chunksList =
-        dateTimeChunks.map((txChunk) => TransactionChunk.fromJson(txChunk)).toList();
+    List<TransactionChunk> chunksList = dateTimeChunks
+        .map((txChunk) => TransactionChunk.fromJson(txChunk))
+        .toList();
 
     return TransactionData(txChunks: chunksList);
   }
@@ -85,9 +86,20 @@ class TransactionChunk {
 
   factory TransactionChunk.fromJson(Map<String, dynamic> json) {
     var txArray = json['transactions'] as List;
-    List<Transaction> txList = txArray.map((tx) => Transaction.fromJson(tx)).toList();
+    List<Transaction> txList =
+        txArray.map((tx) => Transaction.fromJson(tx)).toList();
 
     return TransactionChunk(timestamp: json['timestamp'], transactions: txList);
+  }
+
+  String toString() {
+    String transaction = "timestamp: $timestamp transactions: [\n";
+    for (final tx in transactions) {
+      transaction += "    $tx \n";
+    }
+    transaction += "]";
+
+    return transaction;
   }
 }
 
@@ -127,6 +139,8 @@ class Transaction {
   final String address;
   // @HiveField(14)
   final int height;
+  // @HiveField(15)
+  final String subType;
 
   Transaction(
       {this.txid,
@@ -143,13 +157,15 @@ class Transaction {
       this.inputs,
       this.outputs,
       this.address,
-      this.height});
+      this.height,
+      this.subType});
 
   factory Transaction.fromJson(Map<String, dynamic> json) {
     var inputArray = json['inputs'] as List;
     var outputArray = json['outputs'] as List;
 
-    List<Input> inputList = inputArray.map((input) => Input.fromJson(input)).toList();
+    List<Input> inputList =
+        inputArray.map((input) => Input.fromJson(input)).toList();
     List<Output> outputList =
         outputArray.map((output) => Output.fromJson(output)).toList();
 
@@ -168,7 +184,8 @@ class Transaction {
         inputs: inputList,
         outputs: outputList,
         address: json['address'],
-        height: json['height']);
+        height: json['height'],
+        subType: json["subType"]);
   }
 
   factory Transaction.fromLelantusJson(Map<String, dynamic> json) {
@@ -187,12 +204,51 @@ class Transaction {
         inputs: [],
         outputs: [],
         address: json["address"],
-        height: json["height"]);
+        height: json["height"],
+        subType: json["subType"]);
+  }
+
+  copyWith(
+      {txid: null,
+      confirmedStatus: null,
+      timestamp: null,
+      txType: null,
+      amount: null,
+      aliens: null,
+      worthNow: null,
+      worthAtBlockTimestamp: null,
+      fees: null,
+      inputSize: null,
+      outputSize: null,
+      inputs: null,
+      outputs: null,
+      address: null,
+      height: null,
+      subType: null}) {
+    return Transaction(
+      txid: txid ?? this.txid,
+      confirmedStatus: confirmedStatus ?? this.confirmedStatus,
+      timestamp: timestamp ?? this.timestamp,
+      txType: txType ?? this.txType,
+      amount: amount ?? this.amount,
+      aliens: aliens ?? this.aliens,
+      worthNow: worthNow ?? this.worthNow,
+      worthAtBlockTimestamp:
+          worthAtBlockTimestamp ?? this.worthAtBlockTimestamp,
+      fees: fees ?? this.fees,
+      inputSize: inputSize ?? this.inputSize,
+      outputSize: outputSize ?? this.outputSize,
+      inputs: inputs ?? this.inputs,
+      outputs: outputs ?? this.outputs,
+      address: address ?? this.address,
+      height: height ?? this.height,
+      subType: subType ?? this.subType,
+    );
   }
 
   String toString() {
     String transaction =
-        "{txid: $txid, type: $txType, value: $amount, fee: $fees, height: $height, confirm: $confirmedStatus, address: $address, inputs: $inputs }";
+        "{txid: $txid, type: $txType, subType: $subType, value: $amount, fee: $fees, height: $height, confirm: $confirmedStatus, address: $address, timestamp: $timestamp, inputs: $inputs }";
     return transaction;
   }
 }

@@ -9,7 +9,12 @@ import 'package:paymint/utilities/sizing_utilities.dart';
 
 class TransactionCard extends StatelessWidget {
   const TransactionCard(
-      {Key key, this.txType, this.date, this.amount, this.fiatValue, this.transaction})
+      {Key key,
+      this.txType,
+      this.date,
+      this.amount,
+      this.fiatValue,
+      this.transaction})
       : super(key: key);
 
   final String txType;
@@ -58,7 +63,8 @@ class TransactionCard extends StatelessWidget {
       color: CFColors.white,
       elevation: 0,
       shape: RoundedRectangleBorder(
-        borderRadius: BorderRadius.circular(SizingUtilities.circularBorderRadius),
+        borderRadius:
+            BorderRadius.circular(SizingUtilities.circularBorderRadius),
       ),
       child: GestureDetector(
         onTap: () {
@@ -74,7 +80,8 @@ class TransactionCard extends StatelessWidget {
         child: Container(
           decoration: BoxDecoration(
             color: CFColors.white,
-            borderRadius: BorderRadius.circular(SizingUtilities.circularBorderRadius),
+            borderRadius:
+                BorderRadius.circular(SizingUtilities.circularBorderRadius),
             boxShadow: [
               CFColors.standardBoxShadow,
             ],
@@ -94,7 +101,8 @@ class TransactionCard extends StatelessWidget {
               ),
               Expanded(
                 child: Padding(
-                  padding: const EdgeInsets.only(top: 16, bottom: 16, right: 14),
+                  padding:
+                      const EdgeInsets.only(top: 16, bottom: 16, right: 14),
                   child: Column(
                     mainAxisAlignment: MainAxisAlignment.spaceBetween,
                     // crossAxisAlignment: CrossAxisAlignment.stretch,

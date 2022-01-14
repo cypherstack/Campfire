@@ -103,13 +103,14 @@ class TransactionAdapter extends TypeAdapter<Transaction> {
       outputs: (fields[12] as List).cast<Output>(),
       address: fields[13] as String,
       height: fields[14] as int,
+      subType: fields[15] as String,
     );
   }
 
   @override
   void write(BinaryWriter writer, Transaction obj) {
     writer
-      ..writeByte(15)
+      ..writeByte(16)
       ..writeByte(0)
       ..write(obj.txid)
       ..writeByte(1)
@@ -139,7 +140,9 @@ class TransactionAdapter extends TypeAdapter<Transaction> {
       ..writeByte(13)
       ..write(obj.address)
       ..writeByte(14)
-      ..write(obj.height);
+      ..write(obj.height)
+      ..writeByte(15)
+      ..write(obj.subType);
   }
 
   @override

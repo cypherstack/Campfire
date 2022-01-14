@@ -38,6 +38,7 @@ class _SendViewState extends State<SendView> {
   double _firoAmount = 0;
   double _fee = 0;
   double _totalAmount = 0;
+  double _maxFee = 0;
 
   bool _autofill = false;
   String _address;
@@ -86,6 +87,17 @@ class _SendViewState extends State<SendView> {
   }
 
   Widget _buildTxFeeInfo() {
+    final BitcoinService bitcoinService = Provider.of<BitcoinService>(context);
+    var defaultTransaction = FittedBox(
+      child: Text(
+        "${0} ${CurrencyUtilities.coinName}",
+        style: GoogleFonts.workSans(
+          color: CFColors.twilight,
+          fontWeight: FontWeight.w600,
+          fontSize: 16,
+        ),
+      ),
+    );
     return Column(
       children: [
         // Transaction fee
@@ -94,7 +106,7 @@ class _SendViewState extends State<SendView> {
           children: [
             FittedBox(
               child: Text(
-                "Transaction fee",
+                "Maximum Transaction fee",
                 style: GoogleFonts.workSans(
                   color: CFColors.twilight,
                   fontWeight: FontWeight.w500,
@@ -102,16 +114,48 @@ class _SendViewState extends State<SendView> {
                 ),
               ),
             ),
-            FittedBox(
-              child: Text(
-                "${_fee.toStringAsFixed(8)} ${CurrencyUtilities.coinName}",
-                style: GoogleFonts.workSans(
-                  color: CFColors.twilight,
-                  fontWeight: FontWeight.w600,
-                  fontSize: 16,
-                ),
-              ),
-            ),
+            _maxFee == 0
+                ?
+                // FutureBuilder(
+                //         future: bitcoinService.getFullBalance(),
+                //         builder: (context, futureData) {
+                //           if (futureData.connectionState == ConnectionState.done) {
+                //             return
+                FutureBuilder(
+                    future: bitcoinService.maxFee,
+                    builder: (context, futureData) {
+                      if (futureData.connectionState == ConnectionState.done) {
+                        _maxFee = futureData.data.fee / 100000000;
+                        return FittedBox(
+                          child: Text(
+                            "${_maxFee.toStringAsFixed(8)} ${CurrencyUtilities.coinName}",
+                            style: GoogleFonts.workSans(
+                              color: CFColors.twilight,
+                              fontWeight: FontWeight.w600,
+                              fontSize: 16,
+                            ),
+                          ),
+                        );
+                      } else {
+                        return defaultTransaction;
+                      }
+                    })
+                // ;
+                // } else {
+                //   return defaultTransaction;
+                //   }
+                // }
+                // )
+                : FittedBox(
+                    child: Text(
+                      "${_maxFee.toStringAsFixed(8)} ${CurrencyUtilities.coinName}",
+                      style: GoogleFonts.workSans(
+                        color: CFColors.twilight,
+                        fontWeight: FontWeight.w600,
+                        fontSize: 16,
+                      ),
+                    ),
+                  ),
           ],
         ),
         SizedBox(
@@ -189,7 +233,7 @@ class _SendViewState extends State<SendView> {
                       firoAmount != ".") {
                     _firoAmount = double.parse(firoAmount);
                     setState(() {
-                      _totalAmount = _firoAmount + _fee;
+                      _totalAmount = _firoAmount + _maxFee;
                     });
 
                     final String fiatAmountString =
@@ -272,7 +316,7 @@ class _SendViewState extends State<SendView> {
                     final amountString = _firoAmount.toStringAsFixed(8);
 
                     setState(() {
-                      _totalAmount = double.parse(amountString) + _fee;
+                      _totalAmount = double.parse(amountString) + _maxFee;
                     });
 
                     _firoAmountController.text = amountString;
@@ -377,14 +421,14 @@ class _SendViewState extends State<SendView> {
                         ),
                       ),
                       FutureBuilder(
-                        future: bitcoinService.utxoData,
+                        future: bitcoinService.getFullBalance(),
                         builder: (
                           BuildContext context,
-                          AsyncSnapshot<UtxoData> utxoData,
+                          AsyncSnapshot<dynamic> balanceData,
                         ) {
-                          if (utxoData.connectionState ==
+                          if (balanceData.connectionState ==
                               ConnectionState.done) {
-                            if (utxoData == null || utxoData.hasError) {
+                            if (balanceData == null || balanceData.hasError) {
                               // TODO: Display failed overlay 'Unable to fetch balance data.\nPlease check connection'
                               return Text(
                                 "... ${CurrencyUtilities.coinName}",
@@ -398,7 +442,7 @@ class _SendViewState extends State<SendView> {
 
                             return FittedBox(
                               child: Text(
-                                "${utxoData.data.bitcoinBalance.toString()} ${CurrencyUtilities.coinName}",
+                                "${balanceData.data[0]} ${CurrencyUtilities.coinName}",
                                 style: GoogleFonts.workSans(
                                   color: CFColors.white,
                                   fontSize: 16,

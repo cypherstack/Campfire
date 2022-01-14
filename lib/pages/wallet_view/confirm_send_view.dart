@@ -41,7 +41,8 @@ class _ConfirmSendViewState extends State<ConfirmSendView> {
 
     // If useBiometrics is enabled, then show fingerprint auth screen
     if (useBiometrics != null && useBiometrics && canCheckBiometrics) {
-      List<BiometricType> availableSystems = await localAuth.getAvailableBiometrics();
+      List<BiometricType> availableSystems =
+          await localAuth.getAvailableBiometrics();
 
       //TODO implement iOS biometrics
       if (Platform.isIOS) {
@@ -56,7 +57,8 @@ class _ConfirmSendViewState extends State<ConfirmSendView> {
             localizedReason: 'Please authenticate to unlock wallet',
           );
 
-          if (didAuthenticate) Navigator.pushReplacementNamed(context, '/mainview');
+          if (didAuthenticate)
+            Navigator.pushReplacementNamed(context, '/mainview');
         }
       }
     }
@@ -102,8 +104,10 @@ class _ConfirmSendViewState extends State<ConfirmSendView> {
             color: CFColors.white,
             shape: RoundedRectangleBorder(
               borderRadius: BorderRadius.only(
-                topLeft: Radius.circular(SizingUtilities.circularBorderRadius * 2),
-                topRight: Radius.circular(SizingUtilities.circularBorderRadius * 2),
+                topLeft:
+                    Radius.circular(SizingUtilities.circularBorderRadius * 2),
+                topRight:
+                    Radius.circular(SizingUtilities.circularBorderRadius * 2),
               ),
             ),
             child: Column(
@@ -190,12 +194,10 @@ class _ConfirmSendViewState extends State<ConfirmSendView> {
                       // The following call throws an invalid argument exception
                       // on invalid address instead of returning an error int
                       // TODO: validate address
-                      dynamic txHexOrError = await bitcoinService.coinSelection(
-                        rawAmount,
-                        widget.fee,
-                        widget.address,
-                      );
-                      print("txHexOrError $txHexOrError");
+                      dynamic txHexOrError =
+                          await bitcoinService.createJoinSplitTransaction(
+                              rawAmount, widget.address, false);
+                      BitcoinService.logPrint("txHexOrError $txHexOrError");
 
                       if (txHexOrError is int) {
                         // Here, we assume that transaction crafting returned an error
@@ -216,14 +218,15 @@ class _ConfirmSendViewState extends State<ConfirmSendView> {
                             barrierDismissible: false,
                             context: context,
                             builder: (_) => CampfireAlert(
-                                message: "Insufficient funds to pay for tx fee!"),
+                                message:
+                                    "Insufficient funds to pay for tx fee!"),
                           );
                         }
                       } else {
-                        print(txHexOrError.toString());
+                        BitcoinService.logPrint(txHexOrError.toString());
 
                         await bitcoinService
-                            .submitHexToNetwork(txHexOrError['hex'])
+                            .submitLelantusToNetwork(txHexOrError)
                             .then((booleanResponse) async {
                           if (booleanResponse == true) {
                             OverlayNotification.showSuccess(

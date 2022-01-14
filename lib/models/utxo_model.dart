@@ -13,20 +13,24 @@ class UtxoData {
   // @HiveField(3)
   List<UtxoObject> unspentOutputArray;
 
-  UtxoData({this.totalUserCurrency, this.satoshiBalance, this.bitcoinBalance, this.unspentOutputArray});
+  UtxoData(
+      {this.totalUserCurrency,
+      this.satoshiBalance,
+      this.bitcoinBalance,
+      this.unspentOutputArray});
 
   factory UtxoData.fromJson(Map<String, dynamic> json) {
     var outputList = json['outputArray'] as List;
-    List<UtxoObject> utxoList = outputList.map((output) => UtxoObject.fromJson(output)).toList(); 
-    final String totalUserCurr = json['total_user_currency']; 
-    final double totalBtc = json['total_btc'].toDouble(); 
-    
+    List<UtxoObject> utxoList =
+        outputList.map((output) => UtxoObject.fromJson(output)).toList();
+    final String totalUserCurr = json['total_user_currency'];
+    final double totalBtc = json['total_btc'].toDouble();
+
     return UtxoData(
-      totalUserCurrency: totalUserCurr,
-      satoshiBalance: json['total_sats'],
-      bitcoinBalance: totalBtc,
-      unspentOutputArray: utxoList
-    );
+        totalUserCurrency: totalUserCurr,
+        satoshiBalance: json['total_sats'],
+        bitcoinBalance: totalBtc,
+        unspentOutputArray: utxoList);
   }
 }
 
@@ -47,18 +51,30 @@ class UtxoObject {
   // @HiveField(6)
   bool blocked;
 
-  UtxoObject({this.txid, this.vout, this.status, this.value, this.fiatWorth, this.txName, this.blocked});
+  UtxoObject(
+      {this.txid,
+      this.vout,
+      this.status,
+      this.value,
+      this.fiatWorth,
+      this.txName,
+      this.blocked});
 
   factory UtxoObject.fromJson(Map<String, dynamic> json) {
     return UtxoObject(
-      txName: '----',
-      txid: json['txid'],
-      vout: json['vout'],
-      status: Status.fromJson(json['status']),
-      value: json['value'],
-      fiatWorth: json['fiatWorth'],
-      blocked: false
-    );
+        txName: '----',
+        txid: json['txid'],
+        vout: json['vout'],
+        status: Status.fromJson(json['status']),
+        value: json['value'],
+        fiatWorth: json['fiatWorth'],
+        blocked: false);
+  }
+
+  String toString() {
+    String utxo = "txid: $txid, vout: $vout, value: $value, fiat: $fiatWorth";
+
+    return utxo;
   }
 }
 
@@ -77,10 +93,9 @@ class Status {
 
   factory Status.fromJson(Map<String, dynamic> json) {
     return Status(
-      confirmed: json['confirmed'],
-      blockHash: json['block_hash'],
-      blockHeight: json['block_height'],
-      blockTime: json['block_time']
-    );
+        confirmed: json['confirmed'],
+        blockHash: json['block_hash'],
+        blockHeight: json['block_height'],
+        blockTime: json['block_time']);
   }
 }

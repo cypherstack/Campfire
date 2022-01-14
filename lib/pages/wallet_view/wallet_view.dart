@@ -133,7 +133,6 @@ class _WalletViewState extends State<WalletView> {
                       future: bitcoinService.getFullBalance(),
                       builder: (BuildContext context,
                           AsyncSnapshot<dynamic> balancesData) {
-                        print(balancesData.data);
                         if (balancesData.connectionState ==
                             ConnectionState.done) {
                           if (balancesData == null || balancesData.hasError) {
@@ -217,7 +216,7 @@ class _WalletViewState extends State<WalletView> {
             ),
             Expanded(
               child: FutureBuilder(
-                future: bitcoinService.transactionData,
+                future: bitcoinService.lelantusTransactionData,
                 builder: (context, txData) {
                   if (txData.connectionState == ConnectionState.done) {
                     final data = txData.data;
