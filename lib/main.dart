@@ -10,6 +10,7 @@ import 'package:paymint/pages/lockscreen.dart';
 import 'package:paymint/pages/onboarding_view/onboarding_view.dart';
 import 'package:paymint/services/address_book_service.dart';
 import 'package:paymint/services/node_service.dart';
+import 'package:paymint/services/notes_service.dart';
 import 'package:paymint/services/services.dart';
 import 'package:paymint/services/wallets_service.dart';
 import 'package:paymint/utilities/cfcolors.dart';
@@ -64,6 +65,9 @@ class MyApp extends StatelessWidget {
         ),
         ChangeNotifierProvider(
           create: (_) => NodeService(),
+        ),
+        ChangeNotifierProvider(
+          create: (_) => NotesService(),
         ),
       ],
       child: MaterialAppWithTheme(),
@@ -168,32 +172,15 @@ class _MaterialAppWithThemeState extends State<MaterialAppWithTheme> {
             AsyncSnapshot<bool> shouldRouteToOnboarding) {
           if (shouldRouteToOnboarding.connectionState == ConnectionState.done) {
             if (shouldRouteToOnboarding.data) {
-              // return SetUpLockscreenView();
               return OnboardingView();
             } else {
               return LockscreenView();
-              // return OnboardingView();
             }
           } else {
-            // return buildLoadingView(context);
             return LoadingView();
           }
         },
       ),
     );
   }
-}
-
-Widget buildLoadingView() {
-  return Scaffold(
-    body: Container(
-      color: Color(0xff121212),
-      child: Center(
-        child: Image.asset(
-          'assets/images/splash.png',
-          height: 125,
-        ),
-      ),
-    ),
-  );
 }

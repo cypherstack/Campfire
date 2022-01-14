@@ -1,16 +1,23 @@
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
-import 'package:flutter_feather_icons/flutter_feather_icons.dart';
+import 'package:flutter/services.dart';
+import 'package:flutter_spinkit/flutter_spinkit.dart';
 import 'package:flutter_svg/svg.dart';
 import 'package:google_fonts/google_fonts.dart';
+import 'package:paymint/models/transactions_model.dart';
 import 'package:paymint/notifications/modal_popup_dialog.dart';
+import 'package:paymint/notifications/overlay_notification.dart';
 import 'package:paymint/services/address_book_service.dart';
+import 'package:paymint/services/bitcoin_service.dart';
+import 'package:paymint/services/utils/currency_utils.dart';
 import 'package:paymint/utilities/cfcolors.dart';
+import 'package:paymint/utilities/shared_utilities.dart';
 import 'package:paymint/utilities/sizing_utilities.dart';
 import 'package:paymint/utilities/text_styles.dart';
 import 'package:paymint/widgets/custom_buttons/app_bar_icon_button.dart';
 import 'package:paymint/widgets/custom_buttons/gradient_button.dart';
 import 'package:paymint/widgets/custom_buttons/simple_button.dart';
+import 'package:paymint/widgets/transaction_card.dart';
 import 'package:provider/provider.dart';
 
 import '../../main_view.dart';
@@ -25,10 +32,12 @@ class AddressBookEntryDetailsView extends StatefulWidget {
   final String name, address;
 
   @override
-  _AddressBookEntryDetailsViewState createState() => _AddressBookEntryDetailsViewState();
+  _AddressBookEntryDetailsViewState createState() =>
+      _AddressBookEntryDetailsViewState();
 }
 
-class _AddressBookEntryDetailsViewState extends State<AddressBookEntryDetailsView> {
+class _AddressBookEntryDetailsViewState
+    extends State<AddressBookEntryDetailsView> {
   final _addressTextEditingController = TextEditingController();
 
   String _name, _address;
@@ -49,6 +58,7 @@ class _AddressBookEntryDetailsViewState extends State<AddressBookEntryDetailsVie
 
   @override
   Widget build(BuildContext context) {
+    final bitcoinService = Provider.of<BitcoinService>(context);
     return Scaffold(
       appBar: _buildAppBar(context),
       body: Container(
@@ -78,24 +88,161 @@ class _AddressBookEntryDetailsViewState extends State<AddressBookEntryDetailsVie
                 height: 8,
               ),
               TextField(
+                // TODO implement edit address
+                readOnly: true,
                 controller: _addressTextEditingController,
                 decoration: InputDecoration(
-                  prefixIcon: Icon(
-                    FeatherIcons.search,
-                    color: CFColors.twilight,
-                    size: 20,
+                    suffixIcon: UnconstrainedBox(
+                  child: Padding(
+                    padding: const EdgeInsets.only(right: 16),
+                    child: Row(
+                      children: [
+                        GestureDetector(
+                          child: SvgPicture.asset(
+                            "assets/svg/copy-2.svg",
+                            color: CFColors.twilight,
+                            height: 20,
+                            width: 20,
+                          ),
+                          onTap: () {
+                            Clipboard.setData(ClipboardData(
+                                text: _addressTextEditingController.text));
+                            OverlayNotification.showInfo(
+                              context,
+                              "Address copied to clipboard",
+                              Duration(seconds: 2),
+                            );
+                          },
+                        ),
+                        SizedBox(
+                          width: 10,
+                        ),
+                        GestureDetector(
+                          child: SvgPicture.asset(
+                            "assets/svg/edit-4.svg",
+                            color: CFColors.twilight,
+                            height: 20,
+                            width: 20,
+                          ),
+                          onTap: () {
+                            print("edit address tapped");
+                          },
+                        )
+                      ],
+                    ),
                   ),
-                ),
+                )),
               ),
               SizedBox(
                 height: 8,
               ),
               _buildSendButton(context),
+              SizedBox(
+                height: 40,
+              ),
+              Align(
+                alignment: Alignment.centerLeft,
+                child: Text(
+                  "Transaction History",
+                  style: GoogleFonts.workSans(
+                    color: CFColors.twilight,
+                    fontSize: 12,
+                    fontWeight: FontWeight.w500,
+                  ),
+                ),
+              ),
+              SizedBox(
+                height: 14,
+              ),
+              Expanded(
+                child: FutureBuilder(
+                  future: bitcoinService.transactionData,
+                  builder: (context, AsyncSnapshot<TransactionData> snapshot) {
+                    if (snapshot.connectionState == ConnectionState.done) {
+                      if (snapshot.data != null && !snapshot.hasError) {
+                        return _buildTransactionHistory(context, snapshot.data);
+                      }
+                    }
+                    return Center(
+                      child: SpinKitThreeBounce(
+                        color: CFColors.spark,
+                        size: MediaQuery.of(context).size.width * 0.1,
+                      ),
+                    );
+                  },
+                ),
+              ),
+              SizedBox(
+                height: SizingUtilities.standardPadding,
+              )
             ],
           ),
         ),
       ),
     );
+  }
+
+  _buildNoTransactionsFound() {
+    return Center(
+      child: FittedBox(
+        fit: BoxFit.scaleDown,
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            SvgPicture.asset(
+              "assets/svg/empty-tx-list.svg",
+              width: MediaQuery.of(context).size.width * 0.52,
+            ),
+            SizedBox(
+              height: 8,
+            ),
+            Text(
+              "NO TRANSACTIONS FOUND",
+              style: GoogleFonts.workSans(
+                color: CFColors.dew,
+                fontWeight: FontWeight.w600,
+                fontSize: 12,
+                letterSpacing: 0.25,
+              ),
+            )
+          ],
+        ),
+      ),
+    );
+  }
+
+  _buildTransactionHistory(BuildContext context, TransactionData txData) {
+    if (txData.txChunks.length == 0) {
+      return _buildNoTransactionsFound();
+    }
+
+    final results =
+        txData.txChunks.expand((element) => element.transactions).toList();
+
+    results.removeWhere((tx) => tx.address != widget.address);
+
+    if (results.length == 0) {
+      return _buildNoTransactionsFound();
+    } else {
+      return ListView.builder(
+        itemCount: results.length,
+        itemBuilder: (context, index) {
+          return Padding(
+            padding: EdgeInsets.all(
+              SizingUtilities.listItemSpacing / 2,
+            ),
+            child: TransactionCard(
+              transaction: results[index],
+              txType: results[index].txType,
+              date: Utilities.extractDateFrom(results[index].timestamp),
+              amount:
+                  "${Utilities.satoshisToAmount(results[index].amount)} ${CurrencyUtilities.coinName}",
+              fiatValue: results[index].worthNow,
+            ),
+          );
+        },
+      );
+    }
   }
 
   _buildAppBar(BuildContext context) {
@@ -180,7 +327,8 @@ class _AddressBookEntryDetailsViewState extends State<AddressBookEntryDetailsVie
           child: Container(
             decoration: BoxDecoration(
               color: CFColors.white,
-              borderRadius: BorderRadius.circular(SizingUtilities.circularBorderRadius),
+              borderRadius:
+                  BorderRadius.circular(SizingUtilities.circularBorderRadius),
               boxShadow: [CFColors.standardBoxShadow],
             ),
             child: Column(
@@ -225,7 +373,8 @@ class _AddressBookEntryDetailsViewState extends State<AddressBookEntryDetailsVie
   _buildSendButton(BuildContext context) {
     return SizedBox(
       height: SizingUtilities.standardButtonHeight,
-      width: MediaQuery.of(context).size.width - (SizingUtilities.standardPadding * 2),
+      width: MediaQuery.of(context).size.width -
+          (SizingUtilities.standardPadding * 2),
       child: GradientButton(
         child: FittedBox(
           child: Text(
@@ -257,7 +406,8 @@ class _AddressBookEntryDetailsViewState extends State<AddressBookEntryDetailsVie
   }
 
   _buildAddressDeleteConfirmDialog() {
-    final addressService = Provider.of<AddressBookService>(context, listen: false);
+    final addressService =
+        Provider.of<AddressBookService>(context, listen: false);
 
     return ModalPopupDialog(
       child: Column(
@@ -316,7 +466,8 @@ class _AddressBookEntryDetailsViewState extends State<AddressBookEntryDetailsVie
                         ),
                       ),
                       onTap: () async {
-                        await addressService.removeAddressBookEntry(widget.address);
+                        await addressService
+                            .removeAddressBookEntry(widget.address);
                         final navigator = Navigator.of(context);
                         navigator.pop();
                         navigator.pop();

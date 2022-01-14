@@ -14,13 +14,34 @@ class AddressBookService extends ChangeNotifier {
   Future<Map<String, String>> get addressBookEntries =>
       _addressBookEntries ??= _fetchAddressBookEntries();
 
-// Load address book contact entries
+  // Load address book contact entries
   Future<Map<String, String>> _fetchAddressBookEntries() async {
     final _currentWallet = await currentWalletName;
     final wallet = await Hive.openBox(_currentWallet);
     final entries = await wallet.get('addressBookEntries');
     print("Address book entries fetched: $entries");
-    return entries == null ? <String, String>{} : Map<String, String>.from(entries);
+    return entries == null
+        ? <String, String>{}
+        : Map<String, String>.from(entries);
+  }
+
+  /// search addressbook entries
+  //TODO optimize addressbook search?
+  Future<Map<String, String>> search(String text) async {
+    if (text.isEmpty) return _addressBookEntries;
+    var results = Map<String, String>.from(await _addressBookEntries);
+    results.removeWhere(
+        (key, value) => (!key.contains(text) && !value.contains(text)));
+    return results;
+  }
+
+  /// check if address already used in address book
+  Future<bool> containsAddress(String address) async {
+    final _currentWallet = await currentWalletName;
+    final wallet = await Hive.openBox(_currentWallet);
+    final _entries = await wallet.get('addressBookEntries');
+    final entries = _entries == null ? <String, String>{} : _entries;
+    return entries.containsKey(address);
   }
 
   /// Add address book contact entry to db
@@ -29,6 +50,12 @@ class AddressBookService extends ChangeNotifier {
     final wallet = await Hive.openBox(_currentWallet);
     final _entries = await wallet.get('addressBookEntries');
     final entries = _entries == null ? <String, String>{} : _entries;
+
+    if (entries.containsKey(address)) {
+      throw Exception(
+          "Address already exists in db. Overwriting not allowed! If you want to edit call the editAddressBookEntry() function.");
+    }
+
     entries[address] = name;
     await wallet.put('addressBookEntries', entries);
     print("address book entry saved");

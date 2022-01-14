@@ -1,7 +1,9 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_svg/svg.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:majascan/majascan.dart';
+import 'package:paymint/notifications/campfire_alert.dart';
 import 'package:paymint/services/address_book_service.dart';
 import 'package:paymint/utilities/cfcolors.dart';
 import 'package:paymint/utilities/sizing_utilities.dart';
@@ -14,48 +16,48 @@ class AddAddressBookEntryView extends StatefulWidget {
   const AddAddressBookEntryView({Key key}) : super(key: key);
 
   @override
-  _AddAddressBookEntryViewState createState() => _AddAddressBookEntryViewState();
+  _AddAddressBookEntryViewState createState() =>
+      _AddAddressBookEntryViewState();
 }
 
 class _AddAddressBookEntryViewState extends State<AddAddressBookEntryView> {
   TextEditingController addressTextController = TextEditingController();
   TextEditingController nameTextController = TextEditingController();
 
-  void _saveNewAddressEntry(BuildContext context) {
-    final addressService = Provider.of<AddressBookService>(context, listen: false);
+  Future<void> _saveNewAddressEntry(BuildContext context) async {
+    final addressService =
+        Provider.of<AddressBookService>(context, listen: false);
 
     final name = nameTextController.text;
     final address = addressTextController.text;
 
     if (name.isEmpty || address.isEmpty) {
       showDialog(
-          context: context,
-          builder: (context) {
-            return AlertDialog(
-              title: const Text('AlertDialog Title'),
-              content: SingleChildScrollView(
-                child: ListBody(
-                  children: const <Widget>[
-                    Text('This is a demo alert dialog.'),
-                    Text('Would you like to approve of this message?'),
-                  ],
-                ),
-              ),
-              actions: <Widget>[
-                TextButton(
-                  child: const Text('Approve'),
-                  onPressed: () {
-                    Navigator.of(context).pop();
-                  },
-                ),
-              ],
-            );
-          });
+        context: context,
+        useSafeArea: false,
+        barrierDismissible: false,
+        builder: (_) {
+          return CampfireAlert(message: "Please fill out both fields.");
+        },
+      );
     } else {
-      addressService.addAddressBookEntry(address, name);
+      if (await addressService.containsAddress(address)) {
+        showDialog(
+          context: context,
+          useSafeArea: false,
+          barrierDismissible: false,
+          builder: (_) {
+            return CampfireAlert(
+                message:
+                    "The address you entered is already in your contacts!");
+          },
+        );
+      } else {
+        addressService.addAddressBookEntry(address, name);
 
-      // on success pop back to address book
-      Navigator.pop(context);
+        // on success pop back to address book
+        Navigator.pop(context);
+      }
     }
   }
 
@@ -122,25 +124,50 @@ class _AddAddressBookEntryViewState extends State<AddAddressBookEntryView> {
                         right: 0,
                       ),
                       suffixIcon: UnconstrainedBox(
-                        child: GestureDetector(
-                          onTap: () async {
-                            // TODO implement parse qr code
-                            String qrResult = await MajaScan.startScan(
-                              title: "Scan address QR Code",
-                              barColor: CFColors.white,
-                              titleColor: CFColors.dusk,
-                              qRCornerColor: CFColors.spark,
-                              qRScannerColor: CFColors.midnight,
-                              flashlightEnable: true,
-                              scanAreaScale: 0.7,
-                            );
-                          },
-                          child: SvgPicture.asset(
-                            "assets/svg/qr-code.svg",
-                            color: CFColors.twilight,
-                            width: 20,
-                            height: 20,
-                          ),
+                        child: Row(
+                          children: [
+                            GestureDetector(
+                              onTap: () async {
+                                final ClipboardData data =
+                                    await Clipboard.getData(
+                                        Clipboard.kTextPlain);
+                                final content = data.text.trim();
+                                addressTextController.text = content;
+                              },
+                              child: SvgPicture.asset(
+                                "assets/svg/clipboard.svg",
+                                color: CFColors.twilight,
+                                width: 20,
+                                height: 20,
+                              ),
+                            ),
+                            SizedBox(
+                              width: 10,
+                            ),
+                            GestureDetector(
+                              onTap: () async {
+                                // TODO implement parse qr code
+                                String qrResult = await MajaScan.startScan(
+                                  title: "Scan address QR Code",
+                                  barColor: CFColors.white,
+                                  titleColor: CFColors.dusk,
+                                  qRCornerColor: CFColors.spark,
+                                  qRScannerColor: CFColors.midnight,
+                                  flashlightEnable: true,
+                                  scanAreaScale: 0.7,
+                                );
+                              },
+                              child: SvgPicture.asset(
+                                "assets/svg/qr-code.svg",
+                                color: CFColors.twilight,
+                                width: 20,
+                                height: 20,
+                              ),
+                            ),
+                            SizedBox(
+                              width: 16,
+                            ),
+                          ],
                         ),
                       ),
                     ),
@@ -168,7 +195,8 @@ class _AddAddressBookEntryViewState extends State<AddAddressBookEntryView> {
                 children: [
                   SizedBox(
                     height: 48,
-                    width: (screenWidth - 40 - 16) / 2, // 20+20 padding, 16 spacing
+                    width: (screenWidth - 40 - 16) /
+                        2, // 20+20 padding, 16 spacing
                     child: SimpleButton(
                       onTap: () {
                         print("cancel add new address entry pressed");
@@ -187,7 +215,8 @@ class _AddAddressBookEntryViewState extends State<AddAddressBookEntryView> {
                   ),
                   SizedBox(
                     height: 48,
-                    width: (screenWidth - 40 - 16) / 2, // 20+20 padding, 16 spacing,
+                    width: (screenWidth - 40 - 16) /
+                        2, // 20+20 padding, 16 spacing,
                     child: GradientButton(
                       child: Text(
                         "SAVE",

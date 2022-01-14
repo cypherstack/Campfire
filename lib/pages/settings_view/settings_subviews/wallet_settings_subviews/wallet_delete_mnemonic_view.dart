@@ -64,7 +64,8 @@ class WalletDeleteMnemonicView extends StatelessWidget {
             Expanded(
               child: FutureBuilder(
                 future: _getMnemonic(context),
-                builder: (BuildContext context, AsyncSnapshot<List<String>> snapshot) {
+                builder: (BuildContext context,
+                    AsyncSnapshot<List<String>> snapshot) {
                   if (snapshot.connectionState == ConnectionState.done) {
                     return _buildKeys(snapshot.data);
                   } else {
@@ -171,8 +172,10 @@ class WalletDeleteMnemonicView extends StatelessWidget {
                         // TODO possibly show progress of deletion if it takes any significant time
                         final walletsService =
                             Provider.of<WalletsService>(context, listen: false);
-                        final walletName = await walletsService.currentWalletName;
-                        int result = await walletsService.deleteWallet(walletName);
+                        final walletName =
+                            await walletsService.currentWalletName;
+                        int result =
+                            await walletsService.deleteWallet(walletName);
                         print("delete result: $result");
                         // check if last wallet was deleted
                         if (result == 2) {
@@ -291,7 +294,7 @@ class WalletDeleteMnemonicView extends StatelessWidget {
   }
 
   Widget _buildKeys(List<String> words) {
-    final int wordsCount = 12;
+    final int wordsCount = CampfireConstants.seedPhraseWordCount;
     List<TableRow> rows = [];
 
     for (int i = 0; i < wordsCount / 2; i++) {
@@ -302,7 +305,8 @@ class WalletDeleteMnemonicView extends StatelessWidget {
             child: Material(
               color: CFColors.fog,
               shape: RoundedRectangleBorder(
-                borderRadius: BorderRadius.circular(SizingUtilities.checkboxBorderRadius),
+                borderRadius:
+                    BorderRadius.circular(SizingUtilities.checkboxBorderRadius),
                 side: BorderSide(
                   width: 1,
                   color: CFColors.dew,
@@ -317,10 +321,10 @@ class WalletDeleteMnemonicView extends StatelessWidget {
                         color: CFColors.dew,
                         shape: RoundedRectangleBorder(
                           borderRadius: BorderRadius.only(
-                            topLeft:
-                                Radius.circular(SizingUtilities.checkboxBorderRadius),
-                            bottomLeft:
-                                Radius.circular(SizingUtilities.checkboxBorderRadius),
+                            topLeft: Radius.circular(
+                                SizingUtilities.checkboxBorderRadius),
+                            bottomLeft: Radius.circular(
+                                SizingUtilities.checkboxBorderRadius),
                           ),
                           side: BorderSide(
                             width: 1,
@@ -372,7 +376,8 @@ class WalletDeleteMnemonicView extends StatelessWidget {
             child: Material(
               color: CFColors.fog,
               shape: RoundedRectangleBorder(
-                borderRadius: BorderRadius.circular(SizingUtilities.checkboxBorderRadius),
+                borderRadius:
+                    BorderRadius.circular(SizingUtilities.checkboxBorderRadius),
                 side: BorderSide(
                   width: 1,
                   color: CFColors.dew,
@@ -387,10 +392,10 @@ class WalletDeleteMnemonicView extends StatelessWidget {
                         color: CFColors.dew,
                         shape: RoundedRectangleBorder(
                           borderRadius: BorderRadius.only(
-                            topLeft:
-                                Radius.circular(SizingUtilities.checkboxBorderRadius),
-                            bottomLeft:
-                                Radius.circular(SizingUtilities.checkboxBorderRadius),
+                            topLeft: Radius.circular(
+                                SizingUtilities.checkboxBorderRadius),
+                            bottomLeft: Radius.circular(
+                                SizingUtilities.checkboxBorderRadius),
                           ),
                           side: BorderSide(
                             width: 1,
@@ -494,7 +499,8 @@ class WalletDeleteMnemonicView extends StatelessWidget {
             child: Material(
               color: CFColors.white,
               shape: RoundedRectangleBorder(
-                borderRadius: BorderRadius.circular(SizingUtilities.circularBorderRadius),
+                borderRadius:
+                    BorderRadius.circular(SizingUtilities.circularBorderRadius),
                 side: BorderSide(
                   color: CFColors.smoke,
                   width: 1,
@@ -502,14 +508,15 @@ class WalletDeleteMnemonicView extends StatelessWidget {
               ),
               child: FutureBuilder(
                 future: _getMnemonic(context),
-                builder: (BuildContext context, AsyncSnapshot<List<String>> snapshot) {
+                builder: (BuildContext context,
+                    AsyncSnapshot<List<String>> snapshot) {
                   if (snapshot.connectionState == ConnectionState.done) {
                     return Center(
                       child: PrettyQr(
                         data: snapshot.data.join(' '),
                         roundEdges: CampfireConstants.roundedQrCode,
                         elementColor: CFColors.midnight,
-                        typeNumber: 5,
+                        typeNumber: 9,
                         size: _qrSize,
                       ),
                     );

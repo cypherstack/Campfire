@@ -1,7 +1,7 @@
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
-import 'package:paymint/pages/onboarding_view/BackupKeyView.dart';
+import 'package:paymint/pages/onboarding_view/backup_key_view.dart';
 import 'package:paymint/services/bitcoin_service.dart';
 import 'package:paymint/services/utils/backup_key_warning.dart';
 import 'package:paymint/services/wallets_service.dart';
@@ -15,7 +15,8 @@ import 'helpers/builders.dart';
 import 'onboarding_view.dart';
 
 class BackupKeyWarningView extends StatefulWidget {
-  const BackupKeyWarningView({Key key, @required this.walletName}) : super(key: key);
+  const BackupKeyWarningView({Key key, @required this.walletName})
+      : super(key: key);
 
   final String walletName;
 
@@ -34,7 +35,8 @@ class _BackupKeyWarningViewState extends State<BackupKeyWarningView> {
         context,
         backButtonPressed: () async {
           // delete created wallet name and pin
-          final walletsService = Provider.of<WalletsService>(context, listen: false);
+          final walletsService =
+              Provider.of<WalletsService>(context, listen: false);
           int result = await walletsService.deleteWallet(widget.walletName);
 
           print("delete result: $result");
@@ -49,7 +51,8 @@ class _BackupKeyWarningViewState extends State<BackupKeyWarningView> {
               (_) => false,
             );
           } else {
-            Provider.of<BitcoinService>(context, listen: false).refreshWalletData();
+            Provider.of<BitcoinService>(context, listen: false)
+                .refreshWalletData();
 
             final nav = Navigator.of(context);
             nav.pop();
@@ -79,8 +82,8 @@ class _BackupKeyWarningViewState extends State<BackupKeyWarningView> {
                 child: Material(
                   color: CFColors.fog,
                   shape: RoundedRectangleBorder(
-                    borderRadius:
-                        BorderRadius.circular(SizingUtilities.circularBorderRadius),
+                    borderRadius: BorderRadius.circular(
+                        SizingUtilities.circularBorderRadius),
                     side: BorderSide(
                       width: 1,
                       color: CFColors.smoke,

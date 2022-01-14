@@ -79,8 +79,12 @@ class WalletBackUpView extends StatelessWidget {
             SizedBox(
               height: 32,
             ),
-            _buildMnemonicView(context),
-            Spacer(),
+            Expanded(
+              child: _buildMnemonicView(context),
+            ),
+            SizedBox(
+              height: SizingUtilities.standardPadding,
+            ),
             _buildButtons(context),
           ],
         ),
@@ -95,7 +99,8 @@ class WalletBackUpView extends StatelessWidget {
         border: Border.all(
           color: CFColors.smoke,
         ),
-        borderRadius: BorderRadius.circular(SizingUtilities.circularBorderRadius),
+        borderRadius:
+            BorderRadius.circular(SizingUtilities.circularBorderRadius),
       ),
       child: Padding(
         padding: EdgeInsets.symmetric(
@@ -135,7 +140,7 @@ class WalletBackUpView extends StatelessWidget {
   }
 
   _buildMnemonicTable(List<String> words) {
-    final int wordsCount = 12;
+    final int wordsCount = CampfireConstants.seedPhraseWordCount;
     List<TableRow> rows = [];
 
     for (int i = 0; i < wordsCount / 2; i++) {
@@ -146,7 +151,8 @@ class WalletBackUpView extends StatelessWidget {
             child: Material(
               color: CFColors.fog,
               shape: RoundedRectangleBorder(
-                borderRadius: BorderRadius.circular(SizingUtilities.checkboxBorderRadius),
+                borderRadius:
+                    BorderRadius.circular(SizingUtilities.checkboxBorderRadius),
                 side: BorderSide(
                   width: 1,
                   color: CFColors.dew,
@@ -161,10 +167,10 @@ class WalletBackUpView extends StatelessWidget {
                         color: CFColors.dew,
                         shape: RoundedRectangleBorder(
                           borderRadius: BorderRadius.only(
-                            topLeft:
-                                Radius.circular(SizingUtilities.checkboxBorderRadius),
-                            bottomLeft:
-                                Radius.circular(SizingUtilities.checkboxBorderRadius),
+                            topLeft: Radius.circular(
+                                SizingUtilities.checkboxBorderRadius),
+                            bottomLeft: Radius.circular(
+                                SizingUtilities.checkboxBorderRadius),
                           ),
                           side: BorderSide(
                             width: 1,
@@ -216,7 +222,8 @@ class WalletBackUpView extends StatelessWidget {
             child: Material(
               color: CFColors.fog,
               shape: RoundedRectangleBorder(
-                borderRadius: BorderRadius.circular(SizingUtilities.checkboxBorderRadius),
+                borderRadius:
+                    BorderRadius.circular(SizingUtilities.checkboxBorderRadius),
                 side: BorderSide(
                   width: 1,
                   color: CFColors.dew,
@@ -231,10 +238,10 @@ class WalletBackUpView extends StatelessWidget {
                         color: CFColors.dew,
                         shape: RoundedRectangleBorder(
                           borderRadius: BorderRadius.only(
-                            topLeft:
-                                Radius.circular(SizingUtilities.checkboxBorderRadius),
-                            bottomLeft:
-                                Radius.circular(SizingUtilities.checkboxBorderRadius),
+                            topLeft: Radius.circular(
+                                SizingUtilities.checkboxBorderRadius),
+                            bottomLeft: Radius.circular(
+                                SizingUtilities.checkboxBorderRadius),
                           ),
                           side: BorderSide(
                             width: 1,
@@ -414,8 +421,8 @@ class WalletBackUpView extends StatelessWidget {
                 child: Material(
                   color: CFColors.white,
                   shape: RoundedRectangleBorder(
-                    borderRadius:
-                        BorderRadius.circular(SizingUtilities.circularBorderRadius),
+                    borderRadius: BorderRadius.circular(
+                        SizingUtilities.circularBorderRadius),
                     side: BorderSide(
                       color: CFColors.smoke,
                       width: 1,
@@ -423,15 +430,15 @@ class WalletBackUpView extends StatelessWidget {
                   ),
                   child: FutureBuilder(
                     future: _getMnemonic(context),
-                    builder:
-                        (BuildContext context, AsyncSnapshot<List<String>> snapshot) {
+                    builder: (BuildContext context,
+                        AsyncSnapshot<List<String>> snapshot) {
                       if (snapshot.connectionState == ConnectionState.done) {
                         return Center(
                           child: PrettyQr(
                             data: snapshot.data.join(' '),
                             roundEdges: CampfireConstants.roundedQrCode,
                             elementColor: CFColors.midnight,
-                            typeNumber: 5,
+                            typeNumber: 9,
                             size: _qrSize,
                           ),
                         );

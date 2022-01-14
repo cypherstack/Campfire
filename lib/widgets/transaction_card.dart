@@ -4,8 +4,10 @@ import 'package:flutter_feather_icons/flutter_feather_icons.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:paymint/models/transactions_model.dart';
 import 'package:paymint/pages/transaction_subviews/transaction_details_view.dart';
+import 'package:paymint/services/notes_service.dart';
 import 'package:paymint/utilities/cfcolors.dart';
 import 'package:paymint/utilities/sizing_utilities.dart';
+import 'package:provider/provider.dart';
 
 class TransactionCard extends StatelessWidget {
   const TransactionCard(
@@ -59,6 +61,8 @@ class TransactionCard extends StatelessWidget {
       );
     }
 
+    final notesService = Provider.of<NotesService>(context, listen: false);
+
     return Material(
       color: CFColors.white,
       elevation: 0,
@@ -67,12 +71,16 @@ class TransactionCard extends StatelessWidget {
             BorderRadius.circular(SizingUtilities.circularBorderRadius),
       ),
       child: GestureDetector(
-        onTap: () {
+        onTap: () async {
+          final note = await notesService.getNoteFor(txid: transaction.txid);
           Navigator.push(
             context,
             CupertinoPageRoute(
               builder: (BuildContext context) {
-                return TransactionDetailsView(transaction: transaction);
+                return TransactionDetailsView(
+                  transaction: transaction,
+                  note: note,
+                );
               },
             ),
           );

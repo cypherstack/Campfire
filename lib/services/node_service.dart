@@ -54,6 +54,16 @@ class NodeService extends ChangeNotifier {
     final id = _walletId;
     final wallet = Hive.box(id);
     final nodes = wallet.get('nodes');
+
+    if (nodes == null || nodes.isEmpty) {
+      createNode(
+        name: CampfireConstants.defaultNodeName,
+        ipAddress: CampfireConstants.defaultIpAddress,
+        port: "",
+      );
+      return _fetchNodes();
+    }
+
     return Map<String, dynamic>.from(nodes);
   }
 
@@ -79,7 +89,11 @@ class NodeService extends ChangeNotifier {
   bool createNode({String name, String ipAddress, String port}) {
     final id = _walletId;
     final wallet = Hive.box(id);
-    final nodes = wallet.get('nodes');
+    var nodes = wallet.get('nodes');
+
+    if (nodes == null) {
+      nodes = <String, dynamic>{};
+    }
 
     if (nodes.keys.contains(name)) {
       return false;

@@ -32,7 +32,7 @@ class _BackupKeyViewState extends State<BackupKeyView> {
   }
 
   Widget _buildKeys(List<String> words) {
-    final int wordsCount = 12;
+    final int wordsCount = 24;
     List<TableRow> rows = [];
 
     for (int i = 0; i < wordsCount / 2; i++) {
@@ -43,7 +43,8 @@ class _BackupKeyViewState extends State<BackupKeyView> {
             child: Material(
               color: CFColors.fog,
               shape: RoundedRectangleBorder(
-                borderRadius: BorderRadius.circular(SizingUtilities.checkboxBorderRadius),
+                borderRadius:
+                    BorderRadius.circular(SizingUtilities.checkboxBorderRadius),
                 side: BorderSide(
                   width: 1,
                   color: CFColors.dew,
@@ -58,10 +59,10 @@ class _BackupKeyViewState extends State<BackupKeyView> {
                         color: CFColors.dew,
                         shape: RoundedRectangleBorder(
                           borderRadius: BorderRadius.only(
-                            topLeft:
-                                Radius.circular(SizingUtilities.checkboxBorderRadius),
-                            bottomLeft:
-                                Radius.circular(SizingUtilities.checkboxBorderRadius),
+                            topLeft: Radius.circular(
+                                SizingUtilities.checkboxBorderRadius),
+                            bottomLeft: Radius.circular(
+                                SizingUtilities.checkboxBorderRadius),
                           ),
                           side: BorderSide(
                             width: 1,
@@ -113,7 +114,8 @@ class _BackupKeyViewState extends State<BackupKeyView> {
             child: Material(
               color: CFColors.fog,
               shape: RoundedRectangleBorder(
-                borderRadius: BorderRadius.circular(SizingUtilities.checkboxBorderRadius),
+                borderRadius:
+                    BorderRadius.circular(SizingUtilities.checkboxBorderRadius),
                 side: BorderSide(
                   width: 1,
                   color: CFColors.dew,
@@ -128,10 +130,10 @@ class _BackupKeyViewState extends State<BackupKeyView> {
                         color: CFColors.dew,
                         shape: RoundedRectangleBorder(
                           borderRadius: BorderRadius.only(
-                            topLeft:
-                                Radius.circular(SizingUtilities.checkboxBorderRadius),
-                            bottomLeft:
-                                Radius.circular(SizingUtilities.checkboxBorderRadius),
+                            topLeft: Radius.circular(
+                                SizingUtilities.checkboxBorderRadius),
+                            bottomLeft: Radius.circular(
+                                SizingUtilities.checkboxBorderRadius),
                           ),
                           side: BorderSide(
                             width: 1,
@@ -235,7 +237,8 @@ class _BackupKeyViewState extends State<BackupKeyView> {
             child: Material(
               color: CFColors.white,
               shape: RoundedRectangleBorder(
-                borderRadius: BorderRadius.circular(SizingUtilities.circularBorderRadius),
+                borderRadius:
+                    BorderRadius.circular(SizingUtilities.circularBorderRadius),
                 side: BorderSide(
                   color: CFColors.smoke,
                   width: 1,
@@ -243,14 +246,15 @@ class _BackupKeyViewState extends State<BackupKeyView> {
               ),
               child: FutureBuilder(
                 future: _getMnemonic(context),
-                builder: (BuildContext context, AsyncSnapshot<List<String>> snapshot) {
+                builder: (BuildContext context,
+                    AsyncSnapshot<List<String>> snapshot) {
                   if (snapshot.connectionState == ConnectionState.done) {
                     return Center(
                       child: PrettyQr(
                         data: snapshot.data.join(' '),
                         roundEdges: CampfireConstants.roundedQrCode,
                         elementColor: CFColors.midnight,
-                        typeNumber: 5,
+                        typeNumber: 9,
                         size: _qrSize,
                       ),
                     );
@@ -378,7 +382,8 @@ class _BackupKeyViewState extends State<BackupKeyView> {
                 ),
                 child: FutureBuilder(
                   future: _getMnemonic(context),
-                  builder: (BuildContext context, AsyncSnapshot<List<String>> snapshot) {
+                  builder: (BuildContext context,
+                      AsyncSnapshot<List<String>> snapshot) {
                     if (snapshot.connectionState == ConnectionState.done) {
                       return _buildKeys(snapshot.data);
                     } else {

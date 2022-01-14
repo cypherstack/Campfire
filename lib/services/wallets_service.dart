@@ -7,7 +7,8 @@ import 'package:uuid/uuid.dart';
 
 class WalletsService extends ChangeNotifier {
   Future<Map<String, String>> _walletNames;
-  Future<Map<String, String>> get walletNames => _walletNames ??= _fetchWalletNames();
+  Future<Map<String, String>> get walletNames =>
+      _walletNames ??= _fetchWalletNames();
 
   Future<String> _currentWalletName;
   Future<String> get currentWalletName =>
@@ -63,7 +64,7 @@ class WalletsService extends ChangeNotifier {
     final wallets = await Hive.openBox('wallets');
     final currentName = await wallets.get('currentWalletName');
     print("Fetched current name: $currentName");
-    if (_currentWalletName != currentName) {
+    if (currentName != null && _currentWalletName != currentName) {
       GlobalEventBus.instance.fire(ActiveWalletNameChangedEvent(currentName));
     }
     return currentName;

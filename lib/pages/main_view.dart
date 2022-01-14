@@ -6,6 +6,9 @@ import 'package:flutter/services.dart';
 import 'package:flutter_svg/flutter_svg.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:paymint/pages/settings_view/settings_view.dart';
+import 'package:paymint/pages/wallet_view/receive_view.dart';
+import 'package:paymint/pages/wallet_view/send_view.dart';
+import 'package:paymint/pages/wallet_view/wallet_view.dart';
 import 'package:paymint/services/bitcoin_service.dart';
 import 'package:paymint/services/event_bus/global_event_bus.dart';
 import 'package:paymint/services/events.dart';
@@ -13,7 +16,6 @@ import 'package:paymint/utilities/cfcolors.dart';
 import 'package:paymint/utilities/sizing_utilities.dart';
 import 'package:provider/provider.dart';
 
-import './pages.dart';
 import '../widgets/custom_buttons/app_bar_icon_button.dart';
 
 /// MainView refers to the main tab bar navigation and view system in place
@@ -114,8 +116,9 @@ class _MainViewState extends State<MainView> {
       // MoreView(),
     ];
 
-    _nodeConnectionStatusChangedEventListener =
-        GlobalEventBus.instance.on<NodeConnectionStatusChangedEvent>().listen((event) {
+    _nodeConnectionStatusChangedEventListener = GlobalEventBus.instance
+        .on<NodeConnectionStatusChangedEvent>()
+        .listen((event) {
       if (nodeState != event.newStatus) {
         setState(() {
           nodeState = event.newStatus;
@@ -343,11 +346,14 @@ class _MainViewState extends State<MainView> {
             children: children,
             index: _currentIndex,
           ),
-          if (nodeState == NodeConnectionStatus.loading && !_disableRefreshOnInit)
+          if (nodeState == NodeConnectionStatus.loading &&
+              !_disableRefreshOnInit)
             _buildSyncing(),
-          if (nodeState == NodeConnectionStatus.synced && !_disableRefreshOnInit)
+          if (nodeState == NodeConnectionStatus.synced &&
+              !_disableRefreshOnInit)
             _buildConnected(),
-          if (nodeState == NodeConnectionStatus.disconnected && !_disableRefreshOnInit)
+          if (nodeState == NodeConnectionStatus.disconnected &&
+              !_disableRefreshOnInit)
             _buildDisconnected(),
         ],
       ),
@@ -358,8 +364,8 @@ class _MainViewState extends State<MainView> {
   Column _buildDisconnected() {
     return Column(
       children: [
-        _buildDropDown(
-            context, "Could not connect. Tap to retry.", CFColors.dropdownError),
+        _buildDropDown(context, "Could not connect. Tap to retry.",
+            CFColors.dropdownError),
       ],
     );
   }
@@ -378,7 +384,8 @@ class _MainViewState extends State<MainView> {
             if (snapshot.connectionState == ConnectionState.done) {
               return Container();
             } else {
-              return _buildDropDown(context, "Connected", CFColors.notificationSuccess);
+              return _buildDropDown(
+                  context, "Connected", CFColors.notificationSuccess);
             }
           },
         ),
@@ -390,12 +397,14 @@ class _MainViewState extends State<MainView> {
     _hasSynced = false;
     return Column(
       children: [
-        _buildDropDown(context, "Synchronizing", CFColors.dropdownSynchronizing),
+        _buildDropDown(
+            context, "Synchronizing", CFColors.dropdownSynchronizing),
       ],
     );
   }
 
-  Container _buildDropDown(BuildContext context, String message, Color backgroundColor) {
+  Container _buildDropDown(
+      BuildContext context, String message, Color backgroundColor) {
     return Container(
       width: MediaQuery.of(context).size.width,
       decoration: BoxDecoration(
