@@ -4,6 +4,8 @@ import 'package:flutter_svg/svg.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:paymint/pages/settings_view/helpers/builders.dart';
 import 'package:paymint/pages/transaction_subviews/transaction_search_results_view.dart';
+import 'package:paymint/services/address_book_service.dart';
+import 'package:paymint/services/notes_service.dart';
 import 'package:paymint/services/utils/currency_utils.dart';
 import 'package:paymint/utilities/cfcolors.dart';
 import 'package:paymint/utilities/shared_utilities.dart';
@@ -12,6 +14,7 @@ import 'package:paymint/utilities/text_styles.dart';
 import 'package:paymint/widgets/custom_buttons/app_bar_icon_button.dart';
 import 'package:paymint/widgets/custom_buttons/gradient_button.dart';
 import 'package:paymint/widgets/custom_buttons/simple_button.dart';
+import 'package:provider/provider.dart';
 
 class TransactionSearchView extends StatefulWidget {
   const TransactionSearchView({Key key}) : super(key: key);
@@ -446,23 +449,7 @@ class _TransactionSearchViewState extends State<TransactionSearchView> {
                                     style: CFTextStyles.button,
                                   ),
                                   onTap: () {
-                                    Navigator.push(context,
-                                        CupertinoPageRoute(builder: (_) {
-                                      return TransactionSearchResultsView(
-                                        start: _dateSelected
-                                            ? _selectedFromDate
-                                            : null,
-                                        end: _dateSelected
-                                            ? _selectedToDate
-                                            : null,
-                                        sent: _isActiveSentCheckbox,
-                                        received: _isActiveReceivedCheckbox,
-                                        amount: double.tryParse(
-                                            _amountTextEditingController.text),
-                                        keyword:
-                                            _keywordTextEditingController.text,
-                                      );
-                                    }));
+                                    _onApplyPressed();
                                   },
                                 ),
                               ),
@@ -482,5 +469,25 @@ class _TransactionSearchViewState extends State<TransactionSearchView> {
         ),
       ),
     );
+  }
+
+  _onApplyPressed() async {
+    final notesService = Provider.of<NotesService>(context, listen: false);
+    final addressBookService =
+        Provider.of<AddressBookService>(context, listen: false);
+    final notes = await notesService.notes;
+    final contacts = await addressBookService.addressBookEntries;
+    Navigator.push(context, CupertinoPageRoute(builder: (_) {
+      return TransactionSearchResultsView(
+        start: _dateSelected ? _selectedFromDate : null,
+        end: _dateSelected ? _selectedToDate : null,
+        sent: _isActiveSentCheckbox,
+        received: _isActiveReceivedCheckbox,
+        amount: double.tryParse(_amountTextEditingController.text),
+        keyword: _keywordTextEditingController.text,
+        notes: notes,
+        contacts: contacts,
+      );
+    }));
   }
 }

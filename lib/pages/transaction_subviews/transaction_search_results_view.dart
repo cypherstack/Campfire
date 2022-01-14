@@ -21,6 +21,8 @@ class TransactionSearchResultsView extends StatelessWidget {
     this.received,
     this.keyword,
     this.amount,
+    this.notes,
+    this.contacts,
   }) : super(key: key);
 
   final DateTime start;
@@ -30,19 +32,27 @@ class TransactionSearchResultsView extends StatelessWidget {
   final String keyword;
   final double amount;
 
+  final Map<String, String> notes;
+  final Map<String, String> contacts;
+
   List<Transaction> _filterTransactions(List<Transaction> transactions) {
     return transactions.where((tx) {
-      if (received != null && received && sent != null && sent) {
+      // check if either both are checked or unchecked
+      if (received != null && sent != null && sent == received) {
         return _isAmountMatch(tx) &&
             _isAfter(tx) &&
             _isBefore(tx) &&
             _isKeywordMatch(tx);
+
+        // otherwise check for sent
       } else if (sent != null && sent) {
         return _isAmountMatch(tx) &&
             _isSent(tx) &&
             _isAfter(tx) &&
             _isBefore(tx) &&
             _isKeywordMatch(tx);
+
+        // otherwise check for received
       } else if (received != null && received) {
         return _isAmountMatch(tx) &&
             _isReceived(tx) &&
@@ -67,11 +77,33 @@ class TransactionSearchResultsView extends StatelessWidget {
   bool _isAfter(Transaction tx) =>
       start == null || tx.timestamp >= start.millisecondsSinceEpoch / 1000;
 
-  bool _isBefore(Transaction tx) => true;
-  // end == null || tx.timestamp <= end.millisecondsSinceEpoch / 1000;
+  bool _isBefore(Transaction tx) =>
+      end == null || tx.timestamp <= end.millisecondsSinceEpoch / 1000;
 
-  //TODO implement this keyword search thing
-  bool _isKeywordMatch(Transaction tx) => keyword == null || true;
+  bool _isKeywordMatch(Transaction tx) {
+    if (keyword == null) {
+      return true;
+    }
+
+    bool contains = false;
+
+    if (contacts != null) {
+      // check if addressbook name contains
+      contains |= contacts[tx.address] != null &&
+          contacts[tx.address].contains(keyword);
+    }
+    // check if address contains
+    contains |= tx.address.contains(keyword);
+
+    if (notes != null) {
+      // check if note contains
+      contains |= notes[tx.txid] != null && notes[tx.txid].contains(keyword);
+    }
+    // check if txid contains
+    contains |= tx.txid.contains(keyword);
+
+    return contains;
+  }
 
   @override
   Widget build(BuildContext context) {
