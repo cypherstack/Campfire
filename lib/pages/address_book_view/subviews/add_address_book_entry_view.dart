@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_svg/svg.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:majascan/majascan.dart';
@@ -123,25 +124,50 @@ class _AddAddressBookEntryViewState extends State<AddAddressBookEntryView> {
                         right: 0,
                       ),
                       suffixIcon: UnconstrainedBox(
-                        child: GestureDetector(
-                          onTap: () async {
-                            // TODO implement parse qr code
-                            String qrResult = await MajaScan.startScan(
-                              title: "Scan address QR Code",
-                              barColor: CFColors.white,
-                              titleColor: CFColors.dusk,
-                              qRCornerColor: CFColors.spark,
-                              qRScannerColor: CFColors.midnight,
-                              flashlightEnable: true,
-                              scanAreaScale: 0.7,
-                            );
-                          },
-                          child: SvgPicture.asset(
-                            "assets/svg/qr-code.svg",
-                            color: CFColors.twilight,
-                            width: 20,
-                            height: 20,
-                          ),
+                        child: Row(
+                          children: [
+                            GestureDetector(
+                              onTap: () async {
+                                final ClipboardData data =
+                                    await Clipboard.getData(
+                                        Clipboard.kTextPlain);
+                                final content = data.text.trim();
+                                addressTextController.text = content;
+                              },
+                              child: SvgPicture.asset(
+                                "assets/svg/clipboard.svg",
+                                color: CFColors.twilight,
+                                width: 20,
+                                height: 20,
+                              ),
+                            ),
+                            SizedBox(
+                              width: 10,
+                            ),
+                            GestureDetector(
+                              onTap: () async {
+                                // TODO implement parse qr code
+                                String qrResult = await MajaScan.startScan(
+                                  title: "Scan address QR Code",
+                                  barColor: CFColors.white,
+                                  titleColor: CFColors.dusk,
+                                  qRCornerColor: CFColors.spark,
+                                  qRScannerColor: CFColors.midnight,
+                                  flashlightEnable: true,
+                                  scanAreaScale: 0.7,
+                                );
+                              },
+                              child: SvgPicture.asset(
+                                "assets/svg/qr-code.svg",
+                                color: CFColors.twilight,
+                                width: 20,
+                                height: 20,
+                              ),
+                            ),
+                            SizedBox(
+                              width: 16,
+                            ),
+                          ],
                         ),
                       ),
                     ),

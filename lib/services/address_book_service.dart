@@ -50,6 +50,12 @@ class AddressBookService extends ChangeNotifier {
     final wallet = await Hive.openBox(_currentWallet);
     final _entries = await wallet.get('addressBookEntries');
     final entries = _entries == null ? <String, String>{} : _entries;
+
+    if (entries.containsKey(address)) {
+      throw Exception(
+          "Address already exists in db. Overwriting not allowed! If you want to edit call the editAddressBookEntry() function.");
+    }
+
     entries[address] = name;
     await wallet.put('addressBookEntries', entries);
     print("address book entry saved");
