@@ -1689,6 +1689,18 @@ class BitcoinService extends ChangeNotifier {
     await wallet.put('receivingIndex', receivingIndex);
     await wallet.put('changeIndex', changeIndex);
 
+    // initialize default node
+    final nodes = <String, dynamic>{};
+    nodes.addAll({
+      CampfireConstants.defaultNodeName: {
+        "id": Uuid().v1(),
+        "ipAddress": CampfireConstants.defaultIpAddress,
+        "port": "",
+      }
+    });
+    await wallet.put('nodes', nodes);
+    await wallet.put('activeNodeName', CampfireConstants.defaultNodeName);
+
     final secureStore = new FlutterSecureStorage();
     await secureStore.write(
         key: '${id}_mnemonic', value: suppliedMnemonic.trim());
