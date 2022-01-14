@@ -3,21 +3,59 @@ import 'package:google_fonts/google_fonts.dart';
 import 'package:paymint/models/models.dart';
 import 'package:paymint/pages/settings_view/helpers/builders.dart';
 import 'package:paymint/services/address_book_service.dart';
+import 'package:paymint/services/notes_service.dart';
 import 'package:paymint/utilities/cfcolors.dart';
 import 'package:paymint/utilities/shared_utilities.dart';
 import 'package:paymint/utilities/sizing_utilities.dart';
 import 'package:provider/provider.dart';
 
-class TransactionDetailsView extends StatelessWidget {
-  const TransactionDetailsView({Key key, @required this.transaction})
-      : super(key: key);
+class TransactionDetailsView extends StatefulWidget {
+  const TransactionDetailsView({
+    Key key,
+    @required this.transaction,
+    @required this.note,
+  }) : super(key: key);
 
   final Transaction transaction;
+  final note;
+
+  @override
+  _TransactionDetailsViewState createState() => _TransactionDetailsViewState();
+}
+
+class _TransactionDetailsViewState extends State<TransactionDetailsView> {
+  Transaction _transaction;
+  FocusNode _focusNode = FocusNode();
+
+  final _noteController = TextEditingController();
+
+  @override
+  void initState() {
+    this._transaction = widget.transaction;
+    _noteController.text = widget.note;
+    _focusNode.addListener(_onNoteFocusChanged);
+    super.initState();
+  }
+
+  @override
+  void dispose() {
+    _focusNode.removeListener(_onNoteFocusChanged);
+    _focusNode.dispose();
+    super.dispose();
+  }
+
+  _onNoteFocusChanged() {
+    if (!_focusNode.hasFocus) {
+      final notesService = Provider.of<NotesService>(context, listen: false);
+      notesService.editOrAddNote(
+          txid: _transaction.txid, note: _noteController.text);
+    }
+  }
 
   Color _txTypeColor() {
-    if (transaction.txType == "Received") {
+    if (_transaction.txType == "Received") {
       return CFColors.success;
-    } else if (transaction.txType == "Sent") {
+    } else if (_transaction.txType == "Sent") {
       return CFColors.spark;
     } else {
       // Are there any other txTypes strings?
@@ -28,14 +66,14 @@ class TransactionDetailsView extends StatelessWidget {
   }
 
   String _getTitle() {
-    if (transaction.txType == "Received") {
-      if (transaction.confirmedStatus) {
+    if (_transaction.txType == "Received") {
+      if (_transaction.confirmedStatus) {
         return "Received";
       } else {
         return "Receiving (~10 min)";
       }
-    } else if (transaction.txType == "Sent") {
-      if (transaction.confirmedStatus) {
+    } else if (_transaction.txType == "Sent") {
+      if (_transaction.confirmedStatus) {
         return "Sent";
       } else {
         return "Sending (~10 min)";
@@ -59,7 +97,6 @@ class TransactionDetailsView extends StatelessWidget {
         fontSize: 14,
       );
 
-  // TODO need to store sent to address for transactions on server for this
   _buildSentToItem(BuildContext context) {
     final addressService =
         Provider.of<AddressBookService>(context, listen: false);
@@ -81,28 +118,19 @@ class TransactionDetailsView extends StatelessWidget {
           future: addressService.addressBookEntries,
           builder: (BuildContext context,
               AsyncSnapshot<Map<String, String>> snapshot) {
-            if (snapshot.connectionState == ConnectionState.done) {
-              // TODO: need address to match up and find contact name
-              final address = "";
+            String text = _transaction.address;
 
-              return Align(
-                alignment: Alignment.centerLeft,
-                child: FittedBox(
-                  child: Text(
-                    snapshot.data[address],
-                    style: _contentStyle,
-                  ),
-                ),
-              );
+            if (snapshot.connectionState == ConnectionState.done) {
+              if (snapshot.data[_transaction.address] != null) {
+                text = snapshot.data[_transaction.address];
+              }
             }
 
             return Align(
               alignment: Alignment.centerLeft,
-              child: FittedBox(
-                child: Text(
-                  "snapshot.data[address]",
-                  style: _contentStyle,
-                ),
+              child: Text(
+                text,
+                style: _contentStyle,
               ),
             );
           },
@@ -159,74 +187,132 @@ class TransactionDetailsView extends StatelessWidget {
         context,
         "Transaction Details",
       ),
-      body: Padding(
-        padding: EdgeInsets.symmetric(
-          horizontal: SizingUtilities.standardPadding,
-        ),
-        child: Column(
-          // crossAxisAlignment: CrossAxisAlignment.stretch,
-          children: [
-            SizedBox(
-              height: 10,
-            ),
-            Container(
-              height: SizingUtilities.standardButtonHeight,
-              decoration: BoxDecoration(
-                color: CFColors.fog,
-                borderRadius:
-                    BorderRadius.circular(SizingUtilities.circularBorderRadius),
+      body: Container(
+        color: CFColors.white,
+        height: SizingUtilities.getBodyHeight(context),
+        child: Padding(
+          padding: EdgeInsets.symmetric(
+            horizontal: SizingUtilities.standardPadding,
+          ),
+          child: Column(
+            // crossAxisAlignment: CrossAxisAlignment.stretch,
+            children: [
+              SizedBox(
+                height: 10,
               ),
-              child: Center(
-                child: FittedBox(
-                  child: Text(
-                    _getTitle(),
-                    style: GoogleFonts.workSans(
-                      color: _txTypeColor(),
-                      fontWeight: FontWeight.w600,
-                      fontSize: 16,
+              Container(
+                height: SizingUtilities.standardButtonHeight,
+                decoration: BoxDecoration(
+                  color: CFColors.fog,
+                  borderRadius: BorderRadius.circular(
+                      SizingUtilities.circularBorderRadius),
+                ),
+                child: Center(
+                  child: FittedBox(
+                    child: Text(
+                      _getTitle(),
+                      style: GoogleFonts.workSans(
+                        color: _txTypeColor(),
+                        fontWeight: FontWeight.w600,
+                        fontSize: 16,
+                      ),
                     ),
                   ),
                 ),
               ),
-            ),
-            SizedBox(
-              height: SizingUtilities.standardPadding,
-            ),
-            Expanded(
-              child: SingleChildScrollView(
-                child: Column(
-                  children: [
-                    // TODO need to store Note for transaction on server for this
-                    _buildItem("Note:", "not implemented yet"),
-                    _buildSeparator(),
-                    // if (transaction.txType == "Sent") _buildSentToItem(context),
-                    // _buildSeparator(),
-                    _buildItem(
-                        "Amount:",
-                        Utilities.satoshiAmountToPrettyString(
-                            transaction.amount)),
-                    _buildSeparator(),
-                    _buildItem(
-                        "Fee:",
-                        Utilities.satoshiAmountToPrettyString(
-                            transaction.fees)),
-                    _buildSeparator(),
-                    _buildItem("Date:",
-                        Utilities.extractDateFrom(transaction.timestamp)),
-                    _buildSeparator(),
-                    _buildItem("Transaction ID:", transaction.txid),
-                    _buildSeparator(),
-                    _buildItem("Block Height:", transaction.height.toString()),
-                  ],
+              SizedBox(
+                height: SizingUtilities.standardPadding,
+              ),
+              Expanded(
+                child: SingleChildScrollView(
+                  child: Column(
+                    children: [
+                      _buildNoteItem(context),
+                      if (_transaction.txType == "Sent")
+                        _buildSentToItem(context),
+                      if (_transaction.txType == "Sent") _buildSeparator(),
+                      if (_transaction.txType == "Received")
+                        _buildItem("Received on:", _transaction.address),
+                      if (_transaction.txType == "Received") _buildSeparator(),
+                      _buildItem(
+                          "Amount:",
+                          Utilities.satoshiAmountToPrettyString(
+                              _transaction.amount)),
+                      _buildSeparator(),
+                      _buildItem(
+                          "Fee:",
+                          Utilities.satoshiAmountToPrettyString(
+                              _transaction.fees)),
+                      _buildSeparator(),
+                      _buildItem("Date:",
+                          Utilities.extractDateFrom(_transaction.timestamp)),
+                      _buildSeparator(),
+                      _buildItem("Transaction ID:", _transaction.txid),
+                      _buildSeparator(),
+                      _buildItem(
+                          "Block Height:", _transaction.height.toString()),
+                    ],
+                  ),
                 ),
               ),
-            ),
-            SizedBox(
-              height: SizingUtilities.standardPadding,
-            ),
-          ],
+              SizedBox(
+                height: SizingUtilities.standardPadding,
+              ),
+            ],
+          ),
         ),
       ),
+    );
+  }
+
+  _buildNoteItem(BuildContext context) {
+    return Column(
+      children: [
+        Align(
+          alignment: Alignment.centerLeft,
+          child: FittedBox(
+            child: Text(
+              "Note:",
+              style: _labelStyle,
+            ),
+          ),
+        ),
+        TextField(
+          focusNode: _focusNode,
+          controller: _noteController,
+          style: _contentStyle,
+          decoration: InputDecoration(
+            hintText: "Type something...",
+            hintStyle: GoogleFonts.workSans(
+              color: CFColors.dew,
+              fontWeight: FontWeight.w400,
+              fontSize: 14,
+            ),
+            contentPadding: EdgeInsets.all(0),
+            fillColor: Colors.transparent,
+            border: InputBorder.none,
+            focusColor: CFColors.fog,
+            disabledBorder: InputBorder.none,
+            enabledBorder: InputBorder.none,
+            errorBorder: InputBorder.none,
+            focusedBorder: InputBorder.none,
+            focusedErrorBorder: InputBorder.none,
+          ),
+        ),
+        SizedBox(
+          height: 5,
+          child: Center(
+            child: Container(
+              color: CFColors.fog,
+              height: 1,
+              width: double.infinity,
+            ),
+          ),
+        ),
+        SizedBox(
+          height: 8,
+        ),
+      ],
     );
   }
 }
