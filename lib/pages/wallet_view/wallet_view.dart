@@ -32,6 +32,8 @@ class _WalletViewState extends State<WalletView> {
 
   StreamSubscription _nodeConnectionStatusChangedEventListener;
 
+  List<Transaction> _cachedTransactions = [];
+
   @override
   void initState() {
     // add listener
@@ -221,29 +223,28 @@ class _WalletViewState extends State<WalletView> {
                 ],
               ),
             ),
+            if (_nodeStatus != NodeConnectionStatus.synced)
+              Center(
+                child: SpinKitThreeBounce(
+                  color: CFColors.spark,
+                  size: MediaQuery.of(context).size.width * 0.1,
+                ),
+              ),
             Expanded(
               child: FutureBuilder(
                 future: bitcoinService.lelantusTransactionData,
-                builder: (context, txData) {
+                builder: (context, AsyncSnapshot<TransactionData> txData) {
                   if (txData.connectionState == ConnectionState.done) {
-                    final data = txData.data;
                     if (_nodeStatus == NodeConnectionStatus.synced) {
-                      return _buildTransactionList(context, data);
-                    } else {
-                      return Center(
-                        child: SpinKitThreeBounce(
-                          color: CFColors.spark,
-                          size: MediaQuery.of(context).size.width * 0.1,
-                        ),
-                      );
+                      _cachedTransactions = txData.data.txChunks
+                          .expand((element) => element.transactions)
+                          .toList();
                     }
+                  }
+                  if (_cachedTransactions.length == 0) {
+                    return _buildNoTransactionsFound(context);
                   } else {
-                    return Center(
-                      child: SpinKitThreeBounce(
-                        color: CFColors.spark,
-                        size: MediaQuery.of(context).size.width * 0.1,
-                      ),
-                    );
+                    return _buildTransactionList(context, _cachedTransactions);
                   }
                 },
               ),
@@ -255,68 +256,59 @@ class _WalletViewState extends State<WalletView> {
   }
 }
 
-// build transaction list after loading data
-Widget _buildTransactionList(BuildContext context, TransactionData txData) {
-  // No transactions in wallet
-  if (txData.txChunks.length == 0) {
-    return Center(
-      child: Column(
-        // mainAxisAlignment: MainAxisAlignment.center,
-        children: [
-          // SizedBox(
-          //   height: 32,
-          // ),
-          SvgPicture.asset(
-            "assets/svg/empty-tx-list.svg",
-            width: MediaQuery.of(context).size.width * 0.52,
-          ),
-          SizedBox(
-            height: 8,
-          ),
-          FittedBox(
-            child: Text(
-              "NO TRANSACTIONS YET",
-              style: GoogleFonts.workSans(
-                color: CFColors.dew,
-                fontWeight: FontWeight.w600,
-                fontSize: 12,
-                letterSpacing: 0.25,
-              ),
+_buildNoTransactionsFound(BuildContext context) {
+  return Center(
+    child: Column(
+      children: [
+        SvgPicture.asset(
+          "assets/svg/empty-tx-list.svg",
+          width: MediaQuery.of(context).size.width * 0.52,
+        ),
+        SizedBox(
+          height: 8,
+        ),
+        FittedBox(
+          child: Text(
+            "NO TRANSACTIONS YET",
+            style: GoogleFonts.workSans(
+              color: CFColors.dew,
+              fontWeight: FontWeight.w600,
+              fontSize: 12,
+              letterSpacing: 0.25,
             ),
-          )
-        ],
-      ),
-    );
-  } else {
-    // flatten transactions into single list
-    List<Transaction> txList =
-        txData.txChunks.expand((element) => element.transactions).toList();
+          ),
+        )
+      ],
+    ),
+  );
+}
 
-    return Container(
-      padding: EdgeInsets.symmetric(
-        vertical: 0,
-        horizontal: 16,
-      ),
-      child: ListView.builder(
-        itemCount: txList.length,
-        itemBuilder: (context, index) {
-          return Padding(
-            padding: EdgeInsets.all(
-              SizingUtilities.listItemSpacing / 2,
-            ),
-            child: TransactionCard(
-              transaction: txList[index],
-              txType: txList[index].txType,
-              date: Utilities.extractDateFrom(txList[index].timestamp),
-              amount:
-                  "${Utilities.satoshisToAmount(txList[index].amount)} ${CurrencyUtilities.coinName}",
-              fiatValue: txList[index].worthNow is String
-                  ? txList[index].worthNow
-                  : txList[index].worthNow.toStringAsFixed(2),
-            ),
-          );
-        },
-      ),
-    );
-  }
+// build transaction list after loading data
+Widget _buildTransactionList(BuildContext context, List<Transaction> txList) {
+  return Container(
+    padding: EdgeInsets.symmetric(
+      vertical: 0,
+      horizontal: 16,
+    ),
+    child: ListView.builder(
+      itemCount: txList.length,
+      itemBuilder: (context, index) {
+        return Padding(
+          padding: EdgeInsets.all(
+            SizingUtilities.listItemSpacing / 2,
+          ),
+          child: TransactionCard(
+            transaction: txList[index],
+            txType: txList[index].txType,
+            date: Utilities.extractDateFrom(txList[index].timestamp),
+            amount:
+                "${Utilities.satoshisToAmount(txList[index].amount)} ${CurrencyUtilities.coinName}",
+            fiatValue: txList[index].worthNow is String
+                ? txList[index].worthNow
+                : txList[index].worthNow.toStringAsFixed(2),
+          ),
+        );
+      },
+    ),
+  );
 }
