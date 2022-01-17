@@ -46,7 +46,8 @@ class _AddCustomNodeViewState extends State<AddCustomNodeView> {
     final nodesService = Provider.of<NodeService>(context, listen: false);
 
     // try to create a new node
-    final success = nodesService.createNode(name: name, ipAddress: url, port: port);
+    final success =
+        nodesService.createNode(name: name, ipAddress: url, port: port);
 
     // check for duplicate node name
     if (success) {
@@ -58,8 +59,8 @@ class _AddCustomNodeViewState extends State<AddCustomNodeView> {
         useSafeArea: false,
         barrierDismissible: false,
         context: context,
-        builder: (_) =>
-            CampfireAlert(message: "A node with the name \"$name\" already exists!"),
+        builder: (_) => CampfireAlert(
+            message: "A node with the name \"$name\" already exists!"),
       );
     }
   }
@@ -148,7 +149,8 @@ class _AddCustomNodeViewState extends State<AddCustomNodeView> {
       children: [
         TextField(
           controller: _nameController,
-          decoration: InputDecoration(hintText: "Node name", hintStyle: _hintStyle),
+          decoration:
+              InputDecoration(hintText: "Node name", hintStyle: _hintStyle),
         ),
         SizedBox(
           height: 12,
@@ -158,8 +160,8 @@ class _AddCustomNodeViewState extends State<AddCustomNodeView> {
             Expanded(
               child: TextField(
                 controller: _addressController,
-                decoration:
-                    InputDecoration(hintText: "IP address", hintStyle: _hintStyle),
+                decoration: InputDecoration(
+                    hintText: "IP address", hintStyle: _hintStyle),
               ),
             ),
             SizedBox(
@@ -168,7 +170,8 @@ class _AddCustomNodeViewState extends State<AddCustomNodeView> {
             Expanded(
               child: TextField(
                 controller: _portController,
-                decoration: InputDecoration(hintText: "Port", hintStyle: _hintStyle),
+                decoration:
+                    InputDecoration(hintText: "Port", hintStyle: _hintStyle),
               ),
             ),
           ],
@@ -214,7 +217,8 @@ class _AddCustomNodeViewState extends State<AddCustomNodeView> {
   _buildTestButton(BuildContext context) {
     return SizedBox(
       height: 48,
-      width: MediaQuery.of(context).size.width - (SizingUtilities.standardPadding * 2),
+      width: MediaQuery.of(context).size.width -
+          (SizingUtilities.standardPadding * 2),
       child: SimpleButton(
         child: FittedBox(
           child: Text(
@@ -234,7 +238,8 @@ class _AddCustomNodeViewState extends State<AddCustomNodeView> {
   _buildSaveButton(BuildContext context) {
     return SizedBox(
       height: 48,
-      width: MediaQuery.of(context).size.width - (SizingUtilities.standardPadding * 2),
+      width: MediaQuery.of(context).size.width -
+          (SizingUtilities.standardPadding * 2),
       child: GradientButton(
         child: Text(
           "SAVE",

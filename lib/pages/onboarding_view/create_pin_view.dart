@@ -41,7 +41,8 @@ class _CreatePinViewState extends State<CreatePinView> {
     );
   }
 
-  PageController _pageController = PageController(initialPage: 0, keepPage: true);
+  PageController _pageController =
+      PageController(initialPage: 0, keepPage: true);
 
   // Attributes for Page 1 of the pageview
   final TextEditingController _pinPutController1 = TextEditingController();
@@ -174,23 +175,29 @@ class _CreatePinViewState extends State<CreatePinView> {
                         selectedFieldDecoration: _pinPutDecoration,
                         followingFieldDecoration: _pinPutDecoration,
                         onSubmit: (String pin) async {
-                          if (_pinPutController1.text == _pinPutController2.text) {
+                          if (_pinPutController1.text ==
+                              _pinPutController2.text) {
                             // ask if want to use biometrics
-                            final bool useBiometrics = await _enableBiometricsDialog();
+                            final bool useBiometrics =
+                                await _enableBiometricsDialog();
 
                             // handle wallet creation/initialization
 
-                            final walletService =
-                                Provider.of<WalletsService>(context, listen: false);
+                            final walletService = Provider.of<WalletsService>(
+                                context,
+                                listen: false);
                             final store = new FlutterSecureStorage();
 
-                            await walletService.addNewWalletName(widget.walletName);
-                            final id = await walletService.getWalletId(widget.walletName);
+                            await walletService
+                                .addNewWalletName(widget.walletName);
+                            final id = await walletService
+                                .getWalletId(widget.walletName);
                             await store.write(key: "${id}_pin", value: pin);
 
                             if (widget.type == CreateWalletType.NEW) {
                               final bitcoinService =
-                                  Provider.of<BitcoinService>(context, listen: false);
+                                  Provider.of<BitcoinService>(context,
+                                      listen: false);
 
                               // need to pop another screen in appbar button if the below is uncommented
 
@@ -222,8 +229,10 @@ class _CreatePinViewState extends State<CreatePinView> {
                               );
 
                               // TODO do this differently - causes short lockup of UI
-                              await bitcoinService.initializeWallet(widget.walletName);
-                              await bitcoinService.updateBiometricsUsage(useBiometrics);
+                              await bitcoinService
+                                  .initializeWallet(widget.walletName);
+                              await bitcoinService
+                                  .updateBiometricsUsage(useBiometrics);
                               await Future.delayed(Duration(seconds: 3));
 
                               Navigator.pop(context);
@@ -236,16 +245,16 @@ class _CreatePinViewState extends State<CreatePinView> {
                               // push restore wallet page
                               case CreateWalletType.RESTORE:
                                 // message = "PIN code successfully set";
-                                nextView =
-                                    RestoreWalletFormView(walletName: widget.walletName);
+                                nextView = RestoreWalletFormView(
+                                    walletName: widget.walletName);
 
                                 break;
 
                               // push new wallet page
                               case CreateWalletType.NEW:
                                 // message = "PIN code successfully set";
-                                nextView =
-                                    BackupKeyWarningView(walletName: widget.walletName);
+                                nextView = BackupKeyWarningView(
+                                    walletName: widget.walletName);
 
                                 break;
                             }
@@ -298,7 +307,8 @@ class _CreatePinViewState extends State<CreatePinView> {
     bool canCheckBiometrics = await localAuth.canCheckBiometrics;
 
     if (canCheckBiometrics) {
-      List<BiometricType> availableSystems = await localAuth.getAvailableBiometrics();
+      List<BiometricType> availableSystems =
+          await localAuth.getAvailableBiometrics();
 
       //TODO implement iOS biometrics
       if (Platform.isIOS) {

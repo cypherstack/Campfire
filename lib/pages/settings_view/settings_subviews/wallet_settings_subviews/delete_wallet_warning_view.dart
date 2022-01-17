@@ -15,8 +15,8 @@ class DeleteWalletWarningView extends StatelessWidget {
   // final _textStyle = GoogleFonts.workSans();
   @override
   Widget build(BuildContext context) {
-    final buttonWidth =
-        MediaQuery.of(context).size.width - (SizingUtilities.standardPadding * 2);
+    final buttonWidth = MediaQuery.of(context).size.width -
+        (SizingUtilities.standardPadding * 2);
     return Scaffold(
       backgroundColor: CFColors.white,
       appBar: buildSettingsAppBar(context, ""),
@@ -54,7 +54,8 @@ class DeleteWalletWarningView extends StatelessWidget {
     return Container(
       decoration: BoxDecoration(
         color: CFColors.fog,
-        borderRadius: BorderRadius.circular(SizingUtilities.circularBorderRadius),
+        borderRadius:
+            BorderRadius.circular(SizingUtilities.circularBorderRadius),
         border: Border.all(
           width: 1,
           color: CFColors.smoke,

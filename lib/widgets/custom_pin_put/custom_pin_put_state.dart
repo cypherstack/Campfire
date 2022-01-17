@@ -31,10 +31,10 @@ class CustomPinPutState extends State<CustomPinPut>
     });
 
     if (widget.withCursor) {
-      _cursorAnimationController =
-          AnimationController(vsync: this, duration: Duration(milliseconds: 500));
-      _cursorAnimation = Tween(begin: 0.0, end: 1.0).animate(
-          CurvedAnimation(curve: Curves.linear, parent: _cursorAnimationController));
+      _cursorAnimationController = AnimationController(
+          vsync: this, duration: Duration(milliseconds: 500));
+      _cursorAnimation = Tween(begin: 0.0, end: 1.0).animate(CurvedAnimation(
+          curve: Curves.linear, parent: _cursorAnimationController));
 
       _cursorAnimationController.addStatusListener((AnimationStatus status) {
         if (status == AnimationStatus.completed) {
@@ -73,7 +73,8 @@ class CustomPinPutState extends State<CustomPinPut>
 
   @override
   void didChangeAppLifecycleState(AppLifecycleState appLifecycleState) {
-    if (appLifecycleState == AppLifecycleState.resumed || widget.checkClipboard) {
+    if (appLifecycleState == AppLifecycleState.resumed ||
+        widget.checkClipboard) {
       _checkClipboard();
     }
   }
@@ -248,10 +249,12 @@ class CustomPinPutState extends State<CustomPinPut>
 
   BoxDecoration _fieldDecoration(int index) {
     if (!widget.enabled) return widget.disabledDecoration;
-    if (index < selectedIndex && (_focusNode.hasFocus || !widget.useNativeKeyboard)) {
+    if (index < selectedIndex &&
+        (_focusNode.hasFocus || !widget.useNativeKeyboard)) {
       return widget.submittedFieldDecoration;
     }
-    if (index == selectedIndex && (_focusNode.hasFocus || !widget.useNativeKeyboard)) {
+    if (index == selectedIndex &&
+        (_focusNode.hasFocus || !widget.useNativeKeyboard)) {
       return widget.selectedFieldDecoration;
     }
     return widget.followingFieldDecoration;

@@ -19,8 +19,8 @@ class ModalPopupDialog extends StatelessWidget {
             child: Container(
               decoration: BoxDecoration(
                 color: CFColors.white,
-                borderRadius:
-                    BorderRadius.circular(SizingUtilities.circularBorderRadius * 2),
+                borderRadius: BorderRadius.circular(
+                    SizingUtilities.circularBorderRadius * 2),
               ),
               child: child,
             ),

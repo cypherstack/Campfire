@@ -115,7 +115,8 @@ class _NodeCardState extends State<NodeCard> {
           child: Container(
             decoration: BoxDecoration(
               color: CFColors.white,
-              borderRadius: BorderRadius.circular(SizingUtilities.circularBorderRadius),
+              borderRadius:
+                  BorderRadius.circular(SizingUtilities.circularBorderRadius),
               boxShadow: [CFColors.standardBoxShadow],
             ),
             child: Column(
@@ -126,7 +127,8 @@ class _NodeCardState extends State<NodeCard> {
                     padding: const EdgeInsets.only(
                       top: 10,
                       left: 12,
-                      right: 12 + 40.0, // +40 to give it mo9re width as per the design
+                      right: 12 +
+                          40.0, // +40 to give it mo9re width as per the design
                       bottom: 10,
                     ),
                     child: Text(
@@ -140,7 +142,8 @@ class _NodeCardState extends State<NodeCard> {
                     ),
                   ),
                   onTap: () async {
-                    final nodeService = Provider.of<NodeService>(context, listen: false);
+                    final nodeService =
+                        Provider.of<NodeService>(context, listen: false);
                     await nodeService.setCurrentNode(_name);
                     Navigator.pop(context);
                   },

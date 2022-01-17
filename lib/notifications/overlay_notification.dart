@@ -4,23 +4,27 @@ import 'package:paymint/utilities/cfcolors.dart';
 import 'package:paymint/utilities/sizing_utilities.dart';
 
 class OverlayNotification {
-  static void showSuccess(BuildContext context, String message, Duration duration) async {
-    return _showOverlay(context, CFColors.notificationSuccess, message, duration);
+  static void showSuccess(
+      BuildContext context, String message, Duration duration) async {
+    return _showOverlay(
+        context, CFColors.notificationSuccess, message, duration);
   }
 
-  static void showInfo(BuildContext context, String message, Duration duration) async {
+  static void showInfo(
+      BuildContext context, String message, Duration duration) async {
     return _showOverlay(context, CFColors.notificationInfo, message, duration);
   }
 
-  static void showError(BuildContext context, String message, Duration duration) async {
+  static void showError(
+      BuildContext context, String message, Duration duration) async {
     return _showOverlay(context, CFColors.notificationError, message, duration);
   }
 
   static OverlayState _state;
   static OverlayEntry _entry;
 
-  static void _showOverlay(BuildContext context, Color backgroundColor, String message,
-      Duration duration) async {
+  static void _showOverlay(BuildContext context, Color backgroundColor,
+      String message, Duration duration) async {
     _state = Overlay.of(context);
     _entry = OverlayEntry(
       builder: (context) => Positioned(
@@ -30,7 +34,8 @@ class OverlayNotification {
         child: Container(
           decoration: BoxDecoration(
               color: backgroundColor,
-              borderRadius: BorderRadius.circular(SizingUtilities.circularBorderRadius),
+              borderRadius:
+                  BorderRadius.circular(SizingUtilities.circularBorderRadius),
               boxShadow: [
                 BoxShadow(
                   color: CFColors.shadowColor,

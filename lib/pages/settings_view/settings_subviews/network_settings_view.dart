@@ -42,8 +42,9 @@ class _NetworkSettingsViewState extends State<NetworkSettingsView> {
   @override
   initState() {
     // TODO add animations and other icons based on status
-    _nodeConnectionStatusChangedEventListener =
-        GlobalEventBus.instance.on<NodeConnectionStatusChangedEvent>().listen((event) {
+    _nodeConnectionStatusChangedEventListener = GlobalEventBus.instance
+        .on<NodeConnectionStatusChangedEvent>()
+        .listen((event) {
       print("event caught");
       String newLabel;
       switch (event.newStatus) {

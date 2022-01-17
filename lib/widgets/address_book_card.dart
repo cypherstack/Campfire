@@ -41,7 +41,8 @@ class _AddressBookCardState extends State<AddressBookCard> {
       );
     } else {
       return RoundedRectangleBorder(
-        borderRadius: BorderRadius.circular(SizingUtilities.circularBorderRadius),
+        borderRadius:
+            BorderRadius.circular(SizingUtilities.circularBorderRadius),
       );
     }
   }
@@ -76,7 +77,8 @@ class _AddressBookCardState extends State<AddressBookCard> {
     return Container(
       decoration: BoxDecoration(
         color: CFColors.white,
-        borderRadius: BorderRadius.circular(SizingUtilities.circularBorderRadius),
+        borderRadius:
+            BorderRadius.circular(SizingUtilities.circularBorderRadius),
         boxShadow: [
           CFColors.standardBoxShadow,
         ],
@@ -102,8 +104,8 @@ class _AddressBookCardState extends State<AddressBookCard> {
                       width: 36,
                       decoration: BoxDecoration(
                         gradient: CFColors.fireGradientVerticalLight,
-                        borderRadius:
-                            BorderRadius.circular(18), // half with for perfect circle
+                        borderRadius: BorderRadius.circular(
+                            18), // half with for perfect circle
                       ),
                       child: Center(
                         child: SvgPicture.asset(
@@ -172,7 +174,8 @@ class _AddressBookCardState extends State<AddressBookCard> {
                     "assets/svg/copy-2.svg",
                     "COPY",
                     () {
-                      Clipboard.setData(new ClipboardData(text: widget.address));
+                      Clipboard.setData(
+                          new ClipboardData(text: widget.address));
                       OverlayNotification.showInfo(
                         context,
                         "Address copied to clipboard",

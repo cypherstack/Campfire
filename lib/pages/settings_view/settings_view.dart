@@ -106,7 +106,8 @@ class SettingsView extends StatelessWidget {
                 "assets/svg/book-open.svg",
                 "Address Book",
                 () {
-                  Navigator.push(context, CupertinoPageRoute(builder: (context) {
+                  Navigator.push(context,
+                      CupertinoPageRoute(builder: (context) {
                     return AddressBookView();
                   }));
                 },
@@ -121,7 +122,8 @@ class SettingsView extends StatelessWidget {
                 "assets/svg/radio.svg",
                 "Network",
                 () {
-                  Navigator.push(context, CupertinoPageRoute(builder: (context) {
+                  Navigator.push(context,
+                      CupertinoPageRoute(builder: (context) {
                     return NetworkSettingsView();
                     // return NodeDetailsView(isEdit: false);
                   }));
@@ -137,8 +139,10 @@ class SettingsView extends StatelessWidget {
                 "assets/svg/lock.svg",
                 "Wallet Backup",
                 () {
-                  Navigator.push(context, CupertinoPageRoute(builder: (context) {
-                    return Lockscreen2View(routeOnSuccess: '/settings/walletbackup');
+                  Navigator.push(context,
+                      CupertinoPageRoute(builder: (context) {
+                    return Lockscreen2View(
+                        routeOnSuccess: '/settings/walletbackup');
                   }));
                 },
               ),
@@ -152,7 +156,8 @@ class SettingsView extends StatelessWidget {
                 "assets/svg/settings.svg",
                 "Wallet Settings",
                 () {
-                  Navigator.push(context, CupertinoPageRoute(builder: (context) {
+                  Navigator.push(context,
+                      CupertinoPageRoute(builder: (context) {
                     return WalletSettingsView();
                   }));
                 },
@@ -167,7 +172,8 @@ class SettingsView extends StatelessWidget {
                 "assets/svg/usd-circle.svg",
                 "Currency",
                 () {
-                  Navigator.push(context, CupertinoPageRoute(builder: (context) {
+                  Navigator.push(context,
+                      CupertinoPageRoute(builder: (context) {
                     return CurrencyView();
                   }));
                 },

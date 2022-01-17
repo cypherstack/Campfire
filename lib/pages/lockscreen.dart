@@ -33,7 +33,8 @@ class _LockscreenViewState extends State<LockscreenView> {
 
     // If useBiometrics is enabled, then show fingerprint auth screen
     if (useBiometrics != null && useBiometrics && canCheckBiometrics) {
-      List<BiometricType> availableSystems = await localAuth.getAvailableBiometrics();
+      List<BiometricType> availableSystems =
+          await localAuth.getAvailableBiometrics();
 
       //TODO implement iOS biometrics
       if (Platform.isIOS) {
@@ -48,7 +49,8 @@ class _LockscreenViewState extends State<LockscreenView> {
             localizedReason: 'Please authenticate to unlock wallet',
           );
 
-          if (didAuthenticate) Navigator.pushReplacementNamed(context, '/mainview');
+          if (didAuthenticate)
+            Navigator.pushReplacementNamed(context, '/mainview');
         }
       }
     }

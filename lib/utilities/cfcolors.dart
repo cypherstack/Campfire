@@ -31,7 +31,8 @@ class CFColors {
   static const Color dropdownError = Color(0xFFFAC2C2);
 
   // focused textfield border
-  static const Color focusedBorder = Color(0x80F5595C); // flame with 50% opacity
+  static const Color focusedBorder =
+      Color(0x80F5595C); // flame with 50% opacity
   static const Color errorBorder = error;
   static const Color successBorder = success;
 

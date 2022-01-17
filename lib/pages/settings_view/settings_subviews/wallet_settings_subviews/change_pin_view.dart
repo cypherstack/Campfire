@@ -27,7 +27,8 @@ class _ChangePinViewState extends State<ChangePinView> {
     );
   }
 
-  PageController _pageController = PageController(initialPage: 0, keepPage: true);
+  PageController _pageController =
+      PageController(initialPage: 0, keepPage: true);
 
   // Attributes for Page 1 of the page view
   final TextEditingController _pinPutController1 = TextEditingController();

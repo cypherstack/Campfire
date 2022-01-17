@@ -11,7 +11,8 @@ AppBar buildSettingsAppBar(BuildContext context, String title,
     bool backDelayed = true}) {
   final List<Widget> actions = rightButton == null ? [] : [rightButton];
 
-  bool _disableBackButton = disableBackButton == null ? false : disableBackButton;
+  bool _disableBackButton =
+      disableBackButton == null ? false : disableBackButton;
 
   final TextStyle _titleStyle = GoogleFonts.workSans(
     color: CFColors.dusk,
@@ -29,7 +30,8 @@ AppBar buildSettingsAppBar(BuildContext context, String title,
     actions: actions,
 
     // leading appbar button
-    leadingWidth: _disableBackButton ? null : 36.0 + 20.0, // account for 20 padding
+    leadingWidth:
+        _disableBackButton ? null : 36.0 + 20.0, // account for 20 padding
 
     leading: _disableBackButton
         ? null

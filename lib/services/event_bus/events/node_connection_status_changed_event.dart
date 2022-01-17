@@ -4,6 +4,7 @@ class NodeConnectionStatusChangedEvent {
   NodeConnectionStatus newStatus;
 
   NodeConnectionStatusChangedEvent(this.newStatus) {
-    print("NodeConnectionStatusChangedEvent fired with arg newStatus = $newStatus");
+    print(
+        "NodeConnectionStatusChangedEvent fired with arg newStatus = $newStatus");
   }
 }

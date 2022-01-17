@@ -31,7 +31,8 @@ class CustomPinPut extends StatefulWidget {
       this.eachFieldAlignment = Alignment.center,
       this.eachFieldMargin,
       this.eachFieldPadding,
-      this.eachFieldConstraints = const BoxConstraints(minHeight: 10.0, minWidth: 10.0),
+      this.eachFieldConstraints =
+          const BoxConstraints(minHeight: 10.0, minWidth: 10.0),
       this.inputDecoration = const InputDecoration(
         contentPadding: EdgeInsets.zero,
         border: InputBorder.none,

@@ -8,7 +8,10 @@ enum TextSwitchButtonState {
 
 class TextSwitchButton extends StatefulWidget {
   const TextSwitchButton(
-      {Key key, this.leftText, this.rightText, @required this.buttonStateChanged})
+      {Key key,
+      this.leftText,
+      this.rightText,
+      @required this.buttonStateChanged})
       : super(key: key);
 
   final String leftText;
@@ -56,7 +59,8 @@ class _TextSwitchButtonState extends State<TextSwitchButton> {
                   height: constraints.maxHeight - 4,
                   width: constraints.maxWidth / 2 - 4,
                   decoration: BoxDecoration(
-                    borderRadius: BorderRadius.circular(constraints.maxHeight / 2),
+                    borderRadius:
+                        BorderRadius.circular(constraints.maxHeight / 2),
                     color: _leftColor,
                   ),
                   child: Center(
@@ -90,7 +94,8 @@ class _TextSwitchButtonState extends State<TextSwitchButton> {
                   height: constraints.maxHeight - 4,
                   width: constraints.maxWidth / 2 - 4,
                   decoration: BoxDecoration(
-                    borderRadius: BorderRadius.circular(constraints.maxHeight / 2),
+                    borderRadius:
+                        BorderRadius.circular(constraints.maxHeight / 2),
                     color: _rightColor,
                   ),
                   child: Center(

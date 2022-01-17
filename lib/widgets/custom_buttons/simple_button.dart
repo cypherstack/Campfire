@@ -3,7 +3,11 @@ import 'package:paymint/utilities/cfcolors.dart';
 
 class SimpleButton extends StatelessWidget {
   const SimpleButton(
-      {Key key, @required this.onTap, @required this.child, this.color, this.shadows})
+      {Key key,
+      @required this.onTap,
+      @required this.child,
+      this.color,
+      this.shadows})
       : super(key: key);
 
   final VoidCallback onTap;
@@ -14,7 +18,10 @@ class SimpleButton extends StatelessWidget {
   final _shape = const StadiumBorder();
 
   List<BoxShadow> get _shadows => shadows == null
-      ? [BoxShadow(color: CFColors.shadowColor, spreadRadius: 0.1, blurRadius: 1.5)]
+      ? [
+          BoxShadow(
+              color: CFColors.shadowColor, spreadRadius: 0.1, blurRadius: 1.5)
+        ]
       : shadows;
 
   @override

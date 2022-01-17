@@ -8,7 +8,8 @@ import 'package:paymint/widgets/custom_buttons/gradient_button.dart';
 import 'package:provider/provider.dart';
 
 class RenameWalletView extends StatefulWidget {
-  const RenameWalletView({Key key, @required this.oldWalletName}) : super(key: key);
+  const RenameWalletView({Key key, @required this.oldWalletName})
+      : super(key: key);
 
   final String oldWalletName;
   @override

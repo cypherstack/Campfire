@@ -2,7 +2,8 @@ import 'package:flutter/material.dart';
 import 'package:paymint/utilities/cfcolors.dart';
 
 class GradientButton extends StatelessWidget {
-  const GradientButton({Key key, @required this.onTap, this.child, this.shadows})
+  const GradientButton(
+      {Key key, @required this.onTap, this.child, this.shadows})
       : super(key: key);
 
   final VoidCallback onTap;
@@ -12,7 +13,10 @@ class GradientButton extends StatelessWidget {
   final _shape = const StadiumBorder();
 
   List<BoxShadow> get _shadows => shadows == null
-      ? [BoxShadow(color: CFColors.shadowColor, spreadRadius: 0.1, blurRadius: 1.5)]
+      ? [
+          BoxShadow(
+              color: CFColors.shadowColor, spreadRadius: 0.1, blurRadius: 1.5)
+        ]
       : shadows;
 
   @override

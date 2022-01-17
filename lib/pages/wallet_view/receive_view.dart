@@ -34,7 +34,8 @@ class _ReceiveViewState extends State<ReceiveView> {
             ),
             FutureBuilder(
               future: bitcoinService.currentReceivingAddress,
-              builder: (BuildContext context, AsyncSnapshot<String> currentAddress) {
+              builder:
+                  (BuildContext context, AsyncSnapshot<String> currentAddress) {
                 if (currentAddress.connectionState == ConnectionState.done) {
                   return Center(
                     child: PrettyQr(
@@ -47,7 +48,8 @@ class _ReceiveViewState extends State<ReceiveView> {
                   );
                 } else {
                   return Container(
-                      height: qrSize, child: Center(child: CircularProgressIndicator()));
+                      height: qrSize,
+                      child: Center(child: CircularProgressIndicator()));
                 }
               },
             ),
@@ -80,7 +82,8 @@ class _ReceiveViewState extends State<ReceiveView> {
                                     SizingUtilities.circularBorderRadius),
                               ),
                               onPressed: () {
-                                Clipboard.setData(new ClipboardData(text: address.data));
+                                Clipboard.setData(
+                                    new ClipboardData(text: address.data));
                                 OverlayNotification.showInfo(
                                   context,
                                   "Copied to clipboard",
@@ -208,5 +211,7 @@ class _ReceiveViewState extends State<ReceiveView> {
 // Receive View helper functions
 
 String condenseAdress(String address) {
-  return address.substring(0, 5) + '...' + address.substring(address.length - 5);
+  return address.substring(0, 5) +
+      '...' +
+      address.substring(address.length - 5);
 }

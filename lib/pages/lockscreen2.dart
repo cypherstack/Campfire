@@ -18,7 +18,8 @@ import 'package:provider/provider.dart';
 class Lockscreen2View extends StatefulWidget {
   final String routeOnSuccess;
 
-  const Lockscreen2View({Key key, @required this.routeOnSuccess}) : super(key: key);
+  const Lockscreen2View({Key key, @required this.routeOnSuccess})
+      : super(key: key);
   @override
   _Lockscreen2ViewState createState() => _Lockscreen2ViewState();
 }
@@ -33,7 +34,8 @@ class _Lockscreen2ViewState extends State<Lockscreen2View> {
 
     // If useBiometrics is enabled, then show fingerprint auth screen
     if (useBiometrics != null && useBiometrics && canCheckBiometrics) {
-      List<BiometricType> availableSystems = await localAuth.getAvailableBiometrics();
+      List<BiometricType> availableSystems =
+          await localAuth.getAvailableBiometrics();
 
       //TODO implement iOS biometrics
       if (Platform.isIOS) {
@@ -221,7 +223,8 @@ class _Lockscreen2ViewState extends State<Lockscreen2View> {
 
                     await Future.delayed(Duration(milliseconds: 600));
 
-                    Navigator.pushReplacementNamed(context, widget.routeOnSuccess);
+                    Navigator.pushReplacementNamed(
+                        context, widget.routeOnSuccess);
                   } else {
                     OverlayNotification.showError(
                       context,

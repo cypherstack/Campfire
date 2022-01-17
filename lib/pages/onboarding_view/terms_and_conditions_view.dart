@@ -12,7 +12,8 @@ import 'package:paymint/widgets/custom_buttons/gradient_button.dart';
 import 'name_your_wallet_view.dart';
 
 class TermsAndConditionsView extends StatefulWidget {
-  const TermsAndConditionsView({Key key, @required this.type}) : super(key: key);
+  const TermsAndConditionsView({Key key, @required this.type})
+      : super(key: key);
 
   final CreateWalletType type;
 

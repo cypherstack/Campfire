@@ -16,7 +16,8 @@ class Utilities {
   static String extractDateFrom(int timestamp) {
     final date = DateTime.fromMillisecondsSinceEpoch(timestamp * 1000);
 
-    final minutes = date.minute < 10 ? "0${date.minute}" : date.minute.toString();
+    final minutes =
+        date.minute < 10 ? "0${date.minute}" : date.minute.toString();
     return "${date.day} ${monthMapShort[date.month]} ${date.year}, ${date.hour}:$minutes";
   }
 
