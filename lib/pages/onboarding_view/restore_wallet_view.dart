@@ -225,6 +225,8 @@ class _RestoreWalletFormViewState extends State<RestoreWalletFormView> {
               } else {
                 final btcService =
                     Provider.of<BitcoinService>(context, listen: false);
+                await btcService.clearWalletData();
+                await btcService.initializeWallet(widget.walletName);
                 showDialog(
                   context: context,
                   useSafeArea: false,

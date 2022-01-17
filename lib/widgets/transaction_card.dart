@@ -61,6 +61,26 @@ class TransactionCard extends StatelessWidget {
       );
     }
 
+    String whatIsIt() {
+      if (type == "Received") {
+        if (transaction.confirmedStatus) {
+          if (transaction.height == -1) {
+            return "Minting";
+          } else {
+            return "Received";
+          }
+        } else {
+          return "Receiving";
+        }
+      } else {
+        if (transaction.confirmedStatus) {
+          return "Sent";
+        } else {
+          return "Sending";
+        }
+      }
+    }
+
     final notesService = Provider.of<NotesService>(context, listen: false);
 
     return Material(
@@ -122,7 +142,7 @@ class TransactionCard extends StatelessWidget {
                             child: FittedBox(
                               fit: BoxFit.scaleDown,
                               child: Text(
-                                type,
+                                whatIsIt(),
                                 style: GoogleFonts.workSans(
                                   color: color,
                                   fontSize: 16,

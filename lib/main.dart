@@ -8,6 +8,7 @@ import 'package:paymint/models/models.dart';
 import 'package:paymint/pages/loading_view.dart';
 import 'package:paymint/pages/lockscreen.dart';
 import 'package:paymint/pages/onboarding_view/onboarding_view.dart';
+import 'package:paymint/pages/wallet_selection_view.dart';
 import 'package:paymint/services/address_book_service.dart';
 import 'package:paymint/services/node_service.dart';
 import 'package:paymint/services/notes_service.dart';
@@ -41,6 +42,8 @@ void main() async {
 
   // Registering Lelantus Model Adapters
   Hive.registerAdapter(LelantusCoinAdapter());
+  final wallets = await Hive.openBox('wallets');
+  await wallets.put('currentWalletName', "");
 
   SystemChrome.setEnabledSystemUIMode(SystemUiMode.manual,
       overlays: [SystemUiOverlay.bottom]);
@@ -96,7 +99,7 @@ class _MaterialAppWithThemeState extends State<MaterialAppWithTheme> {
   Future<bool> _checkForWallets() async {
     final wallets = await Hive.openBox('wallets');
     print("wallets: ${wallets.toMap()}");
-    if (wallets.isEmpty) {
+    if (wallets.isEmpty || wallets.length == 1) {
       return true;
     } else {
       return false;
@@ -174,7 +177,7 @@ class _MaterialAppWithThemeState extends State<MaterialAppWithTheme> {
             if (shouldRouteToOnboarding.data) {
               return OnboardingView();
             } else {
-              return LockscreenView();
+              return WalletSelectionView();
             }
           } else {
             return LoadingView();

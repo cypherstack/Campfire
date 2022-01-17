@@ -248,7 +248,7 @@ class Transaction {
 
   String toString() {
     String transaction =
-        "{txid: $txid, type: $txType, subType: $subType, value: $amount, fee: $fees, height: $height, confirm: $confirmedStatus, address: $address, timestamp: $timestamp, inputs: $inputs }";
+        "{txid: $txid, type: $txType, subType: $subType, value: $amount, fee: $fees, height: $height, confirm: $confirmedStatus, address: $address, timestamp: $timestamp, worthNow: $worthNow, inputs: $inputs }";
     return transaction;
   }
 }

@@ -127,7 +127,7 @@ class TransactionSearchResultsView extends StatelessWidget {
             ),
             Expanded(
               child: FutureBuilder(
-                future: bitcoinService.transactionData,
+                future: bitcoinService.lelantusTransactionData,
                 builder: (context, AsyncSnapshot<TransactionData> snapshot) {
                   if (snapshot.connectionState == ConnectionState.done) {
                     if (snapshot.data != null && !snapshot.hasError) {

@@ -1,11 +1,10 @@
 import 'dart:async';
 import 'dart:convert';
-import 'dart:ffi';
+import 'dart:math';
 import 'dart:typed_data';
 
 import 'package:bip32/bip32.dart' as bip32;
 import 'package:bip39/bip39.dart' as bip39;
-import 'package:ffi/ffi.dart';
 import 'package:firo_flutter/firo_flutter.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
@@ -22,7 +21,6 @@ import 'package:paymint/services/wallets_service.dart';
 import 'package:paymint/utilities/misc_global_constants.dart';
 import 'package:uuid/uuid.dart';
 
-import './utils/dev_utils.dart';
 import '../models/lelantus_coin.dart';
 import 'event_bus/events/nodes_changed_event.dart';
 import 'events.dart';
@@ -54,9 +52,13 @@ class BitcoinService extends ChangeNotifier {
   Future<TransactionData> get lelantusTransactionData =>
       _lelantusTransactionData;
 
-  /// Holds wallet lelantus transaction data
+  /// Holds the max fee that can be sent
   Future<FeeData> _maxFee;
   Future<FeeData> get maxFee => _maxFee;
+
+  /// Holds the current balance data
+  Future<List<String>> _balance;
+  Future<List<String>> get balance => _balance;
 
   // Holds charting information
   Future<ChartModel> _chartData;
@@ -91,6 +93,37 @@ class BitcoinService extends ChangeNotifier {
   Future<String> _currentWalletName;
   Future<String> get currentWalletName =>
       _currentWalletName ??= _fetchCurrentWalletName();
+
+  clearWalletData() async {
+    Future<UtxoData> _utxoData;
+    Future<TransactionData> _transactionData;
+    Future<TransactionData> _lelantusTransactionData;
+    Future<FeeData> _maxFee;
+    Future<List<String>> _balance;
+    Future<ChartModel> _chartData;
+    List<UtxoObject> _outputsList = [];
+    Future<dynamic> _bitcoinPrice;
+    Future<FeeObject> _feeObject;
+    Future<String> _marketInfo;
+    Future<String> _currency;
+    Future<String> _currentReceivingAddress;
+    Future<bool> _useBiometrics;
+    Future<String> _currentWalletName;
+    this._utxoData = _utxoData;
+    this._transactionData = _transactionData;
+    this._lelantusTransactionData = _lelantusTransactionData;
+    this._maxFee = _maxFee;
+    this._balance = _balance;
+    this._chartData = _chartData;
+    this._outputsList = _outputsList;
+    this._bitcoinPrice = _bitcoinPrice;
+    this._feeObject = _feeObject;
+    this._marketInfo = _marketInfo;
+    this._currency = _currency;
+    this._currentReceivingAddress = _currentReceivingAddress;
+    this._useBiometrics = _useBiometrics;
+    this._currentWalletName = _currentWalletName;
+  }
 
   final firo = new NetworkType(
       messagePrefix: '\x18Zcoin Signed Message:\n',
@@ -138,7 +171,6 @@ class BitcoinService extends ChangeNotifier {
   // TODO cache this
   Future<String> _getWalletId() async {
     final _currentWallet = await currentWalletName;
-    print("_getWalletId for: $_currentWallet");
     final wallets = await Hive.openBox('wallets');
     final names = await wallets.get('names');
     final id = names[_currentWallet];
@@ -163,6 +195,7 @@ class BitcoinService extends ChangeNotifier {
       // Triggers for new users automatically. Generates new wallet
       await _generateNewWallet(wallet);
       wallet.put("id", id);
+      _lelantusTransactionData = getLelantusTransactionData();
     } else {
       // Wallet already exists, triggers for a returning user
       _lelantusTransactionData = getLelantusTransactionData();
@@ -263,13 +296,21 @@ class BitcoinService extends ChangeNotifier {
     this._marketInfo = Future(() => marketInfo);
     this._useBiometrics = Future(() => useBiometrics);
 
+    final id = await _getWalletId();
+    final wallet = await Hive.openBox(id);
+    final Map _lelantus_coins = await wallet.get('_lelantus_coins');
+    logPrint(_lelantus_coins);
+
     await _refreshLelantusData();
     await autoMint();
 
     var balance = await getFullBalance();
-    final maxFees = estimateJoinSplitFee(
+    final maxFees = await estimateJoinSplitFee(
         (double.parse(balance[0]) * 100000000).toInt(), true);
     this._maxFee = Future(() => maxFees);
+    balance.add((double.parse(balance[0]) - (maxFees.fee / 100000000))
+        .toStringAsFixed(8));
+    this._balance = Future(() => balance);
 
     GlobalEventBus.instance
         .fire(NodeConnectionStatusChangedEvent(NodeConnectionStatus.synced));
@@ -734,7 +775,12 @@ class BitcoinService extends ChangeNotifier {
       final wallet = await Hive.openBox(id);
       int index = await wallet.get('mintIndex');
       final Map _lelantus_coins = await wallet.get('_lelantus_coins');
-      Map coins = {..._lelantus_coins};
+      Map coins;
+      if (_lelantus_coins == null || _lelantus_coins.isEmpty) {
+        coins = Map();
+      } else {
+        coins = {..._lelantus_coins};
+      }
 
       if (transactionInfo['spendCoinIndexes'] != null) {
         // This is a joinsplit
@@ -781,7 +827,8 @@ class BitcoinService extends ChangeNotifier {
         logPrint(newTxData.txChunks);
         // TODO uncomment this
         await wallet.put('latest_lelantus_tx_model', newTxData);
-        _transactionData = await wallet.get('latest_lelantus_tx_model');
+        var ldata = await wallet.get('latest_lelantus_tx_model');
+        _lelantusTransactionData = Future(() => ldata);
       } else {
         // This is a mint
         print("this is a mint");
@@ -819,6 +866,10 @@ class BitcoinService extends ChangeNotifier {
 
     if (res.statusCode == 200 || res.statusCode == 201) {
       print(res.body.toString());
+      if (res.body.toString().contains("error") ||
+          res.body.toString().contains("Error")) {
+        return false;
+      }
       return true;
     } else {
       print(res.body.toString());
@@ -836,10 +887,14 @@ class BitcoinService extends ChangeNotifier {
     final List changeAddresses = await wallet.get('changeAddresses');
 
     for (var i = 0; i < receivingAddresses.length; i++) {
-      allAddresses.add(receivingAddresses[i]);
+      if (!allAddresses.contains(receivingAddresses[i])) {
+        allAddresses.add(receivingAddresses[i]);
+      }
     }
     for (var i = 0; i < changeAddresses.length; i++) {
-      allAddresses.add(changeAddresses[i]);
+      if (!allAddresses.contains(changeAddresses[i])) {
+        allAddresses.add(changeAddresses[i]);
+      }
     }
 
     final Map<String, dynamic> requestBody = {
@@ -859,6 +914,7 @@ class BitcoinService extends ChangeNotifier {
         print('Outputs fetched');
         final List<UtxoObject> allOutputs =
             UtxoData.fromJson(json.decode(response.body)).unspentOutputArray;
+        print(allOutputs);
         await _sortOutputs(allOutputs);
         await wallet.put(
             'latest_utxo_model', UtxoData.fromJson(json.decode(response.body)));
@@ -1206,14 +1262,29 @@ class BitcoinService extends ChangeNotifier {
   Future<TransactionData> _refreshLelantusData() async {
     final id = await _getWalletId();
     final wallet = await Hive.openBox(id);
+    final Map _lelantus_coins = await wallet.get('_lelantus_coins');
+    List jindexes = await wallet.get('jindex');
 
     // Get all joinsplit transaction ids
     final lelantusTxData = await lelantusTransactionData;
+    if (lelantusTxData == null) {
+      return null;
+    }
     final listLelantusTxData = lelantusTxData.getAllTransactions();
     List<String> joinsplits = [];
     for (final tx in listLelantusTxData.values) {
       if (tx.subType == "join") {
         joinsplits.add(tx.txid);
+      }
+    }
+    if (_lelantus_coins != null) {
+      for (final coin in _lelantus_coins.values) {
+        if (jindexes != null) {
+          if (jindexes.contains(coin.index) &&
+              !joinsplits.contains(coin.txId)) {
+            joinsplits.add(coin.txId);
+          }
+        }
       }
     }
 
@@ -1224,7 +1295,11 @@ class BitcoinService extends ChangeNotifier {
     // update all of joinsplits that are now confirmed.
     for (final tx in updatedJSplit) {
       final currenttx = listLelantusTxData[tx.txid];
-      if (currenttx == null) continue;
+      if (currenttx == null) {
+        // this send was accidentally not included in the list
+        listLelantusTxData[tx.txid] = tx;
+        continue;
+      }
       if (currenttx.confirmedStatus != tx.confirmedStatus) {
         print("not equal");
         listLelantusTxData[tx.txid] = tx;
@@ -1232,6 +1307,10 @@ class BitcoinService extends ChangeNotifier {
     }
 
     final txData = await transactionData;
+    if (txData == null) {
+      return null;
+    }
+    logPrint(txData.txChunks);
     final listTxData = txData.getAllTransactions();
     listTxData.forEach((key, value) {
       // ignore change addresses
@@ -1249,9 +1328,6 @@ class BitcoinService extends ChangeNotifier {
           }
         });
       }
-      print(value);
-      print(hasAtLeastOneRecieve);
-      print(howManyRecieveInputs);
 
       if (value.txType == "Received" &&
           !listLelantusTxData.containsKey(value.txid)) {
@@ -1260,7 +1336,6 @@ class BitcoinService extends ChangeNotifier {
       } else if (value.txType == "Sent" &&
           hasAtLeastOneRecieve &&
           value.subType == "mint") {
-        print(value);
         // use mint sends to update receives with user readable values.
 
         int sharedFee = value.fees ~/ howManyRecieveInputs;
@@ -1278,6 +1353,7 @@ class BitcoinService extends ChangeNotifier {
         });
       }
     });
+    print("break ----------------");
 
     // update the _lelantusTransactionData
     final TransactionData newTxData =
@@ -1400,7 +1476,7 @@ class BitcoinService extends ChangeNotifier {
     final List<String> anonymitySetHashes = [];
     final List<String> groupBlockHashes = [];
     for (var i = 0; i < lelantusEntries.length; i++) {
-      final anonymitySetId = lelantusEntries[i].ref.anonymitySetId;
+      final anonymitySetId = lelantusEntries[i].anonymitySetId;
       if (!setIds.contains(anonymitySetId)) {
         setIds.add(anonymitySetId);
         List<Map> _anonymity_sets = [null, getanonymityset];
@@ -1467,7 +1543,7 @@ class BitcoinService extends ChangeNotifier {
       "txType": "Sent",
       "confirmed_status": false,
       "amount": amount / 100000000.0,
-      "worthNow": amount / 100000000.0 * price,
+      "worthNow": num.parse((amount / 100000000 * price).toStringAsFixed(2)),
       "address": address,
       "timestamp": DateTime.now().millisecondsSinceEpoch ~/ 1000,
       "subType": "join",
@@ -1476,7 +1552,7 @@ class BitcoinService extends ChangeNotifier {
 
   Future<FeeData> estimateJoinSplitFee(
       int spendAmount, bool subtractFeeFromAmount) async {
-    final List<Pointer<LelantusEntry>> lelantusEntries =
+    final List<DartLelantusEntry> lelantusEntries =
         await this._getLelantusEntry();
 
     for (int i = 0; i < lelantusEntries.length; i++) {}
@@ -1513,6 +1589,9 @@ class BitcoinService extends ChangeNotifier {
     List jindexes = await wallet.get('jindex');
     final data = await transactionData;
     List<LelantusCoin> coins = [];
+    if (_lelantus_coins == null) {
+      return coins;
+    }
     _lelantus_coins.forEach((key, value) {
       final tx = data.findTransaction(value.txId);
       bool isUnconfirmed = tx == null ? false : !tx.confirmedStatus;
@@ -1529,23 +1608,17 @@ class BitcoinService extends ChangeNotifier {
     return coins;
   }
 
-  Future<List<Pointer<LelantusEntry>>> _getLelantusEntry() async {
+  Future<List<DartLelantusEntry>> _getLelantusEntry() async {
     final List<LelantusCoin> lelantusCoins = await _getUnspentCoins();
     final waitLelantusEntries = lelantusCoins.map((coin) async {
       final keyPair = await _getNode(MINT_INDEX, coin.index);
       final String privateKey = uint8listToString(keyPair.privateKey);
       if (privateKey == null) {
         print("error bad key");
-        return createEntry(1, 0, 0, 0, 0, ''.toNativeUtf8());
+        return DartLelantusEntry(1, 0, 0, 0, 0, '');
       }
-      return createEntry(
-        coin.isUsed ? 1 : 0,
-        0,
-        coin.anonymitySetId,
-        coin.value,
-        coin.index,
-        privateKey.toNativeUtf8(),
-      );
+      return DartLelantusEntry(coin.isUsed ? 1 : 0, 0, coin.anonymitySetId,
+          coin.value, coin.index, privateKey);
     }).toList();
 
     final lelantusEntries = await Future.wait(waitLelantusEntries);
@@ -1606,6 +1679,33 @@ class BitcoinService extends ChangeNotifier {
       }
     }
 
+    print(spendableOutputs);
+
+    final id = await _getWalletId();
+    final wallet = await Hive.openBox(id);
+    final Map _lelantus_coins = await wallet.get('_lelantus_coins');
+    final data = await transactionData;
+    if (data != null && _lelantus_coins != null) {
+      final dataMap = data.getAllTransactions();
+      dataMap.forEach((key, value) {
+        if (value.inputs != null && value.inputs.length > 0) {
+          value.inputs.forEach((element) {
+            if (_lelantus_coins.keys.contains(value.txid) &&
+                spendableOutputs.firstWhere(
+                        (output) => output.txid == element.txid,
+                        orElse: () => null) !=
+                    null) {
+              print(element);
+              print(value);
+              spendableOutputs
+                  .removeWhere((output) => output.txid == element.txid);
+            }
+          });
+        }
+      });
+    }
+    print(spendableOutputs);
+
     // If there is no Utxos to mint then stop the function.
     if (spendableOutputs.length == 0) {
       return "Error None To Mint";
@@ -1629,6 +1729,7 @@ class BitcoinService extends ChangeNotifier {
     if (firoFee < vsize) {
       firoFee = vsize + 1;
     }
+    firoFee = firoFee + 10;
     int satoshiAmountToSend = satoshisBeingUsed - firoFee;
 
     print('Input size: $satoshisBeingUsed');
@@ -1765,7 +1866,7 @@ class BitcoinService extends ChangeNotifier {
       "transaction": builtHex,
       "txid": txId,
       "txHex": txHex,
-      "value": amount,
+      "value": amount - fee,
       "fees": fee / 100000000,
       "publicCoin": "",
       "height": height,
@@ -2036,6 +2137,7 @@ class BitcoinService extends ChangeNotifier {
     await wallet.put('jindex', jindexes);
 
     // Edit the receive transactions with the mint fees.
+    _transactionData = _fetchTransactionData();
     TransactionData data = await _transactionData;
     Map<String, models.Transaction> editedTransactions =
         Map<String, models.Transaction>();

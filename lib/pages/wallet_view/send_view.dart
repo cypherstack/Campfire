@@ -39,6 +39,8 @@ class _SendViewState extends State<SendView> {
   double _fee = 0;
   double _totalAmount = 0;
   double _maxFee = 0;
+  List<String> _balance = [];
+  String _currency = "";
 
   bool _autofill = false;
   String _address;
@@ -88,16 +90,6 @@ class _SendViewState extends State<SendView> {
 
   Widget _buildTxFeeInfo() {
     final BitcoinService bitcoinService = Provider.of<BitcoinService>(context);
-    var defaultTransaction = FittedBox(
-      child: Text(
-        "${0} ${CurrencyUtilities.coinName}",
-        style: GoogleFonts.workSans(
-          color: CFColors.twilight,
-          fontWeight: FontWeight.w600,
-          fontSize: 16,
-        ),
-      ),
-    );
     return Column(
       children: [
         // Transaction fee
@@ -114,48 +106,35 @@ class _SendViewState extends State<SendView> {
                 ),
               ),
             ),
-            _maxFee == 0
-                ?
-                // FutureBuilder(
-                //         future: bitcoinService.getFullBalance(),
-                //         builder: (context, futureData) {
-                //           if (futureData.connectionState == ConnectionState.done) {
-                //             return
-                FutureBuilder(
-                    future: bitcoinService.maxFee,
-                    builder: (context, futureData) {
-                      if (futureData.connectionState == ConnectionState.done) {
-                        _maxFee = futureData.data.fee / 100000000;
-                        return FittedBox(
-                          child: Text(
-                            "${_maxFee.toStringAsFixed(8)} ${CurrencyUtilities.coinName}",
-                            style: GoogleFonts.workSans(
-                              color: CFColors.twilight,
-                              fontWeight: FontWeight.w600,
-                              fontSize: 16,
-                            ),
-                          ),
-                        );
-                      } else {
-                        return defaultTransaction;
-                      }
-                    })
-                // ;
-                // } else {
-                //   return defaultTransaction;
-                //   }
-                // }
-                // )
-                : FittedBox(
-                    child: Text(
-                      "${_maxFee.toStringAsFixed(8)} ${CurrencyUtilities.coinName}",
-                      style: GoogleFonts.workSans(
-                        color: CFColors.twilight,
-                        fontWeight: FontWeight.w600,
-                        fontSize: 16,
+            FutureBuilder(
+                future: bitcoinService.maxFee,
+                builder: (context, futureData) {
+                  if (futureData.connectionState == ConnectionState.done &&
+                      futureData.data != null) {
+                    _maxFee = futureData.data.fee / 100000000;
+                    return FittedBox(
+                      child: Text(
+                        "${_maxFee.toStringAsFixed(8)} ${CurrencyUtilities.coinName}",
+                        style: GoogleFonts.workSans(
+                          color: CFColors.twilight,
+                          fontWeight: FontWeight.w600,
+                          fontSize: 16,
+                        ),
                       ),
-                    ),
-                  ),
+                    );
+                  } else {
+                    return FittedBox(
+                      child: Text(
+                        "${_maxFee.toStringAsFixed(8)} ${CurrencyUtilities.coinName}",
+                        style: GoogleFonts.workSans(
+                          color: CFColors.twilight,
+                          fontWeight: FontWeight.w600,
+                          fontSize: 16,
+                        ),
+                      ),
+                    );
+                  }
+                }),
           ],
         ),
         SizedBox(
@@ -347,8 +326,9 @@ class _SendViewState extends State<SendView> {
                           builder: (context, futureData) {
                             if (futureData.connectionState ==
                                 ConnectionState.done) {
+                              _currency = futureData.data;
                               return Text(
-                                futureData.data,
+                                _currency,
                                 style: TextStyle(
                                   color: CFColors.twilight,
                                   fontWeight: FontWeight.w600,
@@ -357,7 +337,7 @@ class _SendViewState extends State<SendView> {
                               );
                             }
                             return Text(
-                              "...",
+                              _currency == "" ? "..." : _currency,
                               style: TextStyle(
                                 color: CFColors.twilight,
                                 fontWeight: FontWeight.w600,
@@ -421,49 +401,49 @@ class _SendViewState extends State<SendView> {
                         ),
                       ),
                       FutureBuilder(
-                        future: bitcoinService.getFullBalance(),
-                        builder: (
-                          BuildContext context,
-                          AsyncSnapshot<dynamic> balanceData,
-                        ) {
-                          if (balanceData.connectionState ==
-                              ConnectionState.done) {
-                            if (balanceData == null || balanceData.hasError) {
-                              // TODO: Display failed overlay 'Unable to fetch balance data.\nPlease check connection'
-                              return Text(
-                                "... ${CurrencyUtilities.coinName}",
-                                style: GoogleFonts.workSans(
-                                  color: CFColors.white,
-                                  fontSize: 16,
-                                  fontWeight: FontWeight.w600,
+                          future: bitcoinService.balance,
+                          builder: (
+                            BuildContext context,
+                            AsyncSnapshot<dynamic> balanceData,
+                          ) {
+                            if (balanceData.connectionState ==
+                                ConnectionState.done) {
+                              if (balanceData == null || balanceData.hasError) {
+                                // TODO: Display failed overlay 'Unable to fetch balance data.\nPlease check connection'
+                                return Text(
+                                  "... ${CurrencyUtilities.coinName}",
+                                  style: GoogleFonts.workSans(
+                                    color: CFColors.white,
+                                    fontSize: 16,
+                                    fontWeight: FontWeight.w600,
+                                  ),
+                                );
+                              }
+                              _balance = balanceData.data;
+
+                              return FittedBox(
+                                child: Text(
+                                  "${double.parse(_balance[4]) < _maxFee ? "0.00000000" : _balance[4]} ${CurrencyUtilities.coinName}",
+                                  style: GoogleFonts.workSans(
+                                    color: CFColors.white,
+                                    fontSize: 16,
+                                    fontWeight: FontWeight.w600,
+                                  ),
+                                ),
+                              );
+                            } else {
+                              //TODO: wallet balance loading progress
+                              // currently hidden by synchronizing overlay
+                              return SizedBox(
+                                height: 20,
+                                width: 100,
+                                child: LinearProgressIndicator(
+                                  color: Colors.green,
+                                  backgroundColor: Colors.purple,
                                 ),
                               );
                             }
-
-                            return FittedBox(
-                              child: Text(
-                                "${balanceData.data[0]} ${CurrencyUtilities.coinName}",
-                                style: GoogleFonts.workSans(
-                                  color: CFColors.white,
-                                  fontSize: 16,
-                                  fontWeight: FontWeight.w600,
-                                ),
-                              ),
-                            );
-                          } else {
-                            //TODO: wallet balance loading progress
-                            // currently hidden by synchronizing overlay
-                            return SizedBox(
-                              height: 20,
-                              width: 100,
-                              child: LinearProgressIndicator(
-                                color: Colors.green,
-                                backgroundColor: Colors.purple,
-                              ),
-                            );
-                          }
-                        },
-                      ),
+                          }),
                     ],
                   ),
                 ),

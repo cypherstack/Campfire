@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_svg/flutter_svg.dart';
 import 'package:google_fonts/google_fonts.dart';
+import 'package:paymint/services/bitcoin_service.dart';
 import 'package:paymint/services/wallets_service.dart';
 import 'package:paymint/utilities/cfcolors.dart';
 import 'package:paymint/utilities/sizing_utilities.dart';
@@ -53,7 +54,14 @@ class _WalletSelectionViewState extends State<WalletSelectionView> {
     AsyncSnapshot<Map<String, String>> snapshot,
     WalletsService walletsService,
   ) {
-    final names = snapshot.data.keys.toList();
+    var names;
+    if (snapshot.data == null) {
+      names = [];
+    } else {
+      names = snapshot.data.keys.toList();
+    }
+    final BitcoinService bitcoinService =
+        Provider.of<BitcoinService>(context, listen: false);
     if (names.length == 0) {
       // this should never actually appear as when the last wallet is
       // deleted the user then gets sent back to the welcome screen
@@ -85,8 +93,8 @@ class _WalletSelectionViewState extends State<WalletSelectionView> {
                   boxShadow: [
                     CFColors.standardBoxShadow,
                   ],
-                  borderRadius:
-                      BorderRadius.circular(SizingUtilities.circularBorderRadius),
+                  borderRadius: BorderRadius.circular(
+                      SizingUtilities.circularBorderRadius),
                 ),
                 child: MaterialButton(
                   padding: EdgeInsets.only(
@@ -97,8 +105,8 @@ class _WalletSelectionViewState extends State<WalletSelectionView> {
                   ),
                   materialTapTargetSize: MaterialTapTargetSize.shrinkWrap,
                   shape: RoundedRectangleBorder(
-                    borderRadius:
-                        BorderRadius.circular(SizingUtilities.circularBorderRadius),
+                    borderRadius: BorderRadius.circular(
+                        SizingUtilities.circularBorderRadius),
                   ),
                   child: Row(
                     mainAxisAlignment: MainAxisAlignment.spaceBetween,
@@ -119,6 +127,8 @@ class _WalletSelectionViewState extends State<WalletSelectionView> {
                   ),
                   onPressed: () async {
                     await walletsService.setCurrentWalletName(names[index]);
+                    await bitcoinService.initializeWallet(names[index]);
+
                     Navigator.of(context).push(
                       CupertinoPageRoute(
                         builder: (context) {
@@ -219,8 +229,10 @@ class _WalletSelectionViewState extends State<WalletSelectionView> {
                           BuildContext context,
                           AsyncSnapshot<Map<String, String>> snapshot,
                         ) {
-                          if (snapshot.connectionState == ConnectionState.done) {
-                            return _buildWalletsList(context, snapshot, walletsService);
+                          if (snapshot.connectionState ==
+                              ConnectionState.done) {
+                            return _buildWalletsList(
+                                context, snapshot, walletsService);
                           } else {
                             return CircularProgressIndicator(
                               color: CFColors.spark,

@@ -40,8 +40,8 @@ class _WalletSettingsViewState extends State<WalletSettingsView> {
 
   @override
   Widget build(BuildContext context) {
-    final _itemWidth =
-        MediaQuery.of(context).size.width - (SizingUtilities.standardPadding * 2);
+    final _itemWidth = MediaQuery.of(context).size.width -
+        (SizingUtilities.standardPadding * 2);
 
     return Scaffold(
       backgroundColor: CFColors.white,
@@ -66,6 +66,8 @@ class _WalletSettingsViewState extends State<WalletSettingsView> {
               ),
               circularBorderRadius: 8,
               onPressed: () async {
+                final BitcoinService bitcoinService =
+                    Provider.of<BitcoinService>(context, listen: false);
                 final walletsService =
                     Provider.of<WalletsService>(context, listen: false);
                 final walletName = await walletsService.currentWalletName;
@@ -103,7 +105,8 @@ class _WalletSettingsViewState extends State<WalletSettingsView> {
                               children: [
                                 Expanded(
                                   child: SizedBox(
-                                    height: SizingUtilities.standardButtonHeight,
+                                    height:
+                                        SizingUtilities.standardButtonHeight,
                                     child: SimpleButton(
                                       child: FittedBox(
                                         child: Text(
@@ -124,7 +127,8 @@ class _WalletSettingsViewState extends State<WalletSettingsView> {
                                 ),
                                 Expanded(
                                   child: SizedBox(
-                                    height: SizingUtilities.standardButtonHeight,
+                                    height:
+                                        SizingUtilities.standardButtonHeight,
                                     child: GradientButton(
                                       child: FittedBox(
                                         child: Text(
@@ -134,13 +138,15 @@ class _WalletSettingsViewState extends State<WalletSettingsView> {
                                       ),
                                       onTap: () async {
                                         print("log out pressed");
+                                        await bitcoinService.clearWalletData();
                                         await walletsService.refreshWallets();
 
                                         Navigator.pushAndRemoveUntil(
                                           context,
                                           CupertinoPageRoute(
                                             maintainState: false,
-                                            builder: (_) => WalletSelectionView(),
+                                            builder: (_) =>
+                                                WalletSelectionView(),
                                           ),
                                           (_) => false,
                                         );
@@ -208,9 +214,11 @@ class _WalletSettingsViewState extends State<WalletSettingsView> {
           if (_useBiometrics) {
             await bitcoinService.updateBiometricsUsage(false);
           } else {
-            final LocalAuthentication localAuthentication = LocalAuthentication();
+            final LocalAuthentication localAuthentication =
+                LocalAuthentication();
 
-            bool canCheckBiometrics = await localAuthentication.canCheckBiometrics;
+            bool canCheckBiometrics =
+                await localAuthentication.canCheckBiometrics;
 
             if (canCheckBiometrics) {
               List<BiometricType> availableSystems =
@@ -219,14 +227,16 @@ class _WalletSettingsViewState extends State<WalletSettingsView> {
               if (Platform.isIOS) {
                 if (availableSystems.contains(BiometricType.face)) {
                   // Write iOS specific code when required
-                } else if (availableSystems.contains(BiometricType.fingerprint)) {
+                } else if (availableSystems
+                    .contains(BiometricType.fingerprint)) {
                   // Write iOS specific code when required
                 }
               } else if (Platform.isAndroid) {
                 if (availableSystems.contains(BiometricType.fingerprint)) {
                   bool didAuthenticate =
                       await localAuthentication.authenticateWithBiometrics(
-                    localizedReason: 'Please authenticate to enable biometric lock',
+                    localizedReason:
+                        'Please authenticate to enable biometric lock',
                     stickyAuth: true,
                   );
                   if (didAuthenticate) {
@@ -257,7 +267,8 @@ class _WalletSettingsViewState extends State<WalletSettingsView> {
               future: bitcoinService.useBiometrics,
               builder: (context, AsyncSnapshot<bool> snapshot) {
                 if (snapshot.connectionState == ConnectionState.done) {
-                  _useBiometrics = snapshot.data == null ? false : snapshot.data;
+                  _useBiometrics =
+                      snapshot.data == null ? false : snapshot.data;
                   return _buildSwitch(context, 18, 36, _useBiometrics);
                 } else {
                   // possibly display loading animation here but likely not needed
@@ -273,8 +284,9 @@ class _WalletSettingsViewState extends State<WalletSettingsView> {
         // width: itemWidth,
         child: GestureDetector(
           onTap: () async {
-            final walletName = await Provider.of<WalletsService>(context, listen: false)
-                .currentWalletName;
+            final walletName =
+                await Provider.of<WalletsService>(context, listen: false)
+                    .currentWalletName;
             Navigator.push(
               context,
               CupertinoPageRoute(
@@ -327,7 +339,8 @@ class _WalletSettingsViewState extends State<WalletSettingsView> {
     ];
   }
 
-  _buildSwitch(BuildContext context, double height, double width, bool isActive) {
+  _buildSwitch(
+      BuildContext context, double height, double width, bool isActive) {
     return Container(
       height: height,
       width: width,
@@ -440,9 +453,11 @@ class _WalletSettingsViewState extends State<WalletSettingsView> {
                         ),
                       ),
                       onTap: () async {
-                        Navigator.push(context, CupertinoPageRoute(builder: (context) {
+                        Navigator.push(context,
+                            CupertinoPageRoute(builder: (context) {
                           return Lockscreen2View(
-                              routeOnSuccess: '/settings/deletewalletwarningview');
+                              routeOnSuccess:
+                                  '/settings/deletewalletwarningview');
                         }));
                       },
                     ),
