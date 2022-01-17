@@ -73,6 +73,13 @@ class WalletsService extends ChangeNotifier {
   Future<Map<String, String>> _fetchWalletNames() async {
     final wallets = await Hive.openBox('wallets');
     final names = await wallets.get('names');
+    if (names == null) {
+      print(
+          "Fetched wallet 'names' returned null. Setting initializing 'names'");
+      final newNames = Map<String, String>();
+      await wallets.put('names', newNames);
+      return newNames;
+    }
     print("Fetched wallet names: ${names.keys}");
     return Map<String, String>.from(names);
   }
