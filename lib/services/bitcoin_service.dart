@@ -256,6 +256,7 @@ class BitcoinService extends ChangeNotifier {
       }
     });
     await wallet.put('nodes', nodes);
+    await wallet.put('jindex', []);
     await wallet.put('activeNodeName', CampfireConstants.defaultNodeName);
     // Generate and add addresses to relevant arrays
     final initialReceivingAddress = await generateAddressForChain(0, 0);
@@ -658,7 +659,7 @@ class BitcoinService extends ChangeNotifier {
       };
 
       final response = await http.post(
-        '$MIDDLE_SERVER/voutLookup',
+        Uri.parse('$MIDDLE_SERVER/voutLookup'),
         body: json.encode(requestBody),
         headers: {'Content-Type': 'application/json'},
       );
@@ -859,7 +860,7 @@ class BitcoinService extends ChangeNotifier {
     };
 
     final res = await http.post(
-      '$MIDDLE_SERVER/pushtx',
+      Uri.parse('$MIDDLE_SERVER/pushtx'),
       body: jsonEncode(obj),
       headers: {'Content-Type': 'application/json'},
     );
@@ -905,7 +906,7 @@ class BitcoinService extends ChangeNotifier {
 
     try {
       final response = await http.post(
-        '$MIDDLE_SERVER/outputData',
+        Uri.parse('$MIDDLE_SERVER/outputData'),
         body: jsonEncode(requestBody),
         headers: {'Content-Type': 'application/json'},
       );
@@ -987,7 +988,7 @@ class BitcoinService extends ChangeNotifier {
 
     try {
       final response = await http.post(
-        '$MIDDLE_SERVER/txData',
+        Uri.parse('$MIDDLE_SERVER/txData'),
         body: jsonEncode(requestBody),
         headers: {'Content-Type': 'application/json'},
       );
@@ -1032,7 +1033,7 @@ class BitcoinService extends ChangeNotifier {
     final Map<String, String> requestBody = {"currency": currency};
 
     final response = await http.post(
-      '$MIDDLE_SERVER/getChartInfo',
+      Uri.parse('$MIDDLE_SERVER/getChartInfo'),
       body: json.encode(requestBody),
       headers: {'Content-Type': 'application/json'},
     );
@@ -1052,7 +1053,7 @@ class BitcoinService extends ChangeNotifier {
     final Map<String, String> requestBody = {"currency": currency};
 
     final response = await http.post(
-      '$MIDDLE_SERVER/currentBitcoinPrice',
+      Uri.parse('$MIDDLE_SERVER/currentBitcoinPrice'),
       body: jsonEncode(requestBody),
       headers: {'Content-Type': 'application/json'},
     );
@@ -1089,7 +1090,7 @@ class BitcoinService extends ChangeNotifier {
     };
 
     final response = await http.post(
-      '$MIDDLE_SERVER/txCount',
+      Uri.parse('$MIDDLE_SERVER/txCount'),
       body: json.encode(requestBody),
       headers: {'Content-Type': 'application/json'},
     );
@@ -1125,7 +1126,7 @@ class BitcoinService extends ChangeNotifier {
     final Map<String, dynamic> requestBody = {"url": await getEsploraUrl()};
 
     final response = await http.post(
-      '$MIDDLE_SERVER/fees',
+      Uri.parse('$MIDDLE_SERVER/fees'),
       body: jsonEncode(requestBody),
       headers: {'Content-Type': 'application/json'},
     );
@@ -1146,7 +1147,7 @@ class BitcoinService extends ChangeNotifier {
     final Map<String, String> requestBody = {"currency": currency};
 
     final response = await http.post(
-      '$MIDDLE_SERVER/getMarketInfo',
+      Uri.parse('$MIDDLE_SERVER/getMarketInfo'),
       body: json.encode(requestBody),
       headers: {'Content-Type': 'application/json'},
     ).catchError((error) => Future(() => 'Unable to fetch market data'));
@@ -1164,7 +1165,7 @@ class BitcoinService extends ChangeNotifier {
     };
 
     final response = await http.post(
-      '$MIDDLE_SERVER/getanonymityset',
+      Uri.parse('$MIDDLE_SERVER/getanonymityset'),
       body: jsonEncode(requestBody),
       headers: {'Content-Type': 'application/json'},
     );
@@ -1185,7 +1186,7 @@ class BitcoinService extends ChangeNotifier {
     final Map<String, dynamic> requestBody = {"url": await getEsploraUrl()};
 
     final response = await http.post(
-      '$MIDDLE_SERVER/getblockhead',
+      Uri.parse('$MIDDLE_SERVER/getblockhead'),
       body: jsonEncode(requestBody),
       headers: {'Content-Type': 'application/json'},
     );
@@ -1204,7 +1205,7 @@ class BitcoinService extends ChangeNotifier {
     final Map<String, dynamic> requestBody = {"url": await getEsploraUrl()};
 
     final response = await http.post(
-      '$MIDDLE_SERVER/getlatestcoinid',
+      Uri.parse('$MIDDLE_SERVER/getlatestcoinid'),
       body: jsonEncode(requestBody),
       headers: {'Content-Type': 'application/json'},
     );
@@ -1223,7 +1224,7 @@ class BitcoinService extends ChangeNotifier {
     final Map<String, dynamic> requestBody = {"url": await getEsploraUrl()};
 
     final response = await http.post(
-      '$MIDDLE_SERVER/getcoinsforrecovery',
+      Uri.parse('$MIDDLE_SERVER/getcoinsforrecovery'),
       body: jsonEncode(requestBody),
       headers: {'Content-Type': 'application/json'},
     ).timeout(Duration(minutes: 3));
@@ -1243,7 +1244,7 @@ class BitcoinService extends ChangeNotifier {
     final Map<String, dynamic> requestBody = {"url": await getEsploraUrl()};
 
     final response = await http.post(
-      '$MIDDLE_SERVER/getusedcoinserials',
+      Uri.parse('$MIDDLE_SERVER/getusedcoinserials'),
       body: jsonEncode(requestBody),
       headers: {'Content-Type': 'application/json'},
     );
@@ -1373,7 +1374,7 @@ class BitcoinService extends ChangeNotifier {
     };
 
     final response = await http.post(
-      '$MIDDLE_SERVER/getjminttransactions',
+      Uri.parse('$MIDDLE_SERVER/getjminttransactions'),
       body: jsonEncode(requestBody),
       headers: {'Content-Type': 'application/json'},
     );
@@ -1559,6 +1560,7 @@ class BitcoinService extends ChangeNotifier {
 
     List<int> changeToMint = List.empty(growable: true);
     List<int> spendCoinIndexes = List.empty(growable: true);
+    print(lelantusEntries);
     final fee = estimateFee(
       spendAmount,
       subtractFeeFromAmount,
@@ -1759,7 +1761,7 @@ class BitcoinService extends ChangeNotifier {
       };
 
       final response = await http.post(
-        '$MIDDLE_SERVER/voutLookup',
+        Uri.parse('$MIDDLE_SERVER/voutLookup'),
         body: json.encode(requestBody),
         headers: {'Content-Type': 'application/json'},
       );
@@ -1920,7 +1922,7 @@ class BitcoinService extends ChangeNotifier {
       };
 
       final response = await http.post(
-        '$MIDDLE_SERVER/txCount',
+        Uri.parse('$MIDDLE_SERVER/txCount'),
         body: json.encode(requestBody),
         headers: {'Content-Type': 'application/json'},
       );
@@ -1960,7 +1962,7 @@ class BitcoinService extends ChangeNotifier {
       };
 
       final response = await http.post(
-        '$MIDDLE_SERVER/txCount',
+        Uri.parse('$MIDDLE_SERVER/txCount'),
         body: json.encode(requestBody),
         headers: {'Content-Type': 'application/json'},
       );
@@ -2252,9 +2254,10 @@ class BitcoinService extends ChangeNotifier {
         } else if (!value.isUsed &&
             (tx == null ? true : tx.confirmedStatus != false)) {
           lelantusBalance += value.value / 100000000;
-        } else if (tx != null && tx.confirmedStatus == false) {
-          unconfirmedLelantusBalance += value.value / 100000000;
         }
+        // else if (tx != null && tx.confirmedStatus == false) {
+        //   unconfirmedLelantusBalance += value.value / 100000000;
+        // }
       });
     }
     final utxosValue = utxos == null ? 0 : utxos.bitcoinBalance;
