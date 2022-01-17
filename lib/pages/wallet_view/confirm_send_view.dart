@@ -7,6 +7,7 @@ import 'package:local_auth/local_auth.dart';
 import 'package:paymint/notifications/campfire_alert.dart';
 import 'package:paymint/notifications/overlay_notification.dart';
 import 'package:paymint/services/bitcoin_service.dart';
+import 'package:paymint/services/notes_service.dart';
 import 'package:paymint/services/wallets_service.dart';
 import 'package:paymint/utilities/cfcolors.dart';
 import 'package:paymint/utilities/sizing_utilities.dart';
@@ -229,6 +230,13 @@ class _ConfirmSendViewState extends State<ConfirmSendView> {
                             .submitLelantusToNetwork(txHexOrError)
                             .then((booleanResponse) async {
                           if (booleanResponse == true) {
+                            final txid = (txHexOrError
+                                as Map<String, dynamic>)["txid"] as String;
+                            final notesService = Provider.of<NotesService>(
+                              context,
+                              listen: false,
+                            );
+                            notesService.addNote(txid: txid, note: widget.note);
                             OverlayNotification.showSuccess(
                               context,
                               "Transaction sent",

@@ -40,6 +40,8 @@ class _RenameWalletViewState extends State<RenameWalletView> {
             ),
             Spacer(),
             SizedBox(
+              width: MediaQuery.of(context).size.width -
+                  (SizingUtilities.standardPadding * 2),
               height: SizingUtilities.standardButtonHeight,
               child: GradientButton(
                 child: FittedBox(

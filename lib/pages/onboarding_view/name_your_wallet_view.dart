@@ -50,7 +50,7 @@ class _NameYourWalletViewState extends State<NameYourWalletView> {
             ),
             FittedBox(
               child: Text(
-                "Use your own label",
+                "Enter a label for your wallet",
                 style: GoogleFonts.workSans(
                   color: CFColors.dusk,
                   fontSize: 16,
@@ -60,7 +60,7 @@ class _NameYourWalletViewState extends State<NameYourWalletView> {
             ),
             FittedBox(
               child: Text(
-                "or choose one of our suggestions.",
+                "(e.g. My Hot Wallet)",
                 style: GoogleFonts.workSans(
                   color: CFColors.dusk,
                   fontSize: 16,

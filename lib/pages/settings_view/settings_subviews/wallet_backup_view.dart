@@ -1,3 +1,5 @@
+import 'dart:math';
+
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_spinkit/flutter_spinkit.dart';
@@ -140,7 +142,8 @@ class WalletBackUpView extends StatelessWidget {
   }
 
   _buildMnemonicTable(List<String> words) {
-    final int wordsCount = CampfireConstants.seedPhraseWordCount;
+    final int wordsCount =
+        min(CampfireConstants.seedPhraseWordCount, words.length);
     List<TableRow> rows = [];
 
     for (int i = 0; i < wordsCount / 2; i++) {

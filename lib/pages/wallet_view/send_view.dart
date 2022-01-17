@@ -4,6 +4,7 @@ import 'package:flutter_svg/svg.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:majascan/majascan.dart';
 import 'package:paymint/models/models.dart';
+import 'package:paymint/notifications/campfire_alert.dart';
 import 'package:paymint/pages/wallet_view/confirm_send_view.dart';
 import 'package:paymint/services/bitcoin_service.dart';
 import 'package:paymint/services/utils/currency_utils.dart';
@@ -649,44 +650,51 @@ class _SendViewState extends State<SendView> {
                   onTap: () {
                     print("SEND pressed");
 
-                    Navigator.of(context).push(
-                      PageRouteBuilder(
-                        opaque: false,
-                        pageBuilder: (
-                          context,
-                          widget,
-                          animation,
-                        ) {
-                          // set address to textfield value if it was not auto filled from address book
-                          // OR if it was but the textfield value does not match anymore
-                          if (!_autofill ||
-                              _recipientAddressTextController.text !=
-                                  _contactName) {
-                            _address = _recipientAddressTextController.text;
-                          }
-                          return ConfirmSendView(
-                            amount: _firoAmount,
-                            note: _noteTextController.text,
-                            address: _address,
-                            fee: _fee,
-                          );
-                        },
-                        transitionsBuilder:
-                            (context, animation, secondaryAnimation, child) {
-                          // const begin = Offset(0.0, 1.0);
-                          // const end = Offset.zero;
-                          // const curve = Curves.ease;
+                    final availableBalance = double.parse(_balance[4]) < _maxFee
+                        ? 0.0
+                        : double.parse(_balance[4]);
 
-                          // var tween = Tween(begin: begin, end: end)
-                          //     .chain(CurveTween(curve: curve));
-
-                          return FadeTransition(
-                            opacity: animation,
-                            child: child,
-                          );
-                        },
-                      ),
-                    );
+                    if (_firoAmount > availableBalance) {
+                      showDialog(
+                        useSafeArea: false,
+                        barrierDismissible: false,
+                        context: context,
+                        builder: (_) =>
+                            CampfireAlert(message: "Insufficient balance!"),
+                      );
+                    } else {
+                      Navigator.of(context).push(
+                        PageRouteBuilder(
+                          opaque: false,
+                          pageBuilder: (
+                            context,
+                            widget,
+                            animation,
+                          ) {
+                            // set address to textfield value if it was not auto filled from address book
+                            // OR if it was but the textfield value does not match anymore
+                            if (!_autofill ||
+                                _recipientAddressTextController.text !=
+                                    _contactName) {
+                              _address = _recipientAddressTextController.text;
+                            }
+                            return ConfirmSendView(
+                              amount: _firoAmount,
+                              note: _noteTextController.text,
+                              address: _address,
+                              fee: _fee,
+                            );
+                          },
+                          transitionsBuilder:
+                              (context, animation, secondaryAnimation, child) {
+                            return FadeTransition(
+                              opacity: animation,
+                              child: child,
+                            );
+                          },
+                        ),
+                      );
+                    }
                   },
                   child: Text(
                     "SEND",
