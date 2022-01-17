@@ -56,7 +56,7 @@ class WalletsService extends ChangeNotifier {
 
     await wallets.put('names', names);
     await setCurrentWalletName(toName);
-
+    await refreshWallets();
     return true;
   }
 
