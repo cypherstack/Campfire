@@ -111,17 +111,7 @@ flutter:
   #  - images/a_dot_burr.jpeg
   #  - images/a_dot_ham.jpeg
   assets:
-    - assets/images/btc.png
-    - assets/images/work-in-progress.png
     - assets/images/splash.png
-    - assets/images/mastercard.png
-    - assets/images/mastercard.jpg
-    - assets/images/visa.png
-    - assets/images/bank.png
-    - assets/images/card.png
-    - assets/images/404image.png
-    - assets/images/twitter-icon.png
-    - assets/images/telegram-icon.png
     - assets/images/logo.png
     - assets/rive/success.flr
     - assets/icon/icon.png
