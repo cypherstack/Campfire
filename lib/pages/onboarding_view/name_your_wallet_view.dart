@@ -25,22 +25,6 @@ class NameYourWalletView extends StatefulWidget {
 class _NameYourWalletViewState extends State<NameYourWalletView> {
   final _nameTextEditingController = TextEditingController();
 
-  final _focusNode = FocusNode();
-
-  final _words = [
-    "Amber",
-    "Ash",
-    "Blaze",
-    "Gleam",
-    "Glow",
-    "Log",
-    "Marshmallow",
-    "Spark",
-    "Stargaze",
-  ];
-
-  bool _showTextField;
-
   @override
   Widget build(BuildContext context) {
     final WalletsService walletsService = Provider.of<WalletsService>(context);
@@ -66,7 +50,7 @@ class _NameYourWalletViewState extends State<NameYourWalletView> {
             ),
             FittedBox(
               child: Text(
-                "Use your own label",
+                "Enter a label for your wallet",
                 style: GoogleFonts.workSans(
                   color: CFColors.dusk,
                   fontSize: 16,
@@ -76,7 +60,7 @@ class _NameYourWalletViewState extends State<NameYourWalletView> {
             ),
             FittedBox(
               child: Text(
-                "or choose one of our suggestions.",
+                "(e.g. My Hot Wallet)",
                 style: GoogleFonts.workSans(
                   color: CFColors.dusk,
                   fontSize: 16,
@@ -93,7 +77,6 @@ class _NameYourWalletViewState extends State<NameYourWalletView> {
               ),
               child: TextField(
                 controller: _nameTextEditingController,
-                focusNode: _focusNode,
                 style: CFTextStyles.textField,
                 decoration: InputDecoration(
                   hintText: "Enter wallet name",
@@ -101,19 +84,6 @@ class _NameYourWalletViewState extends State<NameYourWalletView> {
                 ),
               ),
             ),
-            Padding(
-              padding: const EdgeInsets.only(
-                top: 20,
-                left: 20,
-                right: 20,
-                bottom: 7,
-              ),
-              child: _buildDropdown(),
-            ),
-            if (_focusNode.hasFocus)
-              SizedBox(
-                height: 7,
-              ),
             Spacer(),
             SizedBox(
               height: 48,
@@ -173,96 +143,4 @@ class _NameYourWalletViewState extends State<NameYourWalletView> {
       ),
     );
   }
-
-  _buildDropdown() {
-    List<DropdownMenuItem> suggestions = [];
-
-    for (int i = 0; i < _words.length; i++) {
-      final item = DropdownMenuItem<String>(
-        value: _words[i],
-        child: Text(
-          _words[i],
-          style: GoogleFonts.workSans(
-            color: CFColors.dusk,
-            fontWeight: FontWeight.w400,
-            fontSize: 16,
-          ),
-        ),
-      );
-      suggestions.add(item);
-    }
-    return Container(
-      width: MediaQuery.of(context).size.width -
-          (SizingUtilities.standardPadding * 2),
-      decoration: BoxDecoration(
-        color: CFColors.fog,
-        borderRadius:
-            BorderRadius.circular(SizingUtilities.circularBorderRadius),
-        border: Border.all(
-          color: CFColors.twilight,
-          width: 1,
-        ),
-      ),
-      child: DropdownButton(
-        hint: Padding(
-          padding: const EdgeInsets.only(left: 16),
-          child: Text(
-            "Suggestions...",
-            style: CFTextStyles.textFieldHint,
-          ),
-        ),
-        iconEnabledColor: CFColors.fog,
-        underline: Container(),
-        elevation: 2,
-        dropdownColor: CFColors.fog,
-        borderRadius:
-            BorderRadius.circular(SizingUtilities.circularBorderRadius),
-        items: suggestions,
-        onChanged: (value) {
-          print(value);
-        },
-      ),
-    );
-  }
-
-  // _buildSuggestions() {
-  //   List<Widget> suggestions = [];
-  //
-  //   for (int i = 0; i < _words.length; i++) {
-  //     final text = Text(
-  //       _words[i],
-  //       style: GoogleFonts.workSans(
-  //         color: CFColors.dusk,
-  //         fontWeight: FontWeight.w400,
-  //         fontSize: 16,
-  //       ),
-  //     );
-  //     suggestions.add(text);
-  //     if (i < _words.length - 1) {
-  //       suggestions.add(
-  //         SizedBox(
-  //           height: 16,
-  //         ),
-  //       );
-  //     }
-  //   }
-  //
-  //   return Container(
-  //     width: MediaQuery.of(context).size.width -
-  //         (SizingUtilities.standardPadding * 2),
-  //     decoration: BoxDecoration(
-  //       color: CFColors.fog,
-  //       boxShadow: [CFColors.standardBoxShadow],
-  //       borderRadius:
-  //           BorderRadius.circular(SizingUtilities.circularBorderRadius),
-  //     ),
-  //     child: Padding(
-  //       padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
-  //       child: ListView(
-  //         shrinkWrap: true,
-  //         children: suggestions,
-  //       ),
-  //     ),
-  //   );
-  // }
 }
