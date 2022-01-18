@@ -10,6 +10,7 @@ import 'package:paymint/pages/wallet_view/receive_view.dart';
 import 'package:paymint/pages/wallet_view/send_view.dart';
 import 'package:paymint/pages/wallet_view/wallet_view.dart';
 import 'package:paymint/services/bitcoin_service.dart';
+import 'package:paymint/services/event_bus/events/refresh_percent_changed_event.dart';
 import 'package:paymint/services/event_bus/global_event_bus.dart';
 import 'package:paymint/services/events.dart';
 import 'package:paymint/utilities/cfcolors.dart';
@@ -83,6 +84,9 @@ class _MainViewState extends State<MainView> {
   }
 
   StreamSubscription _nodeConnectionStatusChangedEventListener;
+  StreamSubscription _refreshPercentChangedEventListener;
+
+  double _percentChanged = 0.0;
 
   @override
   void initState() {
@@ -126,6 +130,14 @@ class _MainViewState extends State<MainView> {
       }
     });
 
+    _refreshPercentChangedEventListener = GlobalEventBus.instance
+        .on<RefreshPercentChangedEvent>()
+        .listen((event) {
+      setState(() {
+        _percentChanged = event.percent;
+      });
+    });
+
     if (!_disableRefreshOnInit) {
       Provider.of<BitcoinService>(context, listen: false).refreshWalletData();
     }
@@ -136,6 +148,7 @@ class _MainViewState extends State<MainView> {
   @override
   dispose() {
     _nodeConnectionStatusChangedEventListener.cancel();
+    _refreshPercentChangedEventListener.cancel();
     super.dispose();
   }
 
@@ -212,8 +225,10 @@ class _MainViewState extends State<MainView> {
           child: AppBarIconButton(
             size: 36,
             onPressed: () {
-              _disableRefreshOnInit = false;
-              bitcoinService.refreshWalletData();
+              if (nodeState != NodeConnectionStatus.loading) {
+                _disableRefreshOnInit = false;
+                bitcoinService.refreshWalletData();
+              }
             },
             circularBorderRadius: 8,
             icon: _selectIconAsset(),
@@ -348,7 +363,7 @@ class _MainViewState extends State<MainView> {
           ),
           if (nodeState == NodeConnectionStatus.loading &&
               !_disableRefreshOnInit)
-            _buildSyncing(),
+            _buildSyncing(_percentChanged),
           if (nodeState == NodeConnectionStatus.synced &&
               !_disableRefreshOnInit)
             _buildConnected(),
@@ -393,12 +408,13 @@ class _MainViewState extends State<MainView> {
     );
   }
 
-  Column _buildSyncing() {
+  Column _buildSyncing(double percent) {
     _hasSynced = false;
+    final percentString = (percent * 100).toStringAsFixed(0);
     return Column(
       children: [
-        _buildDropDown(
-            context, "Synchronizing", CFColors.dropdownSynchronizing),
+        _buildDropDown(context, "Synchronizing ($percentString%)",
+            CFColors.dropdownSynchronizing),
       ],
     );
   }

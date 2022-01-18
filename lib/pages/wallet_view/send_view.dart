@@ -663,37 +663,48 @@ class _SendViewState extends State<SendView> {
                             CampfireAlert(message: "Insufficient balance!"),
                       );
                     } else {
-                      Navigator.of(context).push(
-                        PageRouteBuilder(
-                          opaque: false,
-                          pageBuilder: (
-                            context,
-                            widget,
-                            animation,
-                          ) {
-                            // set address to textfield value if it was not auto filled from address book
-                            // OR if it was but the textfield value does not match anymore
-                            if (!_autofill ||
-                                _recipientAddressTextController.text !=
-                                    _contactName) {
-                              _address = _recipientAddressTextController.text;
-                            }
-                            return ConfirmSendView(
-                              amount: _firoAmount,
-                              note: _noteTextController.text,
-                              address: _address,
-                              fee: _fee,
-                            );
-                          },
-                          transitionsBuilder:
-                              (context, animation, secondaryAnimation, child) {
-                            return FadeTransition(
-                              opacity: animation,
-                              child: child,
-                            );
-                          },
-                        ),
-                      );
+                      // set address to textfield value if it was not auto filled from address book
+                      // OR if it was but the textfield value does not match anymore
+                      if (!_autofill ||
+                          _recipientAddressTextController.text !=
+                              _contactName) {
+                        _address = _recipientAddressTextController.text;
+                      }
+
+                      if (bitcoinService.validateFiroAddress(_address)) {
+                        Navigator.of(context).push(
+                          PageRouteBuilder(
+                            opaque: false,
+                            pageBuilder: (
+                              context,
+                              widget,
+                              animation,
+                            ) {
+                              return ConfirmSendView(
+                                amount: _firoAmount,
+                                note: _noteTextController.text,
+                                address: _address,
+                                fee: _fee,
+                              );
+                            },
+                            transitionsBuilder: (context, animation,
+                                secondaryAnimation, child) {
+                              return FadeTransition(
+                                opacity: animation,
+                                child: child,
+                              );
+                            },
+                          ),
+                        );
+                      } else {
+                        showDialog(
+                          useSafeArea: false,
+                          barrierDismissible: false,
+                          context: context,
+                          builder: (_) =>
+                              CampfireAlert(message: "Invalid address entered"),
+                        );
+                      }
                     }
                   },
                   child: Text(
