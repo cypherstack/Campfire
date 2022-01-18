@@ -223,7 +223,8 @@ class _WalletViewState extends State<WalletView> {
                 ],
               ),
             ),
-            if (_nodeStatus != NodeConnectionStatus.synced)
+            if (_nodeStatus != NodeConnectionStatus.synced &&
+                _nodeStatus != NodeConnectionStatus.disconnected)
               Center(
                 child: SpinKitThreeBounce(
                   color: CFColors.spark,

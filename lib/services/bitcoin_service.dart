@@ -1,7 +1,7 @@
 import 'dart:async';
 import 'dart:convert';
-import 'dart:typed_data';
 import 'dart:isolate';
+import 'dart:typed_data';
 
 import 'package:bip32/bip32.dart' as bip32;
 import 'package:bip39/bip39.dart' as bip39;
@@ -617,80 +617,87 @@ class BitcoinService extends ChangeNotifier {
 
   /// Refreshes display data for the wallet
   refreshWalletData() async {
-    GlobalEventBus.instance
-        .fire(NodeConnectionStatusChangedEvent(NodeConnectionStatus.loading));
+    try {
+      GlobalEventBus.instance
+          .fire(NodeConnectionStatusChangedEvent(NodeConnectionStatus.loading));
 
-    GlobalEventBus.instance.fire(RefreshPercentChangedEvent(0.0));
+      GlobalEventBus.instance.fire(RefreshPercentChangedEvent(0.0));
 
-    final UtxoData newUtxoData = await _fetchUtxoData();
-    GlobalEventBus.instance.fire(RefreshPercentChangedEvent(0.1));
+      final UtxoData newUtxoData = await _fetchUtxoData();
+      GlobalEventBus.instance.fire(RefreshPercentChangedEvent(0.1));
 
-    final TransactionData newTxData = await _fetchTransactionData();
-    GlobalEventBus.instance.fire(RefreshPercentChangedEvent(0.2));
+      final TransactionData newTxData = await _fetchTransactionData();
+      GlobalEventBus.instance.fire(RefreshPercentChangedEvent(0.2));
 
-    final dynamic newBtcPrice = await getBitcoinPrice();
-    GlobalEventBus.instance.fire(RefreshPercentChangedEvent(0.25));
+      final dynamic newBtcPrice = await getBitcoinPrice();
+      GlobalEventBus.instance.fire(RefreshPercentChangedEvent(0.25));
 
-    final FeeObject feeObj = await getFees();
-    GlobalEventBus.instance.fire(RefreshPercentChangedEvent(0.3));
+      final FeeObject feeObj = await getFees();
+      GlobalEventBus.instance.fire(RefreshPercentChangedEvent(0.3));
 
-    final String currentName = await WalletsService().currentWalletName;
-    GlobalEventBus.instance.fire(RefreshPercentChangedEvent(0.40));
+      final String currentName = await WalletsService().currentWalletName;
+      GlobalEventBus.instance.fire(RefreshPercentChangedEvent(0.40));
 
-    await checkReceivingAddressForTransactions();
-    final useBiometrics = await _fetchUseBiometrics();
-    GlobalEventBus.instance.fire(RefreshPercentChangedEvent(0.50));
+      await checkReceivingAddressForTransactions();
+      final useBiometrics = await _fetchUseBiometrics();
+      GlobalEventBus.instance.fire(RefreshPercentChangedEvent(0.50));
 
-    this._currentWalletName = Future(() => currentName);
-    this._utxoData = Future(() => newUtxoData);
-    this._transactionData = Future(() => newTxData);
-    this._bitcoinPrice = Future(() => newBtcPrice);
-    this._feeObject = Future(() => feeObj);
-    this._marketInfo = Future(() => marketInfo);
-    this._useBiometrics = Future(() => useBiometrics);
-    GlobalEventBus.instance.fire(RefreshPercentChangedEvent(0.60));
+      GlobalEventBus.instance.fire(RefreshPercentChangedEvent(0.60));
 
-    final id = await _getWalletId();
-    final wallet = await Hive.openBox(id);
-    final Map _lelantus_coins = await wallet.get('_lelantus_coins');
-    logPrint(_lelantus_coins);
-    GlobalEventBus.instance.fire(RefreshPercentChangedEvent(0.70));
+      final id = await _getWalletId();
+      final wallet = await Hive.openBox(id);
+      final Map _lelantus_coins = await wallet.get('_lelantus_coins');
+      logPrint(_lelantus_coins);
+      GlobalEventBus.instance.fire(RefreshPercentChangedEvent(0.70));
 
-    await _refreshLelantusData();
-    GlobalEventBus.instance.fire(RefreshPercentChangedEvent(0.80));
+      await _refreshLelantusData();
+      GlobalEventBus.instance.fire(RefreshPercentChangedEvent(0.80));
 
-    await autoMint();
-    GlobalEventBus.instance.fire(RefreshPercentChangedEvent(0.90));
+      await autoMint();
+      GlobalEventBus.instance.fire(RefreshPercentChangedEvent(0.90));
 
-    var balance = await getFullBalance();
+      var balance = await getFullBalance();
 
-    var lelantusEntry = await _getLelantusEntry();
-    ReceivePort receivePort = await getIsolate({
-      "function": "estimateJoinSplit",
-      "spendAmount": (double.parse(balance[0]) * 100000000).toInt(),
-      "subtractFeeFromAmount": true,
-      "lelantusEntries": lelantusEntry,
-    });
-    GlobalEventBus.instance.fire(RefreshPercentChangedEvent(0.95));
+      var lelantusEntry = await _getLelantusEntry();
+      ReceivePort receivePort = await getIsolate({
+        "function": "estimateJoinSplit",
+        "spendAmount": (double.parse(balance[0]) * 100000000).toInt(),
+        "subtractFeeFromAmount": true,
+        "lelantusEntries": lelantusEntry,
+      });
+      GlobalEventBus.instance.fire(RefreshPercentChangedEvent(0.95));
 
-    var message = await receivePort.first;
-    if (message is String) {
-      print("this is a string");
+      var message = await receivePort.first;
+      if (message is String) {
+        print("this is a string");
+        stop();
+        return;
+      }
+      this._maxFee = Future(() => message);
+      balance.add((double.parse(balance[0]) - (message.fee / 100000000))
+          .toStringAsFixed(8));
+      this._balance = Future(() => balance);
       stop();
-      return;
+      print('Closing estimateJoinSplit!');
+
+      this._currentWalletName = Future(() => currentName);
+      this._utxoData = Future(() => newUtxoData);
+      this._transactionData = Future(() => newTxData);
+      this._bitcoinPrice = Future(() => newBtcPrice);
+      this._feeObject = Future(() => feeObj);
+      this._marketInfo = Future(() => marketInfo);
+      this._useBiometrics = Future(() => useBiometrics);
+
+      GlobalEventBus.instance.fire(RefreshPercentChangedEvent(1.0));
+
+      GlobalEventBus.instance
+          .fire(NodeConnectionStatusChangedEvent(NodeConnectionStatus.synced));
+      notifyListeners();
+    } catch (error) {
+      GlobalEventBus.instance.fire(
+          NodeConnectionStatusChangedEvent(NodeConnectionStatus.disconnected));
+      print("Caught exception in refreshWalletData(): $error");
     }
-    this._maxFee = Future(() => message);
-    balance.add((double.parse(balance[0]) - (message.fee / 100000000))
-        .toStringAsFixed(8));
-    this._balance = Future(() => balance);
-    stop();
-    print('Closing estimateJoinSplit!');
-
-    GlobalEventBus.instance.fire(RefreshPercentChangedEvent(1.0));
-
-    GlobalEventBus.instance
-        .fire(NodeConnectionStatusChangedEvent(NodeConnectionStatus.synced));
-    notifyListeners();
   }
 
   /// Generates a new internal or external chain address for the wallet using a BIP84 derivation path.
@@ -2366,38 +2373,43 @@ class BitcoinService extends ChangeNotifier {
   // index 0 and 1 for the funds available to spend.
   // index 2 and 3 for all the funds in the wallet (including the undependable ones)
   Future<dynamic> getFullBalance() async {
-    final id = await _getWalletId();
-    final wallet = await Hive.openBox(id);
-    final Map _lelantus_coins = await wallet.get('_lelantus_coins');
-    final utxos = await utxoData;
-    final price = await bitcoinPrice;
-    final data = await transactionData;
-    List jindexes = await wallet.get('jindex');
-    double lelantusBalance = 0;
-    double unconfirmedLelantusBalance = 0;
-    if (_lelantus_coins != null && data != null) {
-      _lelantus_coins.forEach((key, value) {
-        final tx = data.findTransaction(value.txId);
-        if (!jindexes.contains(value.index) && tx == null) {
-          // This coin is not confirmed and may be replaced
-        } else if (!value.isUsed &&
-            (tx == null ? true : tx.confirmedStatus != false)) {
-          lelantusBalance += value.value / 100000000;
-        }
-        // else if (tx != null && tx.confirmedStatus == false) {
-        //   unconfirmedLelantusBalance += value.value / 100000000;
-        // }
-      });
+    try {
+      final id = await _getWalletId();
+      final wallet = await Hive.openBox(id);
+      final Map _lelantus_coins = await wallet.get('_lelantus_coins');
+      final utxos = await utxoData;
+      final price = await bitcoinPrice;
+      final data = await transactionData;
+      List jindexes = await wallet.get('jindex');
+      double lelantusBalance = 0;
+      double unconfirmedLelantusBalance = 0;
+      if (_lelantus_coins != null && data != null) {
+        _lelantus_coins.forEach((key, value) {
+          final tx = data.findTransaction(value.txId);
+          if (!jindexes.contains(value.index) && tx == null) {
+            // This coin is not confirmed and may be replaced
+          } else if (!value.isUsed &&
+              (tx == null ? true : tx.confirmedStatus != false)) {
+            lelantusBalance += value.value / 100000000;
+          }
+          // else if (tx != null && tx.confirmedStatus == false) {
+          //   unconfirmedLelantusBalance += value.value / 100000000;
+          // }
+        });
+      }
+      final utxosValue = utxos == null ? 0 : utxos.bitcoinBalance;
+      List<String> balances = List.empty(growable: true);
+      balances.add(lelantusBalance.toStringAsFixed(8));
+      balances.add((lelantusBalance * price).toStringAsFixed(2));
+      balances.add((lelantusBalance + utxosValue + unconfirmedLelantusBalance)
+          .toStringAsFixed(8));
+      balances.add(
+          ((lelantusBalance + utxosValue + unconfirmedLelantusBalance) * price)
+              .toStringAsFixed(2));
+      return balances;
+    } catch (e) {
+      print("Exception caught in getFullBalance: $e");
+      return null;
     }
-    final utxosValue = utxos == null ? 0 : utxos.bitcoinBalance;
-    List<String> balances = List.empty(growable: true);
-    balances.add(lelantusBalance.toStringAsFixed(8));
-    balances.add((lelantusBalance * price).toStringAsFixed(2));
-    balances.add((lelantusBalance + utxosValue + unconfirmedLelantusBalance)
-        .toStringAsFixed(8));
-    balances.add(
-        ((lelantusBalance + utxosValue + unconfirmedLelantusBalance) * price)
-            .toStringAsFixed(2));
-    return balances;
   }
 }
