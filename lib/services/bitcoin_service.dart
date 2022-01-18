@@ -1,6 +1,5 @@
 import 'dart:async';
 import 'dart:convert';
-import 'dart:math';
 import 'dart:typed_data';
 
 import 'package:bip32/bip32.dart' as bip32;
@@ -13,6 +12,7 @@ import 'package:http/http.dart' as http;
 import 'package:lelantus/lelantus.dart';
 import 'package:paymint/models/models.dart';
 import 'package:paymint/models/models.dart' as models;
+import 'package:paymint/services/event_bus/events/refresh_percent_changed_event.dart';
 import 'package:paymint/services/event_bus/events/wallet_name_changed_event.dart';
 import 'package:paymint/services/event_bus/global_event_bus.dart';
 import 'package:paymint/services/globals.dart';
@@ -281,13 +281,28 @@ class BitcoinService extends ChangeNotifier {
     GlobalEventBus.instance
         .fire(NodeConnectionStatusChangedEvent(NodeConnectionStatus.loading));
 
+    GlobalEventBus.instance.fire(RefreshPercentChangedEvent(0.0));
+
     final UtxoData newUtxoData = await _fetchUtxoData();
+    GlobalEventBus.instance.fire(RefreshPercentChangedEvent(0.05));
+
     final TransactionData newTxData = await _fetchTransactionData();
+    GlobalEventBus.instance.fire(RefreshPercentChangedEvent(0.1));
+
     final dynamic newBtcPrice = await getBitcoinPrice();
+    GlobalEventBus.instance.fire(RefreshPercentChangedEvent(0.15));
+
     final FeeObject feeObj = await getFees();
+    GlobalEventBus.instance.fire(RefreshPercentChangedEvent(0.2));
+
     final String currentName = await WalletsService().currentWalletName;
+    GlobalEventBus.instance.fire(RefreshPercentChangedEvent(0.30));
+
     await checkReceivingAddressForTransactions();
+    GlobalEventBus.instance.fire(RefreshPercentChangedEvent(0.40));
+
     final useBiometrics = await _fetchUseBiometrics();
+    GlobalEventBus.instance.fire(RefreshPercentChangedEvent(0.50));
 
     this._currentWalletName = Future(() => currentName);
     this._utxoData = Future(() => newUtxoData);
@@ -296,27 +311,41 @@ class BitcoinService extends ChangeNotifier {
     this._feeObject = Future(() => feeObj);
     this._marketInfo = Future(() => marketInfo);
     this._useBiometrics = Future(() => useBiometrics);
+    GlobalEventBus.instance.fire(RefreshPercentChangedEvent(0.60));
 
     final id = await _getWalletId();
+    GlobalEventBus.instance.fire(RefreshPercentChangedEvent(0.70));
+
     final wallet = await Hive.openBox(id);
+    GlobalEventBus.instance.fire(RefreshPercentChangedEvent(0.80));
+
     final Map _lelantus_coins = await wallet.get('_lelantus_coins');
+    GlobalEventBus.instance.fire(RefreshPercentChangedEvent(0.90));
+
     logPrint(_lelantus_coins);
 
     await _refreshLelantusData();
+    GlobalEventBus.instance.fire(RefreshPercentChangedEvent(0.93));
+
     await autoMint();
+    GlobalEventBus.instance.fire(RefreshPercentChangedEvent(0.95));
 
     var balance = await getFullBalance();
+    GlobalEventBus.instance.fire(RefreshPercentChangedEvent(0.97));
+
     final maxFees = await estimateJoinSplitFee(
         (double.parse(balance[0]) * 100000000).toInt(), true);
+    GlobalEventBus.instance.fire(RefreshPercentChangedEvent(0.99));
+
     this._maxFee = Future(() => maxFees);
     balance.add((double.parse(balance[0]) - (maxFees.fee / 100000000))
         .toStringAsFixed(8));
     this._balance = Future(() => balance);
 
+    GlobalEventBus.instance.fire(RefreshPercentChangedEvent(1.0));
+
     GlobalEventBus.instance
         .fire(NodeConnectionStatusChangedEvent(NodeConnectionStatus.synced));
-    notifyListeners();
-
     notifyListeners();
   }
 
