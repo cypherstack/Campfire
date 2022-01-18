@@ -5,6 +5,7 @@ import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:local_auth/local_auth.dart';
 import 'package:paymint/notifications/campfire_alert.dart';
+import 'package:paymint/notifications/modal_popup_dialog.dart';
 import 'package:paymint/notifications/overlay_notification.dart';
 import 'package:paymint/services/bitcoin_service.dart';
 import 'package:paymint/services/notes_service.dart';
@@ -186,6 +187,14 @@ class _ConfirmSendViewState extends State<ConfirmSendView> {
                     final storedPin = await store.read(key: '${id}_pin');
 
                     if (storedPin == pin) {
+                      // show sending dialog
+                      showDialog(
+                        useSafeArea: false,
+                        barrierDismissible: false,
+                        context: context,
+                        builder: (_) => _buildSendingDialog(),
+                      );
+
                       final rawAmount = (widget.amount * 100000000).toInt();
 
                       print("rawAmount: $rawAmount");
@@ -194,7 +203,7 @@ class _ConfirmSendViewState extends State<ConfirmSendView> {
 
                       // The following call throws an invalid argument exception
                       // on invalid address instead of returning an error int
-                      // TODO: validate address
+                      // Address is validated in send_view.dart
                       dynamic txHexOrError =
                           await bitcoinService.createJoinSplitTransaction(
                               rawAmount, widget.address, false);
@@ -242,20 +251,24 @@ class _ConfirmSendViewState extends State<ConfirmSendView> {
                               "Transaction sent",
                               Duration(milliseconds: 2700),
                             );
-                            await Future.delayed(Duration(milliseconds: 700))
+                            await Future.delayed(Duration(milliseconds: 100))
                                 .then((value) {
                               bitcoinService.refreshWalletData();
-                              Navigator.pop(context);
+                              final navigator = Navigator.of(context);
+                              navigator.pop();
+                              navigator.pop();
                             });
                           } else {
                             OverlayNotification.showError(
                               context,
-                              "Transaction failed. See logs.",
-                              Duration(milliseconds: 1500),
+                              "Transaction failed.",
+                              Duration(milliseconds: 2000),
                             );
-                            await Future.delayed(Duration(milliseconds: 700))
+                            await Future.delayed(Duration(milliseconds: 100))
                                 .then((value) {
-                              Navigator.pop(context);
+                              final navigator = Navigator.of(context);
+                              navigator.pop();
+                              navigator.pop();
                             });
                           }
                         });
@@ -280,6 +293,67 @@ class _ConfirmSendViewState extends State<ConfirmSendView> {
               ],
             ),
           ),
+        ],
+      ),
+    );
+  }
+
+  _buildSendingDialog() {
+    return ModalPopupDialog(
+      child: Column(
+        children: [
+          Padding(
+            padding: const EdgeInsets.only(
+              top: 28,
+              left: 24,
+              right: 24,
+              bottom: 12,
+            ),
+            child: Align(
+              alignment: Alignment.topCenter,
+              child: Text(
+                "Sending transaction...",
+                style: GoogleFonts.workSans(
+                  color: CFColors.dusk,
+                  fontWeight: FontWeight.w600,
+                  fontSize: 18,
+                ),
+              ),
+            ),
+          ),
+          SizedBox(
+            height: SizingUtilities.standardPadding,
+          ),
+          Align(
+            alignment: Alignment.bottomCenter,
+            child: Padding(
+              padding: const EdgeInsets.all(SizingUtilities.standardPadding),
+              child: Container(
+                width: 98,
+                height: 98,
+                decoration: BoxDecoration(
+                  borderRadius: BorderRadius.circular(49),
+                  border: Border.all(
+                    color: CFColors.dew,
+                    width: 2,
+                  ),
+                ),
+                child: Center(
+                  child: Container(
+                    height: 40,
+                    width: 40,
+                    child: CircularProgressIndicator(
+                      color: CFColors.spark,
+                      strokeWidth: 2,
+                    ),
+                  ),
+                ),
+              ),
+            ),
+          ),
+          SizedBox(
+            height: 50,
+          )
         ],
       ),
     );

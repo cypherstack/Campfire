@@ -168,6 +168,10 @@ class BitcoinService extends ChangeNotifier {
     return currentName;
   }
 
+  bool validateFiroAddress(String address) {
+    return Address.validateAddress(address, firo);
+  }
+
   // TODO cache this
   Future<String> _getWalletId() async {
     final _currentWallet = await currentWalletName;
