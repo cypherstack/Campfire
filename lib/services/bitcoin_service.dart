@@ -2246,7 +2246,7 @@ class BitcoinService extends ChangeNotifier {
     List jindexes = await wallet.get('jindex');
     double lelantusBalance = 0;
     double unconfirmedLelantusBalance = 0;
-    if (_lelantus_coins != null) {
+    if (_lelantus_coins != null && data != null) {
       _lelantus_coins.forEach((key, value) {
         final tx = data.findTransaction(value.txId);
         if (!jindexes.contains(value.index) && tx == null) {
