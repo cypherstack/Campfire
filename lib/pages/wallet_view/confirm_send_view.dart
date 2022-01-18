@@ -198,7 +198,7 @@ class _ConfirmSendViewState extends State<ConfirmSendView> {
                       dynamic txHexOrError =
                           await bitcoinService.createJoinSplitTransaction(
                               rawAmount, widget.address, false);
-                      BitcoinService.logPrint("txHexOrError $txHexOrError");
+                      logPrint("txHexOrError $txHexOrError");
 
                       if (txHexOrError is int) {
                         // Here, we assume that transaction crafting returned an error
@@ -222,9 +222,18 @@ class _ConfirmSendViewState extends State<ConfirmSendView> {
                                 message:
                                     "Insufficient funds to pay for tx fee!"),
                           );
+                        } else if (txHexOrError == 3) {
+                          print("Some other error");
+                          showDialog(
+                            useSafeArea: false,
+                            barrierDismissible: false,
+                            context: context,
+                            builder: (_) => CampfireAlert(
+                                message: "Error Creating Transaction!"),
+                          );
                         }
                       } else {
-                        BitcoinService.logPrint(txHexOrError.toString());
+                        logPrint(txHexOrError.toString());
 
                         await bitcoinService
                             .submitLelantusToNetwork(txHexOrError)
