@@ -4,6 +4,7 @@ import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_svg/svg.dart';
 import 'package:google_fonts/google_fonts.dart';
+import 'package:local_auth/auth_strings.dart';
 import 'package:local_auth/local_auth.dart';
 import 'package:paymint/notifications/modal_popup_dialog.dart';
 import 'package:paymint/pages/settings_view/helpers/builders.dart';
@@ -235,10 +236,14 @@ class _WalletSettingsViewState extends State<WalletSettingsView> {
                 if (availableSystems.contains(BiometricType.fingerprint)) {
                   bool didAuthenticate =
                       await localAuthentication.authenticateWithBiometrics(
-                    localizedReason:
-                        'Please authenticate to enable biometric lock',
-                    stickyAuth: true,
-                  );
+                          localizedReason:
+                              'Unlock wallet and confirm transactions with your fingerprint',
+                          stickyAuth: true,
+                          androidAuthStrings: AndroidAuthMessages(
+                            cancelButton: "CANCEL",
+                            biometricHint: "",
+                            signInTitle: "Enable fingerprint authentication",
+                          ));
                   if (didAuthenticate) {
                     await bitcoinService.updateBiometricsUsage(true);
                   }
