@@ -11,7 +11,7 @@
     <uses-permission android:name="android.permission.READ_EXTERNAL_STORAGE"/>
     <application
         android:name="io.flutter.app.FlutterApplication"
-        android:label="Paymint"
+        android:label="Campfire"
         android:icon="@mipmap/ic_launcher"
         android:allowBackup="false"
         android:fullBackupContent="false">
