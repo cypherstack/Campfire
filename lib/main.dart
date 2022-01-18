@@ -6,7 +6,6 @@ import 'package:hive_flutter/hive_flutter.dart';
 import 'package:path_provider/path_provider.dart' as path;
 import 'package:paymint/models/models.dart';
 import 'package:paymint/pages/loading_view.dart';
-import 'package:paymint/pages/lockscreen.dart';
 import 'package:paymint/pages/onboarding_view/onboarding_view.dart';
 import 'package:paymint/pages/wallet_selection_view.dart';
 import 'package:paymint/services/address_book_service.dart';
@@ -122,10 +121,11 @@ class _MaterialAppWithThemeState extends State<MaterialAppWithTheme> {
       title: 'Campfire',
       onGenerateRoute: RouteGenerator.generateRoute,
       theme: ThemeData(
-        brightness: Brightness.dark,
+        brightness: Brightness.light,
         fontFamily: GoogleFonts.workSans().fontFamily,
         textTheme: GoogleFonts.workSansTextTheme(),
         primaryColor: CFColors.spark,
+        primarySwatch: CFColors.createMaterialColor(CFColors.spark),
         checkboxTheme: CheckboxThemeData(
           shape: RoundedRectangleBorder(
             borderRadius:
