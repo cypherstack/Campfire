@@ -623,23 +623,21 @@ class BitcoinService extends ChangeNotifier {
     GlobalEventBus.instance.fire(RefreshPercentChangedEvent(0.0));
 
     final UtxoData newUtxoData = await _fetchUtxoData();
-    GlobalEventBus.instance.fire(RefreshPercentChangedEvent(0.05));
-
-    final TransactionData newTxData = await _fetchTransactionData();
     GlobalEventBus.instance.fire(RefreshPercentChangedEvent(0.1));
 
-    final dynamic newBtcPrice = await getBitcoinPrice();
-    GlobalEventBus.instance.fire(RefreshPercentChangedEvent(0.15));
-
-    final FeeObject feeObj = await getFees();
+    final TransactionData newTxData = await _fetchTransactionData();
     GlobalEventBus.instance.fire(RefreshPercentChangedEvent(0.2));
 
-    final String currentName = await WalletsService().currentWalletName;
-    GlobalEventBus.instance.fire(RefreshPercentChangedEvent(0.30));
+    final dynamic newBtcPrice = await getBitcoinPrice();
+    GlobalEventBus.instance.fire(RefreshPercentChangedEvent(0.25));
 
-    await checkReceivingAddressForTransactions();
+    final FeeObject feeObj = await getFees();
+    GlobalEventBus.instance.fire(RefreshPercentChangedEvent(0.3));
+
+    final String currentName = await WalletsService().currentWalletName;
     GlobalEventBus.instance.fire(RefreshPercentChangedEvent(0.40));
 
+    await checkReceivingAddressForTransactions();
     final useBiometrics = await _fetchUseBiometrics();
     GlobalEventBus.instance.fire(RefreshPercentChangedEvent(0.50));
 
@@ -653,24 +651,18 @@ class BitcoinService extends ChangeNotifier {
     GlobalEventBus.instance.fire(RefreshPercentChangedEvent(0.60));
 
     final id = await _getWalletId();
+    final wallet = await Hive.openBox(id);
+    final Map _lelantus_coins = await wallet.get('_lelantus_coins');
+    logPrint(_lelantus_coins);
     GlobalEventBus.instance.fire(RefreshPercentChangedEvent(0.70));
 
-    final wallet = await Hive.openBox(id);
+    await _refreshLelantusData();
     GlobalEventBus.instance.fire(RefreshPercentChangedEvent(0.80));
 
-    final Map _lelantus_coins = await wallet.get('_lelantus_coins');
+    await autoMint();
     GlobalEventBus.instance.fire(RefreshPercentChangedEvent(0.90));
 
-    logPrint(_lelantus_coins);
-
-    await _refreshLelantusData();
-    GlobalEventBus.instance.fire(RefreshPercentChangedEvent(0.93));
-
-    await autoMint();
-    GlobalEventBus.instance.fire(RefreshPercentChangedEvent(0.95));
-
     var balance = await getFullBalance();
-    GlobalEventBus.instance.fire(RefreshPercentChangedEvent(0.97));
 
     var lelantusEntry = await _getLelantusEntry();
     ReceivePort receivePort = await getIsolate({
@@ -679,6 +671,7 @@ class BitcoinService extends ChangeNotifier {
       "subtractFeeFromAmount": true,
       "lelantusEntries": lelantusEntry,
     });
+    GlobalEventBus.instance.fire(RefreshPercentChangedEvent(0.95));
 
     var message = await receivePort.first;
     if (message is String) {
