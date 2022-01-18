@@ -475,26 +475,6 @@ class _RestoreWalletFormViewState extends State<RestoreWalletFormView> {
 
 // Dialog Widgets
 
-class InvalidInputDialog extends StatelessWidget {
-  const InvalidInputDialog({Key key}) : super(key: key);
-
-  @override
-  Widget build(BuildContext context) {
-    return AlertDialog(
-      title: Text('Invalid input'),
-      content: Text('Please input a valid 12-word mnemonic and try again'),
-      actions: <Widget>[
-        FlatButton(
-          child: Text('OK'),
-          onPressed: () {
-            Navigator.pop(context);
-          },
-        )
-      ],
-    );
-  }
-}
-
 class RecoveryCompleteDialog extends StatelessWidget {
   const RecoveryCompleteDialog({Key key}) : super(key: key);
 
