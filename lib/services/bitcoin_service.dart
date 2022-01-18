@@ -60,10 +60,6 @@ class BitcoinService extends ChangeNotifier {
   Future<List<String>> _balance;
   Future<List<String>> get balance => _balance;
 
-  // Holds charting information
-  Future<ChartModel> _chartData;
-  Future<ChartModel> get chartData => _chartData ??= getChartData();
-
   /// Holds all outputs for wallet, used for displaying utxos in app security view
   List<UtxoObject> _outputsList = [];
   List<UtxoObject> get allOutputs => _outputsList;
@@ -100,7 +96,6 @@ class BitcoinService extends ChangeNotifier {
     Future<TransactionData> _lelantusTransactionData;
     Future<FeeData> _maxFee;
     Future<List<String>> _balance;
-    Future<ChartModel> _chartData;
     List<UtxoObject> _outputsList = [];
     Future<dynamic> _bitcoinPrice;
     Future<FeeObject> _feeObject;
@@ -114,7 +109,6 @@ class BitcoinService extends ChangeNotifier {
     this._lelantusTransactionData = _lelantusTransactionData;
     this._maxFee = _maxFee;
     this._balance = _balance;
-    this._chartData = _chartData;
     this._outputsList = _outputsList;
     this._bitcoinPrice = _bitcoinPrice;
     this._feeObject = _feeObject;
@@ -1057,26 +1051,6 @@ class BitcoinService extends ChangeNotifier {
         print("Old transaction model located");
         return latestModel;
       }
-    }
-  }
-
-  Future<ChartModel> getChartData() async {
-    final String currency = await CurrencyUtilities.fetchPreferredCurrency();
-
-    final Map<String, String> requestBody = {"currency": currency};
-
-    final response = await http.post(
-      Uri.parse('$MIDDLE_SERVER/getChartInfo'),
-      body: json.encode(requestBody),
-      headers: {'Content-Type': 'application/json'},
-    );
-
-    if (response.statusCode == 200 || response.statusCode == 201) {
-      return ChartModel.fromJson(json.decode(response.body));
-    } else {
-      throw Exception('Something happened: ' +
-          response.statusCode.toString() +
-          response.body);
     }
   }
 
