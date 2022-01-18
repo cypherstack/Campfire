@@ -93,6 +93,8 @@ class _TransactionSearchViewState extends State<TransactionSearchView> {
           // TODO custom date picker
           onTap: () async {
             final date = await showRoundedDatePicker(
+              // This doesn't change statusbar color...
+              // background: CFColors.starryNight.withOpacity(0.8),
               context: context,
               initialDate: DateTime.now(),
               height: MediaQuery.of(context).size.height * 0.5,
@@ -117,11 +119,6 @@ class _TransactionSearchViewState extends State<TransactionSearchView> {
                     fontSize: 16, fontWeight: FontWeight.w600),
                 textStyleCurrentDayOnCalendar: baseStyle.copyWith(
                   color: CFColors.spark,
-                ),
-                textStyleDayButton: baseStyle.copyWith(
-                  color: Colors.green,
-                  fontSize: 16,
-                  fontWeight: FontWeight.w600,
                 ),
                 textStyleDayHeader: baseStyle.copyWith(
                   color: CFColors.starryNight,
