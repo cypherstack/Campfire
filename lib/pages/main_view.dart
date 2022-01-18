@@ -225,8 +225,10 @@ class _MainViewState extends State<MainView> {
           child: AppBarIconButton(
             size: 36,
             onPressed: () {
-              _disableRefreshOnInit = false;
-              bitcoinService.refreshWalletData();
+              if (nodeState != NodeConnectionStatus.loading) {
+                _disableRefreshOnInit = false;
+                bitcoinService.refreshWalletData();
+              }
             },
             circularBorderRadius: 8,
             icon: _selectIconAsset(),
