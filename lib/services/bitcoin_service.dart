@@ -407,7 +407,7 @@ class BitcoinService extends ChangeNotifier {
 
   /// Holds the current balance data
   Future<List<String>> _balance;
-  Future<List<String>> get balance => _balance;
+  Future<List<String>> get balance => _balance ??= getFullBalance();
 
   /// Holds all outputs for wallet, used for displaying utxos in app security view
   List<UtxoObject> _outputsList = [];

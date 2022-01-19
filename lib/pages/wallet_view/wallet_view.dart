@@ -153,7 +153,7 @@ class _WalletViewState extends State<WalletView> {
                 child: Stack(
                   children: [
                     FutureBuilder(
-                      future: bitcoinService.getFullBalance(),
+                      future: bitcoinService.balance,
                       builder: (BuildContext context,
                           AsyncSnapshot<dynamic> balancesData) {
                         if (balancesData.connectionState ==
