@@ -642,6 +642,13 @@ class BitcoinService extends ChangeNotifier {
       final useBiometrics = await _fetchUseBiometrics();
       GlobalEventBus.instance.fire(RefreshPercentChangedEvent(0.50));
 
+      this._currentWalletName = Future(() => currentName);
+      this._utxoData = Future(() => newUtxoData);
+      this._transactionData = Future(() => newTxData);
+      this._bitcoinPrice = Future(() => newBtcPrice);
+      this._feeObject = Future(() => feeObj);
+      this._marketInfo = Future(() => marketInfo);
+      this._useBiometrics = Future(() => useBiometrics);
       GlobalEventBus.instance.fire(RefreshPercentChangedEvent(0.60));
 
       final id = await _getWalletId();
@@ -679,15 +686,6 @@ class BitcoinService extends ChangeNotifier {
       this._balance = Future(() => balance);
       stop();
       print('Closing estimateJoinSplit!');
-
-      this._currentWalletName = Future(() => currentName);
-      this._utxoData = Future(() => newUtxoData);
-      this._transactionData = Future(() => newTxData);
-      this._bitcoinPrice = Future(() => newBtcPrice);
-      this._feeObject = Future(() => feeObj);
-      this._marketInfo = Future(() => marketInfo);
-      this._useBiometrics = Future(() => useBiometrics);
-
       GlobalEventBus.instance.fire(RefreshPercentChangedEvent(1.0));
 
       GlobalEventBus.instance
