@@ -53,10 +53,22 @@ class _AddAddressBookEntryViewState extends State<AddAddressBookEntryView> {
           },
         );
       } else {
-        addressService.addAddressBookEntry(address, name);
-
-        // on success pop back to address book
-        Navigator.pop(context);
+        try {
+          await addressService.addAddressBookEntry(address, name);
+          // on success pop back to address book
+          Navigator.pop(context);
+        } catch (error) {
+          showDialog(
+            context: context,
+            useSafeArea: false,
+            barrierDismissible: false,
+            builder: (_) {
+              return CampfireAlert(
+                  message:
+                      "The address you entered is already in your contacts!");
+            },
+          );
+        }
       }
     }
   }
