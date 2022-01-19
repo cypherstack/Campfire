@@ -356,7 +356,7 @@ class _RestoreWalletFormViewState extends State<RestoreWalletFormView> {
             ),
             FittedBox(
               child: Text(
-                "Enter your 12-word backup key.",
+                "Enter your 24-word backup key.",
                 style: GoogleFonts.workSans(
                   color: CFColors.dusk,
                   fontWeight: FontWeight.w400,
