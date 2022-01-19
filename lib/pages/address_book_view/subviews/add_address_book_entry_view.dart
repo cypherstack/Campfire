@@ -1,12 +1,13 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_svg/svg.dart';
-import 'package:google_fonts/google_fonts.dart';
 import 'package:majascan/majascan.dart';
 import 'package:paymint/notifications/campfire_alert.dart';
 import 'package:paymint/services/address_book_service.dart';
+import 'package:paymint/services/bitcoin_service.dart';
 import 'package:paymint/utilities/cfcolors.dart';
 import 'package:paymint/utilities/sizing_utilities.dart';
+import 'package:paymint/utilities/text_styles.dart';
 import 'package:paymint/widgets/custom_buttons/app_bar_icon_button.dart';
 import 'package:paymint/widgets/custom_buttons/gradient_button.dart';
 import 'package:paymint/widgets/custom_buttons/simple_button.dart';
@@ -73,9 +74,20 @@ class _AddAddressBookEntryViewState extends State<AddAddressBookEntryView> {
     }
   }
 
+  bool _enabledSave = false;
+
+  _updateInvalidAddressText(String address, BitcoinService bitcoinService) {
+    if (address.isNotEmpty && !bitcoinService.validateFiroAddress(address)) {
+      return "Invalid address";
+    }
+    return null;
+  }
+
   @override
   Widget build(BuildContext context) {
+    final bitcoinService = Provider.of<BitcoinService>(context, listen: false);
     final screenWidth = MediaQuery.of(context).size.width;
+
     return Scaffold(
       appBar: AppBar(
         backgroundColor: CFColors.white,
@@ -126,8 +138,18 @@ class _AddAddressBookEntryViewState extends State<AddAddressBookEntryView> {
                     bottom: 12,
                   ),
                   child: TextField(
+                    readOnly: true,
                     controller: addressTextController,
                     decoration: InputDecoration(
+                      errorText: _updateInvalidAddressText(
+                          addressTextController.text, bitcoinService),
+                      focusedBorder: OutlineInputBorder(
+                        borderSide: BorderSide(
+                          color: CFColors.twilight,
+                        ),
+                        borderRadius: BorderRadius.circular(
+                            SizingUtilities.circularBorderRadius),
+                      ),
                       hintText: "Paste address",
                       contentPadding: EdgeInsets.only(
                         left: 16,
@@ -138,6 +160,9 @@ class _AddAddressBookEntryViewState extends State<AddAddressBookEntryView> {
                       suffixIcon: UnconstrainedBox(
                         child: Row(
                           children: [
+                            SizedBox(
+                              width: 16,
+                            ),
                             GestureDetector(
                               onTap: () async {
                                 final ClipboardData data =
@@ -145,6 +170,11 @@ class _AddAddressBookEntryViewState extends State<AddAddressBookEntryView> {
                                         Clipboard.kTextPlain);
                                 final content = data.text.trim();
                                 addressTextController.text = content;
+                                setState(() {
+                                  _enabledSave = bitcoinService
+                                          .validateFiroAddress(content) &&
+                                      nameTextController.text.isNotEmpty;
+                                });
                               },
                               child: SvgPicture.asset(
                                 "assets/svg/clipboard.svg",
@@ -196,6 +226,13 @@ class _AddAddressBookEntryViewState extends State<AddAddressBookEntryView> {
                     decoration: InputDecoration(
                       hintText: "Enter name",
                     ),
+                    onChanged: (_) {
+                      setState(() {
+                        _enabledSave = bitcoinService.validateFiroAddress(
+                                addressTextController.text) &&
+                            nameTextController.text.isNotEmpty;
+                      });
+                    },
                   ),
                 ),
               ],
@@ -216,11 +253,8 @@ class _AddAddressBookEntryViewState extends State<AddAddressBookEntryView> {
                       },
                       child: Text(
                         "CANCEL",
-                        style: GoogleFonts.workSans(
+                        style: CFTextStyles.button.copyWith(
                           color: CFColors.dusk,
-                          fontSize: 16,
-                          fontWeight: FontWeight.w600,
-                          letterSpacing: 0.5,
                         ),
                       ),
                     ),
@@ -230,14 +264,10 @@ class _AddAddressBookEntryViewState extends State<AddAddressBookEntryView> {
                     width: (screenWidth - 40 - 16) /
                         2, // 20+20 padding, 16 spacing,
                     child: GradientButton(
+                      enabled: _enabledSave,
                       child: Text(
                         "SAVE",
-                        style: GoogleFonts.workSans(
-                          color: CFColors.white,
-                          fontSize: 16, // ScalingUtils.fontScaled(context, 16),
-                          fontWeight: FontWeight.w600,
-                          letterSpacing: 0.5,
-                        ),
+                        style: CFTextStyles.button,
                       ),
                       onTap: () {
                         _saveNewAddressEntry(context);
