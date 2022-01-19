@@ -505,9 +505,6 @@ class _SendViewState extends State<SendView> {
                           height: 8,
                         ),
                         TextField(
-                          onChanged: (string) {
-                            print("text changed to: $string");
-                          },
                           style: GoogleFonts.workSans(
                             color: CFColors.dusk,
                           ),
@@ -529,7 +526,7 @@ class _SendViewState extends State<SendView> {
                               bottom: 12,
                               right: 5,
                             ),
-                            hintText: "Address",
+                            hintText: "Paste address",
                             suffixIcon: Padding(
                               padding: const EdgeInsets.only(right: 16),
                               child: UnconstrainedBox(
