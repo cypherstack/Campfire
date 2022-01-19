@@ -218,10 +218,12 @@ class _WalletSettingsViewState extends State<WalletSettingsView> {
             final LocalAuthentication localAuthentication =
                 LocalAuthentication();
 
-            bool canCheckBiometrics =
+            final canCheckBiometrics =
                 await localAuthentication.canCheckBiometrics;
+            final isDeviceSupported =
+                await localAuthentication.isDeviceSupported();
 
-            if (canCheckBiometrics) {
+            if (canCheckBiometrics && isDeviceSupported) {
               List<BiometricType> availableSystems =
                   await localAuthentication.getAvailableBiometrics();
 
