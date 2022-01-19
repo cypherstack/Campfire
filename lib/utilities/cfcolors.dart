@@ -42,6 +42,12 @@ class CFColors {
     CFColors.flame,
   ]);
 
+  static LinearGradient fireGradientHorizontalDisabled =
+      LinearGradient(colors: [
+    CFColors.spark.withOpacity(0.4),
+    CFColors.flame.withOpacity(0.4),
+  ]);
+
   static const LinearGradient fireGradientVertical = LinearGradient(
     colors: [
       CFColors.spark,
