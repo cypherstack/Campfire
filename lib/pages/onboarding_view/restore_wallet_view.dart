@@ -240,33 +240,51 @@ class _RestoreWalletFormViewState extends State<RestoreWalletFormView> {
                     Provider.of<WalletsService>(context, listen: false);
                 await walletsService.refreshWallets();
 
-                final walletId = await walletsService
-                    .getWalletId(await walletsService.currentWalletName);
+                final walletName = await walletsService.currentWalletName;
+                final walletId = await walletsService.getWalletId(walletName);
 
-                final secureStore = new FlutterSecureStorage();
-                await secureStore.write(
-                    key: '${walletId}_mnemonic', value: mnemonic.trim());
-                await btcService.recoverWalletFromBIP32SeedPhrase(mnemonic);
-                await btcService.refreshWalletData();
-                Navigator.pushReplacementNamed(context, "/mainview");
+                try {
+                  final secureStore = new FlutterSecureStorage();
+                  await secureStore.write(
+                      key: '${walletId}_mnemonic', value: mnemonic.trim());
+                  await btcService.recoverWalletFromBIP32SeedPhrase(mnemonic);
+                  await btcService.refreshWalletData();
+                  Navigator.pushReplacementNamed(context, "/mainview");
 
-                Timer timer = Timer(Duration(milliseconds: 2200), () {
-                  Navigator.of(context, rootNavigator: true).pop();
-                });
+                  Timer timer = Timer(Duration(milliseconds: 2200), () {
+                    Navigator.of(context, rootNavigator: true).pop();
+                  });
 
-                showDialog(
-                  context: context,
-                  useSafeArea: false,
-                  barrierDismissible: false,
-                  builder: (context) {
-                    return RecoveryCompleteDialog();
-                  },
-                ).then(
-                  (_) {
-                    timer.cancel();
-                    timer = null;
-                  },
-                );
+                  showDialog(
+                    context: context,
+                    useSafeArea: false,
+                    barrierDismissible: false,
+                    builder: (context) {
+                      return RecoveryCompleteDialog();
+                    },
+                  ).then(
+                    (_) {
+                      timer.cancel();
+                      timer = null;
+                    },
+                  );
+                } catch (e) {
+                  // pop waiting dialog
+                  Navigator.pop(context);
+
+                  // delete partially created wallet
+                  await walletsService.deleteWallet(walletName);
+
+                  // show restoring wallet failed dialog
+                  showDialog(
+                    context: context,
+                    useSafeArea: false,
+                    barrierDismissible: false,
+                    builder: (context) {
+                      return RestoreFailedDialog(errorMessage: e.toString());
+                    },
+                  );
+                }
               }
             }
           },
@@ -538,6 +556,76 @@ class RecoveryCompleteDialog extends StatelessWidget {
             // the center widget is at the same height as the
             // circular progress indicator in WaitDialog
             height: 50.0 + 48.0 + 8.0,
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+class RestoreFailedDialog extends StatelessWidget {
+  const RestoreFailedDialog({Key key, this.errorMessage}) : super(key: key);
+  final String errorMessage;
+  @override
+  Widget build(BuildContext context) {
+    return ModalPopupDialog(
+      child: Column(
+        children: [
+          SizedBox(
+            height: 28,
+          ),
+          FittedBox(
+            child: Text(
+              "Restoring wallet failed.",
+              style: CFTextStyles.pinkHeader.copyWith(
+                fontSize: 16,
+              ),
+            ),
+          ),
+          SizedBox(
+            height: 12,
+          ),
+          Center(
+            child: Text(
+              errorMessage == null ? "" : errorMessage,
+              style: GoogleFonts.workSans(
+                color: CFColors.dusk,
+                fontWeight: FontWeight.w400,
+                fontSize: 14,
+              ),
+            ),
+          ),
+          SizedBox(
+            height: 50,
+          ),
+          Align(
+            alignment: Alignment.bottomCenter,
+            child: Padding(
+              padding: const EdgeInsets.all(SizingUtilities.standardPadding),
+              child: SizedBox(
+                height: SizingUtilities.standardButtonHeight,
+                width: SizingUtilities.standardFixedButtonWidth,
+                child: GradientButton(
+                  child: FittedBox(
+                    child: Text(
+                      "OK",
+                      style: CFTextStyles.button,
+                    ),
+                  ),
+                  onTap: () {
+                    final navigator = Navigator.of(context);
+                    navigator.pop();
+                    navigator.pop();
+                    navigator.pop();
+                    navigator.pop();
+                    navigator.pop();
+                  },
+                ),
+              ),
+            ),
+          ),
+          SizedBox(
+            height: SizingUtilities.standardPadding,
           ),
         ],
       ),
