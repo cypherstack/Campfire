@@ -241,8 +241,10 @@ class _TransactionDetailsViewState extends State<TransactionDetailsView> {
                       _buildSeparator(),
                       _buildItem(
                           "Fee:",
-                          Utilities.satoshiAmountToPrettyString(
-                              _transaction.fees)),
+                          _transaction.confirmedStatus
+                              ? Utilities.satoshiAmountToPrettyString(
+                                  _transaction.fees)
+                              : "Pending"),
                       _buildSeparator(),
                       _buildItem("Date:",
                           Utilities.extractDateFrom(_transaction.timestamp)),
@@ -250,7 +252,10 @@ class _TransactionDetailsViewState extends State<TransactionDetailsView> {
                       _buildItem("Transaction ID:", _transaction.txid),
                       _buildSeparator(),
                       _buildItem(
-                          "Block Height:", _transaction.height.toString()),
+                          "Block Height:",
+                          _transaction.confirmedStatus
+                              ? _transaction.height.toString()
+                              : "Pending"),
                     ],
                   ),
                 ),
