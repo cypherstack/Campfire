@@ -45,7 +45,7 @@ class _SendViewState extends State<SendView> {
   String _currency = "";
 
   bool _autofill = false;
-  String _address;
+  String _address = "";
   String _contactName;
 
   bool _cryptoAmountHasFocus = false;
@@ -82,6 +82,14 @@ class _SendViewState extends State<SendView> {
   }
 
   bool _addressToggleFlag = true;
+  bool _sendButtonEnabled = false;
+
+  _updateInvalidAddressText(String address, BitcoinService bitcoinService) {
+    if (address.isNotEmpty && !bitcoinService.validateFiroAddress(address)) {
+      return "Invalid address";
+    }
+    return null;
+  }
 
   @override
   initState() {
@@ -178,7 +186,8 @@ class _SendViewState extends State<SendView> {
     );
   }
 
-  Widget _buildAmountInputBox(dynamic firoPrice) {
+  Widget _buildAmountInputBox(
+      dynamic firoPrice, BitcoinService bitcoinService) {
     return Container(
       decoration: BoxDecoration(
         color: CFColors.fog,
@@ -214,10 +223,14 @@ class _SendViewState extends State<SendView> {
                           : oldValue),
                 ],
                 onChanged: (String firoAmount) {
+                  print(firoAmount);
                   if (firoAmount.isNotEmpty && firoAmount != ".") {
                     _firoAmount = double.parse(firoAmount);
                     setState(() {
                       _totalAmount = _firoAmount + _maxFee;
+                      _sendButtonEnabled =
+                          (bitcoinService.validateFiroAddress(_address) &&
+                              _firoAmount > 0);
                     });
 
                     if (firoPrice is double && firoPrice > 0) {
@@ -229,6 +242,7 @@ class _SendViewState extends State<SendView> {
                   } else {
                     setState(() {
                       _totalAmount = 0;
+                      _sendButtonEnabled = false;
                     });
                     _fiatAmountController.text = "";
                   }
@@ -491,12 +505,17 @@ class _SendViewState extends State<SendView> {
                           height: 8,
                         ),
                         TextField(
+                          onChanged: (string) {
+                            print("text changed to: $string");
+                          },
                           style: GoogleFonts.workSans(
                             color: CFColors.dusk,
                           ),
                           readOnly: true,
                           controller: _recipientAddressTextController,
                           decoration: InputDecoration(
+                            errorText: _updateInvalidAddressText(
+                                _address, bitcoinService),
                             focusedBorder: OutlineInputBorder(
                               borderSide: BorderSide(
                                 color: CFColors.twilight,
@@ -523,8 +542,14 @@ class _SendViewState extends State<SendView> {
                                             onTap: () {
                                               _recipientAddressTextController
                                                   .text = "";
+                                              _address = "";
                                               setState(() {
                                                 _addressToggleFlag = false;
+                                                _sendButtonEnabled =
+                                                    (bitcoinService
+                                                            .validateFiroAddress(
+                                                                _address) &&
+                                                        _totalAmount > 0);
                                               });
                                             },
                                             child: SvgPicture.asset(
@@ -542,10 +567,19 @@ class _SendViewState extends State<SendView> {
                                               final content = data.text.trim();
                                               _recipientAddressTextController
                                                   .text = content;
+                                              _address = content;
+
                                               setState(() {
                                                 _addressToggleFlag =
                                                     _recipientAddressTextController
                                                         .text.isNotEmpty;
+                                                _sendButtonEnabled =
+                                                    (bitcoinService
+                                                            .validateFiroAddress(
+                                                                _address) &&
+                                                        _totalAmount > 0);
+                                                print(_address.toString() +
+                                                    _totalAmount.toString());
                                               });
                                             },
                                             child: SvgPicture.asset(
@@ -676,13 +710,14 @@ class _SendViewState extends State<SendView> {
                                 // TODO: show proper connection error
                                 print(
                                     "Couldn't fetch price, please check connection");
-                                return _buildAmountInputBox(0);
+                                return _buildAmountInputBox(0, bitcoinService);
                               }
-                              return _buildAmountInputBox(price.data);
+                              return _buildAmountInputBox(
+                                  price.data, bitcoinService);
                             }
 
                             print("Fetching price... please wait...");
-                            return _buildAmountInputBox(0);
+                            return _buildAmountInputBox(0, bitcoinService);
                           },
                         ),
                         SizedBox(
@@ -720,6 +755,7 @@ class _SendViewState extends State<SendView> {
                           height: 48,
                           width: MediaQuery.of(context).size.width - 40,
                           child: GradientButton(
+                            enabled: _sendButtonEnabled,
                             onTap: () {
                               print("SEND pressed");
 
