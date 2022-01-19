@@ -420,7 +420,8 @@ class _SendViewState extends State<SendView> {
                                     if (balanceData.connectionState ==
                                         ConnectionState.done) {
                                       if (balanceData == null ||
-                                          balanceData.hasError) {
+                                          balanceData.hasError ||
+                                          balanceData.data == null) {
                                         // TODO: Display failed overlay 'Unable to fetch balance data.\nPlease check connection'
                                         return Text(
                                           "... ${CurrencyUtilities.coinName}",

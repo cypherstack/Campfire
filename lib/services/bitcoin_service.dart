@@ -406,8 +406,8 @@ class BitcoinService extends ChangeNotifier {
   Future<FeeData> get maxFee => _maxFee;
 
   /// Holds the current balance data
-  Future<List<String>> _balance;
-  Future<List<String>> get balance => _balance ??= getFullBalance();
+  Future<dynamic> _balance;
+  Future<dynamic> get balance => _balance ??= getFullBalance();
 
   /// Holds all outputs for wallet, used for displaying utxos in app security view
   List<UtxoObject> _outputsList = [];
@@ -664,6 +664,9 @@ class BitcoinService extends ChangeNotifier {
       GlobalEventBus.instance.fire(RefreshPercentChangedEvent(0.90));
 
       var balance = await getFullBalance();
+      if (balance == null) {
+        throw Exception("getFullBalance() in refreshWalletData() failed");
+      }
 
       var lelantusEntry = await _getLelantusEntry();
       ReceivePort receivePort = await getIsolate({
@@ -2404,12 +2407,24 @@ class BitcoinService extends ChangeNotifier {
       final utxosValue = utxos == null ? 0 : utxos.bitcoinBalance;
       List<String> balances = List.empty(growable: true);
       balances.add(lelantusBalance.toStringAsFixed(8));
-      balances.add((lelantusBalance * price).toStringAsFixed(2));
+
+      if (price == null) {
+        balances.add("...");
+      } else {
+        balances.add((lelantusBalance * price).toStringAsFixed(2));
+      }
+
       balances.add((lelantusBalance + utxosValue + unconfirmedLelantusBalance)
           .toStringAsFixed(8));
-      balances.add(
-          ((lelantusBalance + utxosValue + unconfirmedLelantusBalance) * price)
-              .toStringAsFixed(2));
+
+      if (price == null) {
+        balances.add("...");
+      } else {
+        balances.add(
+            ((lelantusBalance + utxosValue + unconfirmedLelantusBalance) *
+                    price)
+                .toStringAsFixed(2));
+      }
       return balances;
     } catch (e) {
       print("Exception caught in getFullBalance: $e");

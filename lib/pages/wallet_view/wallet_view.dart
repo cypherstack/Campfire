@@ -158,7 +158,9 @@ class _WalletViewState extends State<WalletView> {
                           AsyncSnapshot<dynamic> balancesData) {
                         if (balancesData.connectionState ==
                             ConnectionState.done) {
-                          if (balancesData == null || balancesData.hasError) {
+                          if (balancesData == null ||
+                              balancesData.hasError ||
+                              balancesData.data == null) {
                             return _buildBalance(["...", "...", "...", "..."]);
                           }
 
