@@ -209,18 +209,18 @@ class _SendViewState extends State<SendView> {
                           : oldValue),
                 ],
                 onChanged: (String firoAmount) {
-                  if (firoAmount.isNotEmpty &&
-                      firoPrice != 0 &&
-                      firoAmount != ".") {
+                  if (firoAmount.isNotEmpty && firoAmount != ".") {
                     _firoAmount = double.parse(firoAmount);
                     setState(() {
                       _totalAmount = _firoAmount + _maxFee;
                     });
 
-                    final String fiatAmountString =
-                        (_firoAmount * firoPrice).toStringAsFixed(2);
+                    if (firoPrice is double && firoPrice > 0) {
+                      final String fiatAmountString =
+                          (_firoAmount * firoPrice).toStringAsFixed(2);
 
-                    _fiatAmountController.text = fiatAmountString;
+                      _fiatAmountController.text = fiatAmountString;
+                    }
                   } else {
                     setState(() {
                       _totalAmount = 0;
@@ -278,6 +278,7 @@ class _SendViewState extends State<SendView> {
                 style: GoogleFonts.workSans(
                   color: CFColors.dusk,
                 ),
+                enabled: firoPrice is double && firoPrice > 0,
                 controller: _fiatAmountController,
                 keyboardType: TextInputType.numberWithOptions(
                     signed: false, decimal: true),
@@ -312,6 +313,7 @@ class _SendViewState extends State<SendView> {
                   filled: false,
                   border: InputBorder.none,
                   enabledBorder: InputBorder.none,
+                  disabledBorder: InputBorder.none,
                   focusedBorder: InputBorder.none,
                   errorBorder: InputBorder.none,
                   contentPadding: EdgeInsets.only(
