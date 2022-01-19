@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import 'package:flutter_spinkit/flutter_spinkit.dart';
 import 'package:flutter_svg/svg.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:majascan/majascan.dart';
@@ -402,49 +403,49 @@ class _SendViewState extends State<SendView> {
                         ),
                       ),
                       FutureBuilder(
-                          future: bitcoinService.balance,
-                          builder: (
-                            BuildContext context,
-                            AsyncSnapshot<dynamic> balanceData,
-                          ) {
-                            if (balanceData.connectionState ==
-                                ConnectionState.done) {
-                              if (balanceData == null || balanceData.hasError) {
-                                // TODO: Display failed overlay 'Unable to fetch balance data.\nPlease check connection'
-                                return Text(
-                                  "... ${CurrencyUtilities.coinName}",
-                                  style: GoogleFonts.workSans(
-                                    color: CFColors.white,
-                                    fontSize: 16,
-                                    fontWeight: FontWeight.w600,
-                                  ),
-                                );
-                              }
-                              _balance = balanceData.data;
-
-                              return FittedBox(
-                                child: Text(
-                                  "${double.parse(_balance[4]) < _maxFee ? "0.00000000" : _balance[4]} ${CurrencyUtilities.coinName}",
-                                  style: GoogleFonts.workSans(
-                                    color: CFColors.white,
-                                    fontSize: 16,
-                                    fontWeight: FontWeight.w600,
-                                  ),
-                                ),
-                              );
-                            } else {
-                              //TODO: wallet balance loading progress
-                              // currently hidden by synchronizing overlay
-                              return SizedBox(
-                                height: 20,
-                                width: 100,
-                                child: LinearProgressIndicator(
-                                  color: Colors.green,
-                                  backgroundColor: Colors.purple,
+                        future: bitcoinService.balance,
+                        builder: (
+                          BuildContext context,
+                          AsyncSnapshot<dynamic> balanceData,
+                        ) {
+                          if (balanceData.connectionState ==
+                              ConnectionState.done) {
+                            if (balanceData == null || balanceData.hasError) {
+                              // TODO: Display failed overlay 'Unable to fetch balance data.\nPlease check connection'
+                              return Text(
+                                "... ${CurrencyUtilities.coinName}",
+                                style: GoogleFonts.workSans(
+                                  color: CFColors.white,
+                                  fontSize: 16,
+                                  fontWeight: FontWeight.w600,
                                 ),
                               );
                             }
-                          }),
+                            _balance = balanceData.data;
+
+                            return FittedBox(
+                              child: Text(
+                                "${double.parse(_balance[4]) < _maxFee ? "0.00000000" : _balance[4]} ${CurrencyUtilities.coinName}",
+                                style: GoogleFonts.workSans(
+                                  color: CFColors.white,
+                                  fontSize: 16,
+                                  fontWeight: FontWeight.w600,
+                                ),
+                              ),
+                            );
+                          } else {
+                            //TODO: wallet balance loading progress
+                            // currently hidden by synchronizing overlay
+                            return SizedBox(
+                              height: 20,
+                              width: 100,
+                              child: SpinKitThreeBounce(
+                                color: CFColors.white,
+                              ),
+                            );
+                          }
+                        },
+                      ),
                     ],
                   ),
                 ),
