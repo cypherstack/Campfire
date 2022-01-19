@@ -81,12 +81,17 @@ class _SendViewState extends State<SendView> {
     });
   }
 
+  bool _addressToggleFlag = true;
+
   @override
   initState() {
     print("SendView args: $autofillArgs");
     if (autofillArgs != null) {
       _parseArgs(autofillArgs);
     }
+    setState(() {
+      _addressToggleFlag = _recipientAddressTextController.text.isNotEmpty;
+    });
     super.initState();
   }
 
@@ -489,8 +494,16 @@ class _SendViewState extends State<SendView> {
                           style: GoogleFonts.workSans(
                             color: CFColors.dusk,
                           ),
+                          readOnly: true,
                           controller: _recipientAddressTextController,
                           decoration: InputDecoration(
+                            focusedBorder: OutlineInputBorder(
+                              borderSide: BorderSide(
+                                color: CFColors.twilight,
+                              ),
+                              borderRadius: BorderRadius.circular(
+                                  SizingUtilities.circularBorderRadius),
+                            ),
                             contentPadding: EdgeInsets.only(
                               left: 16,
                               top: 12,
@@ -498,13 +511,53 @@ class _SendViewState extends State<SendView> {
                               right: 5,
                             ),
                             hintText: "Address",
-                            suffixIcon: UnconstrainedBox(
-                              child: Padding(
-                                padding: const EdgeInsets.only(right: 16),
+                            suffixIcon: Padding(
+                              padding: const EdgeInsets.only(right: 16),
+                              child: UnconstrainedBox(
                                 child: Row(
                                   mainAxisAlignment:
                                       MainAxisAlignment.spaceAround,
                                   children: [
+                                    _addressToggleFlag
+                                        ? GestureDetector(
+                                            onTap: () {
+                                              _recipientAddressTextController
+                                                  .text = "";
+                                              setState(() {
+                                                _addressToggleFlag = false;
+                                              });
+                                            },
+                                            child: SvgPicture.asset(
+                                              "assets/svg/x.svg",
+                                              color: CFColors.twilight,
+                                              width: 20,
+                                              height: 20,
+                                            ),
+                                          )
+                                        : GestureDetector(
+                                            onTap: () async {
+                                              final ClipboardData data =
+                                                  await Clipboard.getData(
+                                                      Clipboard.kTextPlain);
+                                              final content = data.text.trim();
+                                              _recipientAddressTextController
+                                                  .text = content;
+                                              setState(() {
+                                                _addressToggleFlag =
+                                                    _recipientAddressTextController
+                                                        .text.isNotEmpty;
+                                              });
+                                            },
+                                            child: SvgPicture.asset(
+                                              "assets/svg/clipboard.svg",
+                                              color: CFColors.twilight,
+                                              width: 20,
+                                              height: 20,
+                                            ),
+                                          ),
+                                    SizedBox(
+                                      width: 10,
+                                    ),
                                     GestureDetector(
                                       onTap: () {
                                         Navigator.of(context)
