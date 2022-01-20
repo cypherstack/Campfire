@@ -39,10 +39,14 @@ class _ConfirmSendViewState extends State<ConfirmSendView> {
     final bool useBiometrics = await bitcoinService.useBiometrics;
     final LocalAuthentication localAuth = LocalAuthentication();
 
-    bool canCheckBiometrics = await localAuth.canCheckBiometrics;
+    final canCheckBiometrics = await localAuth.canCheckBiometrics;
+    final isDeviceSupported = await localAuth.isDeviceSupported();
 
     // If useBiometrics is enabled, then show fingerprint auth screen
-    if (useBiometrics != null && useBiometrics && canCheckBiometrics) {
+    if (useBiometrics != null &&
+        useBiometrics &&
+        canCheckBiometrics &&
+        isDeviceSupported) {
       List<BiometricType> availableSystems =
           await localAuth.getAvailableBiometrics();
 
@@ -57,6 +61,7 @@ class _ConfirmSendViewState extends State<ConfirmSendView> {
         if (availableSystems.contains(BiometricType.fingerprint)) {
           bool didAuthenticate = await localAuth.authenticateWithBiometrics(
             localizedReason: 'Please authenticate to unlock wallet',
+            stickyAuth: true,
           );
 
           if (didAuthenticate)

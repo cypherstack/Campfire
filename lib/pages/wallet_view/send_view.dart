@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import 'package:flutter_spinkit/flutter_spinkit.dart';
 import 'package:flutter_svg/svg.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:majascan/majascan.dart';
@@ -44,7 +45,7 @@ class _SendViewState extends State<SendView> {
   String _currency = "";
 
   bool _autofill = false;
-  String _address;
+  String _address = "";
   String _contactName;
 
   bool _cryptoAmountHasFocus = false;
@@ -80,12 +81,25 @@ class _SendViewState extends State<SendView> {
     });
   }
 
+  bool _addressToggleFlag = true;
+  bool _sendButtonEnabled = false;
+
+  _updateInvalidAddressText(String address, BitcoinService bitcoinService) {
+    if (address.isNotEmpty && !bitcoinService.validateFiroAddress(address)) {
+      return "Invalid address";
+    }
+    return null;
+  }
+
   @override
   initState() {
     print("SendView args: $autofillArgs");
     if (autofillArgs != null) {
       _parseArgs(autofillArgs);
     }
+    setState(() {
+      _addressToggleFlag = _recipientAddressTextController.text.isNotEmpty;
+    });
     super.initState();
   }
 
@@ -172,7 +186,8 @@ class _SendViewState extends State<SendView> {
     );
   }
 
-  Widget _buildAmountInputBox(dynamic firoPrice) {
+  Widget _buildAmountInputBox(
+      dynamic firoPrice, BitcoinService bitcoinService) {
     return Container(
       decoration: BoxDecoration(
         color: CFColors.fog,
@@ -208,21 +223,26 @@ class _SendViewState extends State<SendView> {
                           : oldValue),
                 ],
                 onChanged: (String firoAmount) {
-                  if (firoAmount.isNotEmpty &&
-                      firoPrice != 0 &&
-                      firoAmount != ".") {
+                  print(firoAmount);
+                  if (firoAmount.isNotEmpty && firoAmount != ".") {
                     _firoAmount = double.parse(firoAmount);
                     setState(() {
                       _totalAmount = _firoAmount + _maxFee;
+                      _sendButtonEnabled =
+                          (bitcoinService.validateFiroAddress(_address) &&
+                              _firoAmount > 0);
                     });
 
-                    final String fiatAmountString =
-                        (_firoAmount * firoPrice).toStringAsFixed(2);
+                    if (firoPrice is double && firoPrice > 0) {
+                      final String fiatAmountString =
+                          (_firoAmount * firoPrice).toStringAsFixed(2);
 
-                    _fiatAmountController.text = fiatAmountString;
+                      _fiatAmountController.text = fiatAmountString;
+                    }
                   } else {
                     setState(() {
                       _totalAmount = 0;
+                      _sendButtonEnabled = false;
                     });
                     _fiatAmountController.text = "";
                   }
@@ -277,6 +297,7 @@ class _SendViewState extends State<SendView> {
                 style: GoogleFonts.workSans(
                   color: CFColors.dusk,
                 ),
+                enabled: firoPrice is double && firoPrice > 0,
                 controller: _fiatAmountController,
                 keyboardType: TextInputType.numberWithOptions(
                     signed: false, decimal: true),
@@ -311,6 +332,7 @@ class _SendViewState extends State<SendView> {
                   filled: false,
                   border: InputBorder.none,
                   enabledBorder: InputBorder.none,
+                  disabledBorder: InputBorder.none,
                   focusedBorder: InputBorder.none,
                   errorBorder: InputBorder.none,
                   contentPadding: EdgeInsets.only(
@@ -370,355 +392,448 @@ class _SendViewState extends State<SendView> {
       child: Scaffold(
         key: _scaffoldKey,
         backgroundColor: CFColors.white,
-        body: SingleChildScrollView(
+        body: Padding(
           padding: EdgeInsets.only(
             top: 8,
             left: 20,
             right: 20,
             bottom: 16,
           ),
-          child: Column(
-            mainAxisAlignment: MainAxisAlignment.start,
-            children: [
-              GradientCard(
-                gradient: CFColors.fireGradientVerticalLight,
-                circularBorderRadius: SizingUtilities.circularBorderRadius,
-                child: Padding(
-                  padding: EdgeInsets.symmetric(
-                    vertical: 11,
-                    horizontal: 16,
+          child: LayoutBuilder(
+            builder: (context, constraint) {
+              return SingleChildScrollView(
+                child: ConstrainedBox(
+                  constraints: BoxConstraints(
+                    minHeight: constraint.maxHeight,
                   ),
-                  child: Row(
-                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                    children: [
-                      FittedBox(
-                        child: Text(
-                          "You can spend: ",
-                          style: GoogleFonts.workSans(
-                            color: CFColors.white,
-                            fontSize: 12,
-                            fontWeight: FontWeight.w600,
+                  child: IntrinsicHeight(
+                    child: Column(
+                      mainAxisAlignment: MainAxisAlignment.start,
+                      children: [
+                        GradientCard(
+                          gradient: CFColors.fireGradientVerticalLight,
+                          circularBorderRadius:
+                              SizingUtilities.circularBorderRadius,
+                          child: Padding(
+                            padding: EdgeInsets.symmetric(
+                              vertical: 11,
+                              horizontal: 16,
+                            ),
+                            child: Row(
+                              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                              children: [
+                                FittedBox(
+                                  child: Text(
+                                    "You can spend: ",
+                                    style: GoogleFonts.workSans(
+                                      color: CFColors.white,
+                                      fontSize: 12,
+                                      fontWeight: FontWeight.w600,
+                                    ),
+                                  ),
+                                ),
+                                FutureBuilder(
+                                  future: bitcoinService.balance,
+                                  builder: (
+                                    BuildContext context,
+                                    AsyncSnapshot<dynamic> balanceData,
+                                  ) {
+                                    if (balanceData.connectionState ==
+                                        ConnectionState.done) {
+                                      if (balanceData == null ||
+                                          balanceData.hasError ||
+                                          balanceData.data == null) {
+                                        // TODO: Display failed overlay 'Unable to fetch balance data.\nPlease check connection'
+                                        return Text(
+                                          "... ${CurrencyUtilities.coinName}",
+                                          style: GoogleFonts.workSans(
+                                            color: CFColors.white,
+                                            fontSize: 16,
+                                            fontWeight: FontWeight.w600,
+                                          ),
+                                        );
+                                      }
+                                      _balance = balanceData.data;
+
+                                      return FittedBox(
+                                        child: Text(
+                                          "${double.parse(_balance[4]) < _maxFee ? "0.00000000" : _balance[4]} ${CurrencyUtilities.coinName}",
+                                          style: GoogleFonts.workSans(
+                                            color: CFColors.white,
+                                            fontSize: 16,
+                                            fontWeight: FontWeight.w600,
+                                          ),
+                                        ),
+                                      );
+                                    } else {
+                                      //TODO: wallet balance loading progress
+                                      // currently hidden by synchronizing overlay
+                                      return SizedBox(
+                                        height: 20,
+                                        width: 100,
+                                        child: SpinKitThreeBounce(
+                                          color: CFColors.white,
+                                        ),
+                                      );
+                                    }
+                                  },
+                                ),
+                              ],
+                            ),
                           ),
                         ),
-                      ),
-                      FutureBuilder(
-                          future: bitcoinService.balance,
-                          builder: (
-                            BuildContext context,
-                            AsyncSnapshot<dynamic> balanceData,
-                          ) {
-                            if (balanceData.connectionState ==
-                                ConnectionState.done) {
-                              if (balanceData == null || balanceData.hasError) {
-                                // TODO: Display failed overlay 'Unable to fetch balance data.\nPlease check connection'
-                                return Text(
-                                  "... ${CurrencyUtilities.coinName}",
-                                  style: GoogleFonts.workSans(
-                                    color: CFColors.white,
-                                    fontSize: 16,
-                                    fontWeight: FontWeight.w600,
-                                  ),
-                                );
+                        SizedBox(
+                          height: 17,
+                        ),
+
+                        // Send to
+                        Row(
+                          children: [
+                            FittedBox(
+                              child: Text(
+                                "Send to",
+                                style: GoogleFonts.workSans(
+                                  color: CFColors.twilight,
+                                  fontWeight: FontWeight.w500,
+                                  fontSize: 12,
+                                ),
+                              ),
+                            ),
+                          ],
+                        ),
+                        SizedBox(
+                          height: 8,
+                        ),
+                        TextField(
+                          style: GoogleFonts.workSans(
+                            color: CFColors.dusk,
+                          ),
+                          readOnly: true,
+                          controller: _recipientAddressTextController,
+                          decoration: InputDecoration(
+                            errorText: _updateInvalidAddressText(
+                                _address, bitcoinService),
+                            focusedBorder: OutlineInputBorder(
+                              borderSide: BorderSide(
+                                color: CFColors.twilight,
+                              ),
+                              borderRadius: BorderRadius.circular(
+                                  SizingUtilities.circularBorderRadius),
+                            ),
+                            contentPadding: EdgeInsets.only(
+                              left: 16,
+                              top: 12,
+                              bottom: 12,
+                              right: 5,
+                            ),
+                            hintText: "Paste address",
+                            suffixIcon: Padding(
+                              padding: const EdgeInsets.only(right: 16),
+                              child: UnconstrainedBox(
+                                child: Row(
+                                  mainAxisAlignment:
+                                      MainAxisAlignment.spaceAround,
+                                  children: [
+                                    _addressToggleFlag
+                                        ? GestureDetector(
+                                            onTap: () {
+                                              _recipientAddressTextController
+                                                  .text = "";
+                                              _address = "";
+                                              setState(() {
+                                                _addressToggleFlag = false;
+                                                _sendButtonEnabled =
+                                                    (bitcoinService
+                                                            .validateFiroAddress(
+                                                                _address) &&
+                                                        _totalAmount > 0);
+                                              });
+                                            },
+                                            child: SvgPicture.asset(
+                                              "assets/svg/x.svg",
+                                              color: CFColors.twilight,
+                                              width: 20,
+                                              height: 20,
+                                            ),
+                                          )
+                                        : GestureDetector(
+                                            onTap: () async {
+                                              final ClipboardData data =
+                                                  await Clipboard.getData(
+                                                      Clipboard.kTextPlain);
+                                              final content = data.text.trim();
+                                              _recipientAddressTextController
+                                                  .text = content;
+                                              _address = content;
+
+                                              setState(() {
+                                                _addressToggleFlag =
+                                                    _recipientAddressTextController
+                                                        .text.isNotEmpty;
+                                                _sendButtonEnabled =
+                                                    (bitcoinService
+                                                            .validateFiroAddress(
+                                                                _address) &&
+                                                        _totalAmount > 0);
+                                                print(_address.toString() +
+                                                    _totalAmount.toString());
+                                              });
+                                            },
+                                            child: SvgPicture.asset(
+                                              "assets/svg/clipboard.svg",
+                                              color: CFColors.twilight,
+                                              width: 20,
+                                              height: 20,
+                                            ),
+                                          ),
+                                    SizedBox(
+                                      width: 10,
+                                    ),
+                                    GestureDetector(
+                                      onTap: () {
+                                        Navigator.of(context)
+                                            .pushNamed("/addressbook")
+                                            .then(
+                                          (value) {
+                                            if (value == null) {
+                                              return;
+                                            }
+                                            if (value is String) {
+                                              _recipientAddressTextController
+                                                  .text = value;
+                                            }
+                                          },
+                                        );
+                                        print("open addressbook icon clicked");
+                                      },
+                                      child: SvgPicture.asset(
+                                        "assets/svg/book-open.svg",
+                                      ),
+                                    ),
+                                    SizedBox(
+                                      width: 10,
+                                    ),
+                                    GestureDetector(
+                                      onTap: () async {
+                                        print(
+                                            "read qr code icon button tapped");
+                                        // TODO implement parse qr code
+                                        String qrResult =
+                                            await MajaScan.startScan(
+                                          title: "Scan address QR Code",
+                                          barColor: CFColors.white,
+                                          titleColor: CFColors.dusk,
+                                          qRCornerColor: CFColors.spark,
+                                          qRScannerColor: CFColors.midnight,
+                                          flashlightEnable: true,
+                                          scanAreaScale: 0.7,
+                                        );
+                                      },
+                                      child: SvgPicture.asset(
+                                        "assets/svg/qr-code.svg",
+                                      ),
+                                    ),
+                                  ],
+                                ),
+                              ),
+                            ),
+                          ),
+                        ),
+                        SizedBox(
+                          height: 16,
+                        ),
+
+                        // Note
+                        Row(
+                          children: [
+                            FittedBox(
+                              child: Text(
+                                "Note (optional)",
+                                style: GoogleFonts.workSans(
+                                  color: CFColors.twilight,
+                                  fontWeight: FontWeight.w500,
+                                  fontSize: 12,
+                                ),
+                              ),
+                            ),
+                          ],
+                        ),
+                        SizedBox(
+                          height: 8,
+                        ),
+                        TextField(
+                          style: GoogleFonts.workSans(
+                            color: CFColors.dusk,
+                          ),
+                          controller: _noteTextController,
+                          decoration: InputDecoration(
+                            fillColor: CFColors.fog,
+                            border: OutlineInputBorder(),
+                            hintText: "Type something...",
+                            hintStyle: GoogleFonts.workSans(
+                              color: CFColors.twilight,
+                              fontWeight: FontWeight.w400,
+                              fontSize: 16,
+                            ),
+                          ),
+                        ),
+                        SizedBox(
+                          height: 16,
+                        ),
+
+                        // Amount
+                        Row(
+                          children: [
+                            FittedBox(
+                              child: Text(
+                                "Amount",
+                                style: GoogleFonts.workSans(
+                                  color: CFColors.twilight,
+                                  fontWeight: FontWeight.w500,
+                                  fontSize: 12,
+                                ),
+                              ),
+                            ),
+                          ],
+                        ),
+                        SizedBox(
+                          height: 8,
+                        ),
+                        FutureBuilder(
+                          future: bitcoinService.bitcoinPrice,
+                          builder: (context, price) {
+                            if (price.connectionState == ConnectionState.done) {
+                              if (price.hasError || price.data == null) {
+                                // TODO: show proper connection error
+                                print(
+                                    "Couldn't fetch price, please check connection");
+                                return _buildAmountInputBox(0, bitcoinService);
                               }
-                              _balance = balanceData.data;
-
-                              return FittedBox(
-                                child: Text(
-                                  "${double.parse(_balance[4]) < _maxFee ? "0.00000000" : _balance[4]} ${CurrencyUtilities.coinName}",
-                                  style: GoogleFonts.workSans(
-                                    color: CFColors.white,
-                                    fontSize: 16,
-                                    fontWeight: FontWeight.w600,
-                                  ),
-                                ),
-                              );
-                            } else {
-                              //TODO: wallet balance loading progress
-                              // currently hidden by synchronizing overlay
-                              return SizedBox(
-                                height: 20,
-                                width: 100,
-                                child: LinearProgressIndicator(
-                                  color: Colors.green,
-                                  backgroundColor: Colors.purple,
-                                ),
-                              );
+                              return _buildAmountInputBox(
+                                  price.data, bitcoinService);
                             }
-                          }),
-                    ],
-                  ),
-                ),
-              ),
-              SizedBox(
-                height: 17,
-              ),
 
-              // Send to
-              Row(
-                children: [
-                  FittedBox(
-                    child: Text(
-                      "Send to",
-                      style: GoogleFonts.workSans(
-                        color: CFColors.twilight,
-                        fontWeight: FontWeight.w500,
-                        fontSize: 12,
-                      ),
-                    ),
-                  ),
-                ],
-              ),
-              SizedBox(
-                height: 8,
-              ),
-              TextField(
-                style: GoogleFonts.workSans(
-                  color: CFColors.dusk,
-                ),
-                controller: _recipientAddressTextController,
-                decoration: InputDecoration(
-                  contentPadding: EdgeInsets.only(
-                    left: 16,
-                    top: 12,
-                    bottom: 12,
-                    right: 5,
-                  ),
-                  hintText: "Address",
-                  suffixIcon: UnconstrainedBox(
-                    child: Padding(
-                      padding: const EdgeInsets.only(right: 16),
-                      child: Row(
-                        mainAxisAlignment: MainAxisAlignment.spaceAround,
-                        children: [
-                          GestureDetector(
+                            print("Fetching price... please wait...");
+                            return _buildAmountInputBox(0, bitcoinService);
+                          },
+                        ),
+                        SizedBox(
+                          height: 16,
+                        ),
+
+                        FutureBuilder(
+                          future: bitcoinService.fees,
+                          builder: (BuildContext context,
+                              AsyncSnapshot<FeeObject> feeObject) {
+                            if (feeObject.connectionState ==
+                                ConnectionState.done) {
+                              if (feeObject == null || feeObject.hasError) {
+                                // TODO: connection error notification
+                                return _buildTxFeeInfo();
+                              }
+
+                              // TODO is this the correct fee?
+                              _fee = feeObject.data.medium;
+
+                              return _buildTxFeeInfo();
+                            } else {
+                              return _buildTxFeeInfo();
+                            }
+                          },
+                        ),
+
+                        SizedBox(
+                          height: 16,
+                        ),
+
+                        Spacer(),
+                        // Send Button
+                        SizedBox(
+                          height: 48,
+                          width: MediaQuery.of(context).size.width - 40,
+                          child: GradientButton(
+                            enabled: _sendButtonEnabled,
                             onTap: () {
-                              Navigator.of(context)
-                                  .pushNamed("/addressbook")
-                                  .then(
-                                (value) {
-                                  if (value == null) {
-                                    return;
-                                  }
-                                  if (value is String) {
-                                    _recipientAddressTextController.text =
-                                        value;
-                                  }
-                                },
-                              );
-                              print("open addressbook icon clicked");
+                              print("SEND pressed");
+
+                              final availableBalance =
+                                  double.parse(_balance[4]) < _maxFee
+                                      ? 0.0
+                                      : double.parse(_balance[4]);
+
+                              if (_firoAmount > availableBalance) {
+                                showDialog(
+                                  useSafeArea: false,
+                                  barrierDismissible: false,
+                                  context: context,
+                                  builder: (_) => CampfireAlert(
+                                      message: "Insufficient balance!"),
+                                );
+                              } else {
+                                // set address to textfield value if it was not auto filled from address book
+                                // OR if it was but the textfield value does not match anymore
+                                if (!_autofill ||
+                                    _recipientAddressTextController.text !=
+                                        _contactName) {
+                                  _address =
+                                      _recipientAddressTextController.text;
+                                }
+
+                                if (bitcoinService
+                                    .validateFiroAddress(_address)) {
+                                  Navigator.of(context).push(
+                                    PageRouteBuilder(
+                                      opaque: false,
+                                      pageBuilder: (
+                                        context,
+                                        widget,
+                                        animation,
+                                      ) {
+                                        return ConfirmSendView(
+                                          amount: _firoAmount,
+                                          note: _noteTextController.text,
+                                          address: _address,
+                                          fee: _fee,
+                                        );
+                                      },
+                                      transitionsBuilder: (context, animation,
+                                          secondaryAnimation, child) {
+                                        return FadeTransition(
+                                          opacity: animation,
+                                          child: child,
+                                        );
+                                      },
+                                    ),
+                                  );
+                                } else {
+                                  showDialog(
+                                    useSafeArea: false,
+                                    barrierDismissible: false,
+                                    context: context,
+                                    builder: (_) => CampfireAlert(
+                                      message: "Invalid address entered",
+                                    ),
+                                  );
+                                }
+                              }
                             },
-                            child: SvgPicture.asset(
-                              "assets/svg/book-open.svg",
+                            child: Text(
+                              "SEND",
+                              style: GoogleFonts.workSans(
+                                color: CFColors.white,
+                                fontSize: 16,
+                                fontWeight: FontWeight.w600,
+                                letterSpacing: 0.5,
+                              ),
                             ),
                           ),
-                          SizedBox(
-                            width: 10,
-                          ),
-                          GestureDetector(
-                            onTap: () async {
-                              print("read qr code icon button tapped");
-                              // TODO implement parse qr code
-                              String qrResult = await MajaScan.startScan(
-                                title: "Scan address QR Code",
-                                barColor: CFColors.white,
-                                titleColor: CFColors.dusk,
-                                qRCornerColor: CFColors.spark,
-                                qRScannerColor: CFColors.midnight,
-                                flashlightEnable: true,
-                                scanAreaScale: 0.7,
-                              );
-                            },
-                            child: SvgPicture.asset(
-                              "assets/svg/qr-code.svg",
-                            ),
-                          ),
-                        ],
-                      ),
+                        ),
+                      ],
                     ),
                   ),
                 ),
-              ),
-              SizedBox(
-                height: 16,
-              ),
-
-              // Note
-              Row(
-                children: [
-                  FittedBox(
-                    child: Text(
-                      "Note (optional)",
-                      style: GoogleFonts.workSans(
-                        color: CFColors.twilight,
-                        fontWeight: FontWeight.w500,
-                        fontSize: 12,
-                      ),
-                    ),
-                  ),
-                ],
-              ),
-              SizedBox(
-                height: 8,
-              ),
-              TextField(
-                style: GoogleFonts.workSans(
-                  color: CFColors.dusk,
-                ),
-                controller: _noteTextController,
-                decoration: InputDecoration(
-                  fillColor: CFColors.fog,
-                  border: OutlineInputBorder(),
-                  hintText: "Type something...",
-                  hintStyle: GoogleFonts.workSans(
-                    color: CFColors.twilight,
-                    fontWeight: FontWeight.w400,
-                    fontSize: 16,
-                  ),
-                ),
-              ),
-              SizedBox(
-                height: 16,
-              ),
-
-              // Amount
-              Row(
-                children: [
-                  FittedBox(
-                    child: Text(
-                      "Amount",
-                      style: GoogleFonts.workSans(
-                        color: CFColors.twilight,
-                        fontWeight: FontWeight.w500,
-                        fontSize: 12,
-                      ),
-                    ),
-                  ),
-                ],
-              ),
-              SizedBox(
-                height: 8,
-              ),
-              FutureBuilder(
-                future: bitcoinService.bitcoinPrice,
-                builder: (context, price) {
-                  if (price.connectionState == ConnectionState.done) {
-                    if (price.hasError || price.data == null) {
-                      // TODO: show proper connection error
-                      print("Couldn't fetch price, please check connection");
-                      return _buildAmountInputBox(0);
-                    }
-                    return _buildAmountInputBox(price.data);
-                  }
-
-                  print("Fetching price... please wait...");
-                  return _buildAmountInputBox(0);
-                },
-              ),
-              SizedBox(
-                height: 16,
-              ),
-
-              FutureBuilder(
-                future: bitcoinService.fees,
-                builder:
-                    (BuildContext context, AsyncSnapshot<FeeObject> feeObject) {
-                  if (feeObject.connectionState == ConnectionState.done) {
-                    if (feeObject == null || feeObject.hasError) {
-                      // TODO: connection error notification
-                      return _buildTxFeeInfo();
-                    }
-
-                    // TODO is this the correct fee?
-                    _fee = feeObject.data.medium;
-
-                    return _buildTxFeeInfo();
-                  } else {
-                    return _buildTxFeeInfo();
-                  }
-                },
-              ),
-
-              SizedBox(
-                height: 16,
-              ),
-
-              // Send Button
-              SizedBox(
-                height: 48,
-                width: MediaQuery.of(context).size.width - 40,
-                child: GradientButton(
-                  onTap: () {
-                    print("SEND pressed");
-
-                    final availableBalance = double.parse(_balance[4]) < _maxFee
-                        ? 0.0
-                        : double.parse(_balance[4]);
-
-                    if (_firoAmount > availableBalance) {
-                      showDialog(
-                        useSafeArea: false,
-                        barrierDismissible: false,
-                        context: context,
-                        builder: (_) =>
-                            CampfireAlert(message: "Insufficient balance!"),
-                      );
-                    } else {
-                      // set address to textfield value if it was not auto filled from address book
-                      // OR if it was but the textfield value does not match anymore
-                      if (!_autofill ||
-                          _recipientAddressTextController.text !=
-                              _contactName) {
-                        _address = _recipientAddressTextController.text;
-                      }
-
-                      if (bitcoinService.validateFiroAddress(_address)) {
-                        Navigator.of(context).push(
-                          PageRouteBuilder(
-                            opaque: false,
-                            pageBuilder: (
-                              context,
-                              widget,
-                              animation,
-                            ) {
-                              return ConfirmSendView(
-                                amount: _firoAmount,
-                                note: _noteTextController.text,
-                                address: _address,
-                                fee: _fee,
-                              );
-                            },
-                            transitionsBuilder: (context, animation,
-                                secondaryAnimation, child) {
-                              return FadeTransition(
-                                opacity: animation,
-                                child: child,
-                              );
-                            },
-                          ),
-                        );
-                      } else {
-                        showDialog(
-                          useSafeArea: false,
-                          barrierDismissible: false,
-                          context: context,
-                          builder: (_) =>
-                              CampfireAlert(message: "Invalid address entered"),
-                        );
-                      }
-                    }
-                  },
-                  child: Text(
-                    "SEND",
-                    style: GoogleFonts.workSans(
-                      color: CFColors.white,
-                      fontSize: 16,
-                      fontWeight: FontWeight.w600,
-                      letterSpacing: 0.5,
-                    ),
-                  ),
-                ),
-              ),
-            ],
+              );
+            },
           ),
         ),
       ),

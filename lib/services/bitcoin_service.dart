@@ -695,8 +695,8 @@ class BitcoinService extends ChangeNotifier {
   Future<FeeData> get maxFee => _maxFee;
 
   /// Holds the current balance data
-  Future<List<String>> _balance;
-  Future<List<String>> get balance => _balance;
+  Future<dynamic> _balance;
+  Future<dynamic> get balance => _balance ??= getFullBalance();
 
   /// Holds all outputs for wallet, used for displaying utxos in app security view
   List<UtxoObject> _outputsList = [];
@@ -953,6 +953,9 @@ class BitcoinService extends ChangeNotifier {
       GlobalEventBus.instance.fire(RefreshPercentChangedEvent(0.90));
 
       var balance = await getFullBalance();
+      if (balance == null) {
+        throw Exception("getFullBalance() in refreshWalletData() failed");
+      }
 
       var lelantusEntry = await _getLelantusEntry();
       ReceivePort receivePort = await getIsolate({
@@ -1695,37 +1698,38 @@ class BitcoinService extends ChangeNotifier {
   }
 
   Future<dynamic> getBitcoinPrice() async {
-    final String currency = await CurrencyUtilities.fetchPreferredCurrency();
+    try {
+      final String currency = await CurrencyUtilities.fetchPreferredCurrency();
 
-    final Map<String, String> requestBody = {"currency": currency};
+      final Map<String, String> requestBody = {"currency": currency};
 
-    final response = await http.post(
-      Uri.parse('$MIDDLE_SERVER/currentBitcoinPrice'),
-      body: jsonEncode(requestBody),
-      headers: {'Content-Type': 'application/json'},
-    );
+      final response = await http.post(
+        Uri.parse('$MIDDLE_SERVER/currentBitcoinPrice'),
+        body: jsonEncode(requestBody),
+        headers: {'Content-Type': 'application/json'},
+      );
 
-    if (response.statusCode == 200 || response.statusCode == 201) {
-      notifyListeners();
-      print('Current BTC Price: ' + response.body.toString());
-      print(
-          "response.body.toString().isEmpty: ${response.body.toString().isEmpty}");
-      if (response.body.toString().isEmpty) {
-        // TODO change this (nice descriptive todo, i know)
-        return 1;
-        // throw Exception('Something happened: ' +
-        //     response.statusCode.toString() +
-        //     " response.body is empty!");
+      if (response.statusCode == 200 || response.statusCode == 201) {
+        notifyListeners();
+        print('Current BTC Price: ' + response.body.toString());
+        print(
+            "response.body.toString().isEmpty: ${response.body.toString().isEmpty}");
+        if (response.body.toString().isEmpty) {
+          throw Exception('Something happened: ' +
+              response.statusCode.toString() +
+              " response.body is empty!");
+        }
+        final result = json.decode(response.body);
+        print("json bitcoin price result: $result");
+        return result;
+      } else {
+        throw Exception('Something happened: ' +
+            response.statusCode.toString() +
+            response.body);
       }
-      //TODO randomly get a json parse error here (due to empty response body)
-      // E/flutter (16131): [ERROR:flutter/lib/ui/ui_dart_state.cc(209)] Unhandled Exception: FormatException: Unexpected end of input (at character 1)
-      final result = json.decode(response.body);
-      print("json bitcoin price result: $result");
-      return result;
-    } else {
-      throw Exception('Something happened: ' +
-          response.statusCode.toString() +
-          response.body);
+    } catch (e) {
+      print("Exception caught in getBitcoinPrice: $e");
+      return null;
     }
   }
 
@@ -1915,6 +1919,7 @@ class BitcoinService extends ChangeNotifier {
   Future<dynamic> createJoinSplitTransaction(
       int spendAmount, String address, bool subtractFeeFromAmount) async {
     var price = await bitcoinPrice;
+    price = price ?? 1;
     String url = await getEsploraUrl();
     final id = await _getWalletId();
     final wallet = await Hive.openBox(id);
@@ -2215,7 +2220,8 @@ class BitcoinService extends ChangeNotifier {
     var txHex = incomplete.toHex();
     int fee = amount - incomplete.outs[0].value;
 
-    final price = await bitcoinPrice;
+    var price = await bitcoinPrice;
+    price = price ?? 1;
     var builtHex = txb.build();
     // return builtHex;
     return {
@@ -2237,149 +2243,154 @@ class BitcoinService extends ChangeNotifier {
 
   /// Recovers wallet from [suppliedMnemonic]. Expects a valid mnemonic.
   dynamic recoverWalletFromBIP32SeedPhrase(String suppliedMnemonic) async {
-    final String mnemonic = suppliedMnemonic;
-    final seed = bip39.mnemonicToSeed(mnemonic);
-    final root = bip32.BIP32.fromSeed(seed);
+    try {
+      final String mnemonic = suppliedMnemonic;
+      final seed = bip39.mnemonicToSeed(mnemonic);
+      final root = bip32.BIP32.fromSeed(seed);
 
-    List<String> receivingAddressArray = [];
-    List<String> changeAddressArray = [];
+      List<String> receivingAddressArray = [];
+      List<String> changeAddressArray = [];
 
-    int receivingIndex = 0;
-    int changeIndex = 0;
+      int receivingIndex = 0;
+      int changeIndex = 0;
 
-    // The gap limit will be capped at 20
-    int receivingGapCounter = 0;
-    int changeGapCounter = 0;
+      // The gap limit will be capped at 20
+      int receivingGapCounter = 0;
+      int changeGapCounter = 0;
 
-    // Deriving and checking for receiving addresses
-    for (var i = 0; i < 1000; i++) {
-      await Future.delayed(Duration(milliseconds: 650));
-      // Break out of loop when receivingGapCounter hits 20
-      if (receivingGapCounter == 20) {
-        break;
-      }
-
-      final currentNode = root.derivePath("m/44'/136'/0'/0/$i");
-      print(currentNode.toBase58());
-      print(currentNode.toWIF());
-      print(currentNode.publicKey);
-      print(currentNode.privateKey);
-      final address = P2PKH(
-              network: firo,
-              data: new PaymentData(pubkey: currentNode.publicKey))
-          .data
-          .address;
-      print(address);
-      final Map<String, String> requestBody = {
-        "address": address,
-        "url": await getEsploraUrl()
-      };
-
-      final response = await http.post(
-        Uri.parse('$MIDDLE_SERVER/txCount'),
-        body: json.encode(requestBody),
-        headers: {'Content-Type': 'application/json'},
-      );
-
-      if (response.statusCode == 200 || response.statusCode == 201) {
-        final int numTxs = json.decode(response.body);
-        if (numTxs >= 1) {
-          receivingIndex = i;
-          receivingAddressArray.add(address);
-        } else if (numTxs == 0) {
-          receivingGapCounter += 1;
+      // Deriving and checking for receiving addresses
+      for (var i = 0; i < 1000; i++) {
+        await Future.delayed(Duration(milliseconds: 650));
+        // Break out of loop when receivingGapCounter hits 20
+        if (receivingGapCounter == 20) {
+          break;
         }
-      } else {
-        throw Exception('Something happened: ' +
-            response.statusCode.toString() +
-            response.body);
-      }
-    }
 
-    // Deriving and checking for change addresses
-    for (var i = 0; i < 1000; i++) {
-      await Future.delayed(Duration(milliseconds: 650));
-      // Same gap limit for change as for receiving, breaks when it hits 20
-      if (changeGapCounter == 20) {
-        break;
-      }
+        final currentNode = root.derivePath("m/44'/136'/0'/0/$i");
+        print(currentNode.toBase58());
+        print(currentNode.toWIF());
+        print(currentNode.publicKey);
+        print(currentNode.privateKey);
+        final address = P2PKH(
+                network: firo,
+                data: new PaymentData(pubkey: currentNode.publicKey))
+            .data
+            .address;
+        print(address);
+        final Map<String, String> requestBody = {
+          "address": address,
+          "url": await getEsploraUrl()
+        };
 
-      final currentNode = root.derivePath("m/44'/136'/0'/1/$i");
-      final address = P2PKH(
-              network: firo,
-              data: new PaymentData(pubkey: currentNode.publicKey))
-          .data
-          .address;
-      final Map<String, String> requestBody = {
-        "address": address,
-        "url": await getEsploraUrl()
-      };
-
-      final response = await http.post(
-        Uri.parse('$MIDDLE_SERVER/txCount'),
-        body: json.encode(requestBody),
-        headers: {'Content-Type': 'application/json'},
-      );
-
-      if (response.statusCode == 200 || response.statusCode == 201) {
-        final int numTxs = json.decode(response.body);
-        if (numTxs >= 1) {
-          changeIndex = i;
-          changeAddressArray.add(address);
-        } else if (numTxs == 0) {
-          changeGapCounter += 1;
-        }
-      } else {
-        throw Exception(
-          'Something happened: ' +
-              response.statusCode.toString() +
-              response.body,
+        final response = await http.post(
+          Uri.parse('$MIDDLE_SERVER/txCount'),
+          body: json.encode(requestBody),
+          headers: {'Content-Type': 'application/json'},
         );
+
+        if (response.statusCode == 200 || response.statusCode == 201) {
+          final int numTxs = json.decode(response.body);
+          if (numTxs >= 1) {
+            receivingIndex = i;
+            receivingAddressArray.add(address);
+          } else if (numTxs == 0) {
+            receivingGapCounter += 1;
+          }
+        } else {
+          throw Exception('Something happened: ' +
+              response.statusCode.toString() +
+              response.body);
+        }
       }
-    }
 
-    // If restoring a wallet that never received any funds, then set receivingArray manually
-    // If we didn't do this, it'd store an empty array
-    if (receivingIndex == 0) {
-      final String receivingAddress =
-          await generateAddressForChain(0, receivingIndex);
-      receivingAddressArray.add(receivingAddress);
-    }
+      // Deriving and checking for change addresses
+      for (var i = 0; i < 1000; i++) {
+        await Future.delayed(Duration(milliseconds: 650));
+        // Same gap limit for change as for receiving, breaks when it hits 20
+        if (changeGapCounter == 20) {
+          break;
+        }
 
-    // If restoring a wallet that never sent any funds with change, then set changeArray
-    // manually. If we didn't do this, it'd store an empty array.
-    if (changeIndex == 0) {
-      final String changeAddress =
-          await generateAddressForChain(1, changeIndex);
-      changeAddressArray.add(changeAddress);
-    }
+        final currentNode = root.derivePath("m/44'/136'/0'/1/$i");
+        final address = P2PKH(
+                network: firo,
+                data: new PaymentData(pubkey: currentNode.publicKey))
+            .data
+            .address;
+        final Map<String, String> requestBody = {
+          "address": address,
+          "url": await getEsploraUrl()
+        };
 
-    final id = await _getWalletId();
+        final response = await http.post(
+          Uri.parse('$MIDDLE_SERVER/txCount'),
+          body: json.encode(requestBody),
+          headers: {'Content-Type': 'application/json'},
+        );
 
-    final wallet = await Hive.openBox(id);
-    await wallet.put('receivingAddresses', receivingAddressArray);
-    await wallet.put('changeAddresses', changeAddressArray);
-    await wallet.put('receivingIndex', receivingIndex);
-    await wallet.put('changeIndex', changeIndex);
-
-    // initialize default node
-    final nodes = <String, dynamic>{};
-    nodes.addAll({
-      CampfireConstants.defaultNodeName: {
-        "id": Uuid().v1(),
-        "ipAddress": CampfireConstants.defaultIpAddress,
-        "port": "",
+        if (response.statusCode == 200 || response.statusCode == 201) {
+          final int numTxs = json.decode(response.body);
+          if (numTxs >= 1) {
+            changeIndex = i;
+            changeAddressArray.add(address);
+          } else if (numTxs == 0) {
+            changeGapCounter += 1;
+          }
+        } else {
+          throw Exception(
+            'Something happened: ' +
+                response.statusCode.toString() +
+                response.body,
+          );
+        }
       }
-    });
-    await wallet.put('nodes', nodes);
-    await wallet.put('activeNodeName', CampfireConstants.defaultNodeName);
 
-    final secureStore = new FlutterSecureStorage();
-    await secureStore.write(
-        key: '${id}_mnemonic', value: suppliedMnemonic.trim());
-    notifyListeners();
-    await restore();
-    notifyListeners();
+      // If restoring a wallet that never received any funds, then set receivingArray manually
+      // If we didn't do this, it'd store an empty array
+      if (receivingIndex == 0) {
+        final String receivingAddress =
+            await generateAddressForChain(0, receivingIndex);
+        receivingAddressArray.add(receivingAddress);
+      }
+
+      // If restoring a wallet that never sent any funds with change, then set changeArray
+      // manually. If we didn't do this, it'd store an empty array.
+      if (changeIndex == 0) {
+        final String changeAddress =
+            await generateAddressForChain(1, changeIndex);
+        changeAddressArray.add(changeAddress);
+      }
+
+      final id = await _getWalletId();
+
+      final wallet = await Hive.openBox(id);
+      await wallet.put('receivingAddresses', receivingAddressArray);
+      await wallet.put('changeAddresses', changeAddressArray);
+      await wallet.put('receivingIndex', receivingIndex);
+      await wallet.put('changeIndex', changeIndex);
+
+      // initialize default node
+      final nodes = <String, dynamic>{};
+      nodes.addAll({
+        CampfireConstants.defaultNodeName: {
+          "id": Uuid().v1(),
+          "ipAddress": CampfireConstants.defaultIpAddress,
+          "port": "",
+        }
+      });
+      await wallet.put('nodes', nodes);
+      await wallet.put('activeNodeName', CampfireConstants.defaultNodeName);
+
+      final secureStore = new FlutterSecureStorage();
+      await secureStore.write(
+          key: '${id}_mnemonic', value: suppliedMnemonic.trim());
+      notifyListeners();
+      await restore();
+      notifyListeners();
+    } catch (e) {
+      print("recoverWalletFromBIP32SeedPhrase threw exception: $e");
+      throw e;
+    }
   }
 
   restore() async {
@@ -2612,7 +2623,8 @@ class BitcoinService extends ChangeNotifier {
       final wallet = await Hive.openBox(id);
       final Map _lelantus_coins = await wallet.get('_lelantus_coins');
       final utxos = await utxoData;
-      final price = await bitcoinPrice;
+      var price = await bitcoinPrice;
+      price = price ?? 1;
       final data = await transactionData;
       List jindexes = await wallet.get('jindex');
       double lelantusBalance = 0;
@@ -2634,12 +2646,24 @@ class BitcoinService extends ChangeNotifier {
       final utxosValue = utxos == null ? 0 : utxos.bitcoinBalance;
       List<String> balances = List.empty(growable: true);
       balances.add(lelantusBalance.toStringAsFixed(8));
-      balances.add((lelantusBalance * price).toStringAsFixed(2));
+
+      if (price == null) {
+        balances.add("...");
+      } else {
+        balances.add((lelantusBalance * price).toStringAsFixed(2));
+      }
+
       balances.add((lelantusBalance + utxosValue + unconfirmedLelantusBalance)
           .toStringAsFixed(8));
-      balances.add(
-          ((lelantusBalance + utxosValue + unconfirmedLelantusBalance) * price)
-              .toStringAsFixed(2));
+
+      if (price == null) {
+        balances.add("...");
+      } else {
+        balances.add(
+            ((lelantusBalance + utxosValue + unconfirmedLelantusBalance) *
+                    price)
+                .toStringAsFixed(2));
+      }
       return balances;
     } catch (e) {
       print("Exception caught in getFullBalance: $e");

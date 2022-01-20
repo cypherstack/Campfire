@@ -70,12 +70,65 @@ class _TransactionSearchViewState extends State<TransactionSearchView> {
   var _selectedToDate = DateTime.now();
   bool _dateSelected = false;
 
-  final baseStyle = GoogleFonts.workSans(
+  final _datePickerTextStyleBase = GoogleFonts.workSans(
     color: CFColors.dusk,
     fontSize: 14,
     fontWeight: FontWeight.w400,
     letterSpacing: 0.5,
   );
+
+  _buildDatePickerStyle() {
+    return MaterialRoundedDatePickerStyle(
+      paddingMonthHeader: EdgeInsets.only(top: 11),
+      colorArrowNext: CFColors.twilight,
+      colorArrowPrevious: CFColors.twilight,
+      textStyleButtonNegative: _datePickerTextStyleBase.copyWith(
+          fontSize: 16, fontWeight: FontWeight.w600),
+      textStyleButtonPositive: _datePickerTextStyleBase.copyWith(
+          fontSize: 16, fontWeight: FontWeight.w600),
+      textStyleCurrentDayOnCalendar: _datePickerTextStyleBase.copyWith(
+        color: CFColors.spark,
+      ),
+      textStyleDayHeader: _datePickerTextStyleBase.copyWith(
+        color: CFColors.starryNight,
+        fontSize: 16,
+        fontWeight: FontWeight.w600,
+      ),
+      textStyleDayOnCalendar: _datePickerTextStyleBase,
+      textStyleDayOnCalendarDisabled: _datePickerTextStyleBase.copyWith(
+        color: CFColors.dew,
+      ),
+      textStyleDayOnCalendarSelected: _datePickerTextStyleBase.copyWith(
+        color: CFColors.white,
+      ),
+      textStyleMonthYearHeader: _datePickerTextStyleBase.copyWith(
+        color: CFColors.twilight,
+        fontSize: 16,
+        fontWeight: FontWeight.w600,
+      ),
+      textStyleYearButton: _datePickerTextStyleBase.copyWith(
+        color: CFColors.white,
+        fontSize: 16,
+        fontWeight: FontWeight.w600,
+      ),
+      textStyleButtonAction: GoogleFonts.workSans(),
+    );
+  }
+
+  _buildYearPickerStyle() {
+    return MaterialRoundedYearPickerStyle(
+      textStyleYear: _datePickerTextStyleBase.copyWith(
+        color: CFColors.dusk,
+        fontWeight: FontWeight.w600,
+        fontSize: 16,
+      ),
+      textStyleYearSelected: _datePickerTextStyleBase.copyWith(
+        color: CFColors.spark,
+        fontWeight: FontWeight.w600,
+        fontSize: 18,
+      ),
+    );
+  }
 
   _buildDateRangePicker() {
     final middleSeparatorPadding = 2.0;
@@ -109,53 +162,8 @@ class _TransactionSearchViewState extends State<TransactionSearchView> {
 
               textPositiveButton: "SELECT",
 
-              styleDatePicker: MaterialRoundedDatePickerStyle(
-                paddingMonthHeader: EdgeInsets.only(top: 11),
-                colorArrowNext: CFColors.twilight,
-                colorArrowPrevious: CFColors.twilight,
-                textStyleButtonNegative: baseStyle.copyWith(
-                    fontSize: 16, fontWeight: FontWeight.w600),
-                textStyleButtonPositive: baseStyle.copyWith(
-                    fontSize: 16, fontWeight: FontWeight.w600),
-                textStyleCurrentDayOnCalendar: baseStyle.copyWith(
-                  color: CFColors.spark,
-                ),
-                textStyleDayHeader: baseStyle.copyWith(
-                  color: CFColors.starryNight,
-                  fontSize: 16,
-                  fontWeight: FontWeight.w600,
-                ),
-                textStyleDayOnCalendar: baseStyle,
-                textStyleDayOnCalendarDisabled: baseStyle.copyWith(
-                  color: CFColors.dew,
-                ),
-                textStyleDayOnCalendarSelected: baseStyle.copyWith(
-                  color: CFColors.white,
-                ),
-                textStyleMonthYearHeader: baseStyle.copyWith(
-                  color: CFColors.twilight,
-                  fontSize: 16,
-                  fontWeight: FontWeight.w600,
-                ),
-                textStyleYearButton: baseStyle.copyWith(
-                  color: CFColors.white,
-                  fontSize: 16,
-                  fontWeight: FontWeight.w600,
-                ),
-                textStyleButtonAction: GoogleFonts.workSans(),
-              ),
-              styleYearPicker: MaterialRoundedYearPickerStyle(
-                textStyleYear: baseStyle.copyWith(
-                  color: CFColors.dusk,
-                  fontWeight: FontWeight.w600,
-                  fontSize: 16,
-                ),
-                textStyleYearSelected: baseStyle.copyWith(
-                  color: CFColors.spark,
-                  fontWeight: FontWeight.w600,
-                  fontSize: 18,
-                ),
-              ),
+              styleDatePicker: _buildDatePickerStyle(),
+              styleYearPicker: _buildYearPickerStyle(),
             );
             if (date != null && date != _selectedFromDate) {
               _selectedFromDate = date;
@@ -223,15 +231,25 @@ class _TransactionSearchViewState extends State<TransactionSearchView> {
         ),
         GestureDetector(
           onTap: () async {
-            final date = await showDatePicker(
-              confirmText: "SELECT",
-              fieldLabelText: "",
+            final date = await showRoundedDatePicker(
+              // This doesn't change statusbar color...
+              // background: CFColors.starryNight.withOpacity(0.8),
               context: context,
+              height: MediaQuery.of(context).size.height * 0.5,
+              theme: ThemeData(
+                primarySwatch: CFColors.createMaterialColor(CFColors.spark),
+              ),
               //TODO pick a better initial date
               // 2007 chosen as that is just before bitcoin launched
               initialDate: DateTime.now(),
               firstDate: DateTime(2007),
               lastDate: DateTime.now(),
+              borderRadius: SizingUtilities.circularBorderRadius * 2,
+
+              textPositiveButton: "SELECT",
+
+              styleDatePicker: _buildDatePickerStyle(),
+              styleYearPicker: _buildYearPickerStyle(),
             );
             if (date != null && date != _selectedFromDate) {
               _selectedToDate = date;

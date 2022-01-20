@@ -304,9 +304,10 @@ class _CreatePinViewState extends State<CreatePinView> {
   Future<bool> _enableBiometricsDialog() async {
     final LocalAuthentication localAuth = LocalAuthentication();
 
-    bool canCheckBiometrics = await localAuth.canCheckBiometrics;
+    final canCheckBiometrics = await localAuth.canCheckBiometrics;
+    final isDeviceSupported = await localAuth.isDeviceSupported();
 
-    if (canCheckBiometrics) {
+    if (canCheckBiometrics && isDeviceSupported) {
       List<BiometricType> availableSystems =
           await localAuth.getAvailableBiometrics();
 
@@ -321,6 +322,7 @@ class _CreatePinViewState extends State<CreatePinView> {
         if (availableSystems.contains(BiometricType.fingerprint)) {
           bool didAuthenticate = await localAuth.authenticateWithBiometrics(
             localizedReason: 'Enable fingerprint authentication',
+            stickyAuth: true,
           );
 
           if (didAuthenticate) {

@@ -2,20 +2,17 @@ import 'dart:io' show Platform;
 
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
-import 'package:flutter_svg/svg.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:local_auth/auth_strings.dart';
 import 'package:local_auth/local_auth.dart';
 import 'package:paymint/notifications/modal_popup_dialog.dart';
 import 'package:paymint/pages/settings_view/helpers/builders.dart';
 import 'package:paymint/pages/settings_view/settings_subviews/wallet_settings_subviews/rename_wallet_view.dart';
-import 'package:paymint/pages/wallet_selection_view.dart';
 import 'package:paymint/services/bitcoin_service.dart';
 import 'package:paymint/services/wallets_service.dart';
 import 'package:paymint/utilities/cfcolors.dart';
 import 'package:paymint/utilities/sizing_utilities.dart';
 import 'package:paymint/utilities/text_styles.dart';
-import 'package:paymint/widgets/custom_buttons/app_bar_icon_button.dart';
 import 'package:paymint/widgets/custom_buttons/gradient_button.dart';
 import 'package:paymint/widgets/custom_buttons/simple_button.dart';
 import 'package:provider/provider.dart';
@@ -49,124 +46,6 @@ class _WalletSettingsViewState extends State<WalletSettingsView> {
       appBar: buildSettingsAppBar(
         context,
         "Wallet Settings",
-        rightButton: Padding(
-          padding: EdgeInsets.only(
-            top: 10,
-            bottom: 10,
-            right: 20,
-          ),
-          child: AspectRatio(
-            aspectRatio: 1,
-            child: AppBarIconButton(
-              size: 36,
-              icon: SvgPicture.asset(
-                "assets/svg/log-out.svg",
-                color: CFColors.twilight,
-                width: 24,
-                height: 24,
-              ),
-              circularBorderRadius: 8,
-              onPressed: () async {
-                final BitcoinService bitcoinService =
-                    Provider.of<BitcoinService>(context, listen: false);
-                final walletsService =
-                    Provider.of<WalletsService>(context, listen: false);
-                final walletName = await walletsService.currentWalletName;
-
-                showDialog(
-                  useSafeArea: false,
-                  barrierColor: Colors.transparent,
-                  context: context,
-                  builder: (context) {
-                    return ModalPopupDialog(
-                      child: Column(
-                        children: [
-                          Padding(
-                            padding: const EdgeInsets.symmetric(
-                              horizontal: 24,
-                              vertical: 28,
-                            ),
-                            child: Text(
-                              "Do you want to log out from $walletName Wallet?",
-                              style: GoogleFonts.workSans(
-                                color: CFColors.dusk,
-                                fontWeight: FontWeight.w600,
-                                fontSize: 18,
-                              ),
-                            ),
-                          ),
-                          Padding(
-                            padding: const EdgeInsets.only(
-                              top: 4,
-                              left: SizingUtilities.standardPadding,
-                              right: SizingUtilities.standardPadding,
-                              bottom: SizingUtilities.standardPadding,
-                            ),
-                            child: Row(
-                              children: [
-                                Expanded(
-                                  child: SizedBox(
-                                    height:
-                                        SizingUtilities.standardButtonHeight,
-                                    child: SimpleButton(
-                                      child: FittedBox(
-                                        child: Text(
-                                          "CANCEL",
-                                          style: CFTextStyles.button.copyWith(
-                                            color: CFColors.dusk,
-                                          ),
-                                        ),
-                                      ),
-                                      onTap: () {
-                                        Navigator.pop(context);
-                                      },
-                                    ),
-                                  ),
-                                ),
-                                SizedBox(
-                                  width: 16,
-                                ),
-                                Expanded(
-                                  child: SizedBox(
-                                    height:
-                                        SizingUtilities.standardButtonHeight,
-                                    child: GradientButton(
-                                      child: FittedBox(
-                                        child: Text(
-                                          "LOG OUT",
-                                          style: CFTextStyles.button,
-                                        ),
-                                      ),
-                                      onTap: () async {
-                                        print("log out pressed");
-                                        await bitcoinService.clearWalletData();
-                                        await walletsService.refreshWallets();
-
-                                        Navigator.pushAndRemoveUntil(
-                                          context,
-                                          CupertinoPageRoute(
-                                            maintainState: false,
-                                            builder: (_) =>
-                                                WalletSelectionView(),
-                                          ),
-                                          (_) => false,
-                                        );
-                                      },
-                                    ),
-                                  ),
-                                )
-                              ],
-                            ),
-                          )
-                        ],
-                      ),
-                    );
-                  },
-                );
-              },
-            ),
-          ),
-        ),
       ),
       body: Padding(
         padding: EdgeInsets.only(
@@ -218,10 +97,12 @@ class _WalletSettingsViewState extends State<WalletSettingsView> {
             final LocalAuthentication localAuthentication =
                 LocalAuthentication();
 
-            bool canCheckBiometrics =
+            final canCheckBiometrics =
                 await localAuthentication.canCheckBiometrics;
+            final isDeviceSupported =
+                await localAuthentication.isDeviceSupported();
 
-            if (canCheckBiometrics) {
+            if (canCheckBiometrics && isDeviceSupported) {
               List<BiometricType> availableSystems =
                   await localAuthentication.getAvailableBiometrics();
 
