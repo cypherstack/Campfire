@@ -1719,6 +1719,7 @@ class BitcoinService extends ChangeNotifier {
   Future<dynamic> createJoinSplitTransaction(
       int spendAmount, String address, bool subtractFeeFromAmount) async {
     var price = await bitcoinPrice;
+    price = price ?? 1;
     String url = await getEsploraUrl();
     final id = await _getWalletId();
     final wallet = await Hive.openBox(id);
@@ -2019,7 +2020,8 @@ class BitcoinService extends ChangeNotifier {
     var txHex = incomplete.toHex();
     int fee = amount - incomplete.outs[0].value;
 
-    final price = await bitcoinPrice;
+    var price = await bitcoinPrice;
+    price = price ?? 1;
     var builtHex = txb.build();
     // return builtHex;
     return {
@@ -2385,7 +2387,8 @@ class BitcoinService extends ChangeNotifier {
       final wallet = await Hive.openBox(id);
       final Map _lelantus_coins = await wallet.get('_lelantus_coins');
       final utxos = await utxoData;
-      final price = await bitcoinPrice;
+      var price = await bitcoinPrice;
+      price = price ?? 1;
       final data = await transactionData;
       List jindexes = await wallet.get('jindex');
       double lelantusBalance = 0;
