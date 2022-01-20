@@ -119,8 +119,8 @@ class _ChangePinViewState extends State<ChangePinView> {
                 followingFieldDecoration: _pinPutDecoration,
                 onSubmit: (String pin) {
                   _pageController.nextPage(
-                    duration: Duration(milliseconds: 500),
-                    curve: Curves.bounceIn,
+                    duration: Duration(milliseconds: 100),
+                    curve: Curves.linear,
                   );
                 },
               ),
@@ -216,8 +216,8 @@ class _ChangePinViewState extends State<ChangePinView> {
                   } else {
                     _pageController.animateTo(
                       0,
-                      duration: Duration(milliseconds: 500),
-                      curve: Curves.bounceOut,
+                      duration: Duration(milliseconds: 100),
+                      curve: Curves.linear,
                     );
 
                     OverlayNotification.showError(
