@@ -782,7 +782,6 @@ class BitcoinService extends ChangeNotifier {
     _initializeBitcoinWallet().whenComplete(() {
       _utxoData = _fetchUtxoData();
       _transactionData = _fetchTransactionData();
-      // DevUtilities.checkReceivingAndChangeArrays();
     }).whenComplete(() => checkReceivingAddressForTransactions());
   }
 
@@ -2403,11 +2402,6 @@ class BitcoinService extends ChangeNotifier {
     String url = await getEsploraUrl();
     final String currency = await CurrencyUtilities.fetchPreferredCurrency();
 
-    // } else if (function == "restore") {
-    // String url = arguments['url'];
-    // String mnemonic = arguments['mnemonic'];
-    // TransactionData transactionData = arguments['transactionData'];
-
     ReceivePort receivePort = await getIsolate({
       "function": "restore",
       "url": url,
@@ -2430,189 +2424,6 @@ class BitcoinService extends ChangeNotifier {
     this._lelantusTransactionData = Future(() => message['newTxData']);
 
     await wallet.put('latest_lelantus_tx_model', message['newTxData']);
-    // final id = await _getWalletId();
-    // final wallet = await Hive.openBox(id);
-    // final secureStore = new FlutterSecureStorage();
-    // final mnemonic = await secureStore.read(key: '${id}_mnemonic');
-    // List<int> jindexes = [];
-    // Map<dynamic, LelantusCoin> _lelantus_coins = Map();
-    // final setDataMap = Map();
-    // final latestSetId = await getLatestSetId();
-    // for (var setId = 1; setId <= latestSetId; setId++) {
-    //   final setData = await getSetData(setId);
-    //   setDataMap[setId] = setData;
-    // }
-    //
-    // final usedSerialNumbers = (await getUsedCoinSerials())['serials'];
-    // Set usedSerialNumbersSet = Set();
-    // for (int ind = 0; ind < usedSerialNumbers.length; ind++) {
-    //   usedSerialNumbersSet.add(usedSerialNumbers[ind]);
-    // }
-    //
-    // final spendTxIds = List.empty(growable: true);
-    //
-    // var lastFoundIndex = 0;
-    // var currentIndex = 0;
-    // while (currentIndex < lastFoundIndex + 20) {
-    //   final mintKeyPair = await _getNode(MINT_INDEX, currentIndex, mnemonic);
-    //   final mintTag = CreateTag(uint8listToString(mintKeyPair.privateKey),
-    //       currentIndex, uint8listToString(mintKeyPair.identifier));
-    //
-    //   for (var setId = 1; setId <= latestSetId; setId++) {
-    //     final Map<String, dynamic> setData = setDataMap[setId];
-    //     setData.forEach((key, value) {});
-    //     var foundMint = null;
-    //     for (int indexMint = 0;
-    //         indexMint < setData['mints'].length;
-    //         indexMint++) {
-    //       if (setData['mints'][indexMint][1] == mintTag) {
-    //         foundMint = setData['mints'][indexMint];
-    //         break;
-    //       }
-    //     }
-    //     if (foundMint != null) {
-    //       lastFoundIndex = currentIndex;
-    //       final amount = foundMint[2];
-    //       final serialNumber = GetSerialNumber(
-    //         amount,
-    //         uint8listToString(mintKeyPair.privateKey),
-    //         currentIndex,
-    //       );
-    //       _lelantus_coins[foundMint[3]] = LelantusCoin(
-    //         currentIndex,
-    //         amount,
-    //         foundMint[0],
-    //         foundMint[3],
-    //         setId,
-    //         usedSerialNumbersSet.contains(serialNumber),
-    //       );
-    //       print(
-    //           "amount ${_lelantus_coins[foundMint[3]].value} used ${_lelantus_coins[foundMint[3]].isUsed}");
-    //     } else {
-    //       var foundJmint = null;
-    //       for (int indexJmint = 0;
-    //           indexJmint < setData['jmints'].length;
-    //           indexJmint++) {
-    //         if (setData['jmints'][indexJmint][1] == mintTag) {
-    //           foundJmint = setData['jmints'][indexJmint];
-    //           break;
-    //         }
-    //       }
-    //       if (foundJmint != null) {
-    //         lastFoundIndex = currentIndex;
-    //
-    //         final keyPath = GetAesKeyPath(foundJmint[0]);
-    //         final aesKeyPair = await _getNode(JMINT_INDEX, keyPath, mnemonic);
-    //         final aesPrivateKey = uint8listToString(aesKeyPair.privateKey);
-    //         if (aesPrivateKey != null) {
-    //           final amount = decryptMintAmount(
-    //             aesPrivateKey,
-    //             foundJmint[2],
-    //           );
-    //
-    //           final serialNumber = GetSerialNumber(
-    //             amount,
-    //             uint8listToString(mintKeyPair.privateKey),
-    //             currentIndex,
-    //           );
-    //
-    //           _lelantus_coins[foundJmint[3]] = LelantusCoin(
-    //             currentIndex,
-    //             amount,
-    //             foundJmint[0],
-    //             foundJmint[3],
-    //             setId,
-    //             usedSerialNumbersSet.contains(serialNumber),
-    //           );
-    //           jindexes.add(currentIndex);
-    //
-    //           spendTxIds.add(foundJmint[3]);
-    //         }
-    //       }
-    //     }
-    //   }
-    //
-    //   currentIndex++;
-    // }
-    // print("mints $_lelantus_coins");
-    // print("jmints $spendTxIds");
-    //
-    // await wallet.put('mintIndex', lastFoundIndex + 1);
-    // await wallet.put('_lelantus_coins', _lelantus_coins);
-    // await wallet.put('jindex', jindexes);
-    //
-    // // Edit the receive transactions with the mint fees.
-    // _transactionData = _fetchTransactionData();
-    // TransactionData data = await _transactionData;
-    // Map<String, models.Transaction> editedTransactions =
-    //     Map<String, models.Transaction>();
-    // _lelantus_coins.forEach((key, value) {
-    //   String txid = value.txId;
-    //   var tx = data.findTransaction(txid);
-    //   if (tx == null) {
-    //     // This is a jmint.
-    //     return;
-    //   }
-    //   List<models.Transaction> inputs = [];
-    //   tx.inputs.forEach((element) {
-    //     var input = data.findTransaction(element.txid);
-    //     if (input != null) {
-    //       inputs.add(input);
-    //     }
-    //   });
-    //   if (inputs.isEmpty) {
-    //     //some error.
-    //     return;
-    //   }
-    //
-    //   int mintfee = tx.fees;
-    //   int sharedfee = mintfee ~/ inputs.length;
-    //   inputs.forEach((element) {
-    //     editedTransactions[element.txid] = models.Transaction(
-    //         txid: element.txid,
-    //         confirmedStatus: element.confirmedStatus,
-    //         timestamp: element.timestamp,
-    //         txType: element.txType,
-    //         amount: element.amount,
-    //         aliens: element.aliens,
-    //         worthNow: element.worthNow,
-    //         worthAtBlockTimestamp: element.worthAtBlockTimestamp,
-    //         fees: sharedfee,
-    //         inputSize: element.inputSize,
-    //         outputSize: element.outputSize,
-    //         inputs: element.inputs,
-    //         outputs: element.outputs,
-    //         address: element.address,
-    //         height: element.height,
-    //         subType: "mint");
-    //   });
-    // });
-    // print(editedTransactions);
-    //
-    // Map<String, models.Transaction> transactionMap = data.getAllTransactions();
-    // print(transactionMap);
-    //
-    // editedTransactions.forEach((key, value) {
-    //   transactionMap.update(key, (_value) => value);
-    // });
-    // transactionMap.removeWhere((key, value) =>
-    //     _lelantus_coins.containsKey(key) ||
-    //     (value.height == -1 && !value.confirmedStatus));
-    // transactionMap.forEach((key, value) {
-    //   print(value);
-    // });
-    //
-    // // Create the joinsplit transactions.
-    // final spendTxs = await getJMintTransactions(spendTxIds);
-    // print(spendTxs);
-    // spendTxs.forEach((element) {
-    //   transactionMap[element.txid] = element;
-    // });
-    //
-    // final TransactionData newTxData = TransactionData.fromMap(transactionMap);
-    // this._lelantusTransactionData = Future(() => newTxData);
-    //
-    // await wallet.put('latest_lelantus_tx_model', newTxData);
   }
 
   // index 0 and 1 for the funds available to spend.
