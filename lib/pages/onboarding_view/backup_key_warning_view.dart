@@ -149,6 +149,7 @@ class _BackupKeyWarningViewState extends State<BackupKeyWarningView> {
               child: SizedBox(
                 height: 48,
                 child: GradientButton(
+                  enabled: _checkboxIsChecked,
                   onTap: () {
                     if (_checkboxIsChecked) {
                       Navigator.push(
