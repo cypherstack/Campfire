@@ -100,7 +100,7 @@ class _BackupKeyWarningViewState extends State<BackupKeyWarningView> {
                         style: GoogleFonts.workSans(
                           color: CFColors.dusk,
                           fontWeight: FontWeight.w400,
-                          fontSize: 12,
+                          fontSize: 16,
                         ),
                       ),
                     ),
