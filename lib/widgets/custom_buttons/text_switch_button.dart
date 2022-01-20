@@ -11,13 +11,13 @@ class TextSwitchButton extends StatefulWidget {
     Key key,
     this.leftText,
     this.rightText,
-    @required this.buttonStateChanged,
+    @required this.onButtonStateChanged,
     @required this.fontSize,
   }) : super(key: key);
 
   final String leftText;
   final String rightText;
-  final Function(TextSwitchButtonState) buttonStateChanged;
+  final Function(TextSwitchButtonState) onButtonStateChanged;
   final double fontSize;
 
   @override
@@ -29,35 +29,61 @@ class _TextSwitchButtonState extends State<TextSwitchButton> {
   Color _leftColor = Colors.white;
   Color _rightColor = Colors.transparent;
 
+  double _dx = 0.0;
+
   // TODO: dynamic sizing to handle larger text on button?
   // especially accessibility settings
   @override
   Widget build(BuildContext context) {
     return LayoutBuilder(
       builder: (context, constraints) {
-        return Container(
-          height: constraints.maxHeight,
-          width: constraints.maxWidth,
-          decoration: BoxDecoration(
-            borderRadius: BorderRadius.circular(constraints.maxHeight / 2),
-            color: Color(0xFFFFBABE),
-          ),
-          child: Row(
-            mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-            children: [
-              GestureDetector(
-                onTap: () {
-                  if (_state == TextSwitchButtonState.available) {
-                    return;
-                  }
-                  setState(() {
-                    _leftColor = Colors.white;
-                    _rightColor = Colors.transparent;
-                    _state = TextSwitchButtonState.available;
-                  });
-                  widget.buttonStateChanged(_state);
-                },
-                child: Container(
+        return GestureDetector(
+          onHorizontalDragEnd: (details) {
+            if (_dx < 0.0) {
+              _state = TextSwitchButtonState.available;
+              setState(() {
+                _leftColor = Colors.white;
+                _rightColor = Colors.transparent;
+              });
+            } else if (_dx > 0.0) {
+              _state = TextSwitchButtonState.full;
+              setState(() {
+                _leftColor = Colors.transparent;
+                _rightColor = Colors.white;
+              });
+            }
+            _dx = 0.0;
+          },
+          onHorizontalDragUpdate: (details) {
+            _dx = details.delta.dx;
+          },
+          onTap: () {
+            _state = _state == TextSwitchButtonState.available
+                ? TextSwitchButtonState.full
+                : TextSwitchButtonState.available;
+
+            setState(() {
+              _leftColor = _state == TextSwitchButtonState.full
+                  ? Colors.transparent
+                  : Colors.white;
+              _rightColor = _state == TextSwitchButtonState.available
+                  ? Colors.transparent
+                  : Colors.white;
+            });
+
+            widget.onButtonStateChanged(_state);
+          },
+          child: Container(
+            height: constraints.maxHeight,
+            width: constraints.maxWidth,
+            decoration: BoxDecoration(
+              borderRadius: BorderRadius.circular(constraints.maxHeight / 2),
+              color: Color(0xFFFFBABE),
+            ),
+            child: Row(
+              mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+              children: [
+                Container(
                   height: constraints.maxHeight - 4,
                   width: constraints.maxWidth / 2 - 4,
                   decoration: BoxDecoration(
@@ -79,20 +105,7 @@ class _TextSwitchButtonState extends State<TextSwitchButton> {
                     ),
                   ),
                 ),
-              ),
-              GestureDetector(
-                onTap: () {
-                  if (_state == TextSwitchButtonState.full) {
-                    return;
-                  }
-                  setState(() {
-                    _leftColor = Colors.transparent;
-                    _rightColor = Colors.white;
-                    _state = TextSwitchButtonState.full;
-                  });
-                  widget.buttonStateChanged(_state);
-                },
-                child: Container(
+                Container(
                   height: constraints.maxHeight - 4,
                   width: constraints.maxWidth / 2 - 4,
                   decoration: BoxDecoration(
@@ -113,8 +126,8 @@ class _TextSwitchButtonState extends State<TextSwitchButton> {
                     ),
                   ),
                 ),
-              ),
-            ],
+              ],
+            ),
           ),
         );
       },
