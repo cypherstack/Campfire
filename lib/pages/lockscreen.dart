@@ -122,7 +122,6 @@ class _LockscreenViewState extends State<LockscreenView> {
                       },
                     ),
                   );
-                  print("lockscreen appbar button pressed.");
                 },
               ),
             ),
@@ -131,8 +130,7 @@ class _LockscreenViewState extends State<LockscreenView> {
       ),
       body: SafeArea(
         child: Column(
-          // mainAxisAlignment: MainAxisAlignment.center,
-          // crossAxisAlignment: CrossAxisAlignment.stretch,
+          mainAxisAlignment: MainAxisAlignment.center,
           children: [
             Center(
               child: FutureBuilder(
@@ -192,64 +190,63 @@ class _LockscreenViewState extends State<LockscreenView> {
               ),
             ),
             SizedBox(height: 48),
-            Expanded(
-              child: CustomPinPut(
-                fieldsCount: 4,
-                eachFieldHeight: 12,
-                eachFieldWidth: 12,
-                textStyle: GoogleFonts.workSans(
-                  fontSize: 1,
-                ),
-                focusNode: _pinFocusNode,
-                controller: _pinTextController,
-                useNativeKeyboard: false,
-                inputDecoration: InputDecoration(
-                  border: InputBorder.none,
-                  enabledBorder: InputBorder.none,
-                  focusedBorder: InputBorder.none,
-                  disabledBorder: InputBorder.none,
-                  errorBorder: InputBorder.none,
-                  focusedErrorBorder: InputBorder.none,
-                  fillColor: CFColors.white,
-                  counterText: "",
-                ),
-                submittedFieldDecoration: _pinPutDecoration.copyWith(
-                  color: CFColors.smoke,
-                ),
-                selectedFieldDecoration: _pinPutDecoration,
-                followingFieldDecoration: _pinPutDecoration,
-                onSubmit: (String pin) async {
-                  final store = new FlutterSecureStorage();
-
-                  final walletName = await walletsService.currentWalletName;
-                  final id = await walletsService.getWalletId(walletName);
-                  final storedPin = await store.read(key: '${id}_pin');
-
-                  if (storedPin == pin) {
-                    OverlayNotification.showSuccess(
-                      context,
-                      "PIN code correct. Unlocking wallet...",
-                      Duration(milliseconds: 1200),
-                    );
-
-                    await Future.delayed(Duration(milliseconds: 600));
-
-                    Navigator.pushReplacementNamed(context, '/mainview');
-                  } else {
-                    OverlayNotification.showError(
-                      context,
-                      'Incorrect PIN. Please try again',
-                      Duration(milliseconds: 1500),
-                    );
-
-                    await Future.delayed(Duration(milliseconds: 100));
-
-                    _pinTextController.text = '';
-                  }
-                },
+            CustomPinPut(
+              fieldsCount: 4,
+              eachFieldHeight: 12,
+              eachFieldWidth: 12,
+              textStyle: GoogleFonts.workSans(
+                fontSize: 1,
               ),
+              focusNode: _pinFocusNode,
+              controller: _pinTextController,
+              useNativeKeyboard: false,
+              obscureText: "",
+              inputDecoration: InputDecoration(
+                border: InputBorder.none,
+                enabledBorder: InputBorder.none,
+                focusedBorder: InputBorder.none,
+                disabledBorder: InputBorder.none,
+                errorBorder: InputBorder.none,
+                focusedErrorBorder: InputBorder.none,
+                fillColor: CFColors.white,
+                counterText: "",
+              ),
+              submittedFieldDecoration: _pinPutDecoration.copyWith(
+                color: CFColors.spark,
+                border: Border.all(width: 1, color: CFColors.spark),
+              ),
+              selectedFieldDecoration: _pinPutDecoration,
+              followingFieldDecoration: _pinPutDecoration,
+              onSubmit: (String pin) async {
+                final store = new FlutterSecureStorage();
+
+                final walletName = await walletsService.currentWalletName;
+                final id = await walletsService.getWalletId(walletName);
+                final storedPin = await store.read(key: '${id}_pin');
+
+                if (storedPin == pin) {
+                  OverlayNotification.showSuccess(
+                    context,
+                    "PIN code correct. Unlocking wallet...",
+                    Duration(milliseconds: 1200),
+                  );
+
+                  await Future.delayed(Duration(milliseconds: 600));
+
+                  Navigator.pushReplacementNamed(context, '/mainview');
+                } else {
+                  OverlayNotification.showError(
+                    context,
+                    'Incorrect PIN. Please try again',
+                    Duration(milliseconds: 1500),
+                  );
+
+                  await Future.delayed(Duration(milliseconds: 100));
+
+                  _pinTextController.text = '';
+                }
+              },
             ),
-            SizedBox(height: 40),
           ],
         ),
       ),
