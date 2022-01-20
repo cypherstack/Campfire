@@ -15,7 +15,7 @@ import 'package:paymint/services/utils/currency_utils.dart';
 import 'package:paymint/utilities/cfcolors.dart';
 import 'package:paymint/utilities/shared_utilities.dart';
 import 'package:paymint/utilities/sizing_utilities.dart';
-import 'package:paymint/widgets/custom_buttons/text_switch_button.dart';
+import 'package:paymint/widgets/custom_buttons/draggable_switch_button.dart';
 import 'package:paymint/widgets/gradient_card.dart';
 import 'package:paymint/widgets/transaction_card.dart';
 import 'package:provider/provider.dart';
@@ -33,6 +33,8 @@ class _WalletViewState extends State<WalletView> {
   StreamSubscription _nodeConnectionStatusChangedEventListener;
 
   List<Transaction> _cachedTransactions = [];
+
+  bool _balanceToggleEnabled = true;
 
   @override
   void initState() {
@@ -55,8 +57,6 @@ class _WalletViewState extends State<WalletView> {
     super.dispose();
   }
 
-  TextSwitchButtonState _balanceToggleState = TextSwitchButtonState.available;
-
   @override
   Widget build(BuildContext context) {
     final BitcoinService bitcoinService = Provider.of<BitcoinService>(context);
@@ -78,12 +78,31 @@ class _WalletViewState extends State<WalletView> {
             Container(
               height: 24,
               width: 160,
-              child: TextSwitchButton(
-                fontSize: 10,
-                onButtonStateChanged: (state) {
-                  print("balance switch button changed to: $state");
+              child: DraggableSwitchButton(
+                offItem: Text(
+                  "FULL",
+                  style: GoogleFonts.workSans(
+                    color: Color(0xFFF27889),
+                    fontSize: 10,
+                    fontWeight: FontWeight.w600,
+                    fontStyle: FontStyle.normal,
+                    letterSpacing: 0.25,
+                  ),
+                ),
+                onItem: Text(
+                  "AVAILABLE",
+                  style: GoogleFonts.workSans(
+                    color: Color(0xFFF27889),
+                    fontSize: 10,
+                    fontWeight: FontWeight.w600,
+                    letterSpacing: 0.25,
+                  ),
+                ),
+                onValueChanged: (newValue) {
                   setState(() {
-                    _balanceToggleState = state;
+                    _balanceToggleEnabled = newValue;
+                    print(
+                        "balance switch button changed to: $_balanceToggleEnabled");
                   });
                 },
               ),
@@ -93,7 +112,7 @@ class _WalletViewState extends State<WalletView> {
             ),
             FittedBox(
               child: Text(
-                _balanceToggleState == TextSwitchButtonState.available
+                _balanceToggleEnabled
                     ? "${balances[0]} ${CurrencyUtilities.coinName}"
                     : "${balances[2]} ${CurrencyUtilities.coinName}",
                 style: GoogleFonts.workSans(
@@ -116,7 +135,7 @@ class _WalletViewState extends State<WalletView> {
                     fiatTicker = snapshot.data;
                   }
                   return Text(
-                    _balanceToggleState == TextSwitchButtonState.available
+                    _balanceToggleEnabled
                         ? "${balances[1]} $fiatTicker"
                         : "${balances[3]} $fiatTicker",
                     style: GoogleFonts.workSans(
