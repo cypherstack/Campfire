@@ -1,12 +1,12 @@
 import 'dart:io';
 
-import 'package:animations/animations.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
-import 'package:flutter_spinkit/flutter_spinkit.dart';
 import 'package:google_fonts/google_fonts.dart';
+import 'package:local_auth/auth_strings.dart';
 import 'package:local_auth/local_auth.dart';
+import 'package:paymint/notifications/modal_popup_dialog.dart';
 import 'package:paymint/notifications/overlay_notification.dart';
 import 'package:paymint/pages/onboarding_view/helpers/builders.dart';
 import 'package:paymint/pages/onboarding_view/restore_wallet_view.dart';
@@ -193,32 +193,12 @@ class _CreatePinViewState extends State<CreatePinView> {
                               context,
                               listen: false);
 
-                          // need to pop another screen in appbar button if the below is uncommented
-
-                          // TODO replace this with something else
-                          showModal(
+                          showDialog(
                             context: context,
-                            configuration: FadeScaleTransitionConfiguration(
-                                barrierDismissible: false),
-                            builder: (BuildContext context) {
-                              return AlertDialog(
-                                backgroundColor: CFColors.white,
-                                title: Row(
-                                  children: <Widget>[
-                                    SpinKitThreeBounce(
-                                      color: CFColors.spark,
-                                      size: 30,
-                                    )
-                                    // SizedBox(width: 16),
-                                    // Text('Please do not exit',
-                                    //     style: TextStyle(color: Colors.white)),
-                                  ],
-                                ),
-                                content: Text(
-                                  "Generating Backup Key",
-                                  style: TextStyle(color: CFColors.spark),
-                                ),
-                              );
+                            useSafeArea: false,
+                            barrierDismissible: false,
+                            builder: (context) {
+                              return _buildKeyGenerationDialog();
                             },
                           );
 
@@ -295,6 +275,57 @@ class _CreatePinViewState extends State<CreatePinView> {
     );
   }
 
+  _buildKeyGenerationDialog() {
+    return ModalPopupDialog(
+      child: Container(
+        width: MediaQuery.of(context).size.width -
+            (SizingUtilities.standardPadding * 2),
+        child: Column(
+          children: [
+            SizedBox(
+              height: 28,
+            ),
+            FittedBox(
+              child: Text(
+                "Generating backup key",
+                style: CFTextStyles.pinkHeader.copyWith(
+                  fontSize: 16,
+                ),
+              ),
+            ),
+            SizedBox(
+              height: 50,
+            ),
+            Container(
+              width: 98,
+              height: 98,
+              decoration: BoxDecoration(
+                borderRadius: BorderRadius.circular(49),
+                border: Border.all(
+                  color: CFColors.dew,
+                  width: 2,
+                ),
+              ),
+              child: Center(
+                child: Container(
+                  height: 40,
+                  width: 40,
+                  child: CircularProgressIndicator(
+                    color: CFColors.spark,
+                    strokeWidth: 2,
+                  ),
+                ),
+              ),
+            ),
+            SizedBox(
+              height: 50,
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
   Future<bool> _enableBiometricsDialog() async {
     final LocalAuthentication localAuth = LocalAuthentication();
 
@@ -315,8 +346,18 @@ class _CreatePinViewState extends State<CreatePinView> {
       } else if (Platform.isAndroid) {
         if (availableSystems.contains(BiometricType.fingerprint)) {
           bool didAuthenticate = await localAuth.authenticateWithBiometrics(
-            localizedReason: 'Enable fingerprint authentication',
+            localizedReason:
+                'Unlock wallet and confirm transactions with your fingerprint',
             stickyAuth: true,
+            androidAuthStrings: AndroidAuthMessages(
+              // biometricRequiredTitle: "hello",
+              // biometricNotRecognized: "biometric not recognized",
+              biometricHint: "",
+              // biometricSuccess: "bio successsss",
+              cancelButton: "SKIP",
+              // deviceCredentialsRequiredTitle: "dev cred req title",
+              signInTitle: "Enable fingerprint authentication",
+            ),
           );
 
           if (didAuthenticate) {
