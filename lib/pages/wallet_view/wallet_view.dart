@@ -76,9 +76,10 @@ class _WalletViewState extends State<WalletView> {
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             Container(
-              height: 18,
-              width: 126,
+              height: 26,
+              width: 160,
               child: TextSwitchButton(
+                fontSize: 10,
                 buttonStateChanged: (state) {
                   print("balance switch button changed to: $state");
                   setState(() {

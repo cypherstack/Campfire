@@ -7,16 +7,18 @@ enum TextSwitchButtonState {
 }
 
 class TextSwitchButton extends StatefulWidget {
-  const TextSwitchButton(
-      {Key key,
-      this.leftText,
-      this.rightText,
-      @required this.buttonStateChanged})
-      : super(key: key);
+  const TextSwitchButton({
+    Key key,
+    this.leftText,
+    this.rightText,
+    @required this.buttonStateChanged,
+    @required this.fontSize,
+  }) : super(key: key);
 
   final String leftText;
   final String rightText;
   final Function(TextSwitchButtonState) buttonStateChanged;
+  final double fontSize;
 
   @override
   _TextSwitchButtonState createState() => _TextSwitchButtonState();
@@ -69,7 +71,7 @@ class _TextSwitchButtonState extends State<TextSwitchButton> {
                         "AVAILABLE",
                         style: GoogleFonts.workSans(
                           color: Color(0xFFF27889),
-                          fontSize: 8, // ScalingUtils.fontScaled(context, 8),
+                          fontSize: widget.fontSize,
                           fontWeight: FontWeight.w600,
                           letterSpacing: 0.25,
                         ),
@@ -103,7 +105,7 @@ class _TextSwitchButtonState extends State<TextSwitchButton> {
                       "FULL",
                       style: GoogleFonts.workSans(
                         color: Color(0xFFF27889),
-                        fontSize: 8, // ScalingUtils.fontScaled(context, 8),
+                        fontSize: widget.fontSize,
                         fontWeight: FontWeight.w600,
                         fontStyle: FontStyle.normal,
                         letterSpacing: 0.25,
