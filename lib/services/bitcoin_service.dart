@@ -709,9 +709,6 @@ class BitcoinService extends ChangeNotifier {
   Future<FeeObject> _feeObject;
   Future<FeeObject> get fees => _feeObject ??= getFees();
 
-  Future<String> _marketInfo;
-  Future<String> get marketInfo => _marketInfo ??= getMarketInfo();
-
   /// Holds preferred fiat currency
   Future<String> _currency;
   Future<String> get currency =>
@@ -737,7 +734,6 @@ class BitcoinService extends ChangeNotifier {
     List<UtxoObject> _outputsList = [];
     Future<dynamic> _bitcoinPrice;
     Future<FeeObject> _feeObject;
-    Future<String> _marketInfo;
     Future<String> _currency;
     Future<String> _currentReceivingAddress;
     Future<bool> _useBiometrics;
@@ -750,7 +746,6 @@ class BitcoinService extends ChangeNotifier {
     this._outputsList = _outputsList;
     this._bitcoinPrice = _bitcoinPrice;
     this._feeObject = _feeObject;
-    this._marketInfo = _marketInfo;
     this._currency = _currency;
     this._currentReceivingAddress = _currentReceivingAddress;
     this._useBiometrics = _useBiometrics;
@@ -935,7 +930,6 @@ class BitcoinService extends ChangeNotifier {
       this._transactionData = Future(() => newTxData);
       this._bitcoinPrice = Future(() => newBtcPrice);
       this._feeObject = Future(() => feeObj);
-      this._marketInfo = Future(() => marketInfo);
       this._useBiometrics = Future(() => useBiometrics);
       GlobalEventBus.instance.fire(RefreshPercentChangedEvent(0.60));
 
@@ -1788,24 +1782,6 @@ class BitcoinService extends ChangeNotifier {
       throw Exception('Something happened: ' +
           response.statusCode.toString() +
           response.body);
-    }
-  }
-
-  Future<String> getMarketInfo() async {
-    final currency = await CurrencyUtilities.fetchPreferredCurrency();
-
-    final Map<String, String> requestBody = {"currency": currency};
-
-    final response = await http.post(
-      Uri.parse('$MIDDLE_SERVER/getMarketInfo'),
-      body: json.encode(requestBody),
-      headers: {'Content-Type': 'application/json'},
-    ).catchError((error) => Future(() => 'Unable to fetch market data'));
-
-    if (response.statusCode == 200 || response.statusCode == 201) {
-      return json.decode(response.body);
-    } else {
-      return Future(() => 'Unable to fetch market data');
     }
   }
 

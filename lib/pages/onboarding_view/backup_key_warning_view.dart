@@ -100,7 +100,7 @@ class _BackupKeyWarningViewState extends State<BackupKeyWarningView> {
                         style: GoogleFonts.workSans(
                           color: CFColors.dusk,
                           fontWeight: FontWeight.w400,
-                          fontSize: 12,
+                          fontSize: 16,
                         ),
                       ),
                     ),
@@ -149,6 +149,7 @@ class _BackupKeyWarningViewState extends State<BackupKeyWarningView> {
               child: SizedBox(
                 height: 48,
                 child: GradientButton(
+                  enabled: _checkboxIsChecked,
                   onTap: () {
                     if (_checkboxIsChecked) {
                       Navigator.push(

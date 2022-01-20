@@ -337,7 +337,23 @@ class _BackupKeyViewState extends State<BackupKeyView> {
   Widget build(BuildContext context) {
     return Scaffold(
       backgroundColor: CFColors.starryNight,
-      appBar: buildOnboardingAppBar(context),
+      appBar: buildOnboardingAppBar(
+        context,
+        actions: [
+          Padding(
+            padding: const EdgeInsets.symmetric(vertical: 16, horizontal: 10),
+            child: TextButton(
+              onPressed: () {
+                Navigator.pushReplacementNamed(context, "/mainview");
+              },
+              child: Text(
+                "SKIP",
+                style: CFTextStyles.button,
+              ),
+            ),
+          ),
+        ],
+      ),
       body: buildOnboardingBody(
         context,
         Column(

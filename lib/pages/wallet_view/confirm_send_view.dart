@@ -164,6 +164,7 @@ class _ConfirmSendViewState extends State<ConfirmSendView> {
                   focusNode: _pinFocusNode,
                   controller: _pinTextController,
                   useNativeKeyboard: false,
+                  obscureText: "",
                   inputDecoration: InputDecoration(
                     border: InputBorder.none,
                     enabledBorder: InputBorder.none,
@@ -175,7 +176,8 @@ class _ConfirmSendViewState extends State<ConfirmSendView> {
                     counterText: "",
                   ),
                   submittedFieldDecoration: _pinPutDecoration.copyWith(
-                    color: CFColors.smoke,
+                    color: CFColors.spark,
+                    border: Border.all(width: 1, color: CFColors.spark),
                   ),
                   selectedFieldDecoration: _pinPutDecoration,
                   followingFieldDecoration: _pinPutDecoration,

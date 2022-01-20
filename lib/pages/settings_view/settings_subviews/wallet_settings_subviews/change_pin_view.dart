@@ -50,10 +50,8 @@ class _ChangePinViewState extends State<ChangePinView> {
         children: [
           // page 1
           Column(
+            mainAxisAlignment: MainAxisAlignment.center,
             children: [
-              SizedBox(
-                height: 30,
-              ),
               Align(
                 alignment: Alignment.center,
                 child: FittedBox(
@@ -92,39 +90,39 @@ class _ChangePinViewState extends State<ChangePinView> {
               SizedBox(
                 height: 28,
               ),
-              Expanded(
-                child: CustomPinPut(
-                  fieldsCount: 4,
-                  eachFieldHeight: 12,
-                  eachFieldWidth: 12,
-                  textStyle: GoogleFonts.workSans(
-                    fontSize: 1,
-                  ),
-                  focusNode: _pinPutFocusNode1,
-                  controller: _pinPutController1,
-                  useNativeKeyboard: false,
-                  inputDecoration: InputDecoration(
-                    border: InputBorder.none,
-                    enabledBorder: InputBorder.none,
-                    focusedBorder: InputBorder.none,
-                    disabledBorder: InputBorder.none,
-                    errorBorder: InputBorder.none,
-                    focusedErrorBorder: InputBorder.none,
-                    fillColor: CFColors.white,
-                    counterText: "",
-                  ),
-                  submittedFieldDecoration: _pinPutDecoration.copyWith(
-                    color: CFColors.smoke,
-                  ),
-                  selectedFieldDecoration: _pinPutDecoration,
-                  followingFieldDecoration: _pinPutDecoration,
-                  onSubmit: (String pin) {
-                    _pageController.nextPage(
-                      duration: Duration(milliseconds: 500),
-                      curve: Curves.bounceIn,
-                    );
-                  },
+              CustomPinPut(
+                fieldsCount: 4,
+                eachFieldHeight: 12,
+                eachFieldWidth: 12,
+                textStyle: GoogleFonts.workSans(
+                  fontSize: 1,
                 ),
+                focusNode: _pinPutFocusNode1,
+                controller: _pinPutController1,
+                useNativeKeyboard: false,
+                obscureText: "",
+                inputDecoration: InputDecoration(
+                  border: InputBorder.none,
+                  enabledBorder: InputBorder.none,
+                  focusedBorder: InputBorder.none,
+                  disabledBorder: InputBorder.none,
+                  errorBorder: InputBorder.none,
+                  focusedErrorBorder: InputBorder.none,
+                  fillColor: CFColors.white,
+                  counterText: "",
+                ),
+                submittedFieldDecoration: _pinPutDecoration.copyWith(
+                  color: CFColors.spark,
+                  border: Border.all(width: 1, color: CFColors.spark),
+                ),
+                selectedFieldDecoration: _pinPutDecoration,
+                followingFieldDecoration: _pinPutDecoration,
+                onSubmit: (String pin) {
+                  _pageController.nextPage(
+                    duration: Duration(milliseconds: 100),
+                    curve: Curves.linear,
+                  );
+                },
               ),
             ],
           ),
@@ -132,10 +130,8 @@ class _ChangePinViewState extends State<ChangePinView> {
           // page 2
 
           Column(
+            mainAxisAlignment: MainAxisAlignment.center,
             children: [
-              SizedBox(
-                height: 30,
-              ),
               Align(
                 alignment: Alignment.center,
                 child: FittedBox(
@@ -174,66 +170,66 @@ class _ChangePinViewState extends State<ChangePinView> {
               SizedBox(
                 height: 28,
               ),
-              Expanded(
-                child: CustomPinPut(
-                  fieldsCount: 4,
-                  eachFieldHeight: 12,
-                  eachFieldWidth: 12,
-                  textStyle: GoogleFonts.workSans(
-                    fontSize: 1,
-                  ),
-                  focusNode: _pinPutFocusNode2,
-                  controller: _pinPutController2,
-                  useNativeKeyboard: false,
-                  inputDecoration: InputDecoration(
-                    border: InputBorder.none,
-                    enabledBorder: InputBorder.none,
-                    focusedBorder: InputBorder.none,
-                    disabledBorder: InputBorder.none,
-                    errorBorder: InputBorder.none,
-                    focusedErrorBorder: InputBorder.none,
-                    fillColor: CFColors.white,
-                    counterText: "",
-                  ),
-                  submittedFieldDecoration: _pinPutDecoration.copyWith(
-                    color: CFColors.smoke,
-                  ),
-                  selectedFieldDecoration: _pinPutDecoration,
-                  followingFieldDecoration: _pinPutDecoration,
-                  onSubmit: (String pin) async {
-                    if (_pinPutController1.text == _pinPutController2.text) {
-                      final store = new FlutterSecureStorage();
-                      final walletName = await walletService.currentWalletName;
-                      final id = await walletService.getWalletId(walletName);
-                      await store.write(key: "${id}_pin", value: pin);
-
-                      OverlayNotification.showSuccess(
-                        context,
-                        "New PIN is set up",
-                        Duration(milliseconds: 2000),
-                      );
-
-                      await Future.delayed(Duration(milliseconds: 100));
-
-                      Navigator.of(context).pop();
-                    } else {
-                      _pageController.animateTo(
-                        0,
-                        duration: Duration(milliseconds: 500),
-                        curve: Curves.bounceOut,
-                      );
-
-                      OverlayNotification.showError(
-                        context,
-                        "PIN codes do not match. Try again.",
-                        Duration(milliseconds: 1500),
-                      );
-
-                      _pinPutController1.text = '';
-                      _pinPutController2.text = '';
-                    }
-                  },
+              CustomPinPut(
+                fieldsCount: 4,
+                eachFieldHeight: 12,
+                eachFieldWidth: 12,
+                textStyle: GoogleFonts.workSans(
+                  fontSize: 1,
                 ),
+                focusNode: _pinPutFocusNode2,
+                controller: _pinPutController2,
+                useNativeKeyboard: false,
+                obscureText: "",
+                inputDecoration: InputDecoration(
+                  border: InputBorder.none,
+                  enabledBorder: InputBorder.none,
+                  focusedBorder: InputBorder.none,
+                  disabledBorder: InputBorder.none,
+                  errorBorder: InputBorder.none,
+                  focusedErrorBorder: InputBorder.none,
+                  fillColor: CFColors.white,
+                  counterText: "",
+                ),
+                submittedFieldDecoration: _pinPutDecoration.copyWith(
+                  color: CFColors.spark,
+                  border: Border.all(width: 1, color: CFColors.spark),
+                ),
+                selectedFieldDecoration: _pinPutDecoration,
+                followingFieldDecoration: _pinPutDecoration,
+                onSubmit: (String pin) async {
+                  if (_pinPutController1.text == _pinPutController2.text) {
+                    final store = new FlutterSecureStorage();
+                    final walletName = await walletService.currentWalletName;
+                    final id = await walletService.getWalletId(walletName);
+                    await store.write(key: "${id}_pin", value: pin);
+
+                    OverlayNotification.showSuccess(
+                      context,
+                      "New PIN is set up",
+                      Duration(milliseconds: 2000),
+                    );
+
+                    await Future.delayed(Duration(milliseconds: 100));
+
+                    Navigator.of(context).pop();
+                  } else {
+                    _pageController.animateTo(
+                      0,
+                      duration: Duration(milliseconds: 100),
+                      curve: Curves.linear,
+                    );
+
+                    OverlayNotification.showError(
+                      context,
+                      "PIN codes do not match. Try again.",
+                      Duration(milliseconds: 1500),
+                    );
+
+                    _pinPutController1.text = '';
+                    _pinPutController2.text = '';
+                  }
+                },
               ),
             ],
           ),

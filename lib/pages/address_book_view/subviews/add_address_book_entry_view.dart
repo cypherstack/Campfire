@@ -75,6 +75,7 @@ class _AddAddressBookEntryViewState extends State<AddAddressBookEntryView> {
   }
 
   bool _enabledSave = false;
+  bool _isEmptyAddress = true;
 
   _updateInvalidAddressText(String address, BitcoinService bitcoinService) {
     if (address.isNotEmpty && !bitcoinService.validateFiroAddress(address)) {
@@ -163,26 +164,43 @@ class _AddAddressBookEntryViewState extends State<AddAddressBookEntryView> {
                             SizedBox(
                               width: 16,
                             ),
-                            GestureDetector(
-                              onTap: () async {
-                                final ClipboardData data =
-                                    await Clipboard.getData(
-                                        Clipboard.kTextPlain);
-                                final content = data.text.trim();
-                                addressTextController.text = content;
-                                setState(() {
-                                  _enabledSave = bitcoinService
-                                          .validateFiroAddress(content) &&
-                                      nameTextController.text.isNotEmpty;
-                                });
-                              },
-                              child: SvgPicture.asset(
-                                "assets/svg/clipboard.svg",
-                                color: CFColors.twilight,
-                                width: 20,
-                                height: 20,
-                              ),
-                            ),
+                            _isEmptyAddress
+                                ? GestureDetector(
+                                    onTap: () async {
+                                      final ClipboardData data =
+                                          await Clipboard.getData(
+                                              Clipboard.kTextPlain);
+                                      final content = data.text.trim();
+                                      addressTextController.text = content;
+                                      setState(() {
+                                        _enabledSave = bitcoinService
+                                                .validateFiroAddress(content) &&
+                                            nameTextController.text.isNotEmpty;
+                                        _isEmptyAddress = content.isEmpty;
+                                      });
+                                    },
+                                    child: SvgPicture.asset(
+                                      "assets/svg/clipboard.svg",
+                                      color: CFColors.twilight,
+                                      width: 20,
+                                      height: 20,
+                                    ),
+                                  )
+                                : GestureDetector(
+                                    onTap: () async {
+                                      addressTextController.text = "";
+                                      setState(() {
+                                        _enabledSave = false;
+                                        _isEmptyAddress = true;
+                                      });
+                                    },
+                                    child: SvgPicture.asset(
+                                      "assets/svg/x.svg",
+                                      color: CFColors.twilight,
+                                      width: 20,
+                                      height: 20,
+                                    ),
+                                  ),
                             SizedBox(
                               width: 10,
                             ),

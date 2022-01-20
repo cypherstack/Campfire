@@ -5,6 +5,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_svg/flutter_svg.dart';
 import 'package:google_fonts/google_fonts.dart';
+import 'package:paymint/notifications/modal_popup_dialog.dart';
 import 'package:paymint/pages/settings_view/settings_view.dart';
 import 'package:paymint/pages/wallet_view/receive_view.dart';
 import 'package:paymint/pages/wallet_view/send_view.dart';
@@ -13,8 +14,10 @@ import 'package:paymint/services/bitcoin_service.dart';
 import 'package:paymint/services/event_bus/events/refresh_percent_changed_event.dart';
 import 'package:paymint/services/event_bus/global_event_bus.dart';
 import 'package:paymint/services/events.dart';
+import 'package:paymint/services/wallets_service.dart';
 import 'package:paymint/utilities/cfcolors.dart';
 import 'package:paymint/utilities/sizing_utilities.dart';
+import 'package:paymint/utilities/text_styles.dart';
 import 'package:provider/provider.dart';
 
 import '../widgets/custom_buttons/app_bar_icon_button.dart';
@@ -276,103 +279,162 @@ class _MainViewState extends State<MainView> {
     }
   }
 
+  bool _exitOnBackButton = false;
+
+  Future<bool> _onWillPop(BuildContext context) async {
+    if (_exitOnBackButton == false) {
+      Timer timer = Timer(Duration(milliseconds: 3000), () {
+        Navigator.of(context, rootNavigator: true).pop();
+        _exitOnBackButton = false;
+      });
+      _exitOnBackButton = true;
+      // TODO proper log out notification dialog
+      await showDialog(
+        context: context,
+        useSafeArea: false,
+        barrierDismissible: false,
+        builder: (context) {
+          return ModalPopupDialog(
+            child: Container(
+              width: MediaQuery.of(context).size.width -
+                  (SizingUtilities.standardPadding * 2),
+              child: Padding(
+                padding: const EdgeInsets.all(SizingUtilities.standardPadding),
+                child: Column(
+                  children: [
+                    Text(
+                      "Tapping BACK again will log out of current wallet",
+                      style: CFTextStyles.button.copyWith(
+                        color: CFColors.spark,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ),
+          );
+        },
+      ).then((_) {
+        timer?.cancel();
+        timer = null;
+      });
+    } else {
+      final bitcoinService = Provider.of<BitcoinService>(context);
+      final walletsService = Provider.of<WalletsService>(context);
+      await bitcoinService.clearWalletData();
+      await walletsService.refreshWallets();
+    }
+    return _exitOnBackButton;
+  }
+
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      key: _key,
-      backgroundColor: CFColors.white,
-      // bottomNavigationBar: new Theme(
-      //   data: Theme.of(context).copyWith(canvasColor: ColorStyles.mist),
-      appBar: buildAppBar(context),
-      extendBody: true,
-      bottomNavigationBar: Container(
-        height: SizingUtilities.bottomToolBarHeight,
-        decoration: BoxDecoration(
-          borderRadius: BorderRadius.only(
-            topLeft: Radius.circular(_navBarRadius),
-            topRight: Radius.circular(_navBarRadius),
-          ),
-          boxShadow: <BoxShadow>[
-            CFColors.standardBoxShadow,
-          ],
-        ),
-        child: ClipRRect(
-          borderRadius: BorderRadius.only(
-            topLeft: Radius.circular(_navBarRadius),
-            topRight: Radius.circular(_navBarRadius),
-          ),
-          child: BottomNavigationBar(
-            backgroundColor: CFColors.mist,
-            // elevation: 0,
-            currentIndex: _currentIndex,
-            type: BottomNavigationBarType.fixed,
-            onTap: _setCurrentIndex,
-            showSelectedLabels: true,
-            showUnselectedLabels: true,
-            items: [
-              BottomNavigationBarItem(
-                icon: SvgPicture.asset(
-                  "assets/svg/upload-2.svg",
-                  color: _buildIconColor(0), // Index 0 -> send view
-                  semanticsLabel: "send navigation logo",
-                ),
-                title: Text(
-                  "Send",
-                  style: _buildTextStyle(0),
-                ),
-              ),
-              BottomNavigationBarItem(
-                icon: SvgPicture.asset(
-                  "assets/svg/wallet-2.svg",
-                  color: _buildIconColor(1), // Index 1 -> wallet view
-                ),
-                title: Text(
-                  "Wallet",
-                  style: _buildTextStyle(1),
-                ),
-              ),
-              BottomNavigationBarItem(
-                icon: SvgPicture.asset(
-                  "assets/svg/download-2.svg",
-                  color: _buildIconColor(2), // Index 2 -> receive view
-                ),
-                title: Text(
-                  "Receive",
-                  style: _buildTextStyle(2),
-                ),
-              ),
-              // BottomNavigationBarItem(
-              //   icon: Icon(
-              //     Icons.menu,
-              //     color: _buildIconColor(5), // Index 2
-              //   ),
-              //   title: Text(
-              //     "More",
-              //     style: _buildTextStyle(5),
-              //   ),
-              // ),
+    return WillPopScope(
+      onWillPop: () async {
+        if (Navigator.of(context).userGestureInProgress) {
+          // disable pull back navigation
+          return false;
+        } else {
+          // check with user if we should log out
+          return await _onWillPop(context);
+        }
+      },
+      child: Scaffold(
+        key: _key,
+        backgroundColor: CFColors.white,
+        // bottomNavigationBar: new Theme(
+        //   data: Theme.of(context).copyWith(canvasColor: ColorStyles.mist),
+        appBar: buildAppBar(context),
+        extendBody: true,
+        bottomNavigationBar: Container(
+          height: SizingUtilities.bottomToolBarHeight,
+          decoration: BoxDecoration(
+            borderRadius: BorderRadius.only(
+              topLeft: Radius.circular(_navBarRadius),
+              topRight: Radius.circular(_navBarRadius),
+            ),
+            boxShadow: <BoxShadow>[
+              CFColors.standardBoxShadow,
             ],
           ),
-        ),
-      ),
-      body: Stack(
-        children: [
-          IndexedStack(
-            children: children,
-            index: _currentIndex,
+          child: ClipRRect(
+            borderRadius: BorderRadius.only(
+              topLeft: Radius.circular(_navBarRadius),
+              topRight: Radius.circular(_navBarRadius),
+            ),
+            child: BottomNavigationBar(
+              backgroundColor: CFColors.mist,
+              // elevation: 0,
+              currentIndex: _currentIndex,
+              type: BottomNavigationBarType.fixed,
+              onTap: _setCurrentIndex,
+              showSelectedLabels: true,
+              showUnselectedLabels: true,
+              items: [
+                BottomNavigationBarItem(
+                  icon: SvgPicture.asset(
+                    "assets/svg/upload-2.svg",
+                    color: _buildIconColor(0), // Index 0 -> send view
+                    semanticsLabel: "send navigation logo",
+                  ),
+                  title: Text(
+                    "Send",
+                    style: _buildTextStyle(0),
+                  ),
+                ),
+                BottomNavigationBarItem(
+                  icon: SvgPicture.asset(
+                    "assets/svg/wallet-2.svg",
+                    color: _buildIconColor(1), // Index 1 -> wallet view
+                  ),
+                  title: Text(
+                    "Wallet",
+                    style: _buildTextStyle(1),
+                  ),
+                ),
+                BottomNavigationBarItem(
+                  icon: SvgPicture.asset(
+                    "assets/svg/download-2.svg",
+                    color: _buildIconColor(2), // Index 2 -> receive view
+                  ),
+                  title: Text(
+                    "Receive",
+                    style: _buildTextStyle(2),
+                  ),
+                ),
+                // BottomNavigationBarItem(
+                //   icon: Icon(
+                //     Icons.menu,
+                //     color: _buildIconColor(5), // Index 2
+                //   ),
+                //   title: Text(
+                //     "More",
+                //     style: _buildTextStyle(5),
+                //   ),
+                // ),
+              ],
+            ),
           ),
-          if (nodeState == NodeConnectionStatus.loading &&
-              !_disableRefreshOnInit)
-            _buildSyncing(_percentChanged),
-          if (nodeState == NodeConnectionStatus.synced &&
-              !_disableRefreshOnInit)
-            _buildConnected(),
-          if (nodeState == NodeConnectionStatus.disconnected &&
-              !_disableRefreshOnInit)
-            _buildDisconnected(),
-        ],
+        ),
+        body: Stack(
+          children: [
+            IndexedStack(
+              children: children,
+              index: _currentIndex,
+            ),
+            if (nodeState == NodeConnectionStatus.loading &&
+                !_disableRefreshOnInit)
+              _buildSyncing(_percentChanged),
+            if (nodeState == NodeConnectionStatus.synced &&
+                !_disableRefreshOnInit)
+              _buildConnected(),
+            if (nodeState == NodeConnectionStatus.disconnected &&
+                !_disableRefreshOnInit)
+              _buildDisconnected(),
+          ],
+        ),
+        // ),
       ),
-      // ),
     );
   }
 
