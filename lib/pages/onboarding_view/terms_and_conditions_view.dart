@@ -4,8 +4,8 @@ import 'package:flutter/services.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:paymint/pages/onboarding_view/helpers/builders.dart';
 import 'package:paymint/pages/onboarding_view/helpers/create_wallet_type.dart';
-import 'package:paymint/services/utils/terms_and_conditions.dart';
 import 'package:paymint/utilities/cfcolors.dart';
+import 'package:paymint/utilities/terms_and_conditions.dart';
 import 'package:paymint/utilities/text_styles.dart';
 import 'package:paymint/widgets/custom_buttons/gradient_button.dart';
 

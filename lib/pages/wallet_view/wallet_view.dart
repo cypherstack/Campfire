@@ -11,8 +11,8 @@ import 'package:paymint/pages/transaction_subviews/transaction_search_view.dart'
 import 'package:paymint/services/bitcoin_service.dart';
 import 'package:paymint/services/event_bus/events/node_connection_status_changed_event.dart';
 import 'package:paymint/services/event_bus/global_event_bus.dart';
-import 'package:paymint/services/utils/currency_utils.dart';
 import 'package:paymint/utilities/cfcolors.dart';
+import 'package:paymint/utilities/currency_utils.dart';
 import 'package:paymint/utilities/shared_utilities.dart';
 import 'package:paymint/utilities/sizing_utilities.dart';
 import 'package:paymint/widgets/custom_buttons/draggable_switch_button.dart';
