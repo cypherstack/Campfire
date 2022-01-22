@@ -134,18 +134,14 @@ class _WalletSelectionViewState extends State<WalletSelectionView> {
                         builder: (context) {
                           return Lockscreen2View(
                             routeOnSuccess: '/mainview',
+                            biometricsAuthenticationTitle: names[index],
+                            biometricsCancelButtonString: "CANCEL",
+                            biometricsLocalizedReason:
+                                "Unlock wallet with your fingerprint",
                           );
                         },
                       ),
                     );
-                    // Navigator.of(context).pushReplacement(
-                    //   CupertinoPageRoute(
-                    //     builder: (context) {
-                    //       walletsService.setCurrentWalletName(snapshot.data[index]);
-                    //       return LockscreenView();
-                    //     },
-                    //   ),
-                    // );
                   },
                 ),
               ),

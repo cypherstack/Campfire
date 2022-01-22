@@ -269,7 +269,12 @@ class SettingsView extends StatelessWidget {
                   Navigator.push(context,
                       CupertinoPageRoute(builder: (context) {
                     return Lockscreen2View(
-                        routeOnSuccess: '/settings/walletbackup');
+                      routeOnSuccess: '/settings/walletbackup',
+                      biometricsAuthenticationTitle: "Show backup key",
+                      biometricsCancelButtonString: "CANCEL",
+                      biometricsLocalizedReason:
+                          "Unlock using fingerprint to show backup key",
+                    );
                   }));
                 },
               ),

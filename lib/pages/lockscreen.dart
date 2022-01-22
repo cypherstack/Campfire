@@ -1,5 +1,3 @@
-import 'dart:io';
-
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
@@ -7,11 +5,11 @@ import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 import 'package:flutter_spinkit/flutter_spinkit.dart';
 import 'package:flutter_svg/flutter_svg.dart';
 import 'package:google_fonts/google_fonts.dart';
-import 'package:local_auth/local_auth.dart';
 import 'package:paymint/notifications/overlay_notification.dart';
 import 'package:paymint/pages/wallet_selection_view.dart';
 import 'package:paymint/services/bitcoin_service.dart';
 import 'package:paymint/services/wallets_service.dart';
+import 'package:paymint/utilities/biometrics.dart';
 import 'package:paymint/utilities/cfcolors.dart';
 import 'package:paymint/utilities/sizing_utilities.dart';
 import 'package:paymint/widgets/custom_buttons/app_bar_icon_button.dart';
@@ -26,38 +24,15 @@ class LockscreenView extends StatefulWidget {
 class _LockscreenViewState extends State<LockscreenView> {
   _checkUseBiometrics() async {
     final bitcoinService = Provider.of<BitcoinService>(context, listen: false);
-    final bool useBiometrics = await bitcoinService.useBiometrics;
-    final LocalAuthentication localAuth = LocalAuthentication();
+    final walletName = await bitcoinService.currentWalletName;
 
-    final canCheckBiometrics = await localAuth.canCheckBiometrics;
-    final isDeviceSupported = await localAuth.isDeviceSupported();
-
-    // If useBiometrics is enabled, then show fingerprint auth screen
-    if (useBiometrics != null &&
-        useBiometrics &&
-        canCheckBiometrics &&
-        isDeviceSupported) {
-      List<BiometricType> availableSystems =
-          await localAuth.getAvailableBiometrics();
-
-      //TODO implement iOS biometrics
-      if (Platform.isIOS) {
-        if (availableSystems.contains(BiometricType.face)) {
-          // Write iOS specific code when required
-        } else if (availableSystems.contains(BiometricType.fingerprint)) {
-          // Write iOS specific code when required
-        }
-      } else if (Platform.isAndroid) {
-        if (availableSystems.contains(BiometricType.fingerprint)) {
-          bool didAuthenticate = await localAuth.authenticateWithBiometrics(
-            localizedReason: 'Please authenticate to unlock wallet',
-            stickyAuth: true,
-          );
-
-          if (didAuthenticate)
-            Navigator.pushReplacementNamed(context, '/mainview');
-        }
-      }
+    if (await bitcoinService.useBiometrics &&
+        await Biometrics.authenticate(
+          title: walletName,
+          localizedReason: "Unlock wallet",
+          cancelButtonText: "CANCEL",
+        )) {
+      Navigator.pushReplacementNamed(context, '/mainview');
     }
   }
 

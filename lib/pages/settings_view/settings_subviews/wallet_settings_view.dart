@@ -1,15 +1,12 @@
-import 'dart:io' show Platform;
-
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
-import 'package:local_auth/auth_strings.dart';
-import 'package:local_auth/local_auth.dart';
 import 'package:paymint/notifications/modal_popup_dialog.dart';
 import 'package:paymint/pages/settings_view/helpers/builders.dart';
 import 'package:paymint/pages/settings_view/settings_subviews/wallet_settings_subviews/rename_wallet_view.dart';
 import 'package:paymint/services/bitcoin_service.dart';
 import 'package:paymint/services/wallets_service.dart';
+import 'package:paymint/utilities/biometrics.dart';
 import 'package:paymint/utilities/cfcolors.dart';
 import 'package:paymint/utilities/sizing_utilities.dart';
 import 'package:paymint/utilities/text_styles.dart';
@@ -94,42 +91,13 @@ class _WalletSettingsViewState extends State<WalletSettingsView> {
           if (_useBiometrics) {
             await bitcoinService.updateBiometricsUsage(false);
           } else {
-            final LocalAuthentication localAuthentication =
-                LocalAuthentication();
-
-            final canCheckBiometrics =
-                await localAuthentication.canCheckBiometrics;
-            final isDeviceSupported =
-                await localAuthentication.isDeviceSupported();
-
-            if (canCheckBiometrics && isDeviceSupported) {
-              List<BiometricType> availableSystems =
-                  await localAuthentication.getAvailableBiometrics();
-
-              if (Platform.isIOS) {
-                if (availableSystems.contains(BiometricType.face)) {
-                  // Write iOS specific code when required
-                } else if (availableSystems
-                    .contains(BiometricType.fingerprint)) {
-                  // Write iOS specific code when required
-                }
-              } else if (Platform.isAndroid) {
-                if (availableSystems.contains(BiometricType.fingerprint)) {
-                  bool didAuthenticate =
-                      await localAuthentication.authenticateWithBiometrics(
-                          localizedReason:
-                              'Unlock wallet and confirm transactions with your fingerprint',
-                          stickyAuth: true,
-                          androidAuthStrings: AndroidAuthMessages(
-                            cancelButton: "CANCEL",
-                            biometricHint: "",
-                            signInTitle: "Enable fingerprint authentication",
-                          ));
-                  if (didAuthenticate) {
-                    await bitcoinService.updateBiometricsUsage(true);
-                  }
-                }
-              }
+            if (await Biometrics.authenticate(
+              cancelButtonText: "CANCEL",
+              localizedReason:
+                  "Unlock wallet and confirm transactions with your fingerprint",
+              title: "Enable fingerprint authentication",
+            )) {
+              await bitcoinService.updateBiometricsUsage(true);
             }
           }
         },
@@ -342,8 +310,12 @@ class _WalletSettingsViewState extends State<WalletSettingsView> {
                         Navigator.push(context,
                             CupertinoPageRoute(builder: (context) {
                           return Lockscreen2View(
-                              routeOnSuccess:
-                                  '/settings/deletewalletwarningview');
+                            routeOnSuccess: '/settings/deletewalletwarningview',
+                            biometricsAuthenticationTitle: "Confirm delete",
+                            biometricsCancelButtonString: "CANCEL",
+                            biometricsLocalizedReason:
+                                "Continue wallet deletion process via fingerprint authentication",
+                          );
                         }));
                       },
                     ),

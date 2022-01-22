@@ -1,17 +1,14 @@
-import 'dart:io';
-
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 import 'package:google_fonts/google_fonts.dart';
-import 'package:local_auth/auth_strings.dart';
-import 'package:local_auth/local_auth.dart';
 import 'package:paymint/notifications/modal_popup_dialog.dart';
 import 'package:paymint/notifications/overlay_notification.dart';
 import 'package:paymint/pages/onboarding_view/helpers/builders.dart';
 import 'package:paymint/pages/onboarding_view/restore_wallet_view.dart';
 import 'package:paymint/services/bitcoin_service.dart';
 import 'package:paymint/services/wallets_service.dart';
+import 'package:paymint/utilities/biometrics.dart';
 import 'package:paymint/utilities/cfcolors.dart';
 import 'package:paymint/utilities/sizing_utilities.dart';
 import 'package:paymint/utilities/text_styles.dart';
@@ -175,7 +172,12 @@ class _CreatePinViewState extends State<CreatePinView> {
                       if (_pinPutController1.text == _pinPutController2.text) {
                         // ask if want to use biometrics
                         final bool useBiometrics =
-                            await _enableBiometricsDialog();
+                            await Biometrics.authenticate(
+                          cancelButtonText: "SKIP",
+                          localizedReason:
+                              "Unlock wallet and confirm transactions with your fingerprint",
+                          title: "Enable fingerprint authentication",
+                        );
 
                         // handle wallet creation/initialization
 
@@ -338,48 +340,5 @@ class _CreatePinViewState extends State<CreatePinView> {
         ),
       ),
     );
-  }
-
-  Future<bool> _enableBiometricsDialog() async {
-    final LocalAuthentication localAuth = LocalAuthentication();
-
-    final canCheckBiometrics = await localAuth.canCheckBiometrics;
-    final isDeviceSupported = await localAuth.isDeviceSupported();
-
-    if (canCheckBiometrics && isDeviceSupported) {
-      List<BiometricType> availableSystems =
-          await localAuth.getAvailableBiometrics();
-
-      //TODO implement iOS biometrics
-      if (Platform.isIOS) {
-        if (availableSystems.contains(BiometricType.face)) {
-          // Write iOS specific code when required
-        } else if (availableSystems.contains(BiometricType.fingerprint)) {
-          // Write iOS specific code when required
-        }
-      } else if (Platform.isAndroid) {
-        if (availableSystems.contains(BiometricType.fingerprint)) {
-          bool didAuthenticate = await localAuth.authenticateWithBiometrics(
-            localizedReason:
-                'Unlock wallet and confirm transactions with your fingerprint',
-            stickyAuth: true,
-            androidAuthStrings: AndroidAuthMessages(
-              // biometricRequiredTitle: "hello",
-              // biometricNotRecognized: "biometric not recognized",
-              biometricHint: "",
-              // biometricSuccess: "bio successsss",
-              cancelButton: "SKIP",
-              // deviceCredentialsRequiredTitle: "dev cred req title",
-              signInTitle: "Enable fingerprint authentication",
-            ),
-          );
-
-          if (didAuthenticate) {
-            return true;
-          }
-        }
-      }
-    }
-    return false;
   }
 }

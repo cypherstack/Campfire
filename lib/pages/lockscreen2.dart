@@ -1,15 +1,13 @@
-import 'dart:io';
-
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 import 'package:flutter_svg/flutter_svg.dart';
 import 'package:google_fonts/google_fonts.dart';
-import 'package:local_auth/local_auth.dart';
 import 'package:paymint/notifications/overlay_notification.dart';
 import 'package:paymint/services/bitcoin_service.dart';
 import 'package:paymint/services/wallets_service.dart';
+import 'package:paymint/utilities/biometrics.dart';
 import 'package:paymint/utilities/cfcolors.dart';
 import 'package:paymint/widgets/custom_buttons/app_bar_icon_button.dart';
 import 'package:paymint/widgets/custom_pin_put/custom_pin_put.dart';
@@ -17,8 +15,16 @@ import 'package:provider/provider.dart';
 
 class Lockscreen2View extends StatefulWidget {
   final String routeOnSuccess;
+  final String biometricsAuthenticationTitle;
+  final String biometricsLocalizedReason;
+  final String biometricsCancelButtonString;
 
-  const Lockscreen2View({Key key, @required this.routeOnSuccess})
+  const Lockscreen2View(
+      {Key key,
+      @required this.routeOnSuccess,
+      this.biometricsAuthenticationTitle,
+      this.biometricsLocalizedReason,
+      this.biometricsCancelButtonString})
       : super(key: key);
   @override
   _Lockscreen2ViewState createState() => _Lockscreen2ViewState();
@@ -26,39 +32,19 @@ class Lockscreen2View extends StatefulWidget {
 
 class _Lockscreen2ViewState extends State<Lockscreen2View> {
   _checkUseBiometrics() async {
+    final title = widget.biometricsAuthenticationTitle ?? "Unlock wallet";
+    final localizedReason = widget.biometricsLocalizedReason ?? "";
+    final cancelButtonText = widget.biometricsCancelButtonString ?? "CANCEL";
+
     final bitcoinService = Provider.of<BitcoinService>(context, listen: false);
-    final bool useBiometrics = await bitcoinService.useBiometrics;
-    final LocalAuthentication localAuth = LocalAuthentication();
+    // final walletName = await bitcoinService.currentWalletName;
 
-    final canCheckBiometrics = await localAuth.canCheckBiometrics;
-    final isDeviceSupported = await localAuth.isDeviceSupported();
-
-    // If useBiometrics is enabled, then show fingerprint auth screen
-    if (useBiometrics != null &&
-        useBiometrics &&
-        canCheckBiometrics &&
-        isDeviceSupported) {
-      List<BiometricType> availableSystems =
-          await localAuth.getAvailableBiometrics();
-
-      //TODO implement iOS biometrics
-      if (Platform.isIOS) {
-        if (availableSystems.contains(BiometricType.face)) {
-          // Write iOS specific code when required
-        } else if (availableSystems.contains(BiometricType.fingerprint)) {
-          // Write iOS specific code when required
-        }
-      } else if (Platform.isAndroid) {
-        if (availableSystems.contains(BiometricType.fingerprint)) {
-          bool didAuthenticate = await localAuth.authenticateWithBiometrics(
-            localizedReason: 'Please authenticate to unlock wallet',
-            stickyAuth: true,
-          );
-
-          if (didAuthenticate)
-            Navigator.pushReplacementNamed(context, widget.routeOnSuccess);
-        }
-      }
+    if (await bitcoinService.useBiometrics &&
+        await Biometrics.authenticate(
+            title: title,
+            localizedReason: localizedReason,
+            cancelButtonText: cancelButtonText)) {
+      Navigator.pushReplacementNamed(context, widget.routeOnSuccess);
     }
   }
 
@@ -75,8 +61,8 @@ class _Lockscreen2ViewState extends State<Lockscreen2View> {
         // statusBarBrightness: Brightness.dark,
       ),
     );
-    _checkUseBiometrics();
     super.initState();
+    _checkUseBiometrics();
   }
 
   BoxDecoration get _pinPutDecoration {
