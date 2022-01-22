@@ -725,6 +725,17 @@ class BitcoinService extends ChangeNotifier {
   Future<String> get currentWalletName =>
       _currentWalletName ??= _fetchCurrentWalletName();
 
+  Future<bool> testConnection(String address, String port) async {
+    try {
+      final separator = port.isEmpty ? "" : ":";
+      final String url = "https://$address$separator$port/api/FIRO/mainnet";
+      final n = await getBlockHead(url);
+      return n != null;
+    } catch (e) {
+      return false;
+    }
+  }
+
   clearWalletData() async {
     Future<UtxoData> _utxoData;
     Future<TransactionData> _transactionData;
