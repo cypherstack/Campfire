@@ -108,7 +108,204 @@ class _RestoreWalletFormViewState extends State<RestoreWalletFormView> {
     );
   }
 
-  Widget _buildWordEntryList() {
+  _onBackPressed(int pops) async {
+    // delete created wallet name and pin
+
+    final walletsService = Provider.of<WalletsService>(context, listen: false);
+    int result = await walletsService.deleteWallet(widget.walletName);
+
+    // check if last wallet was deleted
+    if (result == 2) {
+      Navigator.pushAndRemoveUntil(
+        context,
+        CupertinoPageRoute(
+          maintainState: false,
+          builder: (_) => OnboardingView(),
+        ),
+        (_) => false,
+      );
+    } else {
+      Provider.of<BitcoinService>(context, listen: false).refreshWalletData();
+
+      FocusScope.of(context).unfocus();
+      await Future.delayed(Duration(milliseconds: 100));
+
+      final nav = Navigator.of(context);
+      for (int i = 0; i < pops; i++) {
+        nav.pop();
+      }
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return WillPopScope(
+      onWillPop: () async {
+        await _onBackPressed(2);
+        return true;
+      },
+      child: Scaffold(
+        backgroundColor: CFColors.starryNight,
+        appBar: buildOnboardingAppBar(
+          context,
+          backButtonPressed: () async {
+            await _onBackPressed(2);
+          },
+        ),
+        body: buildOnboardingBody(
+          context,
+          Column(
+            children: [
+              SizedBox(
+                height: 40,
+              ),
+              FittedBox(
+                child: Text(
+                  "Restore wallet",
+                  style: CFTextStyles.pinkHeader,
+                ),
+              ),
+              SizedBox(
+                height: 13,
+              ),
+              FittedBox(
+                child: Text(
+                  "Enter your 24-word backup key.",
+                  style: GoogleFonts.workSans(
+                    color: CFColors.dusk,
+                    fontWeight: FontWeight.w400,
+                    fontSize: 16,
+                  ),
+                ),
+              ),
+              SizedBox(
+                height: 20,
+              ),
+              Row(
+                children: [
+                  Expanded(
+                    child: Padding(
+                      padding: const EdgeInsets.only(
+                        left: 20,
+                        right: 8,
+                      ),
+                      child: SizedBox(
+                        height: 48,
+                        child: SimpleButton(
+                          onTap: () async {
+                            print("Scan qr code");
+                            // TODO implement parse qr code
+                            String qrResult = await MajaScan.startScan(
+                              title: "Scan seed QR Code",
+                              barColor: CFColors.white,
+                              titleColor: CFColors.dusk,
+                              qRCornerColor: CFColors.spark,
+                              qRScannerColor: CFColors.midnight,
+                              flashlightEnable: true,
+                              scanAreaScale: 0.7,
+                            );
+
+                            // Navigator.push(context,
+                            //     MaterialPageRoute(builder: (_) => QrScannerView()));
+                          },
+                          child: FittedBox(
+                            child: Row(
+                              children: [
+                                SvgPicture.asset(
+                                  "assets/svg/qr-code.svg",
+                                  color: CFColors.dusk,
+                                ),
+                                SizedBox(
+                                  width: 10,
+                                ),
+                                Text(
+                                  "SCAN QR",
+                                  style: GoogleFonts.workSans(
+                                    color: CFColors.dusk,
+                                    fontWeight: FontWeight.w600,
+                                    fontSize: 16,
+                                    letterSpacing: 0.5,
+                                  ),
+                                ),
+                              ],
+                            ),
+                          ),
+                        ),
+                      ),
+                    ),
+                  ),
+                  Expanded(
+                    child: Padding(
+                      padding: const EdgeInsets.only(
+                        left: 8,
+                        right: 20,
+                      ),
+                      child: SizedBox(
+                        height: 48,
+                        child: SimpleButton(
+                          onTap: () async {
+                            final ClipboardData data =
+                                await Clipboard.getData(Clipboard.kTextPlain);
+                            final content = data.text.trim();
+                            final list = content.split(" ");
+                            final count = min(_controllers.length, list.length);
+                            for (int i = 0; i < count; i++) {
+                              _controllers[i].text = list[i];
+                            }
+                          },
+                          child: FittedBox(
+                            child: Row(
+                              children: [
+                                SvgPicture.asset(
+                                  "assets/svg/qr-code.svg",
+                                  color: CFColors.dusk,
+                                ),
+                                SizedBox(
+                                  width: 10,
+                                ),
+                                Text(
+                                  "PASTE",
+                                  style: GoogleFonts.workSans(
+                                    color: CFColors.dusk,
+                                    fontWeight: FontWeight.w600,
+                                    fontSize: 16,
+                                    letterSpacing: 0.5,
+                                  ),
+                                ),
+                              ],
+                            ),
+                          ),
+                        ),
+                      ),
+                    ),
+                  )
+                ],
+              ),
+              Expanded(
+                child: Padding(
+                  padding: const EdgeInsets.only(
+                    top: 20 - (SizingUtilities.listItemSpacing / 2),
+                    left: 20,
+                    right: 20 - (SizingUtilities.listItemSpacing / 2),
+                  ),
+                  child: SingleChildScrollView(
+                    child: Column(
+                      children: [
+                        _buildWordEntryList(),
+                        _buildRestoreButton(),
+                      ],
+                    ),
+                  ),
+                ),
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+
+  _buildWordEntryList() {
     final List<TableRow> children = [];
 
     for (int i = 1; i <= _seedWordCount; i++) {
@@ -232,7 +429,7 @@ class _RestoreWalletFormViewState extends State<RestoreWalletFormView> {
                   useSafeArea: false,
                   barrierDismissible: false,
                   builder: (context) {
-                    return WaitDialog();
+                    return _buildWaitDialog();
                   },
                 );
 
@@ -260,7 +457,7 @@ class _RestoreWalletFormViewState extends State<RestoreWalletFormView> {
                     useSafeArea: false,
                     barrierDismissible: false,
                     builder: (context) {
-                      return RecoveryCompleteDialog();
+                      return _buildRecoveryCompleteDialog();
                     },
                   ).then(
                     (_) {
@@ -272,16 +469,13 @@ class _RestoreWalletFormViewState extends State<RestoreWalletFormView> {
                   // pop waiting dialog
                   Navigator.pop(context);
 
-                  // delete partially created wallet
-                  await walletsService.deleteWallet(walletName);
-
                   // show restoring wallet failed dialog
                   showDialog(
                     context: context,
                     useSafeArea: false,
                     barrierDismissible: false,
                     builder: (context) {
-                      return RestoreFailedDialog(errorMessage: e.toString());
+                      return _buildRestoreFailedDialog(e.toString());
                     },
                   );
                 }
@@ -302,450 +496,256 @@ class _RestoreWalletFormViewState extends State<RestoreWalletFormView> {
     );
   }
 
-  @override
-  Widget build(BuildContext context) {
-    return Scaffold(
-      backgroundColor: CFColors.starryNight,
-      appBar: buildOnboardingAppBar(
-        context,
-        backButtonPressed: () async {
-          // delete created wallet name and pin
-
-          final walletsService =
-              Provider.of<WalletsService>(context, listen: false);
-          int result = await walletsService.deleteWallet(widget.walletName);
-
-          // check if last wallet was deleted
-          if (result == 2) {
-            Navigator.pushAndRemoveUntil(
-              context,
-              CupertinoPageRoute(
-                maintainState: false,
-                builder: (_) => OnboardingView(),
-              ),
-              (_) => false,
-            );
-          } else {
-            Provider.of<BitcoinService>(context, listen: false)
-                .refreshWalletData();
-
-            FocusScope.of(context).unfocus();
-            await Future.delayed(Duration(milliseconds: 100));
-
-            final nav = Navigator.of(context);
-            nav.pop();
-            nav.pop();
-          }
-        },
-      ),
-      body: buildOnboardingBody(
-        context,
-        Column(
+  _buildWaitDialog() {
+    return WillPopScope(
+      onWillPop: () async {
+        return false;
+      },
+      child: ModalPopupDialog(
+        child: Column(
           children: [
             SizedBox(
-              height: 40,
+              height: 28,
             ),
             FittedBox(
               child: Text(
-                "Restore wallet",
-                style: CFTextStyles.pinkHeader,
-              ),
-            ),
-            SizedBox(
-              height: 13,
-            ),
-            FittedBox(
-              child: Text(
-                "Enter your 24-word backup key.",
-                style: GoogleFonts.workSans(
-                  color: CFColors.dusk,
-                  fontWeight: FontWeight.w400,
+                "Restoring wallet",
+                style: CFTextStyles.pinkHeader.copyWith(
                   fontSize: 16,
                 ),
               ),
             ),
             SizedBox(
-              height: 20,
+              height: 12,
             ),
-            Row(
-              children: [
-                Expanded(
-                  child: Padding(
-                    padding: const EdgeInsets.only(
-                      left: 20,
-                      right: 8,
-                    ),
-                    child: SizedBox(
-                      height: 48,
-                      child: SimpleButton(
-                        onTap: () async {
-                          print("Scan qr code");
-                          // TODO implement parse qr code
-                          String qrResult = await MajaScan.startScan(
-                            title: "Scan seed QR Code",
-                            barColor: CFColors.white,
-                            titleColor: CFColors.dusk,
-                            qRCornerColor: CFColors.spark,
-                            qRScannerColor: CFColors.midnight,
-                            flashlightEnable: true,
-                            scanAreaScale: 0.7,
-                          );
-
-                          // Navigator.push(context,
-                          //     MaterialPageRoute(builder: (_) => QrScannerView()));
-                        },
-                        child: FittedBox(
-                          child: Row(
-                            children: [
-                              SvgPicture.asset(
-                                "assets/svg/qr-code.svg",
-                                color: CFColors.dusk,
-                              ),
-                              SizedBox(
-                                width: 10,
-                              ),
-                              Text(
-                                "SCAN QR",
-                                style: GoogleFonts.workSans(
-                                  color: CFColors.dusk,
-                                  fontWeight: FontWeight.w600,
-                                  fontSize: 16,
-                                  letterSpacing: 0.5,
-                                ),
-                              ),
-                            ],
-                          ),
-                        ),
-                      ),
-                    ),
-                  ),
+            FittedBox(
+              child: Text(
+                "This may take a while.",
+                style: GoogleFonts.workSans(
+                  color: CFColors.dusk,
+                  fontWeight: FontWeight.w400,
+                  fontSize: 14,
                 ),
-                Expanded(
-                  child: Padding(
-                    padding: const EdgeInsets.only(
-                      left: 8,
-                      right: 20,
-                    ),
-                    child: SizedBox(
-                      height: 48,
-                      child: SimpleButton(
-                        onTap: () async {
-                          final ClipboardData data =
-                              await Clipboard.getData(Clipboard.kTextPlain);
-                          final content = data.text.trim();
-                          final list = content.split(" ");
-                          final count = min(_controllers.length, list.length);
-                          for (int i = 0; i < count; i++) {
-                            _controllers[i].text = list[i];
-                          }
-                        },
-                        child: FittedBox(
-                          child: Row(
-                            children: [
-                              SvgPicture.asset(
-                                "assets/svg/qr-code.svg",
-                                color: CFColors.dusk,
-                              ),
-                              SizedBox(
-                                width: 10,
-                              ),
-                              Text(
-                                "PASTE",
-                                style: GoogleFonts.workSans(
-                                  color: CFColors.dusk,
-                                  fontWeight: FontWeight.w600,
-                                  fontSize: 16,
-                                  letterSpacing: 0.5,
-                                ),
-                              ),
-                            ],
-                          ),
-                        ),
-                      ),
-                    ),
-                  ),
-                )
-              ],
+              ),
             ),
-            Expanded(
-              child: Padding(
-                padding: const EdgeInsets.only(
-                  top: 20 - (SizingUtilities.listItemSpacing / 2),
-                  left: 20,
-                  right: 20 - (SizingUtilities.listItemSpacing / 2),
+            SizedBox(
+              height: 50,
+            ),
+            Container(
+              width: 98,
+              height: 98,
+              decoration: BoxDecoration(
+                borderRadius: BorderRadius.circular(49),
+                border: Border.all(
+                  color: CFColors.dew,
+                  width: 2,
                 ),
-                child: SingleChildScrollView(
-                  child: Column(
-                    children: [
-                      _buildWordEntryList(),
-                      _buildRestoreButton(),
-                    ],
+              ),
+              child: Center(
+                child: Container(
+                  height: 40,
+                  width: 40,
+                  child: CircularProgressIndicator(
+                    color: CFColors.spark,
+                    strokeWidth: 2,
                   ),
                 ),
               ),
+            ),
+            SizedBox(
+              height: 50,
+            ),
+            Row(
+              mainAxisAlignment: MainAxisAlignment.end,
+              children: [
+                SizedBox(
+                  height: 48,
+                  child: TextButton(
+                    onPressed: () async {
+                      await _onBackPressed(5);
+                      // final walletsService =
+                      //     Provider.of<WalletsService>(context, listen: false);
+                      // final name = await walletsService.currentWalletName;
+                      // int result = await walletsService.deleteWallet(name);
+                      //
+                      // // check if last wallet was deleted
+                      // if (result == 2) {
+                      //   Navigator.pushAndRemoveUntil(
+                      //     context,
+                      //     CupertinoPageRoute(
+                      //       maintainState: false,
+                      //       builder: (_) => OnboardingView(),
+                      //     ),
+                      //     (_) => false,
+                      //   );
+                      // } else {
+                      //   final navigator = Navigator.of(context);
+                      //   navigator.pop();
+                      //   navigator.pop();
+                      //   navigator.pop();
+                      //   navigator.pop();
+                      //   navigator.pop();
+                      // }
+                    },
+                    child: FittedBox(
+                      child: Text(
+                        "CANCEL",
+                        style: GoogleFonts.workSans(
+                          color: CFColors.dusk,
+                          fontWeight: FontWeight.w600,
+                          fontSize: 16,
+                          letterSpacing: 0.5,
+                        ),
+                      ),
+                    ),
+                  ),
+                ),
+                SizedBox(
+                  width: 20,
+                ),
+              ],
+            ),
+            SizedBox(
+              height: 8,
             ),
           ],
         ),
       ),
     );
   }
-}
 
-// Dialog Widgets
-
-class RecoveryCompleteDialog extends StatelessWidget {
-  const RecoveryCompleteDialog({Key key}) : super(key: key);
-
-  @override
-  Widget build(BuildContext context) {
-    return ModalPopupDialog(
-      child: Column(
-        children: [
-          SizedBox(
-            height: 28,
-          ),
-          FittedBox(
-            child: Text(
-              "Wallet Restored!",
-              style: CFTextStyles.pinkHeader.copyWith(
-                fontSize: 16,
-              ),
+  _buildRecoveryCompleteDialog() {
+    return WillPopScope(
+      onWillPop: () async {
+        return false;
+      },
+      child: ModalPopupDialog(
+        child: Column(
+          children: [
+            SizedBox(
+              height: 28,
             ),
-          ),
-          SizedBox(
-            height: 12,
-          ),
-          FittedBox(
-            child: Text(
-              "Get ready to spend your Firo.",
-              style: GoogleFonts.workSans(
-                color: CFColors.dusk,
-                fontWeight: FontWeight.w400,
-                fontSize: 14,
-              ),
-            ),
-          ),
-          SizedBox(
-            height: 50,
-          ),
-          Container(
-            width: 98,
-            height: 98,
-            decoration: BoxDecoration(
-              borderRadius: BorderRadius.circular(49),
-              border: Border.all(
-                color: CFColors.dew,
-                width: 2,
-              ),
-            ),
-            child: Center(
-              child: Container(
-                height: 50,
-                width: 50,
-                child: SvgPicture.asset(
-                  "assets/svg/check-circle.svg",
-                  color: CFColors.spark,
+            FittedBox(
+              child: Text(
+                "Wallet Restored!",
+                style: CFTextStyles.pinkHeader.copyWith(
+                  fontSize: 16,
                 ),
               ),
             ),
-          ),
-          SizedBox(
-            width: MediaQuery.of(context).size.width -
-                (SizingUtilities.standardPadding * 2),
-            // add height of button and sized box from WaitDialog so
-            // the center widget is at the same height as the
-            // circular progress indicator in WaitDialog
-            height: 50.0 + 48.0 + 8.0,
-          ),
-        ],
-      ),
-    );
-  }
-}
-
-class RestoreFailedDialog extends StatelessWidget {
-  const RestoreFailedDialog({Key key, this.errorMessage}) : super(key: key);
-  final String errorMessage;
-  @override
-  Widget build(BuildContext context) {
-    return ModalPopupDialog(
-      child: Column(
-        children: [
-          SizedBox(
-            height: 28,
-          ),
-          FittedBox(
-            child: Text(
-              "Restoring wallet failed.",
-              style: CFTextStyles.pinkHeader.copyWith(
-                fontSize: 16,
+            SizedBox(
+              height: 12,
+            ),
+            FittedBox(
+              child: Text(
+                "Get ready to spend your Firo.",
+                style: GoogleFonts.workSans(
+                  color: CFColors.dusk,
+                  fontWeight: FontWeight.w400,
+                  fontSize: 14,
+                ),
               ),
             ),
-          ),
-          SizedBox(
-            height: 12,
-          ),
-          Center(
-            child: Text(
-              errorMessage == null ? "" : errorMessage,
-              style: GoogleFonts.workSans(
-                color: CFColors.dusk,
-                fontWeight: FontWeight.w400,
-                fontSize: 14,
-              ),
+            SizedBox(
+              height: 50,
             ),
-          ),
-          SizedBox(
-            height: 50,
-          ),
-          Align(
-            alignment: Alignment.bottomCenter,
-            child: Padding(
-              padding: const EdgeInsets.all(SizingUtilities.standardPadding),
-              child: SizedBox(
-                height: SizingUtilities.standardButtonHeight,
-                width: SizingUtilities.standardFixedButtonWidth,
-                child: GradientButton(
-                  child: FittedBox(
-                    child: Text(
-                      "OK",
-                      style: CFTextStyles.button,
-                    ),
+            Container(
+              width: 98,
+              height: 98,
+              decoration: BoxDecoration(
+                borderRadius: BorderRadius.circular(49),
+                border: Border.all(
+                  color: CFColors.dew,
+                  width: 2,
+                ),
+              ),
+              child: Center(
+                child: Container(
+                  height: 50,
+                  width: 50,
+                  child: SvgPicture.asset(
+                    "assets/svg/check-circle.svg",
+                    color: CFColors.spark,
                   ),
-                  onTap: () {
-                    final navigator = Navigator.of(context);
-                    navigator.pop();
-                    navigator.pop();
-                    navigator.pop();
-                    navigator.pop();
-                    navigator.pop();
-                  },
                 ),
               ),
             ),
-          ),
-          SizedBox(
-            height: SizingUtilities.standardPadding,
-          ),
-        ],
+            SizedBox(
+              width: MediaQuery.of(context).size.width -
+                  (SizingUtilities.standardPadding * 2),
+              // add height of button and sized box from WaitDialog so
+              // the center widget is at the same height as the
+              // circular progress indicator in WaitDialog
+              height: 50.0 + 48.0 + 8.0,
+            ),
+          ],
+        ),
       ),
     );
   }
-}
 
-class WaitDialog extends StatelessWidget {
-  const WaitDialog({Key key}) : super(key: key);
-
-  @override
-  Widget build(BuildContext context) {
-    return ModalPopupDialog(
-      child: Column(
-        children: [
-          SizedBox(
-            height: 28,
-          ),
-          FittedBox(
-            child: Text(
-              "Restoring wallet",
-              style: CFTextStyles.pinkHeader.copyWith(
-                fontSize: 16,
-              ),
+  _buildRestoreFailedDialog(String errorMessage) {
+    return WillPopScope(
+      onWillPop: () async {
+        await _onBackPressed(5);
+        return true;
+      },
+      child: ModalPopupDialog(
+        child: Column(
+          children: [
+            SizedBox(
+              height: 28,
             ),
-          ),
-          SizedBox(
-            height: 12,
-          ),
-          FittedBox(
-            child: Text(
-              "This may take a while.",
-              style: GoogleFonts.workSans(
-                color: CFColors.dusk,
-                fontWeight: FontWeight.w400,
-                fontSize: 14,
-              ),
-            ),
-          ),
-          SizedBox(
-            height: 50,
-          ),
-          Container(
-            width: 98,
-            height: 98,
-            decoration: BoxDecoration(
-              borderRadius: BorderRadius.circular(49),
-              border: Border.all(
-                color: CFColors.dew,
-                width: 2,
-              ),
-            ),
-            child: Center(
-              child: Container(
-                height: 40,
-                width: 40,
-                child: CircularProgressIndicator(
-                  color: CFColors.spark,
-                  strokeWidth: 2,
+            FittedBox(
+              child: Text(
+                "Restoring wallet failed.",
+                style: CFTextStyles.pinkHeader.copyWith(
+                  fontSize: 16,
                 ),
               ),
             ),
-          ),
-          SizedBox(
-            height: 50,
-          ),
-          Row(
-            mainAxisAlignment: MainAxisAlignment.end,
-            children: [
-              SizedBox(
-                height: 48,
-                child: TextButton(
-                  onPressed: () async {
-                    print("cancel restore wallet pressed");
-                    final walletsService =
-                        Provider.of<WalletsService>(context, listen: false);
-                    final name = await walletsService.currentWalletName;
-                    int result = await walletsService.deleteWallet(name);
-
-                    // check if last wallet was deleted
-                    if (result == 2) {
-                      Navigator.pushAndRemoveUntil(
-                        context,
-                        CupertinoPageRoute(
-                          maintainState: false,
-                          builder: (_) => OnboardingView(),
-                        ),
-                        (_) => false,
-                      );
-                    } else {
-                      final navigator = Navigator.of(context);
-                      navigator.pop();
-                      navigator.pop();
-                      navigator.pop();
-                      navigator.pop();
-                      navigator.pop();
-                    }
-                  },
-                  child: FittedBox(
-                    child: Text(
-                      "CANCEL",
-                      style: GoogleFonts.workSans(
-                        color: CFColors.dusk,
-                        fontWeight: FontWeight.w600,
-                        fontSize: 16,
-                        letterSpacing: 0.5,
+            SizedBox(
+              height: 12,
+            ),
+            Center(
+              child: Text(
+                errorMessage == null ? "" : errorMessage,
+                style: GoogleFonts.workSans(
+                  color: CFColors.dusk,
+                  fontWeight: FontWeight.w400,
+                  fontSize: 14,
+                ),
+              ),
+            ),
+            SizedBox(
+              height: 50,
+            ),
+            Align(
+              alignment: Alignment.bottomCenter,
+              child: Padding(
+                padding: const EdgeInsets.all(SizingUtilities.standardPadding),
+                child: SizedBox(
+                  height: SizingUtilities.standardButtonHeight,
+                  width: SizingUtilities.standardFixedButtonWidth,
+                  child: GradientButton(
+                    child: FittedBox(
+                      child: Text(
+                        "OK",
+                        style: CFTextStyles.button,
                       ),
                     ),
+                    onTap: () {
+                      _onBackPressed(5);
+                    },
                   ),
                 ),
               ),
-              SizedBox(
-                width: 20,
-              ),
-            ],
-          ),
-          SizedBox(
-            height: 8,
-          ),
-        ],
+            ),
+            SizedBox(
+              height: SizingUtilities.standardPadding,
+            ),
+          ],
+        ),
       ),
     );
   }
