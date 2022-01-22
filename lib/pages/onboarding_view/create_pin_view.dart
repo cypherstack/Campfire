@@ -276,51 +276,65 @@ class _CreatePinViewState extends State<CreatePinView> {
   }
 
   _buildKeyGenerationDialog() {
-    return ModalPopupDialog(
-      child: Container(
-        width: MediaQuery.of(context).size.width -
-            (SizingUtilities.standardPadding * 2),
-        child: Column(
-          children: [
-            SizedBox(
-              height: 28,
-            ),
-            FittedBox(
-              child: Text(
-                "Generating backup key",
-                style: CFTextStyles.pinkHeader.copyWith(
-                  fontSize: 16,
-                ),
+    return WillPopScope(
+      onWillPop: () async {
+        //TODO ideally delete partially created wallet and return true
+        // currently this causes a crash:
+        // _CreatePinViewState#2e3ba(lifecycle state: defunct, not mounted)
+
+        // final walletService =
+        //     Provider.of<WalletsService>(context, listen: false);
+        // walletService.deleteWallet(widget.walletName);
+        // Navigator.pop(context);
+        // return true;
+        return false;
+      },
+      child: ModalPopupDialog(
+        child: Container(
+          width: MediaQuery.of(context).size.width -
+              (SizingUtilities.standardPadding * 2),
+          child: Column(
+            children: [
+              SizedBox(
+                height: 28,
               ),
-            ),
-            SizedBox(
-              height: 50,
-            ),
-            Container(
-              width: 98,
-              height: 98,
-              decoration: BoxDecoration(
-                borderRadius: BorderRadius.circular(49),
-                border: Border.all(
-                  color: CFColors.dew,
-                  width: 2,
-                ),
-              ),
-              child: Center(
-                child: Container(
-                  height: 40,
-                  width: 40,
-                  child: CircularProgressIndicator(
-                    color: CFColors.spark,
-                    strokeWidth: 2,
+              FittedBox(
+                child: Text(
+                  "Generating backup key",
+                  style: CFTextStyles.pinkHeader.copyWith(
+                    fontSize: 16,
                   ),
                 ),
               ),
-            ),
-            SizedBox(
-              height: 50,
-            ),
-          ],
+              SizedBox(
+                height: 50,
+              ),
+              Container(
+                width: 98,
+                height: 98,
+                decoration: BoxDecoration(
+                  borderRadius: BorderRadius.circular(49),
+                  border: Border.all(
+                    color: CFColors.dew,
+                    width: 2,
+                  ),
+                ),
+                child: Center(
+                  child: Container(
+                    height: 40,
+                    width: 40,
+                    child: CircularProgressIndicator(
+                      color: CFColors.spark,
+                      strokeWidth: 2,
+                    ),
+                  ),
+                ),
+              ),
+              SizedBox(
+                height: 50,
+              ),
+            ],
+          ),
         ),
       ),
     );
