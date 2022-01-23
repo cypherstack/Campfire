@@ -24,7 +24,9 @@ class Biometrics {
         }
       } else if (Platform.isAndroid) {
         if (availableSystems.contains(BiometricType.fingerprint)) {
-          bool didAuthenticate = await localAuth.authenticateWithBiometrics(
+          //TODO catch and handle errors/exceptions
+          bool didAuthenticate = await localAuth.authenticate(
+            biometricOnly: true,
             localizedReason: localizedReason,
             stickyAuth: true,
             androidAuthStrings: AndroidAuthMessages(
