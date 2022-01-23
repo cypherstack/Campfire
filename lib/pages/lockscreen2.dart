@@ -37,14 +37,15 @@ class _Lockscreen2ViewState extends State<Lockscreen2View> {
     final cancelButtonText = widget.biometricsCancelButtonString ?? "CANCEL";
 
     final bitcoinService = Provider.of<BitcoinService>(context, listen: false);
-    // final walletName = await bitcoinService.currentWalletName;
-
-    if (await bitcoinService.useBiometrics &&
-        await Biometrics.authenticate(
-            title: title,
-            localizedReason: localizedReason,
-            cancelButtonText: cancelButtonText)) {
-      Navigator.pushReplacementNamed(context, widget.routeOnSuccess);
+    if (await bitcoinService.useBiometrics) {
+      if (await Biometrics.authenticate(
+          title: title,
+          localizedReason: localizedReason,
+          cancelButtonText: cancelButtonText)) {
+        Navigator.pushReplacementNamed(context, widget.routeOnSuccess);
+      } else {
+        Navigator.pop(context);
+      }
     }
   }
 
