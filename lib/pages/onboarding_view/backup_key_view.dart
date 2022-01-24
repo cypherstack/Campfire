@@ -8,6 +8,7 @@ import 'package:paymint/notifications/overlay_notification.dart';
 import 'package:paymint/pages/onboarding_view/helpers/builders.dart';
 import 'package:paymint/pages/onboarding_view/verify_backup_key_view.dart';
 import 'package:paymint/services/bitcoin_service.dart';
+import 'package:paymint/utilities/address_utils.dart';
 import 'package:paymint/utilities/cfcolors.dart';
 import 'package:paymint/utilities/misc_global_constants.dart';
 import 'package:paymint/utilities/sizing_utilities.dart';
@@ -251,10 +252,10 @@ class _BackupKeyViewState extends State<BackupKeyView> {
                   if (snapshot.connectionState == ConnectionState.done) {
                     return Center(
                       child: PrettyQr(
-                        data: snapshot.data.join(' '),
+                        data: AddressUtils.encodeQRSeedData(snapshot.data),
                         roundEdges: CampfireConstants.roundedQrCode,
                         elementColor: CFColors.midnight,
-                        typeNumber: 9,
+                        typeNumber: 10,
                         size: _qrSize,
                       ),
                     );
