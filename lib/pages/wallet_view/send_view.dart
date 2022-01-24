@@ -447,7 +447,6 @@ class _SendViewState extends State<SendView> {
                 GestureDetector(
                   onTap: () async {
                     print("read qr code icon button tapped");
-                    // TODO implement parse qr code
                     String qrResult = await MajaScan.startScan(
                       title: "Scan address QR Code",
                       barColor: CFColors.white,
@@ -457,6 +456,11 @@ class _SendViewState extends State<SendView> {
                       flashlightEnable: true,
                       scanAreaScale: 0.7,
                     );
+                    if (qrResult.startsWith("firo:")) {
+                      // parse address from uri
+                      qrResult = qrResult.substring(qrResult.indexOf(":") + 1);
+                      _recipientAddressTextController.text = qrResult;
+                    }
                   },
                   child: SvgPicture.asset(
                     "assets/svg/qr-code.svg",

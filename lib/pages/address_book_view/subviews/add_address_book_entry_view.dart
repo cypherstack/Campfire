@@ -206,7 +206,6 @@ class _AddAddressBookEntryViewState extends State<AddAddressBookEntryView> {
                             ),
                             GestureDetector(
                               onTap: () async {
-                                // TODO implement parse qr code
                                 String qrResult = await MajaScan.startScan(
                                   title: "Scan address QR Code",
                                   barColor: CFColors.white,
@@ -216,6 +215,12 @@ class _AddAddressBookEntryViewState extends State<AddAddressBookEntryView> {
                                   flashlightEnable: true,
                                   scanAreaScale: 0.7,
                                 );
+                                if (qrResult.startsWith("firo:")) {
+                                  // parse address from uri
+                                  qrResult = qrResult
+                                      .substring(qrResult.indexOf(":") + 1);
+                                  addressTextController.text = qrResult;
+                                }
                               },
                               child: SvgPicture.asset(
                                 "assets/svg/qr-code.svg",
