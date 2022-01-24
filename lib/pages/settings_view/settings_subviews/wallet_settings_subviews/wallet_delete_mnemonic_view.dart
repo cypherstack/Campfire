@@ -1,3 +1,5 @@
+import 'dart:math';
+
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
@@ -210,6 +212,7 @@ class WalletDeleteMnemonicView extends StatelessWidget {
   }
 
   _buildButtonRow(BuildContext context) {
+    final _isTinyWidth = SizingUtilities.isTinyWidth(context);
     return Row(
       children: [
         Expanded(
@@ -234,7 +237,7 @@ class WalletDeleteMnemonicView extends StatelessWidget {
                     color: CFColors.dusk,
                   ),
                   SizedBox(
-                    width: 10,
+                    width: _isTinyWidth ? 4 : 10,
                   ),
                   FittedBox(
                     child: Text(
@@ -277,7 +280,7 @@ class WalletDeleteMnemonicView extends StatelessWidget {
                     color: CFColors.dusk,
                   ),
                   SizedBox(
-                    width: 10,
+                    width: _isTinyWidth ? 4 : 10,
                   ),
                   Text(
                     "COPY",
@@ -295,7 +298,8 @@ class WalletDeleteMnemonicView extends StatelessWidget {
   }
 
   Widget _buildKeys(List<String> words) {
-    final int wordsCount = CampfireConstants.seedPhraseWordCount;
+    final int wordsCount =
+        min(words.length, CampfireConstants.seedPhraseWordCount);
     List<TableRow> rows = [];
 
     for (int i = 0; i < wordsCount / 2; i++) {
