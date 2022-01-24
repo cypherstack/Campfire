@@ -324,6 +324,7 @@ class WalletBackUpView extends StatelessWidget {
   }
 
   _buildButtons(BuildContext context) {
+    final _isTinyWidth = SizingUtilities.isTinyWidth(context);
     return Row(
       children: [
         Expanded(
@@ -339,16 +340,13 @@ class WalletBackUpView extends StatelessWidget {
                     color: CFColors.dusk,
                   ),
                   SizedBox(
-                    width: 10,
+                    width: _isTinyWidth ? 4 : 10,
                   ),
                   FittedBox(
                     child: Text(
                       "QR CODE",
-                      style: GoogleFonts.workSans(
+                      style: CFTextStyles.button.copyWith(
                         color: CFColors.dusk,
-                        fontWeight: FontWeight.w600,
-                        fontSize: 16,
-                        letterSpacing: 0.5,
                       ),
                     ),
                   ),
@@ -373,15 +371,12 @@ class WalletBackUpView extends StatelessWidget {
                     color: CFColors.dusk,
                   ),
                   SizedBox(
-                    width: 10,
+                    width: _isTinyWidth ? 4 : 10,
                   ),
                   Text(
                     "COPY",
-                    style: GoogleFonts.workSans(
+                    style: CFTextStyles.button.copyWith(
                       color: CFColors.dusk,
-                      fontWeight: FontWeight.w600,
-                      fontSize: 16,
-                      letterSpacing: 0.5,
                     ),
                   ),
                 ],
