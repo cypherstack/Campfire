@@ -8,6 +8,7 @@ import 'package:paymint/models/models.dart';
 import 'package:paymint/notifications/campfire_alert.dart';
 import 'package:paymint/pages/wallet_view/confirm_send_view.dart';
 import 'package:paymint/services/bitcoin_service.dart';
+import 'package:paymint/utilities/address_utils.dart';
 import 'package:paymint/utilities/cfcolors.dart';
 import 'package:paymint/utilities/currency_utils.dart';
 import 'package:paymint/utilities/sizing_utilities.dart';
@@ -456,10 +457,26 @@ class _SendViewState extends State<SendView> {
                       flashlightEnable: true,
                       scanAreaScale: 0.7,
                     );
-                    if (qrResult.startsWith("firo:")) {
-                      // parse address from uri
-                      qrResult = qrResult.substring(qrResult.indexOf(":") + 1);
-                      _recipientAddressTextController.text = qrResult;
+                    final results = AddressUtils.parseFiroUri(qrResult);
+                    if (results.isNotEmpty) {
+                      // auto fill address
+                      _recipientAddressTextController.text = results["address"];
+
+                      // autofill notes field
+                      if (results["message"] != null) {
+                        _noteTextController.text = results["message"];
+                      } else if (results["label"] != null) {
+                        _noteTextController.text = results["label"];
+                      }
+
+                      // autofill amount field
+                      if (results["amount"] != null) {
+                        final amount = double.parse(results["amount"]);
+                        _firoAmountController.text = amount.toString();
+                        setState(() {
+                          _firoAmount = amount;
+                        });
+                      }
                     }
                   },
                   child: SvgPicture.asset(

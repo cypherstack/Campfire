@@ -5,6 +5,7 @@ import 'package:majascan/majascan.dart';
 import 'package:paymint/notifications/campfire_alert.dart';
 import 'package:paymint/services/address_book_service.dart';
 import 'package:paymint/services/bitcoin_service.dart';
+import 'package:paymint/utilities/address_utils.dart';
 import 'package:paymint/utilities/cfcolors.dart';
 import 'package:paymint/utilities/sizing_utilities.dart';
 import 'package:paymint/utilities/text_styles.dart';
@@ -215,11 +216,14 @@ class _AddAddressBookEntryViewState extends State<AddAddressBookEntryView> {
                                   flashlightEnable: true,
                                   scanAreaScale: 0.7,
                                 );
-                                if (qrResult.startsWith("firo:")) {
-                                  // parse address from uri
-                                  qrResult = qrResult
-                                      .substring(qrResult.indexOf(":") + 1);
-                                  addressTextController.text = qrResult;
+
+                                final results =
+                                    AddressUtils.parseFiroUri(qrResult);
+                                if (results.isNotEmpty) {
+                                  addressTextController.text =
+                                      results["address"];
+                                  nameTextController.text = results["label"] ??
+                                      nameTextController.text;
                                 }
                               },
                               child: SvgPicture.asset(
