@@ -43,9 +43,11 @@ class _Lockscreen2ViewState extends State<Lockscreen2View> {
           localizedReason: localizedReason,
           cancelButtonText: cancelButtonText)) {
         Navigator.pushReplacementNamed(context, widget.routeOnSuccess);
-      } else {
-        Navigator.pop(context);
       }
+      // leave this commented to enable pin fall back should biometrics not work properly
+      // else {
+      //   Navigator.pop(context);
+      // }
     }
   }
 
