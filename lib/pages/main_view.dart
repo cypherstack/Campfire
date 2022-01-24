@@ -156,11 +156,12 @@ class _MainViewState extends State<MainView> {
   }
 
   AppBar buildAppBar(BuildContext context) {
-    final bitcoinService = Provider.of<BitcoinService>(context);
+    final bitcoinService = Provider.of<BitcoinService>(context, listen: false);
+    final walletsService = Provider.of<WalletsService>(context);
     return AppBar(
       backgroundColor: CFColors.white,
       title: FutureBuilder(
-        future: bitcoinService.currentWalletName,
+        future: walletsService.currentWalletName,
         builder: (BuildContext context, AsyncSnapshot<String> snapshot) {
           if (snapshot.connectionState == ConnectionState.done) {
             return Text(
@@ -342,8 +343,6 @@ class _MainViewState extends State<MainView> {
       child: Scaffold(
         key: _key,
         backgroundColor: CFColors.white,
-        // bottomNavigationBar: new Theme(
-        //   data: Theme.of(context).copyWith(canvasColor: ColorStyles.mist),
         appBar: buildAppBar(context),
         extendBody: true,
         bottomNavigationBar: Container(
@@ -402,16 +401,6 @@ class _MainViewState extends State<MainView> {
                     style: _buildTextStyle(2),
                   ),
                 ),
-                // BottomNavigationBarItem(
-                //   icon: Icon(
-                //     Icons.menu,
-                //     color: _buildIconColor(5), // Index 2
-                //   ),
-                //   title: Text(
-                //     "More",
-                //     style: _buildTextStyle(5),
-                //   ),
-                // ),
               ],
             ),
           ),
