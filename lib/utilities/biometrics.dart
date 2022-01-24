@@ -15,34 +15,48 @@ class Biometrics {
       List<BiometricType> availableSystems =
           await localAuth.getAvailableBiometrics();
 
-      //TODO implement iOS biometrics
+      //TODO properly handle caught exceptions
       if (Platform.isIOS) {
         if (availableSystems.contains(BiometricType.face)) {
-          // Write iOS specific code when required
+          //TODO implement iOS face id
         } else if (availableSystems.contains(BiometricType.fingerprint)) {
-          // Write iOS specific code when required
+          try {
+            bool didAuthenticate = await localAuth.authenticate(
+              biometricOnly: true,
+              localizedReason: localizedReason,
+              stickyAuth: true,
+              //TODO use ios auth strings?
+              // iOSAuthStrings: IOSAuthMessages(),
+            );
+
+            if (didAuthenticate) {
+              return true;
+            }
+          } catch (e) {
+            print(
+                "local_auth exception caught in Biometrics.authenticate(), e: $e");
+          }
         }
       } else if (Platform.isAndroid) {
         if (availableSystems.contains(BiometricType.fingerprint)) {
-          //TODO catch and handle errors/exceptions
-          bool didAuthenticate = await localAuth.authenticate(
-            biometricOnly: true,
-            localizedReason: localizedReason,
-            stickyAuth: true,
-            androidAuthStrings: AndroidAuthMessages(
-              // biometricRequiredTitle: "hello",
-              // biometricNotRecognized: "biometric not recognized",
-              biometricHint: "",
-              // biometricSuccess: "bio successsss",
-              // cancelButton: "SKIP",
-              cancelButton: cancelButtonText,
-              // deviceCredentialsRequiredTitle: "dev cred req title",
-              signInTitle: title,
-            ),
-          );
+          try {
+            bool didAuthenticate = await localAuth.authenticate(
+              biometricOnly: true,
+              localizedReason: localizedReason,
+              stickyAuth: true,
+              androidAuthStrings: AndroidAuthMessages(
+                biometricHint: "",
+                cancelButton: cancelButtonText,
+                signInTitle: title,
+              ),
+            );
 
-          if (didAuthenticate) {
-            return true;
+            if (didAuthenticate) {
+              return true;
+            }
+          } catch (e) {
+            print(
+                "local_auth exception caught in Biometrics.authenticate(), e: $e");
           }
         }
       }
