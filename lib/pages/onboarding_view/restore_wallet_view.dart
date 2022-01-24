@@ -16,6 +16,7 @@ import 'package:paymint/notifications/modal_popup_dialog.dart';
 import 'package:paymint/pages/onboarding_view/onboarding_view.dart';
 import 'package:paymint/services/bitcoin_service.dart';
 import 'package:paymint/services/wallets_service.dart';
+import 'package:paymint/utilities/address_utils.dart';
 import 'package:paymint/utilities/cfcolors.dart';
 import 'package:paymint/utilities/misc_global_constants.dart';
 import 'package:paymint/utilities/sizing_utilities.dart';
@@ -108,9 +109,22 @@ class _RestoreWalletFormViewState extends State<RestoreWalletFormView> {
     );
   }
 
+  _clearAndPopulateMnemonic(List<String> words) {
+    final count = min(_controllers.length, words.length);
+
+    // replace field content with listed words
+    for (int i = 0; i < count; i++) {
+      _controllers[i].text = words[i];
+    }
+
+    // clear remaining fields
+    for (int i = count; i < _controllers.length; i++) {
+      _controllers[i].text = "";
+    }
+  }
+
   _onBackPressed(int pops) async {
     // delete created wallet name and pin
-
     final walletsService = Provider.of<WalletsService>(context, listen: false);
     int result = await walletsService.deleteWallet(widget.walletName);
 
@@ -193,10 +207,8 @@ class _RestoreWalletFormViewState extends State<RestoreWalletFormView> {
                         height: 48,
                         child: SimpleButton(
                           onTap: () async {
-                            print("Scan qr code");
-                            // TODO implement parse qr code
                             String qrResult = await MajaScan.startScan(
-                              title: "Scan seed QR Code",
+                              title: "Scan backup key QR Code",
                               barColor: CFColors.white,
                               titleColor: CFColors.dusk,
                               qRCornerColor: CFColors.spark,
@@ -204,9 +216,13 @@ class _RestoreWalletFormViewState extends State<RestoreWalletFormView> {
                               flashlightEnable: true,
                               scanAreaScale: 0.7,
                             );
+                            final results =
+                                AddressUtils.decodeQRSeedData(qrResult);
 
-                            // Navigator.push(context,
-                            //     MaterialPageRoute(builder: (_) => QrScannerView()));
+                            if (results["mnemonic"] != null) {
+                              final list = results["mnemonic"] as List<String>;
+                              _clearAndPopulateMnemonic(list);
+                            }
                           },
                           child: FittedBox(
                             child: Row(
@@ -248,10 +264,7 @@ class _RestoreWalletFormViewState extends State<RestoreWalletFormView> {
                                 await Clipboard.getData(Clipboard.kTextPlain);
                             final content = data.text.trim();
                             final list = content.split(" ");
-                            final count = min(_controllers.length, list.length);
-                            for (int i = 0; i < count; i++) {
-                              _controllers[i].text = list[i];
-                            }
+                            _clearAndPopulateMnemonic(list);
                           },
                           child: FittedBox(
                             child: Row(
