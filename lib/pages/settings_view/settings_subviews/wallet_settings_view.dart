@@ -69,7 +69,12 @@ class _WalletSettingsViewState extends State<WalletSettingsView> {
         child: GestureDetector(
           onTap: () {
             Navigator.push(context, CupertinoPageRoute(builder: (context) {
-              return Lockscreen2View(routeOnSuccess: '/settings/changepinview');
+              return Lockscreen2View(
+                routeOnSuccess: '/settings/changepinview',
+                biometricsCancelButtonString: "CANCEL",
+                biometricsLocalizedReason: "Authenticate to change PIN",
+                biometricsAuthenticationTitle: "Change PIN",
+              );
             }));
           },
           child: Padding(
