@@ -1,3 +1,5 @@
+import 'dart:convert';
+
 class AddressUtils {
   static String condenseAddress(String address) {
     return address.substring(0, 5) +
@@ -17,6 +19,28 @@ class AddressUtils {
       }
     } catch (e) {
       print(e);
+    }
+    return result;
+  }
+
+  /// returns empty if bad data
+  static Map<String, dynamic> decodeQRSeedData(String data) {
+    Map<String, String> result = {};
+    try {
+      result = jsonDecode(data);
+    } catch (e) {
+      print("Exception caught in parseQRSeedData($data): $e");
+    }
+    return result;
+  }
+
+  /// encode mnemonic words to qrcode formatted string
+  static String encodeQRSeedData(List<String> words) {
+    String result = "";
+    try {
+      result = jsonEncode({"mnemonic": words});
+    } catch (e) {
+      print("Exception caught in encodeQRSeedData: $e");
     }
     return result;
   }
