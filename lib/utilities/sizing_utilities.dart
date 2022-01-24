@@ -29,4 +29,9 @@ class SizingUtilities {
         getStatusBarHeight(context) -
         getAppBarHeight(null);
   }
+
+  // Layout determination based on screen width
+  static bool isTinyWidth(BuildContext context) {
+    return MediaQuery.of(context).size.width < 400;
+  }
 }
