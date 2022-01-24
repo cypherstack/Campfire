@@ -39,7 +39,7 @@ class _ReceiveViewState extends State<ReceiveView> {
                 if (currentAddress.connectionState == ConnectionState.done) {
                   return Center(
                     child: PrettyQr(
-                      data: currentAddress.data,
+                      data: "firo:" + currentAddress.data,
                       roundEdges: roundQr,
                       elementColor: CFColors.starryNight,
                       typeNumber: 4,
