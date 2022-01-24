@@ -1,6 +1,7 @@
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import 'package:flutter_spinkit/flutter_spinkit.dart';
 import 'package:flutter_svg/flutter_svg.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:paymint/services/bitcoin_service.dart';
@@ -27,10 +28,6 @@ class WalletSelectionView extends StatefulWidget {
 class _WalletSelectionViewState extends State<WalletSelectionView> {
   @override
   void initState() {
-    // show system status bar
-    // SystemChrome.setEnabledSystemUIMode(SystemUiMode.manual,
-    //     overlays: [SystemUiOverlay.top, SystemUiOverlay.bottom]);
-
     SystemChrome.setSystemUIOverlayStyle(
       SystemUiOverlayStyle(
         statusBarColor: Colors.transparent,
@@ -40,14 +37,6 @@ class _WalletSelectionViewState extends State<WalletSelectionView> {
     );
     super.initState();
   }
-  //
-  // @override
-  // void dispose() {
-  //   // hide system status bar
-  //   SystemChrome.setEnabledSystemUIMode(SystemUiMode.manual,
-  //       overlays: [SystemUiOverlay.bottom]);
-  //   super.dispose();
-  // }
 
   _buildWalletsList(
     BuildContext context,
@@ -230,9 +219,11 @@ class _WalletSelectionViewState extends State<WalletSelectionView> {
                             return _buildWalletsList(
                                 context, snapshot, walletsService);
                           } else {
-                            return CircularProgressIndicator(
-                              color: CFColors.spark,
-                              strokeWidth: 2,
+                            return Center(
+                              child: SpinKitThreeBounce(
+                                color: CFColors.spark,
+                                size: MediaQuery.of(context).size.width * 0.1,
+                              ),
                             );
                           }
                         },
