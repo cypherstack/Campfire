@@ -1,22 +1,24 @@
+import 'dart:core' as core;
+
 abstract class Logger {
-  static void print(Object object) async {
-    int defaultPrintLength = 1020;
+  static void print(core.Object object) async {
+    core.int defaultPrintLength = 1020;
     if (object == null || object.toString().length <= defaultPrintLength) {
-      print(object);
+      core.print(object);
     } else {
-      String log = object.toString();
-      int start = 0;
-      int endIndex = defaultPrintLength;
-      int logLength = log.length;
-      int tmpLogLength = log.length;
+      core.String log = object.toString();
+      core.int start = 0;
+      core.int endIndex = defaultPrintLength;
+      core.int logLength = log.length;
+      core.int tmpLogLength = log.length;
       while (endIndex < logLength) {
-        print(log.substring(start, endIndex));
+        core.print(log.substring(start, endIndex));
         endIndex += defaultPrintLength;
         start += defaultPrintLength;
         tmpLogLength -= defaultPrintLength;
       }
       if (tmpLogLength > 0) {
-        print(log.substring(start, logLength));
+        core.print(log.substring(start, logLength));
       }
     }
   }
