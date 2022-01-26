@@ -184,29 +184,32 @@ class _AddressBookEntryDetailsViewState
 
   _buildNoTransactionsFound() {
     return Center(
-      child: FittedBox(
-        fit: BoxFit.scaleDown,
-        child: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            SvgPicture.asset(
-              "assets/svg/empty-tx-list.svg",
-              width: MediaQuery.of(context).size.width * 0.52,
+      child: Column(
+        mainAxisAlignment: MainAxisAlignment.center,
+        children: [
+          Spacer(
+            flex: 1,
+          ),
+          SvgPicture.asset(
+            "assets/svg/empty-tx-list.svg",
+            width: MediaQuery.of(context).size.width * 0.52,
+          ),
+          SizedBox(
+            height: 8,
+          ),
+          Text(
+            "NO TRANSACTIONS FOUND",
+            style: GoogleFonts.workSans(
+              color: CFColors.dew,
+              fontWeight: FontWeight.w600,
+              fontSize: 12,
+              letterSpacing: 0.25,
             ),
-            SizedBox(
-              height: 8,
-            ),
-            Text(
-              "NO TRANSACTIONS FOUND",
-              style: GoogleFonts.workSans(
-                color: CFColors.dew,
-                fontWeight: FontWeight.w600,
-                fontSize: 12,
-                letterSpacing: 0.25,
-              ),
-            )
-          ],
-        ),
+          ),
+          Spacer(
+            flex: 2,
+          ),
+        ],
       ),
     );
   }
