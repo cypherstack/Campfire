@@ -282,65 +282,68 @@ class _SendViewState extends State<SendView> {
           vertical: 11,
           horizontal: 16,
         ),
-        child: Row(
-          mainAxisAlignment: MainAxisAlignment.spaceBetween,
-          children: [
-            FittedBox(
-              child: Text(
-                "You can spend: ",
-                style: GoogleFonts.workSans(
-                  color: CFColors.white,
-                  fontSize: 12,
-                  fontWeight: FontWeight.w600,
+        child: Container(
+          height: 20,
+          child: Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: [
+              FittedBox(
+                child: Text(
+                  "You can spend: ",
+                  style: GoogleFonts.workSans(
+                    color: CFColors.white,
+                    fontSize: 12,
+                    fontWeight: FontWeight.w600,
+                  ),
                 ),
               ),
-            ),
-            FutureBuilder(
-              future: manager.balanceMinusMaxFee,
-              builder: (
-                BuildContext context,
-                AsyncSnapshot<double> balanceMinusMaxFee,
-              ) {
-                if (balanceMinusMaxFee.connectionState ==
-                    ConnectionState.done) {
-                  if (balanceMinusMaxFee == null ||
-                      balanceMinusMaxFee.hasError ||
-                      balanceMinusMaxFee.data == null) {
-                    return Text(
-                      "... ${CurrencyUtilities.coinName}",
-                      style: GoogleFonts.workSans(
+              FutureBuilder(
+                future: manager.balanceMinusMaxFee,
+                builder: (
+                  BuildContext context,
+                  AsyncSnapshot<double> balanceMinusMaxFee,
+                ) {
+                  if (balanceMinusMaxFee.connectionState ==
+                      ConnectionState.done) {
+                    if (balanceMinusMaxFee == null ||
+                        balanceMinusMaxFee.hasError ||
+                        balanceMinusMaxFee.data == null) {
+                      return Text(
+                        "... ${CurrencyUtilities.coinName}",
+                        style: GoogleFonts.workSans(
+                          color: CFColors.white,
+                          fontSize: 16,
+                          fontWeight: FontWeight.w600,
+                        ),
+                      );
+                    }
+                    _balanceMinusMaxFee = balanceMinusMaxFee.data;
+
+                    return FittedBox(
+                      child: Text(
+                        "${_balanceMinusMaxFee < _maxFee ? "0.00000000" : _balanceMinusMaxFee.toStringAsFixed(8)} ${CurrencyUtilities.coinName}",
+                        style: GoogleFonts.workSans(
+                          color: CFColors.white,
+                          fontSize: 16,
+                          fontWeight: FontWeight.w600,
+                        ),
+                      ),
+                    );
+                  } else {
+                    //TODO: wallet balance loading progress
+                    // currently hidden by synchronizing overlay
+                    return SizedBox(
+                      height: 20,
+                      width: 100,
+                      child: SpinKitThreeBounce(
                         color: CFColors.white,
-                        fontSize: 16,
-                        fontWeight: FontWeight.w600,
                       ),
                     );
                   }
-                  _balanceMinusMaxFee = balanceMinusMaxFee.data;
-
-                  return FittedBox(
-                    child: Text(
-                      "${_balanceMinusMaxFee < _maxFee ? "0.00000000" : _balanceMinusMaxFee.toStringAsFixed(8)} ${CurrencyUtilities.coinName}",
-                      style: GoogleFonts.workSans(
-                        color: CFColors.white,
-                        fontSize: 16,
-                        fontWeight: FontWeight.w600,
-                      ),
-                    ),
-                  );
-                } else {
-                  //TODO: wallet balance loading progress
-                  // currently hidden by synchronizing overlay
-                  return SizedBox(
-                    height: 20,
-                    width: 100,
-                    child: SpinKitThreeBounce(
-                      color: CFColors.white,
-                    ),
-                  );
-                }
-              },
-            ),
-          ],
+                },
+              ),
+            ],
+          ),
         ),
       ),
     );
