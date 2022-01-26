@@ -280,6 +280,9 @@ _buildNoTransactionsFound(BuildContext context) {
   return Center(
     child: Column(
       children: [
+        Spacer(
+          flex: 1,
+        ),
         SvgPicture.asset(
           "assets/svg/empty-tx-list.svg",
           width: MediaQuery.of(context).size.width * 0.52,
@@ -297,7 +300,10 @@ _buildNoTransactionsFound(BuildContext context) {
               letterSpacing: 0.25,
             ),
           ),
-        )
+        ),
+        Spacer(
+          flex: 2,
+        ),
       ],
     ),
   );
