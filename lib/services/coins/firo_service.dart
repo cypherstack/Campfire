@@ -712,7 +712,7 @@ class Firo extends CoinServiceAPI {
 
   @override
   bool validateAddress(String address) {
-    return Address.validateAddress(address);
+    return Address.validateAddress(address, firoNetwork);
   }
 
   /// Holds final balances, all utxos under control
