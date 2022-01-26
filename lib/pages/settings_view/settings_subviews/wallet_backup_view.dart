@@ -7,7 +7,7 @@ import 'package:flutter_svg/svg.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:paymint/notifications/modal_popup_dialog.dart';
 import 'package:paymint/notifications/overlay_notification.dart';
-import 'package:paymint/services/bitcoin_service.dart';
+import 'package:paymint/services/coins/manager.dart';
 import 'package:paymint/utilities/address_utils.dart';
 import 'package:paymint/utilities/cfcolors.dart';
 import 'package:paymint/utilities/misc_global_constants.dart';
@@ -22,8 +22,8 @@ class WalletBackUpView extends StatelessWidget {
   const WalletBackUpView({Key key}) : super(key: key);
 
   Future<List<String>> _getMnemonic(BuildContext context) async {
-    final bitcoinService = Provider.of<BitcoinService>(context, listen: false);
-    final mnemonic = await bitcoinService.getMnemonicList();
+    final manager = Provider.of<Manager>(context, listen: false);
+    final mnemonic = await manager.mnemonic;
     return mnemonic;
   }
 

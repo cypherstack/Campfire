@@ -4,7 +4,7 @@ import 'package:google_fonts/google_fonts.dart';
 import 'package:paymint/notifications/modal_popup_dialog.dart';
 import 'package:paymint/pages/settings_view/helpers/builders.dart';
 import 'package:paymint/pages/settings_view/settings_subviews/wallet_settings_subviews/rename_wallet_view.dart';
-import 'package:paymint/services/bitcoin_service.dart';
+import 'package:paymint/services/coins/manager.dart';
 import 'package:paymint/services/wallets_service.dart';
 import 'package:paymint/utilities/biometrics.dart';
 import 'package:paymint/utilities/cfcolors.dart';
@@ -62,7 +62,7 @@ class _WalletSettingsViewState extends State<WalletSettingsView> {
   }
 
   List<Widget> _buildOptionsList(BuildContext context, double itemWidth) {
-    final bitcoinService = Provider.of<BitcoinService>(context);
+    final manager = Provider.of<Manager>(context);
     return [
       Container(
         // width: itemWidth,
@@ -94,7 +94,7 @@ class _WalletSettingsViewState extends State<WalletSettingsView> {
       GestureDetector(
         onTap: () async {
           if (_useBiometrics) {
-            await bitcoinService.updateBiometricsUsage(false);
+            await manager.updateBiometricsUsage(false);
           } else {
             if (await Biometrics.authenticate(
               cancelButtonText: "CANCEL",
@@ -102,7 +102,7 @@ class _WalletSettingsViewState extends State<WalletSettingsView> {
                   "Unlock wallet and confirm transactions with your fingerprint",
               title: "Enable fingerprint authentication",
             )) {
-              await bitcoinService.updateBiometricsUsage(true);
+              await manager.updateBiometricsUsage(true);
             }
           }
         },
@@ -123,7 +123,7 @@ class _WalletSettingsViewState extends State<WalletSettingsView> {
             ),
             Spacer(),
             FutureBuilder(
-              future: bitcoinService.useBiometrics,
+              future: manager.useBiometrics,
               builder: (context, AsyncSnapshot<bool> snapshot) {
                 if (snapshot.connectionState == ConnectionState.done) {
                   _useBiometrics =

@@ -4,7 +4,7 @@ import 'package:flutter_svg/svg.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:paymint/notifications/campfire_alert.dart';
 import 'package:paymint/notifications/overlay_notification.dart';
-import 'package:paymint/services/bitcoin_service.dart';
+import 'package:paymint/services/coins/manager.dart';
 import 'package:paymint/services/node_service.dart';
 import 'package:paymint/utilities/cfcolors.dart';
 import 'package:paymint/utilities/sizing_utilities.dart';
@@ -68,9 +68,9 @@ class _AddCustomNodeViewState extends State<AddCustomNodeView> {
   }
 
   void _onTestPressed() async {
-    final bitcoinService = Provider.of<BitcoinService>(context, listen: false);
+    final manager = Provider.of<Manager>(context, listen: false);
 
-    final canConnect = await bitcoinService.testConnection(
+    final canConnect = await manager.testNetworkConnection(
         _addressController.text, _portController.text);
 
     if (canConnect) {

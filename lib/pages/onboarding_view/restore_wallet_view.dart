@@ -14,7 +14,8 @@ import 'package:majascan/majascan.dart';
 import 'package:paymint/notifications/campfire_alert.dart';
 import 'package:paymint/notifications/modal_popup_dialog.dart';
 import 'package:paymint/pages/onboarding_view/onboarding_view.dart';
-import 'package:paymint/services/bitcoin_service.dart';
+import 'package:paymint/services/coins/firo_service.dart';
+import 'package:paymint/services/coins/manager.dart';
 import 'package:paymint/services/wallets_service.dart';
 import 'package:paymint/utilities/address_utils.dart';
 import 'package:paymint/utilities/cfcolors.dart';
@@ -139,8 +140,6 @@ class _RestoreWalletFormViewState extends State<RestoreWalletFormView> {
         (_) => false,
       );
     } else {
-      Provider.of<BitcoinService>(context, listen: false).refreshWalletData();
-
       FocusScope.of(context).unfocus();
       await Future.delayed(Duration(milliseconds: 100));
 
@@ -433,10 +432,10 @@ class _RestoreWalletFormViewState extends State<RestoreWalletFormView> {
                       CampfireAlert(message: "Invalid seed phrase!"),
                 );
               } else {
-                final btcService =
-                    Provider.of<BitcoinService>(context, listen: false);
-                await btcService.clearWalletData();
-                await btcService.initializeWallet(widget.walletName);
+                final manager = Provider.of<Manager>(context, listen: false);
+                // should already be null but just in case:
+                manager.currentWallet = null;
+
                 showDialog(
                   context: context,
                   useSafeArea: false,
@@ -452,13 +451,15 @@ class _RestoreWalletFormViewState extends State<RestoreWalletFormView> {
 
                 final walletName = await walletsService.currentWalletName;
                 final walletId = await walletsService.getWalletId(walletName);
+                manager.currentWallet =
+                    Firo(walletId: walletId, walletName: walletName);
 
                 try {
                   final secureStore = new FlutterSecureStorage();
                   await secureStore.write(
                       key: '${walletId}_mnemonic', value: mnemonic.trim());
-                  await btcService.recoverWalletFromBIP32SeedPhrase(mnemonic);
-                  await btcService.refreshWalletData();
+                  await manager.recoverFromMnemonic(mnemonic);
+                  await manager.refresh();
                   Navigator.pushReplacementNamed(context, "/mainview");
 
                   Timer timer = Timer(Duration(milliseconds: 2200), () {

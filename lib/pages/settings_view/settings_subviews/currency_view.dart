@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_spinkit/flutter_spinkit.dart';
 import 'package:google_fonts/google_fonts.dart';
-import 'package:paymint/services/bitcoin_service.dart';
+import 'package:paymint/services/coins/manager.dart';
 import 'package:paymint/utilities/cfcolors.dart';
 import 'package:paymint/utilities/sizing_utilities.dart';
 import 'package:provider/provider.dart';
@@ -38,11 +38,11 @@ class _CurrencyViewState extends State<CurrencyView> {
 
   @override
   Widget build(BuildContext context) {
-    final bitcoinService = Provider.of<BitcoinService>(context);
+    final manager = Provider.of<Manager>(context);
     return Scaffold(
       backgroundColor: CFColors.white,
       appBar: buildSettingsAppBar(context, "Currency", onBackPressed: () {
-        if (_currencyChanged) bitcoinService.refreshWalletData();
+        if (_currencyChanged) manager.refresh();
       }),
       body: Padding(
         padding: EdgeInsets.only(
@@ -52,7 +52,7 @@ class _CurrencyViewState extends State<CurrencyView> {
           bottom: SizingUtilities.standardPadding,
         ),
         child: FutureBuilder(
-          future: bitcoinService.currency,
+          future: manager.fiatCurrency,
           builder: (BuildContext context, AsyncSnapshot<String> currency) {
             if (currency.connectionState == ConnectionState.done) {
               final selectedCurrency = currency.data;
@@ -93,17 +93,8 @@ class _CurrencyViewState extends State<CurrencyView> {
               // ignore if already selected currency
               return;
             }
-
-            // showModal(
-            //   context: context,
-            //   configuration: FadeScaleTransitionConfiguration(barrierDismissible: false),
-            //   builder: (BuildContext context) {
-            //     return _currencySwitchDialog(currenciesWithoutSelected[index]);
-            //   },
-            // );
-            final BitcoinService btcService =
-                Provider.of<BitcoinService>(context, listen: false);
-            await btcService.changeCurrency(currenciesWithoutSelected[index]);
+            final manager = Provider.of<Manager>(context, listen: false);
+            await manager.changeFiatCurrency(currenciesWithoutSelected[index]);
             _currencyChanged = true;
             // Navigator.pop(context);
           },
@@ -129,24 +120,4 @@ class _CurrencyViewState extends State<CurrencyView> {
       },
     );
   }
-  //
-  // _currencySwitchDialog(String newCurrency) {
-  //   return AlertDialog(
-  //     backgroundColor: Colors.black,
-  //     title: Row(
-  //       children: <Widget>[
-  //         CircularProgressIndicator(),
-  //         SizedBox(width: 16),
-  //         Text(
-  //           'Switching currency...',
-  //           style: TextStyle(color: Colors.white),
-  //         ),
-  //       ],
-  //     ),
-  //     content: Text(
-  //       "Please wait while we refresh wallet data in $newCurrency",
-  //       style: TextStyle(color: Colors.white),
-  //     ),
-  //   );
-  // }
 }

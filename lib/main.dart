@@ -9,9 +9,9 @@ import 'package:paymint/pages/loading_view.dart';
 import 'package:paymint/pages/onboarding_view/onboarding_view.dart';
 import 'package:paymint/pages/wallet_selection_view.dart';
 import 'package:paymint/services/address_book_service.dart';
+import 'package:paymint/services/coins/manager.dart';
 import 'package:paymint/services/node_service.dart';
 import 'package:paymint/services/notes_service.dart';
-import 'package:paymint/services/services.dart';
 import 'package:paymint/services/wallets_service.dart';
 import 'package:paymint/utilities/cfcolors.dart';
 import 'package:paymint/utilities/sizing_utilities.dart';
@@ -57,7 +57,7 @@ class MyApp extends StatelessWidget {
     return MultiProvider(
       providers: [
         ChangeNotifierProvider(
-          create: (_) => BitcoinService(),
+          create: (_) => Manager(),
         ),
         ChangeNotifierProvider(
           create: (_) => WalletsService(),

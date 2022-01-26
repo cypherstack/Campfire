@@ -8,7 +8,7 @@ import 'package:paymint/pages/lockscreen2.dart';
 import 'package:paymint/pages/settings_view/settings_subviews/currency_view.dart';
 import 'package:paymint/pages/settings_view/settings_subviews/network_settings_view.dart';
 import 'package:paymint/pages/settings_view/settings_subviews/wallet_settings_view.dart';
-import 'package:paymint/services/bitcoin_service.dart';
+import 'package:paymint/services/coins/manager.dart';
 import 'package:paymint/services/wallets_service.dart';
 import 'package:paymint/utilities/cfcolors.dart';
 import 'package:paymint/utilities/sizing_utilities.dart';
@@ -23,34 +23,6 @@ import 'helpers/builders.dart';
 
 class SettingsView extends StatelessWidget {
   const SettingsView({Key key}) : super(key: key);
-
-//   @override
-//   _SettingsViewState createState() => _SettingsViewState();
-// }
-//
-// class _SettingsViewState extends State<SettingsView> {
-  // @override
-  // void initState() {
-  //   // show system status bar
-  //   SystemChrome.setEnabledSystemUIMode(SystemUiMode.manual,
-  //       overlays: [SystemUiOverlay.top, SystemUiOverlay.bottom]);
-  //
-  //   SystemChrome.setSystemUIOverlayStyle(
-  //     SystemUiOverlayStyle(
-  //       statusBarColor: Colors.transparent,
-  //       statusBarIconBrightness: Brightness.dark,
-  //       // statusBarBrightness: Brightness.dark,
-  //     ),
-  //   );
-  //   super.initState();
-  // }
-  //
-  // final _itemTextStyle = GoogleFonts.workSans(
-  //   color: CFColors.starryNight,
-  //   fontWeight: FontWeight.w600,
-  //   fontSize: 16,
-  //   letterSpacing: 0.25,
-  // );
 
   _buildItem(String iconAsset, String text, VoidCallback onTap) {
     return GestureDetector(
@@ -116,8 +88,7 @@ class SettingsView extends StatelessWidget {
               ),
               circularBorderRadius: 8,
               onPressed: () async {
-                final BitcoinService bitcoinService =
-                    Provider.of<BitcoinService>(context, listen: false);
+                final manager = Provider.of<Manager>(context, listen: false);
                 final walletsService =
                     Provider.of<WalletsService>(context, listen: false);
                 final walletName = await walletsService.currentWalletName;
@@ -188,7 +159,9 @@ class SettingsView extends StatelessWidget {
                                       ),
                                       onTap: () async {
                                         print("log out pressed");
-                                        await bitcoinService.clearWalletData();
+                                        manager.currentWallet = null;
+                                        await walletsService
+                                            .setCurrentWalletName("");
                                         await walletsService.refreshWallets();
 
                                         Navigator.pushAndRemoveUntil(

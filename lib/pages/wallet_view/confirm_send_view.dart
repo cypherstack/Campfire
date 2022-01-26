@@ -4,11 +4,11 @@ import 'package:google_fonts/google_fonts.dart';
 import 'package:paymint/notifications/campfire_alert.dart';
 import 'package:paymint/notifications/modal_popup_dialog.dart';
 import 'package:paymint/notifications/overlay_notification.dart';
-import 'package:paymint/services/bitcoin_service.dart';
+import 'package:paymint/services/coins/manager.dart';
 import 'package:paymint/services/notes_service.dart';
-import 'package:paymint/services/wallets_service.dart';
 import 'package:paymint/utilities/biometrics.dart';
 import 'package:paymint/utilities/cfcolors.dart';
+import 'package:paymint/utilities/logger.dart';
 import 'package:paymint/utilities/sizing_utilities.dart';
 import 'package:paymint/widgets/custom_pin_put/custom_pin_put.dart';
 import 'package:provider/provider.dart';
@@ -33,13 +33,13 @@ class ConfirmSendView extends StatefulWidget {
 
 class _ConfirmSendViewState extends State<ConfirmSendView> {
   _checkUseBiometrics() async {
-    final bitcoinService = Provider.of<BitcoinService>(context, listen: false);
+    final manager = Provider.of<Manager>(context, listen: false);
 
-    if (await bitcoinService.useBiometrics &&
+    if (await manager.useBiometrics &&
         await Biometrics.authenticate(
           cancelButtonText: "CANCEL",
-          localizedReason: "",
-          title: "Confirm transaction",
+          localizedReason: "Confirm transaction",
+          title: manager.walletName,
         )) {
       Navigator.pushReplacementNamed(context, '/mainview');
     }
@@ -156,16 +156,12 @@ class _ConfirmSendViewState extends State<ConfirmSendView> {
                   selectedFieldDecoration: _pinPutDecoration,
                   followingFieldDecoration: _pinPutDecoration,
                   onSubmit: (String pin) async {
-                    final BitcoinService bitcoinService =
-                        Provider.of<BitcoinService>(context, listen: false);
-                    final walletsService =
-                        Provider.of<WalletsService>(context, listen: false);
+                    final manager =
+                        Provider.of<Manager>(context, listen: false);
 
                     final store = new FlutterSecureStorage();
-
-                    final walletName = await bitcoinService.currentWalletName;
-                    final id = await walletsService.getWalletId(walletName);
-                    final storedPin = await store.read(key: '${id}_pin');
+                    final storedPin =
+                        await store.read(key: '${manager.walletId}_pin');
 
                     if (storedPin == pin) {
                       // show sending dialog
@@ -176,92 +172,47 @@ class _ConfirmSendViewState extends State<ConfirmSendView> {
                         builder: (_) => _buildSendingDialog(),
                       );
 
-                      final rawAmount = (widget.amount * 100000000).toInt();
-
-                      print("rawAmount: $rawAmount");
-                      print("widget.fee: ${widget.fee}");
+                      print("widget.amount: ${widget.amount}");
                       print("widget.address: ${widget.address}");
 
-                      // The following call throws an invalid argument exception
-                      // on invalid address instead of returning an error int
-                      // Address is validated in send_view.dart
-                      dynamic txHexOrError =
-                          await bitcoinService.createJoinSplitTransaction(
-                              rawAmount, widget.address, false);
-                      logPrint("txHexOrError $txHexOrError");
+                      try {
+                        final String txid = await manager.send(
+                            toAddress: widget.address, amount: widget.amount);
 
-                      if (txHexOrError is int) {
-                        // Here, we assume that transaction crafting returned an error
-                        if (txHexOrError == 1) {
-                          //TODO: handle send transaction errors
-                          print("Insufficient balance!");
-                          showDialog(
-                            useSafeArea: false,
-                            barrierDismissible: false,
-                            context: context,
-                            builder: (_) =>
-                                CampfireAlert(message: "Insufficient balance!"),
-                          );
-                        } else if (txHexOrError == 2) {
-                          print("Insufficient funds to pay for tx fee");
-                          showDialog(
-                            useSafeArea: false,
-                            barrierDismissible: false,
-                            context: context,
-                            builder: (_) => CampfireAlert(
-                                message:
-                                    "Insufficient funds to pay for tx fee!"),
-                          );
-                        } else if (txHexOrError == 3) {
-                          print("Some other error");
-                          showDialog(
-                            useSafeArea: false,
-                            barrierDismissible: false,
-                            context: context,
-                            builder: (_) => CampfireAlert(
-                                message: "Error Creating Transaction!"),
-                          );
-                        }
-                      } else {
-                        logPrint(txHexOrError.toString());
-
-                        await bitcoinService
-                            .submitLelantusToNetwork(txHexOrError)
-                            .then((booleanResponse) async {
-                          if (booleanResponse == true) {
-                            final txid = (txHexOrError
-                                as Map<String, dynamic>)["txid"] as String;
-                            final notesService = Provider.of<NotesService>(
-                              context,
-                              listen: false,
-                            );
-                            notesService.addNote(txid: txid, note: widget.note);
-                            OverlayNotification.showSuccess(
-                              context,
-                              "Transaction sent",
-                              Duration(milliseconds: 2700),
-                            );
-                            await Future.delayed(Duration(milliseconds: 100))
-                                .then((value) {
-                              bitcoinService.refreshWalletData();
-                              final navigator = Navigator.of(context);
-                              navigator.pop();
-                              navigator.pop();
-                            });
-                          } else {
-                            OverlayNotification.showError(
-                              context,
-                              "Transaction failed.",
-                              Duration(milliseconds: 2000),
-                            );
-                            await Future.delayed(Duration(milliseconds: 100))
-                                .then((value) {
-                              final navigator = Navigator.of(context);
-                              navigator.pop();
-                              navigator.pop();
-                            });
-                          }
+                        final notesService = Provider.of<NotesService>(
+                          context,
+                          listen: false,
+                        );
+                        notesService.addNote(txid: txid, note: widget.note);
+                        OverlayNotification.showSuccess(
+                          context,
+                          "Transaction sent",
+                          Duration(milliseconds: 2700),
+                        );
+                        await Future.delayed(Duration(milliseconds: 100))
+                            .then((value) {
+                          manager.refresh();
+                          final navigator = Navigator.of(context);
+                          navigator.pop();
+                          navigator.pop();
                         });
+                      } catch (e) {
+                        Logger.print(e);
+                        showDialog(
+                          useSafeArea: false,
+                          barrierDismissible: false,
+                          context: context,
+                          builder: (_) => CampfireAlert(message: e.toString()),
+                        ).then((value) {
+                          final navigator = Navigator.of(context);
+                          navigator.pop();
+                          navigator.pop();
+                        });
+                        OverlayNotification.showError(
+                          context,
+                          "Transaction failed.",
+                          Duration(milliseconds: 2000),
+                        );
                       }
 
                       // Navigator.pop(context);

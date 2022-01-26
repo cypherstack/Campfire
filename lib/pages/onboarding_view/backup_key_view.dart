@@ -7,7 +7,7 @@ import 'package:paymint/notifications/modal_popup_dialog.dart';
 import 'package:paymint/notifications/overlay_notification.dart';
 import 'package:paymint/pages/onboarding_view/helpers/builders.dart';
 import 'package:paymint/pages/onboarding_view/verify_backup_key_view.dart';
-import 'package:paymint/services/bitcoin_service.dart';
+import 'package:paymint/services/coins/manager.dart';
 import 'package:paymint/utilities/address_utils.dart';
 import 'package:paymint/utilities/cfcolors.dart';
 import 'package:paymint/utilities/misc_global_constants.dart';
@@ -27,8 +27,8 @@ class BackupKeyView extends StatefulWidget {
 
 class _BackupKeyViewState extends State<BackupKeyView> {
   Future<List<String>> _getMnemonic(BuildContext context) async {
-    final bitcoinService = Provider.of<BitcoinService>(context, listen: false);
-    final mnemonic = await bitcoinService.getMnemonicList();
+    final manager = Provider.of<Manager>(context, listen: false);
+    final mnemonic = await manager.mnemonic;
     return mnemonic;
   }
 

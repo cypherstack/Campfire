@@ -8,7 +8,7 @@ import 'package:paymint/models/transactions_model.dart';
 import 'package:paymint/notifications/modal_popup_dialog.dart';
 import 'package:paymint/notifications/overlay_notification.dart';
 import 'package:paymint/services/address_book_service.dart';
-import 'package:paymint/services/bitcoin_service.dart';
+import 'package:paymint/services/coins/manager.dart';
 import 'package:paymint/utilities/cfcolors.dart';
 import 'package:paymint/utilities/currency_utils.dart';
 import 'package:paymint/utilities/shared_utilities.dart';
@@ -58,7 +58,7 @@ class _AddressBookEntryDetailsViewState
 
   @override
   Widget build(BuildContext context) {
-    final bitcoinService = Provider.of<BitcoinService>(context);
+    final manager = Provider.of<Manager>(context);
     return Scaffold(
       appBar: _buildAppBar(context),
       body: Container(
@@ -156,7 +156,7 @@ class _AddressBookEntryDetailsViewState
               ),
               Expanded(
                 child: FutureBuilder(
-                  future: bitcoinService.lelantusTransactionData,
+                  future: manager.transactionData,
                   builder: (context, AsyncSnapshot<TransactionData> snapshot) {
                     if (snapshot.connectionState == ConnectionState.done) {
                       if (snapshot.data != null && !snapshot.hasError) {

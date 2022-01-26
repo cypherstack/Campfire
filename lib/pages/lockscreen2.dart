@@ -4,8 +4,10 @@ import 'package:flutter/services.dart';
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 import 'package:flutter_svg/flutter_svg.dart';
 import 'package:google_fonts/google_fonts.dart';
+import 'package:hive/hive.dart';
 import 'package:paymint/notifications/overlay_notification.dart';
-import 'package:paymint/services/bitcoin_service.dart';
+import 'package:paymint/services/coins/firo_service.dart';
+import 'package:paymint/services/coins/manager.dart';
 import 'package:paymint/services/wallets_service.dart';
 import 'package:paymint/utilities/biometrics.dart';
 import 'package:paymint/utilities/cfcolors.dart';
@@ -32,12 +34,26 @@ class Lockscreen2View extends StatefulWidget {
 
 class _Lockscreen2ViewState extends State<Lockscreen2View> {
   _checkUseBiometrics() async {
-    final title = widget.biometricsAuthenticationTitle ?? "Unlock wallet";
-    final localizedReason = widget.biometricsLocalizedReason ?? "";
+    final manager = Provider.of<Manager>(context, listen: false);
+    bool useBiometrics = false;
+
+    // check if authenticating wallet log in
+    if (manager.currentWallet == null) {
+      final walletsService =
+          Provider.of<WalletsService>(context, listen: false);
+      final walletId = await walletsService
+          .getWalletId(await walletsService.currentWalletName);
+      final wallet = await Hive.openBox(walletId);
+      useBiometrics = await wallet.get('use_biometrics');
+    } else {
+      useBiometrics = await manager.useBiometrics;
+    }
+
+    final title = widget.biometricsAuthenticationTitle ?? manager.walletName;
+    final localizedReason = widget.biometricsLocalizedReason ?? "Unlock wallet";
     final cancelButtonText = widget.biometricsCancelButtonString ?? "CANCEL";
 
-    final bitcoinService = Provider.of<BitcoinService>(context, listen: false);
-    if (await bitcoinService.useBiometrics) {
+    if (useBiometrics) {
       if (await Biometrics.authenticate(
           title: title,
           localizedReason: localizedReason,
@@ -215,6 +231,14 @@ class _Lockscreen2ViewState extends State<Lockscreen2View> {
                     "PIN code correct. Unlocking wallet...",
                     Duration(milliseconds: 2200),
                   );
+
+                  // check if initial log in
+                  if (widget.routeOnSuccess == "/mainview") {
+                    final manager =
+                        Provider.of<Manager>(context, listen: false);
+                    manager.currentWallet =
+                        Firo(walletId: id, walletName: walletName);
+                  }
 
                   await Future.delayed(Duration(milliseconds: 600));
 

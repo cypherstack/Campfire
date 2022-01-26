@@ -6,7 +6,8 @@ import 'package:paymint/notifications/modal_popup_dialog.dart';
 import 'package:paymint/notifications/overlay_notification.dart';
 import 'package:paymint/pages/onboarding_view/helpers/builders.dart';
 import 'package:paymint/pages/onboarding_view/restore_wallet_view.dart';
-import 'package:paymint/services/bitcoin_service.dart';
+import 'package:paymint/services/coins/firo_service.dart';
+import 'package:paymint/services/coins/manager.dart';
 import 'package:paymint/services/wallets_service.dart';
 import 'package:paymint/utilities/biometrics.dart';
 import 'package:paymint/utilities/cfcolors.dart';
@@ -191,9 +192,8 @@ class _CreatePinViewState extends State<CreatePinView> {
                         await store.write(key: "${id}_pin", value: pin);
 
                         if (widget.type == CreateWalletType.NEW) {
-                          final bitcoinService = Provider.of<BitcoinService>(
-                              context,
-                              listen: false);
+                          final manager =
+                              Provider.of<Manager>(context, listen: false);
 
                           showDialog(
                             context: context,
@@ -205,10 +205,9 @@ class _CreatePinViewState extends State<CreatePinView> {
                           );
 
                           // TODO do this differently - causes short lockup of UI
-                          await bitcoinService
-                              .initializeWallet(widget.walletName);
-                          await bitcoinService
-                              .updateBiometricsUsage(useBiometrics);
+                          manager.currentWallet =
+                              Firo(walletId: id, walletName: widget.walletName);
+                          await manager.updateBiometricsUsage(useBiometrics);
                           await Future.delayed(Duration(seconds: 3));
 
                           Navigator.pop(context);

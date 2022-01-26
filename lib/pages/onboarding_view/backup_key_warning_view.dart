@@ -2,7 +2,7 @@ import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:paymint/pages/onboarding_view/backup_key_view.dart';
-import 'package:paymint/services/bitcoin_service.dart';
+import 'package:paymint/services/coins/manager.dart';
 import 'package:paymint/services/wallets_service.dart';
 import 'package:paymint/utilities/backup_key_warning.dart';
 import 'package:paymint/utilities/cfcolors.dart';
@@ -192,7 +192,7 @@ class _BackupKeyWarningViewState extends State<BackupKeyWarningView> {
         (_) => false,
       );
     } else {
-      Provider.of<BitcoinService>(context, listen: false).refreshWalletData();
+      Provider.of<Manager>(context, listen: false).refresh();
 
       // TODO pop back to multiple wallets view or go back to naming?
       final nav = Navigator.of(context);

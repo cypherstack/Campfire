@@ -2,7 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:paymint/notifications/overlay_notification.dart';
-import 'package:paymint/services/bitcoin_service.dart';
+import 'package:paymint/services/coins/manager.dart';
 import 'package:paymint/utilities/cfcolors.dart';
 import 'package:paymint/utilities/sizing_utilities.dart';
 import 'package:pretty_qr_code/pretty_qr_code.dart';
@@ -18,7 +18,7 @@ class ReceiveView extends StatefulWidget {
 class _ReceiveViewState extends State<ReceiveView> {
   @override
   Widget build(BuildContext context) {
-    final BitcoinService bitcoinService = Provider.of<BitcoinService>(context);
+    final manager = Provider.of<Manager>(context);
     bool roundQr = true;
     final qrSize = MediaQuery.of(context).size.width / 2;
 
@@ -26,14 +26,11 @@ class _ReceiveViewState extends State<ReceiveView> {
       child: Scaffold(
         backgroundColor: CFColors.white,
         body: Column(
-          // mainAxisAlignment: MainAxisAlignment.center,
+          mainAxisAlignment: MainAxisAlignment.center,
           crossAxisAlignment: CrossAxisAlignment.stretch,
           children: <Widget>[
-            SizedBox(
-              height: 32,
-            ),
             FutureBuilder(
-              future: bitcoinService.currentReceivingAddress,
+              future: manager.currentReceivingAddress,
               builder:
                   (BuildContext context, AsyncSnapshot<String> currentAddress) {
                 if (currentAddress.connectionState == ConnectionState.done) {
@@ -57,7 +54,7 @@ class _ReceiveViewState extends State<ReceiveView> {
               height: 40,
             ),
             FutureBuilder(
-              future: bitcoinService.currentReceivingAddress,
+              future: manager.currentReceivingAddress,
               builder: (BuildContext context, AsyncSnapshot<String> address) {
                 if (address.connectionState == ConnectionState.done) {
                   return Container(
@@ -119,99 +116,14 @@ class _ReceiveViewState extends State<ReceiveView> {
                       ),
                     ),
                   );
-                  // return ListTile(
-                  //   title: Text(
-                  //     'Address:',
-                  //     style: TextStyle(color: Colors.black),
-                  //   ),
-                  //   trailing: Text(
-                  //     condenseAdress(address.data),
-                  //     style: TextStyle(color: Colors.black),
-                  //   ),
-                  //   onTap: () {},
-                  // );
                 } else {
                   return Container();
                 }
               },
             ),
-            // FutureBuilder(
-            //   future: bitcoinService.currentReceivingAddress,
-            //   builder: (BuildContext context, AsyncSnapshot snapshot) {
-            //     if (snapshot.connectionState == ConnectionState.done) {
-            //       return ListTile(
-            //         title: Text(
-            //           'Copy address to clipboard',
-            //           style: TextStyle(color: Colors.cyanAccent),
-            //         ),
-            //         onTap: () {
-            //           Clipboard.setData(new ClipboardData(text: snapshot.data));
-            //           Toast.show(
-            //             'Address copied to clipboard',
-            //             context,
-            //             duration: Toast.LENGTH_LONG,
-            //             gravity: Toast.BOTTOM,
-            //           );
-            //         },
-            //       );
-            //     } else {
-            //       return ListTile(
-            //         title: Text(
-            //           'Copy address to clipboard',
-            //           style: TextStyle(color: Colors.cyanAccent),
-            //         ),
-            //       );
-            //     }
-            //   },
-            // ),
-            // FutureBuilder(
-            //   future: bitcoinService.currentReceivingAddress,
-            //   builder: (BuildContext context, AsyncSnapshot snapshot) {
-            //     if (snapshot.connectionState == ConnectionState.done) {
-            //       return ListTile(
-            //         title: Text(
-            //           'Share address',
-            //           style: TextStyle(color: Colors.cyanAccent),
-            //         ),
-            //         onTap: () {
-            //           Share.share(snapshot.data);
-            //         },
-            //       );
-            //     } else {
-            //       return ListTile(
-            //         title: Text(
-            //           'Share address',
-            //           style: TextStyle(color: Colors.cyanAccent),
-            //         ),
-            //       );
-            //     }
-            //   },
-            // ),
-            // ListTile(
-            //   title: Text(
-            //     'View previous addresses',
-            //     style: TextStyle(color: Colors.cyanAccent),
-            //   ),
-            //   trailing: Icon(
-            //     Icons.chevron_right,
-            //     color: Colors.cyanAccent,
-            //   ),
-            //   onTap: () {
-            //     Navigator.pushNamed(context, '/receivingaddressbook');
-            //   },
-            // ),
-            // SizedBox(height: 16),
           ],
         ),
       ),
     );
   }
-}
-
-// Receive View helper functions
-
-String condenseAdress(String address) {
-  return address.substring(0, 5) +
-      '...' +
-      address.substring(address.length - 5);
 }

@@ -10,7 +10,7 @@ import 'package:paymint/pages/settings_view/settings_view.dart';
 import 'package:paymint/pages/wallet_view/receive_view.dart';
 import 'package:paymint/pages/wallet_view/send_view.dart';
 import 'package:paymint/pages/wallet_view/wallet_view.dart';
-import 'package:paymint/services/bitcoin_service.dart';
+import 'package:paymint/services/coins/manager.dart';
 import 'package:paymint/services/event_bus/events/refresh_percent_changed_event.dart';
 import 'package:paymint/services/event_bus/global_event_bus.dart';
 import 'package:paymint/services/events.dart';
@@ -142,7 +142,7 @@ class _MainViewState extends State<MainView> {
     });
 
     if (!_disableRefreshOnInit) {
-      Provider.of<BitcoinService>(context, listen: false).refreshWalletData();
+      Provider.of<Manager>(context, listen: false).refresh();
     }
 
     super.initState();
@@ -156,7 +156,7 @@ class _MainViewState extends State<MainView> {
   }
 
   AppBar buildAppBar(BuildContext context) {
-    final bitcoinService = Provider.of<BitcoinService>(context, listen: false);
+    final manager = Provider.of<Manager>(context, listen: false);
     final walletsService = Provider.of<WalletsService>(context);
     return AppBar(
       backgroundColor: CFColors.white,
@@ -231,7 +231,7 @@ class _MainViewState extends State<MainView> {
             onPressed: () {
               if (nodeState != NodeConnectionStatus.loading) {
                 _disableRefreshOnInit = false;
-                bitcoinService.refreshWalletData();
+                manager.refresh();
               }
             },
             circularBorderRadius: 8,
@@ -320,9 +320,9 @@ class _MainViewState extends State<MainView> {
         timer = null;
       });
     } else {
-      final bitcoinService = Provider.of<BitcoinService>(context);
+      final manager = Provider.of<Manager>(context);
       final walletsService = Provider.of<WalletsService>(context);
-      await bitcoinService.clearWalletData();
+      manager.currentWallet = null;
       await walletsService.refreshWallets();
     }
     return _exitOnBackButton;

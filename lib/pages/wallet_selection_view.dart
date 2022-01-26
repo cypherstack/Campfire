@@ -4,7 +4,7 @@ import 'package:flutter/services.dart';
 import 'package:flutter_spinkit/flutter_spinkit.dart';
 import 'package:flutter_svg/flutter_svg.dart';
 import 'package:google_fonts/google_fonts.dart';
-import 'package:paymint/services/bitcoin_service.dart';
+import 'package:paymint/services/coins/manager.dart';
 import 'package:paymint/services/wallets_service.dart';
 import 'package:paymint/utilities/cfcolors.dart';
 import 'package:paymint/utilities/sizing_utilities.dart';
@@ -49,8 +49,7 @@ class _WalletSelectionViewState extends State<WalletSelectionView> {
     } else {
       names = snapshot.data.keys.toList();
     }
-    final BitcoinService bitcoinService =
-        Provider.of<BitcoinService>(context, listen: false);
+    final manager = Provider.of<Manager>(context, listen: false);
     if (names.length == 0) {
       // this should never actually appear as when the last wallet is
       // deleted the user then gets sent back to the welcome screen
@@ -115,15 +114,15 @@ class _WalletSelectionViewState extends State<WalletSelectionView> {
                     ],
                   ),
                   onPressed: () async {
-                    await walletsService.setCurrentWalletName(names[index]);
-                    await bitcoinService.initializeWallet(names[index]);
+                    final walletName = names[index];
+                    await walletsService.setCurrentWalletName(walletName);
 
                     Navigator.of(context).push(
                       CupertinoPageRoute(
                         builder: (context) {
                           return Lockscreen2View(
                             routeOnSuccess: '/mainview',
-                            biometricsAuthenticationTitle: names[index],
+                            biometricsAuthenticationTitle: walletName,
                             biometricsCancelButtonString: "CANCEL",
                             biometricsLocalizedReason:
                                 "Unlock wallet with your fingerprint",

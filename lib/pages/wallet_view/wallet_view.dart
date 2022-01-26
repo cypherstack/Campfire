@@ -8,7 +8,7 @@ import 'package:flutter_svg/svg.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:paymint/models/models.dart';
 import 'package:paymint/pages/transaction_subviews/transaction_search_view.dart';
-import 'package:paymint/services/bitcoin_service.dart';
+import 'package:paymint/services/coins/manager.dart';
 import 'package:paymint/services/event_bus/events/node_connection_status_changed_event.dart';
 import 'package:paymint/services/event_bus/global_event_bus.dart';
 import 'package:paymint/utilities/cfcolors.dart';
@@ -59,7 +59,7 @@ class _WalletViewState extends State<WalletView> {
 
   @override
   Widget build(BuildContext context) {
-    final BitcoinService bitcoinService = Provider.of<BitcoinService>(context);
+    final manager = Provider.of<Manager>(context);
 
     final double _bodyHeight = MediaQuery.of(context).size.height -
         MediaQuery.of(context).padding.top -
@@ -69,7 +69,7 @@ class _WalletViewState extends State<WalletView> {
     /// list of balances with length of 4 is expected
     // index 0 and 1 for the funds available to spend.
     // index 2 and 3 for all the funds in the wallet (including the undependable ones)
-    Widget _buildBalance(List<String> balances) {
+    Widget _buildBalance() {
       return Padding(
         padding: const EdgeInsets.all(20.0),
         child: Column(
@@ -111,16 +111,25 @@ class _WalletViewState extends State<WalletView> {
               height: 14,
             ),
             FittedBox(
-              child: Text(
-                _balanceToggleEnabled
-                    ? "${balances[0]} ${CurrencyUtilities.coinName}"
-                    : "${balances[2]} ${CurrencyUtilities.coinName}",
-                style: GoogleFonts.workSans(
-                  color: CFColors.white,
-                  fontSize: 28,
-                  fontWeight: FontWeight.w600,
-                  letterSpacing: -0.5,
-                ),
+              child: FutureBuilder(
+                future: _balanceToggleEnabled
+                    ? manager.balance
+                    : manager.totalBalance,
+                builder: (context, AsyncSnapshot<double> snapshot) {
+                  String balance = "...";
+                  if (snapshot.connectionState == ConnectionState.done) {
+                    balance = snapshot.data.toStringAsFixed(8);
+                  }
+                  return Text(
+                    "$balance ${CurrencyUtilities.coinName}",
+                    style: GoogleFonts.workSans(
+                      color: CFColors.white,
+                      fontSize: 28,
+                      fontWeight: FontWeight.w600,
+                      letterSpacing: -0.5,
+                    ),
+                  );
+                },
               ),
             ),
             SizedBox(
@@ -128,21 +137,30 @@ class _WalletViewState extends State<WalletView> {
             ),
             FittedBox(
               child: FutureBuilder(
-                future: bitcoinService.currency,
+                future: manager.fiatCurrency,
                 builder: (context, AsyncSnapshot<String> snapshot) {
                   String fiatTicker = "...";
                   if (snapshot.connectionState == ConnectionState.done) {
                     fiatTicker = snapshot.data;
                   }
-                  return Text(
-                    _balanceToggleEnabled
-                        ? "${balances[1]} $fiatTicker"
-                        : "${balances[3]} $fiatTicker",
-                    style: GoogleFonts.workSans(
-                      color: CFColors.white,
-                      fontSize: 14,
-                      fontWeight: FontWeight.w600,
-                    ),
+                  return FutureBuilder(
+                    future: _balanceToggleEnabled
+                        ? manager.fiatBalance
+                        : manager.fiatTotalBalance,
+                    builder: (context, AsyncSnapshot<double> snapshot) {
+                      String balance = "...";
+                      if (snapshot.connectionState == ConnectionState.done) {
+                        balance = snapshot.data.toStringAsFixed(8);
+                      }
+                      return Text(
+                        "$balance $fiatTicker",
+                        style: GoogleFonts.workSans(
+                          color: CFColors.white,
+                          fontSize: 14,
+                          fontWeight: FontWeight.w600,
+                        ),
+                      );
+                    },
                   );
                 },
               ),
@@ -172,28 +190,7 @@ class _WalletViewState extends State<WalletView> {
                 gradient: CFColors.fireGradientVerticalLight,
                 child: Stack(
                   children: [
-                    FutureBuilder(
-                      future: bitcoinService.balance,
-                      builder: (BuildContext context,
-                          AsyncSnapshot<dynamic> balancesData) {
-                        if (balancesData.connectionState ==
-                            ConnectionState.done) {
-                          if (balancesData == null ||
-                              balancesData.hasError ||
-                              balancesData.data == null) {
-                            return _buildBalance(["...", "...", "...", "..."]);
-                          }
-
-                          if (_nodeStatus == NodeConnectionStatus.synced)
-                            return _buildBalance(balancesData.data);
-                          else {
-                            return _buildBalance(["...", "...", "...", "..."]);
-                          }
-                        } else {
-                          return _buildBalance(["...", "...", "...", "..."]);
-                        }
-                      },
-                    ),
+                    _buildBalance(),
                     Row(
                       mainAxisAlignment: MainAxisAlignment.end,
                       children: [
@@ -255,7 +252,7 @@ class _WalletViewState extends State<WalletView> {
               ),
             Expanded(
               child: FutureBuilder(
-                future: bitcoinService.lelantusTransactionData,
+                future: manager.transactionData,
                 builder: (context, AsyncSnapshot<TransactionData> txData) {
                   if (txData.connectionState == ConnectionState.done) {
                     if (_nodeStatus == NodeConnectionStatus.synced) {

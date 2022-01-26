@@ -7,7 +7,7 @@ import 'package:flutter_svg/flutter_svg.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:paymint/notifications/overlay_notification.dart';
 import 'package:paymint/pages/wallet_selection_view.dart';
-import 'package:paymint/services/bitcoin_service.dart';
+import 'package:paymint/services/coins/manager.dart';
 import 'package:paymint/services/wallets_service.dart';
 import 'package:paymint/utilities/biometrics.dart';
 import 'package:paymint/utilities/cfcolors.dart';
@@ -23,12 +23,11 @@ class LockscreenView extends StatefulWidget {
 
 class _LockscreenViewState extends State<LockscreenView> {
   _checkUseBiometrics() async {
-    final bitcoinService = Provider.of<BitcoinService>(context, listen: false);
-    final walletName = await bitcoinService.currentWalletName;
+    final manager = Provider.of<Manager>(context, listen: false);
 
-    if (await bitcoinService.useBiometrics &&
+    if (await manager.useBiometrics &&
         await Biometrics.authenticate(
-          title: walletName,
+          title: manager.walletName,
           localizedReason: "Unlock wallet",
           cancelButtonText: "CANCEL",
         )) {

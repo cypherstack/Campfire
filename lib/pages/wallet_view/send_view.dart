@@ -7,7 +7,7 @@ import 'package:majascan/majascan.dart';
 import 'package:paymint/models/models.dart';
 import 'package:paymint/notifications/campfire_alert.dart';
 import 'package:paymint/pages/wallet_view/confirm_send_view.dart';
-import 'package:paymint/services/bitcoin_service.dart';
+import 'package:paymint/services/coins/manager.dart';
 import 'package:paymint/utilities/address_utils.dart';
 import 'package:paymint/utilities/cfcolors.dart';
 import 'package:paymint/utilities/currency_utils.dart';
@@ -42,7 +42,7 @@ class _SendViewState extends State<SendView> {
   double _fee = 0;
   double _totalAmount = 0;
   double _maxFee = 0;
-  List<String> _balance = [];
+  double _balanceMinusMaxFee = 0;
   String _currency = "";
 
   bool _autofill = false;
@@ -85,8 +85,8 @@ class _SendViewState extends State<SendView> {
   bool _addressToggleFlag = true;
   bool _sendButtonEnabled = false;
 
-  _updateInvalidAddressText(String address, BitcoinService bitcoinService) {
-    if (address.isNotEmpty && !bitcoinService.validateFiroAddress(address)) {
+  _updateInvalidAddressText(String address, Manager manager) {
+    if (address.isNotEmpty && !manager.validateAddress(address)) {
       return "Invalid address";
     }
     return null;
@@ -106,7 +106,7 @@ class _SendViewState extends State<SendView> {
 
   @override
   Widget build(BuildContext context) {
-    final BitcoinService bitcoinService = Provider.of<BitcoinService>(context);
+    final manager = Provider.of<Manager>(context);
     return SafeArea(
       child: Scaffold(
         key: _scaffoldKey,
@@ -129,7 +129,7 @@ class _SendViewState extends State<SendView> {
                   child: Column(
                     mainAxisAlignment: MainAxisAlignment.start,
                     children: [
-                      _buildSpendableBalanceCard(bitcoinService),
+                      _buildSpendableBalanceCard(manager),
                       SizedBox(
                         height: 17,
                       ),
@@ -152,7 +152,7 @@ class _SendViewState extends State<SendView> {
                       SizedBox(
                         height: 8,
                       ),
-                      _buildAddressTextField(bitcoinService),
+                      _buildAddressTextField(manager),
                       SizedBox(
                         height: 16,
                       ),
@@ -214,21 +214,20 @@ class _SendViewState extends State<SendView> {
                         height: 8,
                       ),
                       FutureBuilder(
-                        future: bitcoinService.bitcoinPrice,
+                        future: manager.fiatPrice,
                         builder: (context, price) {
                           if (price.connectionState == ConnectionState.done) {
                             if (price.hasError || price.data == null) {
                               // TODO: show proper connection error
                               print(
                                   "Couldn't fetch price, please check connection");
-                              return _buildAmountInputBox(0, bitcoinService);
+                              return _buildAmountInputBox(0, manager);
                             }
-                            return _buildAmountInputBox(
-                                price.data, bitcoinService);
+                            return _buildAmountInputBox(price.data, manager);
                           }
 
                           print("Fetching price... please wait...");
-                          return _buildAmountInputBox(0, bitcoinService);
+                          return _buildAmountInputBox(0, manager);
                         },
                       ),
                       SizedBox(
@@ -236,7 +235,7 @@ class _SendViewState extends State<SendView> {
                       ),
 
                       FutureBuilder(
-                        future: bitcoinService.fees,
+                        future: manager.fees,
                         builder: (BuildContext context,
                             AsyncSnapshot<FeeObject> feeObject) {
                           if (feeObject.connectionState ==
@@ -262,7 +261,7 @@ class _SendViewState extends State<SendView> {
 
                       Spacer(),
                       // Send Button
-                      _buildSendButton(bitcoinService),
+                      _buildSendButton(manager),
                     ],
                   ),
                 ),
@@ -274,7 +273,7 @@ class _SendViewState extends State<SendView> {
     );
   }
 
-  _buildSpendableBalanceCard(BitcoinService bitcoinService) {
+  _buildSpendableBalanceCard(Manager manager) {
     return GradientCard(
       gradient: CFColors.fireGradientVerticalLight,
       circularBorderRadius: SizingUtilities.circularBorderRadius,
@@ -297,17 +296,16 @@ class _SendViewState extends State<SendView> {
               ),
             ),
             FutureBuilder(
-              future: bitcoinService.balance,
+              future: manager.balanceMinusMaxFee,
               builder: (
                 BuildContext context,
-                AsyncSnapshot<dynamic> balanceData,
+                AsyncSnapshot<double> balanceMinusMaxFee,
               ) {
-                if (balanceData.connectionState == ConnectionState.done) {
-                  if (balanceData == null ||
-                      balanceData.hasError ||
-                      balanceData.data == null ||
-                      balanceData.data.length != 5) {
-                    // TODO: Display failed overlay 'Unable to fetch balance data.\nPlease check connection'
+                if (balanceMinusMaxFee.connectionState ==
+                    ConnectionState.done) {
+                  if (balanceMinusMaxFee == null ||
+                      balanceMinusMaxFee.hasError ||
+                      balanceMinusMaxFee.data == null) {
                     return Text(
                       "... ${CurrencyUtilities.coinName}",
                       style: GoogleFonts.workSans(
@@ -317,11 +315,11 @@ class _SendViewState extends State<SendView> {
                       ),
                     );
                   }
-                  _balance = balanceData.data;
+                  _balanceMinusMaxFee = balanceMinusMaxFee.data;
 
                   return FittedBox(
                     child: Text(
-                      "${double.parse(_balance[4]) < _maxFee ? "0.00000000" : _balance[4]} ${CurrencyUtilities.coinName}",
+                      "${_balanceMinusMaxFee < _maxFee ? "0.00000000" : _balanceMinusMaxFee.toStringAsFixed(8)} ${CurrencyUtilities.coinName}",
                       style: GoogleFonts.workSans(
                         color: CFColors.white,
                         fontSize: 16,
@@ -348,7 +346,7 @@ class _SendViewState extends State<SendView> {
     );
   }
 
-  _buildAddressTextField(BitcoinService bitcoinService) {
+  _buildAddressTextField(Manager manager) {
     return TextField(
       style: GoogleFonts.workSans(
         color: CFColors.dusk,
@@ -356,7 +354,7 @@ class _SendViewState extends State<SendView> {
       readOnly: true,
       controller: _recipientAddressTextController,
       decoration: InputDecoration(
-        errorText: _updateInvalidAddressText(_address, bitcoinService),
+        errorText: _updateInvalidAddressText(_address, manager),
         focusedBorder: OutlineInputBorder(
           borderSide: BorderSide(
             color: CFColors.twilight,
@@ -385,7 +383,7 @@ class _SendViewState extends State<SendView> {
                           setState(() {
                             _addressToggleFlag = false;
                             _sendButtonEnabled =
-                                (bitcoinService.validateFiroAddress(_address) &&
+                                (manager.validateAddress(_address) &&
                                     _totalAmount > 0);
                           });
                         },
@@ -408,7 +406,7 @@ class _SendViewState extends State<SendView> {
                             _addressToggleFlag =
                                 _recipientAddressTextController.text.isNotEmpty;
                             _sendButtonEnabled =
-                                (bitcoinService.validateFiroAddress(_address) &&
+                                (manager.validateAddress(_address) &&
                                     _totalAmount > 0);
                             print(
                                 _address.toString() + _totalAmount.toString());
@@ -491,9 +489,9 @@ class _SendViewState extends State<SendView> {
     );
   }
 
-  _buildMaxFee(BitcoinService bitcoinService) {
+  _buildMaxFee(Manager manager) {
     return FutureBuilder(
-      future: bitcoinService.maxFee,
+      future: manager.maxFee,
       builder: (context, futureData) {
         if (futureData.connectionState == ConnectionState.done &&
             futureData.data != null) {
@@ -538,7 +536,7 @@ class _SendViewState extends State<SendView> {
   }
 
   Widget _buildTxFeeInfo() {
-    final BitcoinService bitcoinService = Provider.of<BitcoinService>(context);
+    final bitcoinService = Provider.of<Manager>(context);
     final isTinyScreen = SizingUtilities.isTinyWidth(context);
     return Column(
       children: [
@@ -598,8 +596,7 @@ class _SendViewState extends State<SendView> {
     );
   }
 
-  Widget _buildAmountInputBox(
-      dynamic firoPrice, BitcoinService bitcoinService) {
+  Widget _buildAmountInputBox(dynamic firoPrice, Manager manager) {
     return Container(
       decoration: BoxDecoration(
         color: CFColors.fog,
@@ -640,9 +637,8 @@ class _SendViewState extends State<SendView> {
                     _firoAmount = double.parse(firoAmount);
                     setState(() {
                       _totalAmount = _firoAmount + _maxFee;
-                      _sendButtonEnabled =
-                          (bitcoinService.validateFiroAddress(_address) &&
-                              _firoAmount > 0);
+                      _sendButtonEnabled = (manager.validateAddress(_address) &&
+                          _firoAmount > 0);
                     });
 
                     if (firoPrice is double && firoPrice > 0) {
@@ -797,7 +793,7 @@ class _SendViewState extends State<SendView> {
     );
   }
 
-  _buildSendButton(BitcoinService bitcoinService) {
+  _buildSendButton(Manager manager) {
     return SizedBox(
       height: 48,
       width: MediaQuery.of(context).size.width - 40,
@@ -806,9 +802,8 @@ class _SendViewState extends State<SendView> {
         onTap: () {
           print("SEND pressed");
 
-          final availableBalance = double.parse(_balance[4]) < _maxFee
-              ? 0.0
-              : double.parse(_balance[4]);
+          final availableBalance =
+              _balanceMinusMaxFee < _maxFee ? 0.0 : _balanceMinusMaxFee;
 
           if (_firoAmount > availableBalance) {
             showDialog(
@@ -825,7 +820,7 @@ class _SendViewState extends State<SendView> {
               _address = _recipientAddressTextController.text;
             }
 
-            if (bitcoinService.validateFiroAddress(_address)) {
+            if (manager.validateAddress(_address)) {
               Navigator.of(context).push(
                 PageRouteBuilder(
                   opaque: false,

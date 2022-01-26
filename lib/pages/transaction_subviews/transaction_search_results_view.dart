@@ -4,7 +4,7 @@ import 'package:flutter_svg/svg.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:paymint/models/transactions_model.dart';
 import 'package:paymint/pages/settings_view/helpers/builders.dart';
-import 'package:paymint/services/bitcoin_service.dart';
+import 'package:paymint/services/coins/manager.dart';
 import 'package:paymint/utilities/cfcolors.dart';
 import 'package:paymint/utilities/currency_utils.dart';
 import 'package:paymint/utilities/shared_utilities.dart';
@@ -107,7 +107,7 @@ class TransactionSearchResultsView extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final BitcoinService bitcoinService = Provider.of<BitcoinService>(context);
+    final manager = Provider.of<Manager>(context);
     return Scaffold(
       backgroundColor: CFColors.white,
       appBar: buildSettingsAppBar(context, "Search results"),
@@ -127,7 +127,7 @@ class TransactionSearchResultsView extends StatelessWidget {
             ),
             Expanded(
               child: FutureBuilder(
-                future: bitcoinService.lelantusTransactionData,
+                future: manager.transactionData,
                 builder: (context, AsyncSnapshot<TransactionData> snapshot) {
                   if (snapshot.connectionState == ConnectionState.done) {
                     if (snapshot.data != null && !snapshot.hasError) {

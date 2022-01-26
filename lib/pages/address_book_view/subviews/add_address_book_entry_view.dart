@@ -4,7 +4,7 @@ import 'package:flutter_svg/svg.dart';
 import 'package:majascan/majascan.dart';
 import 'package:paymint/notifications/campfire_alert.dart';
 import 'package:paymint/services/address_book_service.dart';
-import 'package:paymint/services/bitcoin_service.dart';
+import 'package:paymint/services/coins/manager.dart';
 import 'package:paymint/utilities/address_utils.dart';
 import 'package:paymint/utilities/cfcolors.dart';
 import 'package:paymint/utilities/sizing_utilities.dart';
@@ -78,8 +78,8 @@ class _AddAddressBookEntryViewState extends State<AddAddressBookEntryView> {
   bool _enabledSave = false;
   bool _isEmptyAddress = true;
 
-  _updateInvalidAddressText(String address, BitcoinService bitcoinService) {
-    if (address.isNotEmpty && !bitcoinService.validateFiroAddress(address)) {
+  _updateInvalidAddressText(String address, Manager manager) {
+    if (address.isNotEmpty && !manager.validateAddress(address)) {
       return "Invalid address";
     }
     return null;
@@ -87,7 +87,7 @@ class _AddAddressBookEntryViewState extends State<AddAddressBookEntryView> {
 
   @override
   Widget build(BuildContext context) {
-    final bitcoinService = Provider.of<BitcoinService>(context, listen: false);
+    final manager = Provider.of<Manager>(context, listen: false);
     final screenWidth = MediaQuery.of(context).size.width;
 
     return Scaffold(
@@ -144,7 +144,7 @@ class _AddAddressBookEntryViewState extends State<AddAddressBookEntryView> {
                     controller: addressTextController,
                     decoration: InputDecoration(
                       errorText: _updateInvalidAddressText(
-                          addressTextController.text, bitcoinService),
+                          addressTextController.text, manager),
                       focusedBorder: OutlineInputBorder(
                         borderSide: BorderSide(
                           color: CFColors.twilight,
@@ -174,8 +174,8 @@ class _AddAddressBookEntryViewState extends State<AddAddressBookEntryView> {
                                       final content = data.text.trim();
                                       addressTextController.text = content;
                                       setState(() {
-                                        _enabledSave = bitcoinService
-                                                .validateFiroAddress(content) &&
+                                        _enabledSave = manager
+                                                .validateAddress(content) &&
                                             nameTextController.text.isNotEmpty;
                                         _isEmptyAddress = content.isEmpty;
                                       });
@@ -255,8 +255,8 @@ class _AddAddressBookEntryViewState extends State<AddAddressBookEntryView> {
                     ),
                     onChanged: (_) {
                       setState(() {
-                        _enabledSave = bitcoinService.validateFiroAddress(
-                                addressTextController.text) &&
+                        _enabledSave = manager
+                                .validateAddress(addressTextController.text) &&
                             nameTextController.text.isNotEmpty;
                       });
                     },
