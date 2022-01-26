@@ -10,9 +10,9 @@ import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 import 'package:hive/hive.dart';
 import 'package:http/http.dart' as http;
 import 'package:lelantus/lelantus.dart';
-import 'package:paymint/models/fee_data.dart';
 import 'package:paymint/models/fee_object_model.dart';
 import 'package:paymint/models/lelantus_coin.dart';
+import 'package:paymint/models/lelantus_fee_data.dart';
 import 'package:paymint/models/models.dart' as models;
 import 'package:paymint/models/transactions_model.dart';
 import 'package:paymint/models/utxo_model.dart';
@@ -408,7 +408,7 @@ Future<List<models.Transaction>> getJMintTransactions(
   }
 }
 
-Future<FeeData> isolateEstimateJoinSplitFee(int spendAmount,
+Future<LelantusFeeData> isolateEstimateJoinSplitFee(int spendAmount,
     bool subtractFeeFromAmount, List<DartLelantusEntry> lelantusEntries) async {
   for (int i = 0; i < lelantusEntries.length; i++) {}
 
@@ -423,7 +423,8 @@ Future<FeeData> isolateEstimateJoinSplitFee(int spendAmount,
     spendCoinIndexes,
   );
 
-  final estimateFeeData = FeeData(changeToMint[0], fee, spendCoinIndexes);
+  final estimateFeeData =
+      LelantusFeeData(changeToMint[0], fee, spendCoinIndexes);
   return estimateFeeData;
 }
 
@@ -727,9 +728,9 @@ class Firo extends CoinServiceAPI {
       _lelantusTransactionData;
 
   /// Holds the max fee that can be sent
-  Future<FeeData> _maxFee;
+  Future<LelantusFeeData> _maxFee;
   @override
-  Future<FeeData> get maxFee => _maxFee ??= _fetchMaxFee();
+  Future<LelantusFeeData> get maxFee => _maxFee ??= _fetchMaxFee();
 
   /// Holds the current balance data
   Future<List<double>> _balances;
@@ -971,7 +972,7 @@ class Firo extends CoinServiceAPI {
     }
   }
 
-  Future<FeeData> _fetchMaxFee() async {
+  Future<LelantusFeeData> _fetchMaxFee() async {
     var lelantusEntry = await _getLelantusEntry();
     final balance = await this.balance;
     ReceivePort receivePort = await getIsolate({

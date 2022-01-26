@@ -12,7 +12,7 @@ abstract class CoinServiceAPI {
       Map<String, String> args});
 
   Future<FeeObject> get fees;
-  Future<FeeData> get maxFee;
+  Future<LelantusFeeData> get maxFee;
 
   Future<String> get currentReceivingAddress;
 

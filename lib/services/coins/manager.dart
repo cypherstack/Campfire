@@ -27,7 +27,7 @@ class Manager with ChangeNotifier {
   }
 
   Future<FeeObject> get fees => currentWallet.fees;
-  Future<FeeData> get maxFee => currentWallet.maxFee;
+  Future<LelantusFeeData> get maxFee => currentWallet.maxFee;
 
   Future<String> get currentReceivingAddress =>
       currentWallet.currentReceivingAddress;
