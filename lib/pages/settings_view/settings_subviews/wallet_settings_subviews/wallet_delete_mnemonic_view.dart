@@ -179,7 +179,11 @@ class WalletDeleteMnemonicView extends StatelessWidget {
                             await walletsService.currentWalletName;
                         int result =
                             await walletsService.deleteWallet(walletName);
-                        print("delete result: $result");
+
+                        // set manager wallet to null if it isn't already
+                        Provider.of<Manager>(context, listen: false)
+                            .currentWallet = null;
+
                         // check if last wallet was deleted
                         if (result == 2) {
                           Navigator.pushAndRemoveUntil(

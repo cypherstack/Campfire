@@ -142,6 +142,9 @@ class _RestoreWalletFormViewState extends State<RestoreWalletFormView> {
     final walletsService = Provider.of<WalletsService>(context, listen: false);
     int result = await walletsService.deleteWallet(widget.walletName);
 
+    // set manager wallet to null if it isn't already
+    Provider.of<Manager>(context, listen: false).currentWallet = null;
+
     // check if last wallet was deleted
     if (result == 2) {
       Navigator.pushAndRemoveUntil(
@@ -479,8 +482,6 @@ class _RestoreWalletFormViewState extends State<RestoreWalletFormView> {
                   await secureStore.write(
                       key: '${walletId}_mnemonic', value: mnemonic.trim());
                   await manager.recoverFromMnemonic(mnemonic);
-                  //TODO make sure refresh not required
-                  // await manager.refresh();
                   Navigator.pushReplacementNamed(context, "/mainview");
 
                   Timer timer = Timer(Duration(milliseconds: 2200), () {

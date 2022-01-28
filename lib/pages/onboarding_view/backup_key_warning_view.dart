@@ -179,6 +179,8 @@ class _BackupKeyWarningViewState extends State<BackupKeyWarningView> {
     // delete created wallet name and pin
     final walletsService = Provider.of<WalletsService>(context, listen: false);
     int result = await walletsService.deleteWallet(widget.walletName);
+    // set manager wallet to null if it isn't already
+    Provider.of<Manager>(context, listen: false).currentWallet = null;
 
     print("delete result: $result");
     // check if last wallet was deleted
@@ -192,8 +194,6 @@ class _BackupKeyWarningViewState extends State<BackupKeyWarningView> {
         (_) => false,
       );
     } else {
-      Provider.of<Manager>(context, listen: false).refresh();
-
       // TODO pop back to multiple wallets view or go back to naming?
       final nav = Navigator.of(context);
       nav.pop();
