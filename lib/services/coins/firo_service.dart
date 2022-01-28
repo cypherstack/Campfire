@@ -721,6 +721,8 @@ class Firo extends CoinServiceAPI {
 
   /// Holds wallet transaction data
   Future<TransactionData> _transactionData;
+  Future<TransactionData> get _txnData =>
+      _transactionData ??= _fetchTransactionData();
 
   /// Holds wallet lelantus transaction data
   Future<TransactionData> _lelantusTransactionData;
@@ -1017,7 +1019,7 @@ class Firo extends CoinServiceAPI {
     final wallet = await Hive.openBox(this._walletId);
     final Map _lelantus_coins = await wallet.get('_lelantus_coins');
     List jindexes = await wallet.get('jindex');
-    final data = await _transactionData ?? await _fetchTransactionData();
+    final data = await _txnData;
     List<LelantusCoin> coins = [];
     if (_lelantus_coins == null) {
       return coins;
@@ -1047,7 +1049,7 @@ class Firo extends CoinServiceAPI {
       final utxos = await utxoData;
       var price = await bitcoinPrice;
       price = price ?? 1;
-      final data = await _transactionData ?? await _fetchTransactionData();
+      final data = await _txnData;
       List jindexes = await wallet.get('jindex');
       double lelantusBalance = 0;
       double unconfirmedLelantusBalance = 0;
@@ -1122,7 +1124,7 @@ class Firo extends CoinServiceAPI {
 
     final wallet = await Hive.openBox(this._walletId);
     final Map _lelantus_coins = await wallet.get('_lelantus_coins');
-    final data = await _transactionData ?? await _fetchTransactionData();
+    final data = await _txnData;
     if (data != null && _lelantus_coins != null) {
       final dataMap = data.getAllTransactions();
       dataMap.forEach((key, value) {
@@ -1405,7 +1407,7 @@ class Firo extends CoinServiceAPI {
       }
     }
 
-    final txData = await _transactionData ?? await _fetchTransactionData();
+    final txData = await _txnData;
     if (txData == null) {
       return null;
     }
@@ -2088,8 +2090,7 @@ class Firo extends CoinServiceAPI {
     final wallet = await Hive.openBox(this._walletId);
     final secureStore = new FlutterSecureStorage();
     final mnemonic = await secureStore.read(key: '${this._walletId}_mnemonic');
-    _transactionData = _fetchTransactionData();
-    TransactionData data = await _transactionData;
+    TransactionData data = await _txnData;
     String url = await _getEsploraUrl();
     final String currency = await CurrencyUtilities.fetchPreferredCurrency();
 
