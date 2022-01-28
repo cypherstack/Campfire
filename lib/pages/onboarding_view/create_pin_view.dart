@@ -110,7 +110,7 @@ class _CreatePinViewState extends State<CreatePinView> {
                     followingFieldDecoration: _pinPutDecoration,
                     onSubmit: (String pin) {
                       _pageController.nextPage(
-                        duration: Duration(milliseconds: 100),
+                        duration: Duration(milliseconds: 250),
                         curve: Curves.linear,
                       );
                     },
@@ -252,7 +252,7 @@ class _CreatePinViewState extends State<CreatePinView> {
                       } else {
                         _pageController.animateTo(
                           0,
-                          duration: Duration(milliseconds: 100),
+                          duration: Duration(milliseconds: 250),
                           curve: Curves.linear,
                         );
 
