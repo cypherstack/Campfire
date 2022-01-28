@@ -1017,7 +1017,7 @@ class Firo extends CoinServiceAPI {
     final wallet = await Hive.openBox(this._walletId);
     final Map _lelantus_coins = await wallet.get('_lelantus_coins');
     List jindexes = await wallet.get('jindex');
-    final data = await _transactionData;
+    final data = await _transactionData ?? await _fetchTransactionData();
     List<LelantusCoin> coins = [];
     if (_lelantus_coins == null) {
       return coins;
@@ -1047,7 +1047,7 @@ class Firo extends CoinServiceAPI {
       final utxos = await utxoData;
       var price = await bitcoinPrice;
       price = price ?? 1;
-      final data = await _transactionData;
+      final data = await _transactionData ?? await _fetchTransactionData();
       List jindexes = await wallet.get('jindex');
       double lelantusBalance = 0;
       double unconfirmedLelantusBalance = 0;
@@ -1122,7 +1122,7 @@ class Firo extends CoinServiceAPI {
 
     final wallet = await Hive.openBox(this._walletId);
     final Map _lelantus_coins = await wallet.get('_lelantus_coins');
-    final data = await _transactionData;
+    final data = await _transactionData ?? await _fetchTransactionData();
     if (data != null && _lelantus_coins != null) {
       final dataMap = data.getAllTransactions();
       dataMap.forEach((key, value) {
@@ -1405,7 +1405,7 @@ class Firo extends CoinServiceAPI {
       }
     }
 
-    final txData = await _transactionData;
+    final txData = await _transactionData ?? await _fetchTransactionData();
     if (txData == null) {
       return null;
     }

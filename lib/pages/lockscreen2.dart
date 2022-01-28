@@ -44,7 +44,7 @@ class _Lockscreen2ViewState extends State<Lockscreen2View> {
       final walletId = await walletsService
           .getWalletId(await walletsService.currentWalletName);
       final wallet = await Hive.openBox(walletId);
-      useBiometrics = await wallet.get('use_biometrics');
+      useBiometrics = await wallet.get('use_biometrics') ?? false;
     } else {
       useBiometrics = await manager.useBiometrics;
     }
