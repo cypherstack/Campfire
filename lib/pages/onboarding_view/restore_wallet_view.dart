@@ -115,12 +115,25 @@ class _RestoreWalletFormViewState extends State<RestoreWalletFormView> {
 
     // replace field content with listed words
     for (int i = 0; i < count; i++) {
+      final word = words[i];
       _controllers[i].text = words[i];
+      if (_isValidMnemonicWord(word)) {
+        setState(() {
+          _inputStatuses[i] = InputStatus.valid;
+        });
+      } else {
+        setState(() {
+          _inputStatuses[i] = InputStatus.invalid;
+        });
+      }
     }
 
     // clear remaining fields
     for (int i = count; i < _controllers.length; i++) {
       _controllers[i].text = "";
+      setState(() {
+        _inputStatuses[i] = InputStatus.empty;
+      });
     }
   }
 
@@ -215,12 +228,17 @@ class _RestoreWalletFormViewState extends State<RestoreWalletFormView> {
                               flashlightEnable: true,
                               scanAreaScale: 0.7,
                             );
+                            print("QR scanned: $qrResult");
                             final results =
                                 AddressUtils.decodeQRSeedData(qrResult);
 
                             if (results["mnemonic"] != null) {
-                              final list = results["mnemonic"] as List<String>;
-                              _clearAndPopulateMnemonic(list);
+                              final list = (results["mnemonic"] as List)
+                                  ?.map((value) => value as String)
+                                  ?.toList(growable: false);
+                              if (list.length > 0) {
+                                _clearAndPopulateMnemonic(list);
+                              }
                             }
                           },
                           child: FittedBox(
@@ -261,9 +279,12 @@ class _RestoreWalletFormViewState extends State<RestoreWalletFormView> {
                           onTap: () async {
                             final ClipboardData data =
                                 await Clipboard.getData(Clipboard.kTextPlain);
-                            final content = data.text.trim();
-                            final list = content.split(" ");
-                            _clearAndPopulateMnemonic(list);
+
+                            if (data != null && data.text.isNotEmpty) {
+                              final content = data.text.trim();
+                              final list = content.split(" ");
+                              _clearAndPopulateMnemonic(list);
+                            }
                           },
                           child: FittedBox(
                             child: Row(
@@ -421,8 +442,6 @@ class _RestoreWalletFormViewState extends State<RestoreWalletFormView> {
               );
               mnemonic = mnemonic.trim();
 
-              print("mnemonic: $mnemonic");
-
               if (bip39.validateMnemonic(mnemonic) == false) {
                 showDialog(
                   useSafeArea: false,
@@ -432,10 +451,7 @@ class _RestoreWalletFormViewState extends State<RestoreWalletFormView> {
                       CampfireAlert(message: "Invalid seed phrase!"),
                 );
               } else {
-                final manager = Provider.of<Manager>(context, listen: false);
-                // should already be null but just in case:
-                manager.currentWallet = null;
-
+                // show restoring in progress
                 showDialog(
                   context: context,
                   useSafeArea: false,
@@ -444,6 +460,10 @@ class _RestoreWalletFormViewState extends State<RestoreWalletFormView> {
                     return _buildWaitDialog();
                   },
                 );
+
+                final manager = Provider.of<Manager>(context, listen: false);
+                // should already be null but just in case:
+                manager.currentWallet = null;
 
                 final walletsService =
                     Provider.of<WalletsService>(context, listen: false);
@@ -459,7 +479,8 @@ class _RestoreWalletFormViewState extends State<RestoreWalletFormView> {
                   await secureStore.write(
                       key: '${walletId}_mnemonic', value: mnemonic.trim());
                   await manager.recoverFromMnemonic(mnemonic);
-                  await manager.refresh();
+                  //TODO make sure refresh not required
+                  // await manager.refresh();
                   Navigator.pushReplacementNamed(context, "/mainview");
 
                   Timer timer = Timer(Duration(milliseconds: 2200), () {

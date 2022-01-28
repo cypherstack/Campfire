@@ -171,14 +171,19 @@ class _AddAddressBookEntryViewState extends State<AddAddressBookEntryView> {
                                       final ClipboardData data =
                                           await Clipboard.getData(
                                               Clipboard.kTextPlain);
-                                      final content = data.text.trim();
-                                      addressTextController.text = content;
-                                      setState(() {
-                                        _enabledSave = manager
-                                                .validateAddress(content) &&
-                                            nameTextController.text.isNotEmpty;
-                                        _isEmptyAddress = content.isEmpty;
-                                      });
+
+                                      if (data != null &&
+                                          data.text.isNotEmpty) {
+                                        final content = data.text.trim();
+                                        addressTextController.text = content;
+                                        setState(() {
+                                          _enabledSave = manager
+                                                  .validateAddress(content) &&
+                                              nameTextController
+                                                  .text.isNotEmpty;
+                                          _isEmptyAddress = content.isEmpty;
+                                        });
+                                      }
                                     },
                                     child: SvgPicture.asset(
                                       "assets/svg/clipboard.svg",

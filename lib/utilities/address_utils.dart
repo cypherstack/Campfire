@@ -25,7 +25,7 @@ class AddressUtils {
 
   /// returns empty if bad data
   static Map<String, dynamic> decodeQRSeedData(String data) {
-    Map<String, String> result = {};
+    Map<String, dynamic> result = {};
     try {
       result = jsonDecode(data);
     } catch (e) {

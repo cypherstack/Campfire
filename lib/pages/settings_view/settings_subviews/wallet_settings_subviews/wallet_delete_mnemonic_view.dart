@@ -521,7 +521,7 @@ class WalletDeleteMnemonicView extends StatelessWidget {
                         data: AddressUtils.encodeQRSeedData(snapshot.data),
                         roundEdges: CampfireConstants.roundedQrCode,
                         elementColor: CFColors.midnight,
-                        typeNumber: 10,
+                        typeNumber: 15,
                         size: _qrSize,
                       ),
                     );

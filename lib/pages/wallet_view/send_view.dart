@@ -401,19 +401,22 @@ class _SendViewState extends State<SendView> {
                         onTap: () async {
                           final ClipboardData data =
                               await Clipboard.getData(Clipboard.kTextPlain);
-                          final content = data.text.trim();
-                          _recipientAddressTextController.text = content;
-                          _address = content;
+                          if (data != null && data.text.isNotEmpty) {
+                            final content = data.text.trim();
+                            _recipientAddressTextController.text = content;
+                            _address = content;
 
-                          setState(() {
-                            _addressToggleFlag =
-                                _recipientAddressTextController.text.isNotEmpty;
-                            _sendButtonEnabled =
-                                (manager.validateAddress(_address) &&
-                                    _totalAmount > 0);
-                            print(
-                                _address.toString() + _totalAmount.toString());
-                          });
+                            setState(() {
+                              _addressToggleFlag =
+                                  _recipientAddressTextController
+                                      .text.isNotEmpty;
+                              _sendButtonEnabled =
+                                  (manager.validateAddress(_address) &&
+                                      _totalAmount > 0);
+                              print(_address.toString() +
+                                  _totalAmount.toString());
+                            });
+                          }
                         },
                         child: SvgPicture.asset(
                           "assets/svg/clipboard.svg",
