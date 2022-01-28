@@ -150,7 +150,9 @@ class _WalletViewState extends State<WalletView> {
                     builder: (context, AsyncSnapshot<double> snapshot) {
                       String balance = "...";
                       if (snapshot.connectionState == ConnectionState.done) {
-                        balance = snapshot.data.toStringAsFixed(8);
+                        if (snapshot.data > 0) {
+                          balance = snapshot.data.toStringAsFixed(8);
+                        }
                       }
                       return Text(
                         "$balance $fiatTicker",
