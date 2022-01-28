@@ -703,11 +703,6 @@ class Firo extends CoinServiceAPI {
   }
 
   @override
-  Future<void> refresh() async {
-    await refreshWalletData();
-  }
-
-  @override
   Future<TransactionData> get transactionData => lelantusTransactionData;
 
   @override
@@ -845,7 +840,7 @@ class Firo extends CoinServiceAPI {
 
     // add listener for nodes changed
     GlobalEventBus.instance.on<NodesChangedEvent>().listen((event) {
-      refreshWalletData();
+      refresh();
     });
 
     _initializeWallet().whenComplete(() {
@@ -911,7 +906,8 @@ class Firo extends CoinServiceAPI {
   }
 
   /// Refreshes display data for the wallet
-  refreshWalletData() async {
+  @override
+  Future<void> refresh() async {
     try {
       GlobalEventBus.instance
           .fire(NodeConnectionStatusChangedEvent(NodeConnectionStatus.loading));
