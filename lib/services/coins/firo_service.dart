@@ -966,7 +966,7 @@ class Firo extends CoinServiceAPI {
     } catch (error) {
       GlobalEventBus.instance.fire(
           NodeConnectionStatusChangedEvent(NodeConnectionStatus.disconnected));
-      print("Caught exception in refreshWalletData(): $error");
+      Logger.print("Caught exception in refreshWalletData(): $error");
     }
   }
 
@@ -982,12 +982,12 @@ class Firo extends CoinServiceAPI {
 
     var message = await receivePort.first;
     if (message is String) {
-      print("this is a string");
+      Logger.print("this is a string");
       stop();
       throw Exception("_fetchMaxFee isolate failed");
     }
     stop();
-    print('Closing estimateJoinSplit!');
+    Logger.print('Closing estimateJoinSplit!');
     return message;
   }
 
@@ -999,7 +999,7 @@ class Firo extends CoinServiceAPI {
       final keyPair = await _getNode(MINT_INDEX, coin.index, mnemonic);
       final String privateKey = uint8listToString(keyPair.privateKey);
       if (privateKey == null) {
-        print("error bad key");
+        Logger.print("error bad key");
         return DartLelantusEntry(1, 0, 0, 0, 0, '');
       }
       return DartLelantusEntry(coin.isUsed ? 1 : 0, 0, coin.anonymitySetId,
@@ -1029,7 +1029,6 @@ class Firo extends CoinServiceAPI {
       if (!value.isUsed &&
           value.anonymitySetId != ANONYMITY_SET_EMPTY_ID &&
           !isUnconfirmed) {
-        print(value);
         coins.add(value);
       }
     });
@@ -1084,7 +1083,7 @@ class Firo extends CoinServiceAPI {
       }
       return balances;
     } catch (e) {
-      print("Exception caught in getFullBalance: $e");
+      Logger.print("Exception caught in getFullBalance: $e");
       throw e;
     }
   }
@@ -1098,8 +1097,7 @@ class Firo extends CoinServiceAPI {
       }
       await _submitLelantusToNetwork(mintResult);
     } catch (e) {
-      print(e);
-      print("could not automint");
+      Logger.print("could not automint: $e");
     }
   }
 
@@ -1116,8 +1114,6 @@ class Firo extends CoinServiceAPI {
       }
     }
 
-    print(spendableOutputs);
-
     final wallet = await Hive.openBox(this._walletId);
     final Map _lelantus_coins = await wallet.get('_lelantus_coins');
     final data = await _txnData;
@@ -1131,8 +1127,6 @@ class Firo extends CoinServiceAPI {
                         (output) => output.txid == element.txid,
                         orElse: () => null) !=
                     null) {
-              print(element);
-              print(value);
               spendableOutputs
                   .removeWhere((output) => output.txid == element.txid);
             }
@@ -1140,7 +1134,6 @@ class Firo extends CoinServiceAPI {
         }
       });
     }
-    print(spendableOutputs);
 
     // If there is no Utxos to mint then stop the function.
     if (spendableOutputs.length == 0) {
@@ -1160,19 +1153,13 @@ class Firo extends CoinServiceAPI {
 
     int vsize = tmpTx['transaction'].virtualSize();
     int firoFee = (vsize * feesObject.fast * (1 / 1000.0) * 100000000).ceil();
-    print("vsize $vsize");
-    print("mintfee $firoFee");
+
     if (firoFee < vsize) {
       firoFee = vsize + 1;
     }
     firoFee = firoFee + 10;
     int satoshiAmountToSend = satoshisBeingUsed - firoFee;
 
-    print('Input size: $satoshisBeingUsed');
-    print('Recipient output size: $satoshiAmountToSend');
-    print('Fee being paid: ' +
-        (satoshisBeingUsed - satoshiAmountToSend).toString() +
-        ' sats');
     dynamic transaction =
         await buildMintTransaction(utxoObjectsToUse, satoshiAmountToSend);
     transaction['transaction'] = "";
@@ -1194,14 +1181,12 @@ class Firo extends CoinServiceAPI {
     );
 
     if (res.statusCode == 200 || res.statusCode == 201) {
-      print(res.body.toString());
       if (res.body.toString().contains("error") ||
           res.body.toString().contains("Error")) {
         return false;
       }
       return true;
     } else {
-      print(res.body.toString());
       return false;
     }
   }
@@ -1270,7 +1255,7 @@ class Firo extends CoinServiceAPI {
                 .data
                 .address ==
             addressToCheckFor) {
-          print('Receiving found on loop $i');
+          Logger.print('Receiving found on loop $i');
           elipticCurvePairArray
               .add(ECPair.fromWIF(nodeReceiving.toWIF(), network: firoNetwork));
           outputDataArray.add(P2PKH(
@@ -1286,7 +1271,7 @@ class Firo extends CoinServiceAPI {
                 .data
                 .address ==
             addressToCheckFor) {
-          print('Change found on loop $i');
+          Logger.print('Change found on loop $i');
           elipticCurvePairArray
               .add(ECPair.fromWIF(nodeChange.toWIF(), network: firoNetwork));
 
@@ -1315,7 +1300,7 @@ class Firo extends CoinServiceAPI {
 
     final wallet = await Hive.openBox(this._walletId);
     final index = await wallet.get('mintIndex');
-    print("index of mint $index");
+    Logger.print("index of mint $index");
 
     Uint8List mintu8 =
         stringToUint8List(await _getMintHex(satoshisPerRecipient, index));
@@ -1387,7 +1372,6 @@ class Firo extends CoinServiceAPI {
     final String currency = await CurrencyUtilities.fetchPreferredCurrency();
     // Grab the most recent information on all the joinsplits
     final updatedJSplit = await getJMintTransactions(url, joinsplits, currency);
-    print(updatedJSplit);
 
     // update all of joinsplits that are now confirmed.
     for (final tx in updatedJSplit) {
@@ -1398,7 +1382,6 @@ class Firo extends CoinServiceAPI {
         continue;
       }
       if (currenttx.confirmedStatus != tx.confirmedStatus) {
-        print("not equal");
         listLelantusTxData[tx.txid] = tx;
       }
     }
@@ -1407,7 +1390,6 @@ class Firo extends CoinServiceAPI {
     if (txData == null) {
       return null;
     }
-    Logger.print(txData.txChunks);
     final listTxData = txData.getAllTransactions();
     listTxData.forEach((key, value) {
       // ignore change addresses
@@ -1450,7 +1432,6 @@ class Firo extends CoinServiceAPI {
         });
       }
     });
-    print("break ----------------");
 
     // update the _lelantusTransactionData
     final TransactionData newTxData =
@@ -1525,30 +1506,25 @@ class Firo extends CoinServiceAPI {
         transactions[transactionInfo['txid']] =
             models.Transaction.fromLelantusJson(transactionInfo);
         final TransactionData newTxData = TransactionData.fromMap(transactions);
-        Logger.print(newTxData.txChunks);
-        // TODO uncomment this
         await wallet.put('latest_lelantus_tx_model', newTxData);
         var ldata = await wallet.get('latest_lelantus_tx_model');
         _lelantusTransactionData = Future(() => ldata);
       } else {
         // This is a mint
-        print("this is a mint");
+        Logger.print("this is a mint");
 
         LelantusCoin mint = LelantusCoin(index, transactionInfo['value'],
             transactionInfo['publicCoin'], transactionInfo['txid'], 1, false);
         if (mint.value > 0) {
           coins[mint.txId] = mint;
-          //TODO uncomment this
           await wallet.put('mintIndex', index + 1);
         }
         Logger.print(coins);
-        // TODO uncomment this
         await wallet.put('_lelantus_coins', coins);
       }
-      //TODO change to true
       return true;
     } else {
-      print("Failed to send to network");
+      // Failed to send to network
       return false;
     }
   }
@@ -1571,18 +1547,12 @@ class Firo extends CoinServiceAPI {
       );
 
       if (response.statusCode == 200 || response.statusCode == 201) {
-        print('Current BTC Price: ' + response.body.toString());
+        Logger.print('Current BTC Price: ' + response.body.toString());
         if (response.body.toString().isEmpty) {
-          print(
-              "response.body.toString().isEmpty: ${response.body.toString().isEmpty}");
-          print("return price of -1");
           return -1;
-          // throw Exception('Something happened: ' +
-          //     response.statusCode.toString() +
-          //     " response.body is empty!");
         }
         final result = json.decode(response.body);
-        print("json bitcoin price result: $result");
+        Logger.print("json bitcoin price result: $result");
         return result;
       } else {
         throw Exception('Something happened: ' +
@@ -1590,8 +1560,7 @@ class Firo extends CoinServiceAPI {
             response.body);
       }
     } catch (e) {
-      print("Exception caught in getBitcoinPrice: $e");
-      print("return price of -1");
+      Logger.print("Exception caught in getBitcoinPrice: $e");
       return -1;
       // return null;
     }
@@ -1621,8 +1590,6 @@ class Firo extends CoinServiceAPI {
     final String url = await wallet.get('esplora_url');
 
     if (url == null) {
-      // final blockstreamUrl = 'https://marco.cypherstack.com/api/FIRO/mainnet/';
-      print('Using blockstream for esplora server');
       await wallet.put('esplora_url', CampfireConstants.defaultNodeUrl);
       return CampfireConstants.defaultNodeUrl;
     } else {
@@ -1645,7 +1612,8 @@ class Firo extends CoinServiceAPI {
 
     if (response.statusCode == 200 || response.statusCode == 201) {
       final int numtxs = json.decode(response.body);
-      print('Number of txs for current receiving addr: ' + numtxs.toString());
+      Logger.print(
+          'Number of txs for current receiving addr: ' + numtxs.toString());
 
       if (numtxs >= 1) {
         final wallet = await Hive.openBox(this._walletId);
@@ -1698,33 +1666,31 @@ class Firo extends CoinServiceAPI {
       );
 
       if (response.statusCode == 200 || response.statusCode == 201) {
-        print('Transactions fetched');
+        Logger.print('Transactions fetched');
         await wallet.put('latest_tx_model',
             TransactionData.fromJson(json.decode(response.body)));
         return TransactionData.fromJson(json.decode(response.body));
       } else {
-        print("Transaction fetch unsuccessful");
+        Logger.print("Transaction fetch unsuccessful");
         final latestModel = await wallet.get('latest_tx_model');
 
         if (latestModel == null) {
           final emptyModel = {"dateTimeChunks": []};
           return TransactionData.fromJson(emptyModel);
         } else {
-          print("Old transaction model located");
-          print(response.body);
+          Logger.print("Old transaction model located: ${response.body}");
           return latestModel;
         }
       }
     } catch (e) {
-      print("error $e");
-      print("Transaction fetch unsuccessful");
+      Logger.print("Transaction fetch unsuccessful: $e");
       final latestModel = await wallet.get('latest_tx_model');
 
       if (latestModel == null) {
         final emptyModel = {"dateTimeChunks": []};
         return TransactionData.fromJson(emptyModel);
       } else {
-        print("Old transaction model located");
+        Logger.print("Old transaction model located");
         return latestModel;
       }
     }
@@ -1762,16 +1728,15 @@ class Firo extends CoinServiceAPI {
       );
 
       if (response.statusCode == 200 || response.statusCode == 201) {
-        print('Outputs fetched');
         final List<UtxoObject> allOutputs =
             UtxoData.fromJson(json.decode(response.body)).unspentOutputArray;
-        print(allOutputs);
+        Logger.print('Outputs fetched: $allOutputs');
         await _sortOutputs(allOutputs);
         await wallet.put(
             'latest_utxo_model', UtxoData.fromJson(json.decode(response.body)));
         return UtxoData.fromJson(json.decode(response.body));
       } else {
-        print("Output fetch unsuccessful");
+        Logger.print("Output fetch unsuccessful");
         final latestTxModel = await wallet.get('latest_utxo_model');
 
         if (latestTxModel == null) {
@@ -1786,13 +1751,12 @@ class Firo extends CoinServiceAPI {
           };
           return UtxoData.fromJson(emptyModel);
         } else {
-          print("Old output model located");
+          Logger.print("Old output model located");
           return latestTxModel;
         }
       }
     } catch (e) {
-      print("Output fetch unsuccessful");
-      print(e);
+      Logger.print("Output fetch unsuccessful: $e");
       final latestTxModel = await wallet.get('latest_utxo_model');
       final currency = await CurrencyUtilities.fetchPreferredCurrency();
       final currencySymbol = currencyMap[currency];
@@ -1806,7 +1770,7 @@ class Firo extends CoinServiceAPI {
         };
         return UtxoData.fromJson(emptyModel);
       } else {
-        print("Old output model located");
+        Logger.print("Old output model located");
         return latestTxModel;
       }
     }
@@ -1821,7 +1785,7 @@ class Firo extends CoinServiceAPI {
       final emptyModel = {"dateTimeChunks": []};
       return TransactionData.fromJson(emptyModel);
     } else {
-      print("Old transaction model located");
+      Logger.print("Old transaction model located");
       return latestModel;
     }
   }
@@ -1884,8 +1848,9 @@ class Firo extends CoinServiceAPI {
 
     final addressArray = wallet.get(chainArray);
     if (addressArray == null) {
-      print('Attempting to add the following to array for chain $chain:' +
-          [address].toString());
+      Logger.print(
+          'Attempting to add the following to array for chain $chain:' +
+              [address].toString());
       await wallet.put(chainArray, [address]);
     } else {
       // Make a deep copy of the existing list
@@ -1960,16 +1925,16 @@ class Firo extends CoinServiceAPI {
         }
 
         final currentNode = root.derivePath("m/44'/136'/0'/0/$i");
-        print(currentNode.toBase58());
-        print(currentNode.toWIF());
-        print(currentNode.publicKey);
-        print(currentNode.privateKey);
+        Logger.print(currentNode.toBase58());
+        Logger.print(currentNode.toWIF());
+        Logger.print(currentNode.publicKey);
+        Logger.print(currentNode.privateKey);
         final address = P2PKH(
                 network: firoNetwork,
                 data: new PaymentData(pubkey: currentNode.publicKey))
             .data
             .address;
-        print(address);
+        Logger.print(address);
         final Map<String, String> requestBody = {
           "address": address,
           "url": await _getEsploraUrl()
@@ -2077,7 +2042,7 @@ class Firo extends CoinServiceAPI {
           key: '${this._walletId}_mnemonic', value: suppliedMnemonic.trim());
       await _restore();
     } catch (e) {
-      print("recoverWalletFromBIP32SeedPhrase threw exception: $e");
+      Logger.print("recoverWalletFromBIP32SeedPhrase threw exception: $e");
       throw e;
     }
   }
@@ -2100,7 +2065,7 @@ class Firo extends CoinServiceAPI {
 
     var message = await receivePort.first;
     if (message is String) {
-      print("this is a string");
+      Logger.print("restore() ->> this is a string");
       stop();
       return;
     }
@@ -2155,7 +2120,7 @@ class Firo extends CoinServiceAPI {
     });
     var message = await receivePort.first;
     if (message is String) {
-      print("Error in CreateJoinSplit: $message");
+      Logger.print("Error in CreateJoinSplit: $message");
       stop();
       return 3;
     }
@@ -2164,7 +2129,7 @@ class Firo extends CoinServiceAPI {
       return message;
     }
     stop();
-    print('Closing createJoinSplit!');
+    Logger.print('Closing createJoinSplit!');
     return message;
   }
 }
