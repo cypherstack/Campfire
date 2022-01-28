@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 
-class SizingUtilities {
+abstract class SizingUtilities {
   static const double circularBorderRadius = 10.0;
   static const double checkboxBorderRadius = 4.0;
 
@@ -12,6 +12,7 @@ class SizingUtilities {
   static const double standardFixedButtonWidth = 204.0;
 
   static const double bottomToolBarHeight = 77.0;
+  static const double onboardingToolBarHeight = 80.0;
 
   static double getAppBarHeight(AppBar appBar) {
     if (appBar != null) {
@@ -32,6 +33,6 @@ class SizingUtilities {
 
   // Layout determination based on screen width
   static bool isTinyWidth(BuildContext context) {
-    return MediaQuery.of(context).size.width < 400;
+    return MediaQuery.of(context).size.width < 350;
   }
 }

@@ -8,7 +8,7 @@ buildOnboardingAppBar(BuildContext context,
     {VoidCallback backButtonPressed, List<Widget> actions}) {
   return AppBar(
     backgroundColor: CFColors.starryNight,
-    toolbarHeight: 80,
+    toolbarHeight: SizingUtilities.onboardingToolBarHeight,
     title: Image(
       image: AssetImage(
         "assets/images/logo.png",
