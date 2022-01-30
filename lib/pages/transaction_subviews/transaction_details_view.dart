@@ -152,7 +152,7 @@ class _TransactionDetailsViewState extends State<TransactionDetailsView> {
     );
   }
 
-  _buildItem(String label, String content) {
+  _buildItem(String label, String content, int lines) {
     return Column(
       children: [
         Align(
@@ -169,10 +169,10 @@ class _TransactionDetailsViewState extends State<TransactionDetailsView> {
         ),
         Align(
           alignment: Alignment.centerLeft,
-          child: Text(
+          child: SelectableText(
             content,
             style: _contentStyle,
-            maxLines: 4,
+            maxLines: lines,
           ),
         ),
       ],
@@ -232,30 +232,46 @@ class _TransactionDetailsViewState extends State<TransactionDetailsView> {
                         _buildSentToItem(context),
                       if (_transaction.txType == "Sent") _buildSeparator(),
                       if (_transaction.txType == "Received")
-                        _buildItem("Received on:", _transaction.address),
+                        _buildItem(
+                          "Received on:",
+                          _transaction.address,
+                          1,
+                        ),
                       if (_transaction.txType == "Received") _buildSeparator(),
                       _buildItem(
-                          "Amount:",
-                          Utilities.satoshiAmountToPrettyString(
-                              _transaction.amount)),
+                        "Amount:",
+                        Utilities.satoshiAmountToPrettyString(
+                            _transaction.amount),
+                        1,
+                      ),
                       _buildSeparator(),
                       _buildItem(
                           "Fee:",
                           _transaction.confirmedStatus
                               ? Utilities.satoshiAmountToPrettyString(
                                   _transaction.fees)
-                              : "Pending"),
-                      _buildSeparator(),
-                      _buildItem("Date:",
-                          Utilities.extractDateFrom(_transaction.timestamp)),
-                      _buildSeparator(),
-                      _buildItem("Transaction ID:", _transaction.txid),
+                              : "Pending",
+                          1),
                       _buildSeparator(),
                       _buildItem(
-                          "Block Height:",
-                          _transaction.confirmedStatus
-                              ? _transaction.height.toString()
-                              : "Pending"),
+                        "Date:",
+                        Utilities.extractDateFrom(_transaction.timestamp),
+                        1,
+                      ),
+                      _buildSeparator(),
+                      _buildItem(
+                        "Transaction ID:",
+                        _transaction.txid,
+                        2,
+                      ),
+                      _buildSeparator(),
+                      _buildItem(
+                        "Block Height:",
+                        _transaction.confirmedStatus
+                            ? _transaction.height.toString()
+                            : "Pending",
+                        1,
+                      ),
                     ],
                   ),
                 ),
