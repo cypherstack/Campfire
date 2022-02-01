@@ -1598,9 +1598,8 @@ class Firo extends CoinServiceAPI {
 
   Future<int> _getReceivedTxCount({String address}) async {
     try {
-      final txns = await ElectrumX.getHistory(address: address);
-      print("+++++++++++++++++++++++++++       txns.length: ${txns.length}");
-      return txns.length;
+      final transactions = await ElectrumX.getHistory(address: address);
+      return transactions.length;
     } catch (e) {
       throw e;
     }
@@ -1924,16 +1923,11 @@ class Firo extends CoinServiceAPI {
         }
 
         final currentNode = root.derivePath("m/44'/136'/0'/0/$i");
-        Logger.print(currentNode.toBase58());
-        Logger.print(currentNode.toWIF());
-        Logger.print(currentNode.publicKey);
-        Logger.print(currentNode.privateKey);
         final address = P2PKH(
                 network: firoNetwork,
                 data: new PaymentData(pubkey: currentNode.publicKey))
             .data
             .address;
-        Logger.print(address);
 
         try {
           final int numTxs = await _getReceivedTxCount(address: address);
