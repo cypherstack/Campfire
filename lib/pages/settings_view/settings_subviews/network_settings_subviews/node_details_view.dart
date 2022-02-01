@@ -1,5 +1,6 @@
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_svg/svg.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:paymint/notifications/campfire_alert.dart';
@@ -85,7 +86,7 @@ class _NodeDetailsViewState extends State<NodeDetailsView> {
     final manager = Provider.of<Manager>(context, listen: false);
 
     final canConnect = await manager.testNetworkConnection(
-        _addressController.text, _portController.text);
+        _addressController.text, int.parse(_portController.text));
 
     if (canConnect) {
       OverlayNotification.showSuccess(
@@ -416,6 +417,8 @@ class _NodeDetailsViewState extends State<NodeDetailsView> {
               child: TextField(
                 enabled: _isEditing,
                 controller: _portController,
+                inputFormatters: [FilteringTextInputFormatter.digitsOnly],
+                keyboardType: TextInputType.number,
               ),
             ),
           ],

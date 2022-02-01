@@ -771,7 +771,7 @@ class Firo extends CoinServiceAPI {
   String get walletId => _walletId;
 
   @override
-  Future<bool> testNetworkConnection(String address, String port) async {
+  Future<bool> testNetworkConnection(String address, int port) async {
     try {
       final separator = port.isEmpty ? "" : ":";
       //TODO pull out the hardcoded stuff into constants or some other var

@@ -40,7 +40,7 @@ abstract class CoinServiceAPI {
 
   Future<List<String>> get mnemonic;
 
-  Future<bool> testNetworkConnection(String address, String port);
+  Future<bool> testNetworkConnection(String address, int port);
 
   dynamic recoverFromMnemonic(String mnemonic);
 }
