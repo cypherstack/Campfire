@@ -10,6 +10,7 @@ import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 import 'package:hive/hive.dart';
 import 'package:http/http.dart' as http;
 import 'package:lelantus/lelantus.dart';
+import 'package:paymint/electrumx_rpc/electrumx.dart';
 import 'package:paymint/models/fee_object_model.dart';
 import 'package:paymint/models/lelantus_coin.dart';
 import 'package:paymint/models/lelantus_fee_data.dart';
@@ -319,22 +320,28 @@ isolateRestore(
 }
 
 Future<int> getLatestSetId(String url) async {
-  final Map<String, dynamic> requestBody = {"url": url};
-
-  final response = await http.post(
-    Uri.parse('$MIDDLE_SERVER/getlatestcoinid'),
-    body: jsonEncode(requestBody),
-    headers: {'Content-Type': 'application/json'},
-  );
-
-  if (response.statusCode == 200 || response.statusCode == 201) {
-    var tod = json.decode(response.body);
-    return tod;
-  } else {
-    throw Exception('Something happened: ' +
-        response.statusCode.toString() +
-        response.body);
+  try {
+    final id = await ElectrumX.getLatestCoinId();
+    return id as int;
+  } catch (e) {
+    throw e;
   }
+  // final Map<String, dynamic> requestBody = {"url": url};
+  //
+  // final response = await http.post(
+  //   Uri.parse('$MIDDLE_SERVER/getlatestcoinid'),
+  //   body: jsonEncode(requestBody),
+  //   headers: {'Content-Type': 'application/json'},
+  // );
+  //
+  // if (response.statusCode == 200 || response.statusCode == 201) {
+  //   var tod = json.decode(response.body);
+  //   return tod;
+  // } else {
+  //   throw Exception('Something happened: ' +
+  //       response.statusCode.toString() +
+  //       response.body);
+  // }
 }
 
 Future<Map<String, dynamic>> getSetData(String url, int setID) async {
@@ -454,7 +461,7 @@ isolateCreateJoinSplitTransaction(
   }
 
   final tx = new TransactionBuilder(network: firoNetwork);
-  int locktime = await getBlockHead(url);
+  int locktime = await getBlockHead();
   tx.setLockTime(locktime);
 
   tx.setVersion(3 | (TRANSACTION_LELANTUS << 16));
@@ -634,22 +641,12 @@ Future<dynamic> getAnonymitySet(String url) async {
   }
 }
 
-Future<int> getBlockHead(String url) async {
-  final Map<String, dynamic> requestBody = {"url": url};
-
-  final response = await http.post(
-    Uri.parse('$MIDDLE_SERVER/getblockhead'),
-    body: jsonEncode(requestBody),
-    headers: {'Content-Type': 'application/json'},
-  );
-
-  if (response.statusCode == 200 || response.statusCode == 201) {
-    var tod = json.decode(response.body);
-    return tod;
-  } else {
-    throw Exception('Something happened: ' +
-        response.statusCode.toString() +
-        response.body);
+Future<int> getBlockHead() async {
+  try {
+    final tip = await ElectrumX.getBlockHeadTip();
+    return tip["height"];
+  } catch (e) {
+    throw e;
   }
 }
 // end of isolates
@@ -773,11 +770,10 @@ class Firo extends CoinServiceAPI {
   @override
   Future<bool> testNetworkConnection(String address, int port) async {
     try {
-      final separator = port.isEmpty ? "" : ":";
-      //TODO pull out the hardcoded stuff into constants or some other var
-      final String url = "https://$address$separator$port/api/FIRO/mainnet";
-      final n = await getBlockHead(url);
-      return n != null;
+      final response = await ElectrumX.request(
+          server: address, port: port, command: 'blockchain.headers.subscribe');
+
+      return response != null;
     } catch (e) {
       return false;
     }
@@ -805,24 +801,17 @@ class Firo extends CoinServiceAPI {
             throw Exception("Error Creating Transaction!");
         }
       } else {
-        await _submitLelantusToNetwork(txHexOrError).then(
-          (booleanResponse) async {
-            if (booleanResponse == true) {
-              final txid =
-                  (txHexOrError as Map<String, dynamic>)["txid"] as String;
-              return txid;
-            } else {
-              //TODO provide more info
-              throw Exception("Transaction failed.");
-            }
-          },
-        );
+        if (await _submitLelantusToNetwork(txHexOrError)) {
+          final txid = (txHexOrError as Map<String, dynamic>)["txid"] as String;
+          return txid;
+        } else {
+          //TODO provide more info
+          throw Exception("Transaction failed.");
+        }
       }
     } catch (e) {
       throw e;
     }
-    //TODO provide more info
-    throw Exception("Transaction failed.");
   }
 
   Future<List<String>> getMnemonicList() async {
@@ -1168,27 +1157,36 @@ class Firo extends CoinServiceAPI {
     return transaction;
   }
 
-  Future<bool> submitHexToNetwork(String hex) async {
-    final Map<String, dynamic> obj = {
-      "url": await _getEsploraUrl(),
-      "rawTx": hex,
-    };
-
-    final res = await http.post(
-      Uri.parse('$MIDDLE_SERVER/pushtx'),
-      body: jsonEncode(obj),
-      headers: {'Content-Type': 'application/json'},
-    );
-
-    if (res.statusCode == 200 || res.statusCode == 201) {
-      if (res.body.toString().contains("error") ||
-          res.body.toString().contains("Error")) {
-        return false;
-      }
-      return true;
-    } else {
-      return false;
+  /// returns a valid txid if successful
+  Future<String> submitHexToNetwork(String hex) async {
+    try {
+      final txid = await ElectrumX.broadcastTransaction(rawTx: hex);
+      return txid;
+    } catch (e) {
+      Logger.print("Caught exception in submitHexToNetwork(\"$hex\"): $e");
+      // return an invalid tx
+      return "transaction submission failed";
     }
+    // final Map<String, dynamic> obj = {
+    //   "url": await _getEsploraUrl(),
+    //   "rawTx": hex,
+    // };
+    //
+    // final res = await http.post(
+    //   Uri.parse('$MIDDLE_SERVER/pushtx'),
+    //   body: jsonEncode(obj),
+    //   headers: {'Content-Type': 'application/json'},
+    // );
+    //
+    // if (res.statusCode == 200 || res.statusCode == 201) {
+    //   if (res.body.toString().contains("error") ||
+    //       res.body.toString().contains("Error")) {
+    //     return false;
+    //   }
+    //   return true;
+    // } else {
+    //   return false;
+    // }
   }
 
   /// Builds and signs a transaction
@@ -1287,8 +1285,7 @@ class Firo extends CoinServiceAPI {
 
     final txb = new TransactionBuilder(network: firoNetwork);
     txb.setVersion(2);
-    var url = await _getEsploraUrl();
-    int height = await getBlockHead(url);
+    int height = await getBlockHead();
     txb.setLockTime(height);
     int amount = 0;
     // Add transaction inputs
@@ -1452,8 +1449,10 @@ class Firo extends CoinServiceAPI {
   }
 
   Future<bool> _submitLelantusToNetwork(dynamic transactionInfo) async {
-    final success = await submitHexToNetwork(transactionInfo['txHex']);
-    if (success) {
+    final txid = await submitHexToNetwork(transactionInfo['txHex']);
+    // success if txid matches the generated txid
+    print(transactionInfo['txid']);
+    if (txid == transactionInfo['txid']) {
       final wallet = await Hive.openBox(this._walletId);
       int index = await wallet.get('mintIndex');
       final Map _lelantus_coins = await wallet.get('_lelantus_coins');
