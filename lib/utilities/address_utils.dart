@@ -16,7 +16,6 @@ class AddressUtils {
   /// Returns the scripthash or throws an exception on invalid firo address
   static String convertToScriptHash(String firoAddress) {
     try {
-      print("address: $firoAddress");
       final output = Address.addressToOutputScript(firoAddress, firoNetwork);
       final hash = sha256.convert(output.toList(growable: false)).toString();
 
