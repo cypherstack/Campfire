@@ -81,7 +81,7 @@ abstract class ElectrumX {
       final scripthash = AddressUtils.convertToScriptHash(address);
 
       final response = await request(
-          command: 'blockchain.scripthash.get_history', args: [scripthash]);
+          command: 'blockchain.scripthash.get_balance', args: [scripthash]);
       return response;
     } catch (e) {
       throw e;
