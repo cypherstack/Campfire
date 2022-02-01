@@ -1596,21 +1596,22 @@ class Firo extends CoinServiceAPI {
     }
   }
 
+  Future<int> _getReceivedTxCount({String address}) async {
+    try {
+      final txns = await ElectrumX.getHistory(address: address);
+      print("+++++++++++++++++++++++++++       txns.length: ${txns.length}");
+      return txns.length;
+    } catch (e) {
+      throw e;
+    }
+  }
+
   Future<void> _checkReceivingAddressForTransactions() async {
-    final String currentExternalAddr = await this._getCurrentAddressForChain(0);
-    final Map<String, String> requestBody = {
-      "address": currentExternalAddr,
-      "url": await _getEsploraUrl()
-    };
-
-    final response = await http.post(
-      Uri.parse('$MIDDLE_SERVER/txCount'),
-      body: json.encode(requestBody),
-      headers: {'Content-Type': 'application/json'},
-    );
-
-    if (response.statusCode == 200 || response.statusCode == 201) {
-      final int numtxs = json.decode(response.body);
+    try {
+      final String currentExternalAddr =
+          await this._getCurrentAddressForChain(0);
+      final int numtxs =
+          await _getReceivedTxCount(address: currentExternalAddr);
       Logger.print(
           'Number of txs for current receiving addr: ' + numtxs.toString());
 
@@ -1628,11 +1629,10 @@ class Firo extends CoinServiceAPI {
         this._currentReceivingAddress = Future(() =>
             newReceivingAddress); // Set the new receiving address that the service
       }
-    } else {
-      //TODO handle exceptions
-      throw Exception('Something happened: ' +
-          response.statusCode.toString() +
-          response.body);
+    } catch (e) {
+      Logger.print(
+          "Exception rethrown from _checkReceivingAddressForTransactions(): $e");
+      throw e;
     }
   }
 
@@ -1934,29 +1934,19 @@ class Firo extends CoinServiceAPI {
             .data
             .address;
         Logger.print(address);
-        final Map<String, String> requestBody = {
-          "address": address,
-          "url": await _getEsploraUrl()
-        };
 
-        final response = await http.post(
-          Uri.parse('$MIDDLE_SERVER/txCount'),
-          body: json.encode(requestBody),
-          headers: {'Content-Type': 'application/json'},
-        );
-
-        if (response.statusCode == 200 || response.statusCode == 201) {
-          final int numTxs = json.decode(response.body);
+        try {
+          final int numTxs = await _getReceivedTxCount(address: address);
           if (numTxs >= 1) {
             receivingIndex = i;
             receivingAddressArray.add(address);
           } else if (numTxs == 0) {
             receivingGapCounter += 1;
           }
-        } else {
-          throw Exception('Something happened: ' +
-              response.statusCode.toString() +
-              response.body);
+        } catch (e) {
+          Logger.print(
+              "Exception rethrown from recoverWalletFromBIP32SeedPhrase(): $e");
+          throw e;
         }
       }
 
@@ -1974,31 +1964,19 @@ class Firo extends CoinServiceAPI {
                 data: new PaymentData(pubkey: currentNode.publicKey))
             .data
             .address;
-        final Map<String, String> requestBody = {
-          "address": address,
-          "url": await _getEsploraUrl()
-        };
 
-        final response = await http.post(
-          Uri.parse('$MIDDLE_SERVER/txCount'),
-          body: json.encode(requestBody),
-          headers: {'Content-Type': 'application/json'},
-        );
-
-        if (response.statusCode == 200 || response.statusCode == 201) {
-          final int numTxs = json.decode(response.body);
+        try {
+          final int numTxs = await _getReceivedTxCount(address: address);
           if (numTxs >= 1) {
             changeIndex = i;
             changeAddressArray.add(address);
           } else if (numTxs == 0) {
             changeGapCounter += 1;
           }
-        } else {
-          throw Exception(
-            'Something happened: ' +
-                response.statusCode.toString() +
-                response.body,
-          );
+        } catch (e) {
+          Logger.print(
+              "Exception rethrown from recoverWalletFromBIP32SeedPhrase(): $e");
+          throw e;
         }
       }
 
