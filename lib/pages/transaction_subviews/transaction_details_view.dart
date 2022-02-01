@@ -128,7 +128,7 @@ class _TransactionDetailsViewState extends State<TransactionDetailsView> {
 
             return Align(
               alignment: Alignment.centerLeft,
-              child: Text(
+              child: SelectableText(
                 text,
                 style: _contentStyle,
               ),
