@@ -47,7 +47,9 @@ abstract class ElectrumX {
   // }
   static Future<Map<String, dynamic>> getBlockHeadTip() async {
     try {
-      final response = await request(command: 'blockchain.headers.subscribe');
+      final response = await request(
+        command: 'blockchain.headers.subscribe',
+      );
       return response;
     } catch (e) {
       throw e;
@@ -60,7 +62,11 @@ abstract class ElectrumX {
   static Future<String> broadcastTransaction({String rawTx}) async {
     try {
       final response = await request(
-          command: 'blockchain.transaction.broadcast', args: [rawTx]);
+        command: 'blockchain.transaction.broadcast',
+        args: [
+          rawTx,
+        ],
+      );
       return response;
     } catch (e) {
       throw e;
@@ -81,7 +87,11 @@ abstract class ElectrumX {
       final scripthash = AddressUtils.convertToScriptHash(address);
 
       final response = await request(
-          command: 'blockchain.scripthash.get_balance', args: [scripthash]);
+        command: 'blockchain.scripthash.get_balance',
+        args: [
+          scripthash,
+        ],
+      );
       return response;
     } catch (e) {
       throw e;
@@ -107,7 +117,11 @@ abstract class ElectrumX {
       final scripthash = AddressUtils.convertToScriptHash(address);
 
       final response = await request(
-          command: 'blockchain.scripthash.get_history', args: [scripthash]);
+        command: 'blockchain.scripthash.get_history',
+        args: [
+          scripthash,
+        ],
+      );
       return List<Map<String, dynamic>>.from(response);
     } catch (e) {
       throw e;
@@ -137,7 +151,11 @@ abstract class ElectrumX {
       final scripthash = AddressUtils.convertToScriptHash(address);
 
       final response = await request(
-          command: 'blockchain.scripthash.listunspent', args: [scripthash]);
+        command: 'blockchain.scripthash.listunspent',
+        args: [
+          scripthash,
+        ],
+      );
       return response;
     } catch (e) {
       throw e;
@@ -195,7 +213,12 @@ abstract class ElectrumX {
       {String tx_hash, bool verbose = true}) async {
     try {
       final response = await request(
-          command: 'blockchain.transaction.get', args: [tx_hash, verbose]);
+        command: 'blockchain.transaction.get',
+        args: [
+          tx_hash,
+          verbose,
+        ],
+      );
       return response;
     } catch (e) {
       throw e;
@@ -205,12 +228,16 @@ abstract class ElectrumX {
   //TODO complete (and add example to) docs below
   /// Returns the whole anonymity set for denomination in the groupId.
   ///
-  /// denomionation is blockhash and is optional
   static Future<dynamic> getAnonymitySet(
-      {dynamic denomination, dynamic groupId}) async {
+      {dynamic groupId, dynamic blockhash}) async {
     try {
       final response = await request(
-          command: 'sigma.getanonymityset', args: [groupId, denomination]);
+        command: 'sigma.getanonymityset',
+        args: [
+          groupId ?? "1",
+          blockhash ?? "",
+        ],
+      );
       return response;
     } catch (e) {
       throw e;
@@ -223,8 +250,12 @@ abstract class ElectrumX {
   /// Returns the block height and groupId of pubcoin.
   static Future<dynamic> getMintData({dynamic mints}) async {
     try {
-      final response =
-          await request(command: 'sigma.getmintmetadata', args: [mints]);
+      final response = await request(
+        command: 'sigma.getmintmetadata',
+        args: [
+          mints,
+        ],
+      );
       return response;
     } catch (e) {
       throw e;
@@ -252,7 +283,9 @@ abstract class ElectrumX {
   ///
   static Future<dynamic> getLatestCoinId() async {
     try {
-      final response = await request(command: 'sigma.getlatestcoinid');
+      final response = await request(
+        command: 'sigma.getlatestcoinid',
+      );
       return response;
     } catch (e) {
       Logger.print(e);
@@ -268,7 +301,9 @@ abstract class ElectrumX {
     try {
       final response = await request(
         command: 'sigma.getcoinsforrecovery',
-        args: [setId],
+        args: [
+          setId,
+        ],
       );
       return response;
     } catch (e) {
@@ -283,7 +318,9 @@ abstract class ElectrumX {
   /// Returns freerate
   static Future<dynamic> getFeeRate() async {
     try {
-      final response = await request(command: 'blockchain.getfeerate');
+      final response = await request(
+        command: 'blockchain.getfeerate',
+      );
       return response;
     } catch (e) {
       throw e;

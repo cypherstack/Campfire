@@ -444,7 +444,7 @@ isolateCreateJoinSplitTransaction(
     dynamic price,
     List<DartLelantusEntry> lelantusEntries,
     String url) async {
-  final getanonymityset = await getAnonymitySet(url);
+  final getanonymityset = await getAnonymitySet();
 
   final estimateJoinSplitFee = await isolateEstimateJoinSplitFee(
     spendAmount,
@@ -618,26 +618,15 @@ Future<bip32.BIP32> _getNode(int chain, int index, String mnemonic) async {
   return node;
 }
 
-Future<dynamic> getAnonymitySet(String url) async {
-  final Map<String, dynamic> requestBody = {
-    "url": url,
-  };
-
-  final response = await http.post(
-    Uri.parse('$MIDDLE_SERVER/getanonymityset'),
-    body: jsonEncode(requestBody),
-    headers: {'Content-Type': 'application/json'},
-  );
-
-  if (response.statusCode == 200 || response.statusCode == 201) {
-    var tod = json.decode(response.body);
+Future<dynamic> getAnonymitySet() async {
+  try {
+    var tod = await ElectrumX.getAnonymitySet();
     tod['serializedCoins'] = tod['serializedCoins'].cast<String>();
 
     return tod;
-  } else {
-    throw Exception('Something happened: ' +
-        response.statusCode.toString() +
-        response.body);
+  } catch (e) {
+    Logger.print("Exception rethrown in getAnonymitySet(): $e");
+    throw e;
   }
 }
 
