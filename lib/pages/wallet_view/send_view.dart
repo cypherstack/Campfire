@@ -4,7 +4,6 @@ import 'package:flutter_spinkit/flutter_spinkit.dart';
 import 'package:flutter_svg/svg.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:majascan/majascan.dart';
-import 'package:paymint/models/models.dart';
 import 'package:paymint/notifications/campfire_alert.dart';
 import 'package:paymint/pages/wallet_view/confirm_send_view.dart';
 import 'package:paymint/services/coins/manager.dart';
@@ -234,26 +233,7 @@ class _SendViewState extends State<SendView> {
                         height: 16,
                       ),
 
-                      FutureBuilder(
-                        future: manager.fees,
-                        builder: (BuildContext context,
-                            AsyncSnapshot<FeeObject> feeObject) {
-                          if (feeObject.connectionState ==
-                              ConnectionState.done) {
-                            if (feeObject == null || feeObject.hasError) {
-                              // TODO: connection error notification
-                              return _buildTxFeeInfo();
-                            }
-
-                            // TODO is this the correct fee?
-                            _fee = feeObject.data.medium;
-
-                            return _buildTxFeeInfo();
-                          } else {
-                            return _buildTxFeeInfo();
-                          }
-                        },
-                      ),
+                      _buildTxFeeInfo(),
 
                       SizedBox(
                         height: 16,
