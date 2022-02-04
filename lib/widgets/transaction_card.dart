@@ -4,8 +4,10 @@ import 'package:flutter_feather_icons/flutter_feather_icons.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:paymint/models/transactions_model.dart';
 import 'package:paymint/pages/transaction_subviews/transaction_details_view.dart';
+import 'package:paymint/services/globals.dart';
 import 'package:paymint/services/notes_service.dart';
 import 'package:paymint/utilities/cfcolors.dart';
+import 'package:paymint/utilities/currency_utils.dart';
 import 'package:paymint/utilities/sizing_utilities.dart';
 import 'package:provider/provider.dart';
 
@@ -22,7 +24,7 @@ class TransactionCard extends StatelessWidget {
   final String txType;
   final String date;
   final String amount;
-  final String fiatValue;
+  final dynamic fiatValue;
 
   final Transaction transaction;
 
@@ -194,19 +196,54 @@ class TransactionCard extends StatelessWidget {
                           SizedBox(
                             width: 10,
                           ),
-                          Flexible(
-                            child: FittedBox(
-                              fit: BoxFit.scaleDown,
-                              child: Text(
-                                fiatValue,
-                                style: GoogleFonts.workSans(
-                                  color: CFColors.twilight,
-                                  fontSize: 16,
-                                  fontWeight: FontWeight.w500,
+                          if (fiatValue is String)
+                            Flexible(
+                              child: FittedBox(
+                                fit: BoxFit.scaleDown,
+                                child: Text(
+                                  fiatValue,
+                                  style: GoogleFonts.workSans(
+                                    color: CFColors.twilight,
+                                    fontSize: 16,
+                                    fontWeight: FontWeight.w500,
+                                  ),
                                 ),
                               ),
                             ),
-                          ),
+                          if (fiatValue is double)
+                            Flexible(
+                              child: FittedBox(
+                                fit: BoxFit.scaleDown,
+                                child: FutureBuilder(
+                                  future: CurrencyUtilities
+                                      .fetchPreferredCurrency(),
+                                  builder: (context,
+                                      AsyncSnapshot<String> snapshot) {
+                                    String value = fiatValue.toStringAsFixed(2);
+                                    if (snapshot.connectionState ==
+                                        ConnectionState.done) {
+                                      return Text(
+                                        currencyMap[snapshot.data] + value,
+                                        style: GoogleFonts.workSans(
+                                          color: CFColors.twilight,
+                                          fontSize: 16,
+                                          fontWeight: FontWeight.w500,
+                                        ),
+                                      );
+                                    } else {
+                                      return Text(
+                                        value,
+                                        style: GoogleFonts.workSans(
+                                          color: CFColors.twilight,
+                                          fontSize: 16,
+                                          fontWeight: FontWeight.w500,
+                                        ),
+                                      );
+                                    }
+                                  },
+                                ),
+                              ),
+                            ),
                         ],
                       ),
                     ],

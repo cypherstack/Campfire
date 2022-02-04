@@ -117,7 +117,8 @@ class _WalletViewState extends State<WalletView> {
                     : manager.totalBalance,
                 builder: (context, AsyncSnapshot<double> snapshot) {
                   String balance = "...";
-                  if (snapshot.connectionState == ConnectionState.done) {
+                  if (snapshot.connectionState == ConnectionState.done &&
+                      snapshot.data != null) {
                     balance = snapshot.data.toStringAsFixed(8);
                   }
                   return Text(
@@ -149,7 +150,8 @@ class _WalletViewState extends State<WalletView> {
                         : manager.fiatTotalBalance,
                     builder: (context, AsyncSnapshot<double> snapshot) {
                       String balance = "...";
-                      if (snapshot.connectionState == ConnectionState.done) {
+                      if (snapshot.connectionState == ConnectionState.done &&
+                          snapshot.data != null) {
                         if (snapshot.data > 0) {
                           balance = snapshot.data.toStringAsFixed(8);
                         }
@@ -331,9 +333,7 @@ Widget _buildTransactionList(BuildContext context, List<Transaction> txList) {
             date: Utilities.extractDateFrom(txList[index].timestamp),
             amount:
                 "${Utilities.satoshisToAmount(txList[index].amount)} ${CurrencyUtilities.coinName}",
-            fiatValue: txList[index].worthNow is String
-                ? txList[index].worthNow
-                : txList[index].worthNow.toStringAsFixed(2),
+            fiatValue: txList[index].worthNow,
           ),
         );
       },
