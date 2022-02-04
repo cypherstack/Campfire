@@ -191,10 +191,10 @@ class _ConfirmSendViewState extends State<ConfirmSendView> {
                         );
                         await Future.delayed(Duration(milliseconds: 100))
                             .then((value) {
-                          manager.refresh();
                           final navigator = Navigator.of(context);
                           navigator.pop();
                           navigator.pop();
+                          manager.refresh();
                         });
                       } catch (e) {
                         Logger.print(e);
