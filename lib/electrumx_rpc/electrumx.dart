@@ -1,7 +1,12 @@
+import 'dart:convert';
+
+import 'package:paymint/electrumx_rpc/rpc.dart';
 import 'package:paymint/utilities/address_utils.dart';
 import 'package:paymint/utilities/logger.dart';
-import 'package:raven_electrum/raven_electrum.dart';
+import 'package:uuid/uuid.dart';
 
+// const ELECTRUMX_SERVER = "electrumx-firo.cypherstack.com";
+// const ELECTRUMX_PORT = 50002;
 const ELECTRUMX_SERVER = "electrumx.firo.org";
 const ELECTRUMX_PORT = 50002;
 
@@ -15,24 +20,29 @@ abstract class ElectrumX {
     Duration connectionTimeout = const Duration(seconds: 5),
     Duration aliveTimerDuration = const Duration(seconds: 2),
   }) async {
-    RavenElectrumClient client;
+    // RavenElectrumClient client;
+    final client = JsonRPC(
+      address: server ?? ELECTRUMX_SERVER,
+      port: port ?? ELECTRUMX_PORT,
+      useSSL: true,
+    );
     try {
-      client = await RavenElectrumClient.connect(
-        server ?? ELECTRUMX_SERVER,
-        port: port ?? ELECTRUMX_PORT,
-        protocolVersion: "1.4",
-        acceptUnverified: true,
-        clientName: "campfire",
-        connectionTimeout: connectionTimeout,
-        aliveTimerDuration: aliveTimerDuration,
-      );
-      final response = await client.request(command, args);
+      final requestId = Uuid().v1();
+      final jsonArgs = json.encode(args);
+      final jsonRequestString =
+          '{"jsonrpc": "2.0", "id": "$requestId","method": "$command","params": $jsonArgs}';
+
+      print("jsonRequestString: $jsonRequestString");
+
+      final response = await client.request(jsonRequestString);
+
+      if (response["result"] == null) {
+        throw Exception("JSONRPC response error: $response");
+      }
 
       return response;
     } catch (e) {
       throw e;
-    } finally {
-      await client.close();
     }
   }
 
@@ -50,7 +60,7 @@ abstract class ElectrumX {
       final response = await request(
         command: 'blockchain.headers.subscribe',
       );
-      return response;
+      return response["result"];
     } catch (e) {
       throw e;
     }
@@ -67,7 +77,7 @@ abstract class ElectrumX {
           rawTx,
         ],
       );
-      return response;
+      return response["result"];
     } catch (e) {
       throw e;
     }
@@ -92,7 +102,7 @@ abstract class ElectrumX {
           scripthash,
         ],
       );
-      return response;
+      return response["result"];
     } catch (e) {
       throw e;
     }
@@ -122,7 +132,7 @@ abstract class ElectrumX {
           scripthash,
         ],
       );
-      return List<Map<String, dynamic>>.from(response);
+      return List<Map<String, dynamic>>.from(response["result"]);
     } catch (e) {
       throw e;
     }
@@ -156,7 +166,7 @@ abstract class ElectrumX {
           scripthash,
         ],
       );
-      return response;
+      return response["result"];
     } catch (e) {
       throw e;
     }
@@ -219,7 +229,7 @@ abstract class ElectrumX {
           verbose,
         ],
       );
-      return response;
+      return response["result"];
     } catch (e) {
       throw e;
     }
@@ -238,7 +248,7 @@ abstract class ElectrumX {
           blockhash ?? "",
         ],
       );
-      return response;
+      return response["result"];
     } catch (e) {
       throw e;
     }
@@ -256,7 +266,7 @@ abstract class ElectrumX {
           mints,
         ],
       );
-      return response;
+      return response["result"];
     } catch (e) {
       throw e;
     }
@@ -271,7 +281,7 @@ abstract class ElectrumX {
       final response = await request(
         command: 'sigma.getusedcoinserials',
       );
-      return response;
+      return response["result"];
     } catch (e) {
       Logger.print(e);
       throw e;
@@ -281,12 +291,12 @@ abstract class ElectrumX {
   //TODO complete (and add example to) docs below. I have no idea what this does as the comments on the python code I'm deriving this from are inaccurate...
   ///
   ///
-  static Future<dynamic> getLatestCoinId() async {
+  static Future<int> getLatestCoinId() async {
     try {
       final response = await request(
         command: 'sigma.getlatestcoinid',
       );
-      return response;
+      return response["result"];
     } catch (e) {
       Logger.print(e);
       throw e;
@@ -297,15 +307,16 @@ abstract class ElectrumX {
   ///
   ///
   /// Returns getcoinsforrecovery
-  static Future<dynamic> getCoinsForRecovery({dynamic setId}) async {
+  static Future<Map<String, dynamic>> getCoinsForRecovery(
+      {dynamic setId}) async {
     try {
       final response = await request(
         command: 'sigma.getcoinsforrecovery',
         args: [
-          setId,
+          setId ?? 1,
         ],
       );
-      return response;
+      return response["result"];
     } catch (e) {
       Logger.print(e);
       throw e;
@@ -321,7 +332,7 @@ abstract class ElectrumX {
       final response = await request(
         command: 'blockchain.getfeerate',
       );
-      return response;
+      return response["result"];
     } catch (e) {
       throw e;
     }

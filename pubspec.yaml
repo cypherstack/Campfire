@@ -61,10 +61,8 @@ dependencies:
   event_bus: ^2.0.0
   uuid: ^3.0.5
   flutter_rounded_date_picker: ^2.0.2
-  raven_electrum: ^2.0.0
-  stream_channel: ^2.1.0
-  json_rpc_2: ^3.0.1
   crypto: ^3.0.1
+  jsonrpc2: ^3.0.1
 
 dev_dependencies:
   flutter_test:
