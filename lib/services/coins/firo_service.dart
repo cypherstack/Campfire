@@ -1,4 +1,5 @@
 import 'dart:convert';
+import 'dart:developer';
 import 'dart:isolate';
 import 'dart:typed_data';
 
@@ -1765,49 +1766,293 @@ class Firo extends CoinServiceAPI {
       allAddresses.add(changeAddresses[i]);
     }
 
-    final Map<String, dynamic> requestBody = {
-      "currency": currency,
-      "allAddresses": allAddresses,
-      "changeAddresses": changeAddresses,
-      "url": await _getEsploraUrl()
-    };
+    print("receiving addresses: $receivingAddresses");
+    print("change addresses: $changeAddresses");
+    // //=====================================================================
 
-    try {
-      final response = await http.post(
-        Uri.parse('$MIDDLE_SERVER/txData'),
-        body: jsonEncode(requestBody),
-        headers: {'Content-Type': 'application/json'},
-      );
+    List<String> allTxHashes = [];
 
-      if (response.statusCode == 200 || response.statusCode == 201) {
-        Logger.print('Transactions fetched');
-        await wallet.put('latest_tx_model',
-            TransactionData.fromJson(json.decode(response.body)));
-        return TransactionData.fromJson(json.decode(response.body));
-      } else {
-        Logger.print("Transaction fetch unsuccessful");
-        final latestModel = await wallet.get('latest_tx_model');
-
-        if (latestModel == null) {
-          final emptyModel = {"dateTimeChunks": []};
-          return TransactionData.fromJson(emptyModel);
-        } else {
-          Logger.print("Old transaction model located: ${response.body}");
-          return latestModel;
+    for (final address in allAddresses) {
+      final txs = await ElectrumX.getHistory(address: address);
+      for (final map in txs) {
+        final txHash = map["tx_hash"];
+        if (!allTxHashes.contains(txHash)) {
+          allTxHashes.add(txHash);
         }
       }
-    } catch (e) {
-      Logger.print("Transaction fetch unsuccessful: $e");
-      final latestModel = await wallet.get('latest_tx_model');
+    }
 
-      if (latestModel == null) {
-        final emptyModel = {"dateTimeChunks": []};
-        return TransactionData.fromJson(emptyModel);
+    log("allTxHashes: $allTxHashes");
+
+    List<Map<String, dynamic>> allTransactions = [];
+
+    for (final txHash in allTxHashes) {
+      final tx = await ElectrumX.getTransaction(tx_hash: txHash, verbose: true);
+      allTransactions.add(tx);
+    }
+
+    log("allTransactions length: ${allTransactions.length}");
+
+    // sort thing stuff
+    final currentPrice = await _getBitcoinPrice(fiatCurrency: currency);
+    final List<Map<String, dynamic>> midSortedArray = [];
+
+    for (final txObject in allTransactions) {
+      List<String> sendersArray = [];
+      List<String> recipientsArray = [];
+
+      // Usually only has value when txType = 'Send'
+      int inputAmtSentFromWallet = 0;
+      // Usually has value regardless of txType due to change addresses
+      int outputAmtAddressedToWallet = 0;
+
+      Map<String, dynamic> midSortedTx = {};
+      List<dynamic> aliens = [];
+
+      // no addresses in any vin item??
+      // https://git.cypherstack.com/marco/FiroWallet-API-v2/src/branch/anonymity/functions/util/sorting_util.js#L82
+      for (final input in txObject["vin"]) {
+        final address = input["address"];
+        if (address != null) {
+          sendersArray.add(address);
+        }
+      }
+
+      log("sendersArray: $sendersArray");
+
+      for (final output in txObject["vout"]) {
+        final addresses = output["scriptPubKey"]["addresses"];
+        if (addresses != null) {
+          recipientsArray.add(addresses[0]);
+        }
+      }
+      log("recipientsArray: $recipientsArray");
+
+      final foundInSenders =
+          allAddresses.every((element) => sendersArray.contains(element));
+      log("foundInSenders: $foundInSenders");
+
+      String outAddress = "";
+
+      int fees = 0;
+
+      // If txType = Sent, then calculate inputAmtSentFromWallet, calculate who received how much in aliens array (check outputs)
+      if (foundInSenders) {
+        int outAmount = 0;
+        int inAmount = 0;
+        bool nFeesUsed = false;
+
+        for (final input in txObject["vin"]) {
+          final nFees = input["nFees"];
+          if (nFees != null) {
+            nFeesUsed = true;
+            fees = (nFees * 100000000).toInt();
+          }
+          final address = input["address"];
+          final value = input["valueSat"];
+          if (address != null && value != null) {
+            if (allAddresses.contains(address)) {
+              inputAmtSentFromWallet += value;
+            }
+          }
+
+          if (value != null) {
+            inAmount += value;
+          }
+        }
+
+        for (final output in txObject["vout"]) {
+          final addresses = output["scriptPubKey"]["addresses"];
+          if (addresses != null) {
+            final address = addresses[0];
+            final value = output["value"];
+            if (address != null && value != null) {
+              if (changeAddresses.contains(address)) {
+                inputAmtSentFromWallet -= (value * 100000000).toInt();
+              } else {
+                outAddress = address;
+              }
+            }
+            // else {
+            //   final type = output["scriptPubKey"]["type"];
+            //   if (type != null && type == "lelantusmint") {}
+            // }
+            if (value != null) {
+              outAmount += (value * 100000000).toInt();
+            }
+          }
+        }
+
+        fees = nFeesUsed ? fees : inAmount - outAmount;
+        inputAmtSentFromWallet -= inAmount - outAmount;
       } else {
-        Logger.print("Old transaction model located");
-        return latestModel;
+        for (final input in txObject["vin"]) {
+          final nFees = input["nFees"];
+          if (nFees != null) {
+            fees += (nFees * 100000000).toInt();
+          }
+        }
+
+        for (final output in txObject["vout"]) {
+          final addresses = output["scriptPubKey"]["addresses"];
+          if (addresses != null) {
+            final address = addresses[0];
+            final value = output["value"];
+            print(address + value.toString());
+            if (address != null) {
+              if (allAddresses.contains(address)) {
+                outputAmtAddressedToWallet += (value * 100000000).toInt();
+                outAddress = address;
+              }
+            }
+          }
+        }
+      }
+      log("$outAddress  =========  inp$inputAmtSentFromWallet/oup$outputAmtAddressedToWallet ============ fees: $fees");
+
+      // if (outAddress != "") {
+      // create final tx map
+      midSortedTx["txid"] = txObject["txid"];
+      midSortedTx["confirmed_status"] = txObject["confirmations"] > 0;
+      midSortedTx["timestamp"] = txObject["blocktime"];
+      if (foundInSenders) {
+        midSortedTx["txType"] = "Sent";
+        midSortedTx["amount"] = inputAmtSentFromWallet;
+        final worthNow = currentPrice * (inputAmtSentFromWallet / 100000000.0);
+        midSortedTx["worthNow"] = worthNow;
+        if (txObject["vout"][0]["scriptPubKey"]["type"] == "lelantusmint") {
+          midSortedTx["subType"] = "mint";
+        }
+      } else {
+        midSortedTx["txType"] = "Received";
+        midSortedTx["amount"] = outputAmtAddressedToWallet;
+        final worthNow =
+            currentPrice * (outputAmtAddressedToWallet / 100000000.0);
+        midSortedTx["worthNow"] = worthNow;
+      }
+      midSortedTx["aliens"] = aliens;
+      midSortedTx["fees"] = fees;
+      midSortedTx["address"] = outAddress;
+      midSortedTx["height"] = txObject["height"];
+      midSortedTx["inputSize"] = txObject["vin"].length;
+      midSortedTx["outputSize"] = txObject["vout"].length;
+      midSortedTx["inputs"] = txObject["vin"];
+      midSortedTx["outputs"] = txObject["vout"];
+
+      midSortedArray.add(midSortedTx);
+      log("midSortedTx: $midSortedTx");
+      // }
+    }
+
+    // get historical price
+    for (int i = 0; i < midSortedArray.length; i++) {
+      var priceAtBlockTimestamp = await _getHistoricalPrice(
+          timestamp: midSortedArray[i]["timestamp"], fiatCurrency: currency);
+      if (priceAtBlockTimestamp == null) {
+        priceAtBlockTimestamp = -1;
+      }
+      final worthAtBlockTimestamp =
+          priceAtBlockTimestamp * (midSortedArray[i]["amount"] / 100000000.0);
+      midSortedArray[i]["worthAtBlockTimestamp"] = worthAtBlockTimestamp;
+    }
+
+    // sort by date
+    midSortedArray.sort((a, b) => b["timestamp"] - a["timestamp"]);
+
+    // buildDateTimeChunks
+    final result = {"dateTimeChunks": <dynamic>[]};
+    final dateArray = <dynamic>[];
+
+    for (int i = 0; i < midSortedArray.length; i++) {
+      final txObject = midSortedArray[i];
+      final date = models.extractDateFromTimestamp(txObject["timestamp"]);
+      final txTimeArray = [txObject["timestamp"], date];
+
+      if (dateArray.contains(txTimeArray[1])) {
+        result["dateTimeChunks"].forEach((chunk) {
+          if (models.extractDateFromTimestamp(chunk["timestamp"]) ==
+              txTimeArray[1]) {
+            if (chunk["transactions"] == null) {
+              chunk["transactions"] = <Map<String, dynamic>>[];
+            }
+            chunk["transactions"].add(txObject);
+          }
+        });
+      } else {
+        dateArray.add(txTimeArray[1]);
+        final chunk = {
+          "timestamp": txTimeArray[0],
+          "transactions": [txObject],
+        };
+        result["dateTimeChunks"].add(chunk);
       }
     }
+
+    // final orderedList = <Map<String, dynamic>>[];
+    //
+    // result["dateTimeChunks"].forEach((chunk) {
+    //   if (chunk["timestamp"] == null) {
+    //     orderedList.add(chunk);
+    //   }
+    // });
+    //
+    // result["dateTimeChunks"].forEach((chunk) {
+    //   if (chunk["timestamp"] != null) {
+    //     orderedList.add(chunk);
+    //   }
+    // });
+
+    // final txModel = TransactionData.fromJson({"dateTimeChunks": orderedList});
+    log("================================================= $result");
+    final txModel = TransactionData.fromJson(result);
+    print("================================================= $txModel");
+    await wallet.put('latest_tx_model', txModel);
+
+    return txModel;
+    //=====================================================================
+    // final Map<String, dynamic> requestBody = {
+    //   "currency": currency,
+    //   "allAddresses": allAddresses,
+    //   "changeAddresses": changeAddresses,
+    //   "url": await _getEsploraUrl()
+    // };
+    //
+    // try {
+    //   final response = await http.post(
+    //     Uri.parse('$MIDDLE_SERVER/txData'),
+    //     body: jsonEncode(requestBody),
+    //     headers: {'Content-Type': 'application/json'},
+    //   );
+    //
+    //   if (response.statusCode == 200 || response.statusCode == 201) {
+    //     Logger.print('Transactions fetched');
+    //     await wallet.put('latest_tx_model',
+    //         TransactionData.fromJson(json.decode(response.body)));
+    //     return TransactionData.fromJson(json.decode(response.body));
+    //   } else {
+    //     Logger.print("Transaction fetch unsuccessful");
+    //     final latestModel = await wallet.get('latest_tx_model');
+    //
+    //     if (latestModel == null) {
+    //       final emptyModel = {"dateTimeChunks": []};
+    //       return TransactionData.fromJson(emptyModel);
+    //     } else {
+    //       Logger.print("Old transaction model located: ${response.body}");
+    //       return latestModel;
+    //     }
+    //   }
+    // } catch (e) {
+    //   Logger.print("Transaction fetch unsuccessful: $e");
+    //   final latestModel = await wallet.get('latest_tx_model');
+    //
+    //   if (latestModel == null) {
+    //     final emptyModel = {"dateTimeChunks": []};
+    //     return TransactionData.fromJson(emptyModel);
+    //   } else {
+    //     Logger.print("Old transaction model located");
+    //     return latestModel;
+    //   }
+    // }
   }
 
   Future<UtxoData> _fetchUtxoData() async {
