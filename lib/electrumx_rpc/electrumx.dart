@@ -239,7 +239,7 @@ abstract class ElectrumX {
   /// Returns the whole anonymity set for denomination in the groupId.
   ///
   static Future<dynamic> getAnonymitySet(
-      {dynamic groupId, dynamic blockhash}) async {
+      {String groupId, String blockhash}) async {
     try {
       final response = await request(
         command: 'sigma.getanonymityset',
