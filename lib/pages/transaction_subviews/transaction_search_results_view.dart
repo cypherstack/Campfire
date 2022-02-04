@@ -229,6 +229,12 @@ class TransactionSearchResultsView extends StatelessWidget {
     // TODO optimize tx search
     final list =
         txData.txChunks.expand((element) => element.transactions).toList();
+
+    // hide/remove self lelantus mints. They are needed in backend for calculating balances correctly
+    list.removeWhere(
+      (tx) => tx.fees == 0 && tx.amount == 0 && tx.txType == "Received",
+    );
+
     final results = _filterTransactions(list);
     if (results.length == 0) {
       return Center(

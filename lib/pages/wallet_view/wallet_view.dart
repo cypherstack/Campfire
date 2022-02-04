@@ -263,6 +263,13 @@ class _WalletViewState extends State<WalletView> {
                       _cachedTransactions = txData.data.txChunks
                           .expand((element) => element.transactions)
                           .toList();
+                      // hide/remove self lelantus mints. They are needed in backend for calculating balances correctly
+                      _cachedTransactions.removeWhere(
+                        (tx) =>
+                            tx.fees == 0 &&
+                            tx.amount == 0 &&
+                            tx.txType == "Received",
+                      );
                     }
                   }
                   if (_cachedTransactions.length == 0) {
