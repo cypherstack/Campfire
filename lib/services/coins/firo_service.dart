@@ -1913,7 +1913,8 @@ class Firo extends CoinServiceAPI {
       // if (outAddress != "") {
       // create final tx map
       midSortedTx["txid"] = txObject["txid"];
-      midSortedTx["confirmed_status"] = txObject["confirmations"] > 0;
+      midSortedTx["confirmed_status"] = (txObject["confirmations"] != null) &&
+          (txObject["confirmations"] > 0);
       midSortedTx["timestamp"] = txObject["blocktime"];
       if (foundInSenders) {
         midSortedTx["txType"] = "Sent";
@@ -1957,7 +1958,21 @@ class Firo extends CoinServiceAPI {
     }
 
     // sort by date
-    midSortedArray.sort((a, b) => b["timestamp"] - a["timestamp"]);
+    // shouldn't be any issues with a null timestamp but I got one at some point?
+    midSortedArray.sort((a, b) {
+      final aT = a["timestamp"];
+      final bT = b["timestamp"];
+
+      if (aT == null && bT == null) {
+        return 0;
+      } else if (aT == null) {
+        return -1;
+      } else if (bT == null) {
+        return 1;
+      } else {
+        return bT - aT;
+      }
+    });
 
     // buildDateTimeChunks
     final result = {"dateTimeChunks": <dynamic>[]};
