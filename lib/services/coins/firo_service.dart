@@ -144,7 +144,7 @@ isolateRestore(
   final setDataMap = Map();
   final latestSetId = await getLatestSetId(url);
   for (var setId = 1; setId <= latestSetId; setId++) {
-    final setData = await getSetData(url, setId);
+    final setData = await getSetData(setId);
     setDataMap[setId] = setData;
   }
 
@@ -322,8 +322,9 @@ isolateRestore(
 Future<int> getLatestSetId(String url) async {
   try {
     final id = await ElectrumX.getLatestCoinId();
-    return id as int;
+    return id;
   } catch (e) {
+    Logger.print("Exception rethrown in firo_service.dart: $e");
     throw e;
   }
   // final Map<String, dynamic> requestBody = {"url": url};
@@ -344,75 +345,162 @@ Future<int> getLatestSetId(String url) async {
   // }
 }
 
-Future<Map<String, dynamic>> getSetData(String url, int setID) async {
-  final Map<String, dynamic> requestBody = {"url": url};
-
-  final response = await http.post(
-    Uri.parse('$MIDDLE_SERVER/getcoinsforrecovery'),
-    body: jsonEncode(requestBody),
-    headers: {'Content-Type': 'application/json'},
-  ).timeout(Duration(minutes: 3));
-
-  if (response.statusCode == 200 || response.statusCode == 201) {
-    var tod = json.decode(response.body);
-
-    return tod;
-  } else {
-    throw Exception('Something happened: ' +
-        response.statusCode.toString() +
-        response.body);
+Future<Map<String, dynamic>> getSetData(int setID) async {
+  try {
+    final response = await ElectrumX.getCoinsForRecovery(setId: setID);
+    return response;
+  } catch (e) {
+    Logger.print("Exception rethrown in firo_service.dart: $e");
+    throw e;
   }
+
+  // final Map<String, dynamic> requestBody = {"url": url};
+  //
+  // final response = await http.post(
+  //   Uri.parse('$MIDDLE_SERVER/getcoinsforrecovery'),
+  //   body: jsonEncode(requestBody),
+  //   headers: {'Content-Type': 'application/json'},
+  // ).timeout(Duration(minutes: 3));
+  //
+  // if (response.statusCode == 200 || response.statusCode == 201) {
+  //   var tod = json.decode(response.body);
+  //
+  //   return tod;
+  // } else {
+  //   throw Exception('Something happened: ' +
+  //       response.statusCode.toString() +
+  //       response.body);
+  // }
 }
 
 Future<dynamic> getUsedCoinSerials(String url) async {
-  final Map<String, dynamic> requestBody = {"url": url};
-
-  final response = await http.post(
-    Uri.parse('$MIDDLE_SERVER/getusedcoinserials'),
-    body: jsonEncode(requestBody),
-    headers: {'Content-Type': 'application/json'},
-  );
-
-  if (response.statusCode == 200 || response.statusCode == 201) {
-    var tod = json.decode(response.body);
-
-    return tod;
-  } else {
-    throw Exception('Something happened: ' +
-        response.statusCode.toString() +
-        response.body);
+  try {
+    final response = await ElectrumX.getUsedCoinSerials();
+    return response;
+  } catch (e) {
+    Logger.print("Exception rethrown in firo_service.dart: $e");
+    throw e;
   }
+  // final Map<String, dynamic> requestBody = {"url": url};
+  //
+  // final response = await http.post(
+  //   Uri.parse('$MIDDLE_SERVER/getusedcoinserials'),
+  //   body: jsonEncode(requestBody),
+  //   headers: {'Content-Type': 'application/json'},
+  // );
+  //
+  // if (response.statusCode == 200 || response.statusCode == 201) {
+  //   var tod = json.decode(response.body);
+  //
+  //   return tod;
+  // } else {
+  //   throw Exception('Something happened: ' +
+  //       response.statusCode.toString() +
+  //       response.body);
+  // }
 }
 
 Future<List<models.Transaction>> getJMintTransactions(
-    String url, List transactions, String currency) async {
-  final Map<String, dynamic> requestBody = {
-    "url": url,
-    "currency": currency,
-    "hashes": transactions,
-  };
-
-  final response = await http.post(
-    Uri.parse('$MIDDLE_SERVER/getjminttransactions'),
-    body: jsonEncode(requestBody),
-    headers: {'Content-Type': 'application/json'},
-  );
-
-  if (response.statusCode == 200 || response.statusCode == 201) {
-    var tod = json.decode(response.body);
+  String url,
+  List transactions,
+  String currency,
+) async {
+  try {
+    final currentPrice = await _getBitcoinPrice(fiatCurrency: currency);
 
     List<models.Transaction> txs = [];
-    for (var i = 0; i < tod.length; i++) {
-      tod[i]['subType'] = "join";
-      txs.add(models.Transaction.fromLelantusJson(tod[i]));
-    }
 
+    for (int i = 0; i < transactions.length; i++) {
+      try {
+        final tx = await ElectrumX.getTransaction(
+          tx_hash: transactions[i],
+          verbose: true,
+        );
+
+        // tx.remove("lelantusData");
+        // tx.remove("hex");
+        // tx.remove("hash");
+        // tx.remove("blockhash");
+        // tx.remove("blocktime");
+        // tx.remove("instantlock");
+        // tx.remove("chainlock");
+        // tx.remove("version");
+
+        tx["confirmed_status"] = tx["confirmations"] > 0;
+        // tx.remove("confirmations");
+
+        tx["timestamp"] = tx["time"];
+        // tx.remove("time");
+
+        tx["txType"] = "Sent";
+
+        var sendIndex = 1;
+
+        if (tx["vout"][0]["value"] != null && tx["vout"][0]["value"] > 0) {
+          sendIndex = 0;
+        }
+        tx["amount"] = tx["vout"][sendIndex]["value"];
+
+        tx["address"] = tx["vout"][sendIndex]["scriptPubKey"]["addresses"][0];
+
+        tx["fees"] = tx["vin"][0]["nFees"];
+        tx["inputSize"] = tx["vin"].length;
+        tx["outputSize"] = tx["vout"].length;
+
+        // tx.remove("vin");
+        // tx.remove("vout");
+        // tx.remove("size");
+        // tx.remove("vsize");
+        // tx.remove("type");
+        // tx.remove("locktime");
+
+        tx["worthNow"] = currentPrice * tx["amount"];
+
+        final priceAtBlockTimeStamp = await _getHistoricalPrice(
+          fiatCurrency: currency,
+          timestamp: tx["timestamp"],
+        );
+        tx["worthAtBlockTimestamp"] = priceAtBlockTimeStamp * tx["amount"];
+
+        tx["subType"] = "join";
+        txs.add(models.Transaction.fromLelantusJson(tx));
+      } catch (e) {
+        Logger.print(e);
+      }
+    }
     return txs;
-  } else {
-    throw Exception('Something happened: ' +
-        response.statusCode.toString() +
-        response.body);
+  } catch (e) {
+    Logger.print("Exception rethrown in firo_service.dart: $e");
+    throw e;
   }
+
+  // final Map<String, dynamic> requestBody = {
+  //   "url": url,
+  //   "currency": currency,
+  //   "hashes": transactions,
+  // };
+  //
+  // final response = await http.post(
+  //   Uri.parse('$MIDDLE_SERVER/getjminttransactions'),
+  //   body: jsonEncode(requestBody),
+  //   headers: {'Content-Type': 'application/json'},
+  // );
+  //
+  // if (response.statusCode == 200 || response.statusCode == 201) {
+  //   var tod = json.decode(response.body);
+  //
+  //   List<models.Transaction> txs = [];
+  //   for (var i = 0; i < tod.length; i++) {
+  //     tod[i]['subType'] = "join";
+  //     txs.add(models.Transaction.fromLelantusJson(tod[i]));
+  //   }
+  //
+  //   return txs;
+  // } else {
+  //   throw Exception('Something happened: ' +
+  //       response.statusCode.toString() +
+  //       response.body);
+  // }
 }
 
 Future<LelantusFeeData> isolateEstimateJoinSplitFee(int spendAmount,
@@ -640,6 +728,74 @@ Future<int> getBlockHead() async {
 }
 // end of isolates
 
+Future<dynamic> _getBitcoinPrice({String fiatCurrency: null}) async {
+  try {
+    final String currency =
+        fiatCurrency ?? await CurrencyUtilities.fetchPreferredCurrency();
+    final Map<String, String> requestBody = {"currency": currency};
+
+    final response = await http.post(
+      Uri.parse('$MIDDLE_SERVER/currentBitcoinPrice'),
+      body: jsonEncode(requestBody),
+      headers: {'Content-Type': 'application/json'},
+    );
+
+    if (response.statusCode == 200 || response.statusCode == 201) {
+      Logger.print('Current BTC Price: ' + response.body.toString());
+      if (response.body.toString().isEmpty) {
+        return -1;
+      }
+      final result = json.decode(response.body);
+      Logger.print("json bitcoin price result: $result");
+      return result;
+    } else {
+      throw Exception('Something happened: ' +
+          response.statusCode.toString() +
+          response.body);
+    }
+  } catch (e) {
+    Logger.print("Exception caught in getBitcoinPrice: $e");
+    return -1;
+    // return null;
+  }
+}
+
+Future<dynamic> _getHistoricalPrice(
+    {int timestamp, String fiatCurrency}) async {
+  try {
+    final String currency =
+        fiatCurrency ?? await CurrencyUtilities.fetchPreferredCurrency();
+    final Map<String, String> requestBody = {
+      "currency": currency,
+      "timestamp": "$timestamp",
+    };
+
+    final response = await http.post(
+      Uri.parse('$MIDDLE_SERVER/historicalBitcoinPrice'),
+      body: jsonEncode(requestBody),
+      headers: {'Content-Type': 'application/json'},
+    );
+
+    if (response.statusCode == 200 || response.statusCode == 201) {
+      Logger.print('historicalBitcoinPrice body: ' + response.body.toString());
+      if (response.body.toString().isEmpty) {
+        return -1;
+      }
+      final result = json.decode(response.body);
+      Logger.print("json historicalBitcoinPrice  result: $result");
+      return result;
+    } else {
+      throw Exception('Something happened: ' +
+          response.statusCode.toString() +
+          response.body);
+    }
+  } catch (e) {
+    Logger.print("Exception caught in _getHistoricalPrice: $e");
+    return -1;
+    // return null;
+  }
+}
+
 /// Handles a single instance of a firo wallet
 class Firo extends CoinServiceAPI {
   @override
@@ -726,6 +882,7 @@ class Firo extends CoinServiceAPI {
   Future<dynamic> _bitcoinPrice;
   Future<dynamic> get bitcoinPrice => _bitcoinPrice ??= _getBitcoinPrice();
 
+  // currently isn't used but required due to abstract parent class
   Future<FeeObject> _feeObject;
   @override
   Future<FeeObject> get fees => _feeObject;
@@ -1190,20 +1347,20 @@ class Firo extends CoinServiceAPI {
     // Populating the addresses to derive
     for (var i = 0; i < utxosToUse.length; i++) {
       List<dynamic> lookupData = [utxosToUse[i].txid, utxosToUse[i].vout];
-      var json;
+      var jsonString;
       try {
         Map<String, dynamic> requestBody = {
           "url": await _getEsploraUrl(),
           "lookupData": lookupData,
         };
-        json = json.encode(requestBody);
+        jsonString = json.encode(requestBody);
       } catch (e) {
         throw e;
       }
 
       final response = await http.post(
         Uri.parse('$MIDDLE_SERVER/voutLookup'),
-        body: json,
+        body: jsonString,
         headers: {'Content-Type': 'application/json'},
       );
 
@@ -1523,37 +1680,6 @@ class Firo extends CoinServiceAPI {
     return useBiometrics == null ? false : useBiometrics;
   }
 
-  Future<dynamic> _getBitcoinPrice() async {
-    try {
-      final String currency = await CurrencyUtilities.fetchPreferredCurrency();
-      final Map<String, String> requestBody = {"currency": currency};
-
-      final response = await http.post(
-        Uri.parse('$MIDDLE_SERVER/currentBitcoinPrice'),
-        body: jsonEncode(requestBody),
-        headers: {'Content-Type': 'application/json'},
-      );
-
-      if (response.statusCode == 200 || response.statusCode == 201) {
-        Logger.print('Current BTC Price: ' + response.body.toString());
-        if (response.body.toString().isEmpty) {
-          return -1;
-        }
-        final result = json.decode(response.body);
-        Logger.print("json bitcoin price result: $result");
-        return result;
-      } else {
-        throw Exception('Something happened: ' +
-            response.statusCode.toString() +
-            response.body);
-      }
-    } catch (e) {
-      Logger.print("Exception caught in getBitcoinPrice: $e");
-      return -1;
-      // return null;
-    }
-  }
-
   Future<FeeObject> _getFees() async {
     final Map<String, dynamic> requestBody = {"url": await _getEsploraUrl()};
 
@@ -1585,6 +1711,7 @@ class Firo extends CoinServiceAPI {
     }
   }
 
+  //TODO call get transaction and check each tx to see if it is a "received" tx?
   Future<int> _getReceivedTxCount({String address}) async {
     try {
       final transactions = await ElectrumX.getHistory(address: address);
