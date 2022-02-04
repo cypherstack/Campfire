@@ -2,6 +2,8 @@ import 'dart:async';
 import 'dart:convert';
 import 'dart:io';
 
+import 'package:paymint/utilities/logger.dart';
+
 // hacky fix to receive large jsonrpc responses
 class JsonRPC {
   JsonRPC({
@@ -30,7 +32,7 @@ class JsonRPC {
 
     //TODO handle error better
     void errorHandler(error, StackTrace trace) {
-      print(error);
+      Logger.print(error);
     }
 
     void doneHandler() {
@@ -45,7 +47,7 @@ class JsonRPC {
         socket?.listen(dataHandler,
             onError: errorHandler, onDone: doneHandler, cancelOnError: true);
       }).catchError((e) {
-        print("Unable to connect: $e");
+        Logger.print("Unable to connect: $e");
         socket?.destroy();
       });
     } else {
@@ -56,7 +58,7 @@ class JsonRPC {
         socket?.listen(dataHandler,
             onError: errorHandler, onDone: doneHandler, cancelOnError: true);
       }).catchError((e) {
-        print("Unable to connect: $e");
+        Logger.print("Unable to connect: $e");
         socket?.destroy();
       });
     }
