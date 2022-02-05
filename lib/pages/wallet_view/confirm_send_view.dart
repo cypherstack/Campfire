@@ -190,11 +190,9 @@ class _ConfirmSendViewState extends State<ConfirmSendView> {
                           Duration(milliseconds: 2700),
                         );
                         await Future.delayed(Duration(milliseconds: 100))
-                            .then((value) {
-                          final navigator = Navigator.of(context);
-                          navigator.pop();
-                          navigator.pop();
-                          manager.refresh();
+                            .then((_) {
+                          Navigator.of(context).pushNamedAndRemoveUntil(
+                              "/mainview", (_) => false);
                         });
                       } catch (e) {
                         Logger.print(e);
@@ -203,7 +201,7 @@ class _ConfirmSendViewState extends State<ConfirmSendView> {
                           barrierDismissible: false,
                           context: context,
                           builder: (_) => CampfireAlert(message: e.toString()),
-                        ).then((value) {
+                        ).then((_) {
                           final navigator = Navigator.of(context);
                           navigator.pop();
                           navigator.pop();
