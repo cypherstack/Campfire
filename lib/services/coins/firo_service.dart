@@ -1347,35 +1347,51 @@ class Firo extends CoinServiceAPI {
 
     // Populating the addresses to derive
     for (var i = 0; i < utxosToUse.length; i++) {
-      List<dynamic> lookupData = [utxosToUse[i].txid, utxosToUse[i].vout];
-      var jsonString;
-      try {
-        Map<String, dynamic> requestBody = {
-          "url": await _getEsploraUrl(),
-          "lookupData": lookupData,
-        };
-        jsonString = json.encode(requestBody);
-      } catch (e) {
-        throw e;
-      }
+      // List<dynamic> lookupData = [utxosToUse[i].txid, utxosToUse[i].vout];
+      //======================================================================
+      final txid = utxosToUse[i].txid;
+      final outputIndex = utxosToUse[i].vout;
 
-      final response = await http.post(
-        Uri.parse('$MIDDLE_SERVER/voutLookup'),
-        body: jsonString,
-        headers: {'Content-Type': 'application/json'},
-      );
+      // txid may not work for this as txid may not always be the same as tx_hash?
+      final tx = await ElectrumX.getTransaction(tx_hash: txid, verbose: true);
 
-      if (response.statusCode == 200 || response.statusCode == 201) {
-        try {
-          addressesToDerive.add(json.decode(response.body));
-        } catch (e) {
-          throw e;
+      final vouts = tx["vout"];
+      if (vouts != null && vouts.length <= outputIndex + 1) {
+        final address = vouts[outputIndex]["scriptPubKey"]["addresses"][0];
+        if (address != null) {
+          addressesToDerive.add(address);
         }
-      } else {
-        throw Exception('Something happened: ' +
-            response.statusCode.toString() +
-            response.body);
       }
+
+      //======================================================================
+      // var jsonString;
+      // try {
+      //   Map<String, dynamic> requestBody = {
+      //     "url": await _getEsploraUrl(),
+      //     "lookupData": lookupData,
+      //   };
+      //   jsonString = json.encode(requestBody);
+      // } catch (e) {
+      //   throw e;
+      // }
+      //
+      // final response = await http.post(
+      //   Uri.parse('$MIDDLE_SERVER/voutLookup'),
+      //   body: jsonString,
+      //   headers: {'Content-Type': 'application/json'},
+      // );
+      //
+      // if (response.statusCode == 200 || response.statusCode == 201) {
+      //   try {
+      //     addressesToDerive.add(json.decode(response.body));
+      //   } catch (e) {
+      //     throw e;
+      //   }
+      // } else {
+      //   throw Exception('Something happened: ' +
+      //       response.statusCode.toString() +
+      //       response.body);
+      // }
     }
 
     final secureStore = new FlutterSecureStorage();
