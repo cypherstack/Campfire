@@ -166,7 +166,7 @@ abstract class ElectrumX {
           scripthash,
         ],
       );
-      return response["result"];
+      return List<Map<String, dynamic>>.from(response["result"]);
     } catch (e) {
       throw e;
     }
