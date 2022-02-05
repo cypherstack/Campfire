@@ -466,12 +466,12 @@ Future<List<models.Transaction>> getJMintTransactions(
         tx["subType"] = "join";
         txs.add(models.Transaction.fromLelantusJson(tx));
       } catch (e) {
-        Logger.print(e);
+        Logger.print("Exception caught in getJMintTransactions(): $e");
       }
     }
     return txs;
   } catch (e) {
-    Logger.print("Exception rethrown in firo_service.dart: $e");
+    Logger.print("Exception rethrown in getJMintTransactions(): $e");
     throw e;
   }
 
@@ -724,6 +724,7 @@ Future<int> getBlockHead() async {
     final tip = await ElectrumX.getBlockHeadTip();
     return tip["height"];
   } catch (e) {
+    Logger.print("Exception rethrown in getBlockHead(): $e");
     throw e;
   }
 }
@@ -755,7 +756,7 @@ Future<dynamic> _getBitcoinPrice({String fiatCurrency: null}) async {
           response.body);
     }
   } catch (e) {
-    Logger.print("Exception caught in getBitcoinPrice: $e");
+    Logger.print("Exception caught in getBitcoinPrice(): $e");
     return -1;
     // return null;
   }
@@ -791,7 +792,7 @@ Future<dynamic> _getHistoricalPrice(
           response.body);
     }
   } catch (e) {
-    Logger.print("Exception caught in _getHistoricalPrice: $e");
+    Logger.print("Exception caught in _getHistoricalPrice(): $e");
     return -1;
     // return null;
   }
@@ -922,6 +923,7 @@ class Firo extends CoinServiceAPI {
 
       return response != null;
     } catch (e) {
+      Logger.print("Exception caught in getBlockHead(): $e");
       return false;
     }
   }
@@ -957,6 +959,7 @@ class Firo extends CoinServiceAPI {
         }
       }
     } catch (e) {
+      Logger.print("Exception rethrown in firo send(): $e");
       throw e;
     }
   }
@@ -1219,7 +1222,7 @@ class Firo extends CoinServiceAPI {
       }
       return balances;
     } catch (e) {
-      Logger.print("Exception caught in getFullBalance: $e");
+      Logger.print("Exception rethrown in getFullBalance(): $e");
       throw e;
     }
   }
@@ -1233,7 +1236,7 @@ class Firo extends CoinServiceAPI {
       }
       await _submitLelantusToNetwork(mintResult);
     } catch (e) {
-      Logger.print("could not automint: $e");
+      Logger.print("Exception caught in _autoMint(): $e");
     }
   }
 
@@ -1734,6 +1737,8 @@ class Firo extends CoinServiceAPI {
       final transactions = await ElectrumX.getHistory(address: address);
       return transactions.length;
     } catch (e) {
+      Logger.print(
+          "Exception rethrown in _getReceivedTxCount(address: $address): $e");
       throw e;
     }
   }
@@ -2405,7 +2410,8 @@ class Firo extends CoinServiceAPI {
           key: '${this._walletId}_mnemonic', value: suppliedMnemonic.trim());
       await _restore();
     } catch (e) {
-      Logger.print("recoverWalletFromBIP32SeedPhrase threw exception: $e");
+      Logger.print(
+          "Exception rethrown from recoverWalletFromBIP32SeedPhrase(): $e");
       throw e;
     }
   }
