@@ -3,7 +3,7 @@ import 'package:hive/hive.dart';
 part 'type_adaptors/transactions_model.g.dart';
 
 String extractDateFromTimestamp(int timestamp) {
-  if (timestamp == 0) {
+  if (timestamp == 0 || timestamp == null) {
     return 'Now...';
   }
 
