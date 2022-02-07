@@ -40,8 +40,7 @@ class JsonRPC {
     }
 
     if (useSSL) {
-      await SecureSocket.connect(
-          this.address ?? "electrumx.firo.org", this.port ?? 50002,
+      await SecureSocket.connect(this.address, this.port,
           onBadCertificate: (_) => true).then((Socket sock) {
         socket = sock;
         socket?.listen(dataHandler,
@@ -51,9 +50,7 @@ class JsonRPC {
         socket?.destroy();
       });
     } else {
-      await Socket.connect(
-              this.address ?? "electrumx.firo.org", this.port ?? 50001)
-          .then((Socket sock) {
+      await Socket.connect(this.address, this.port).then((Socket sock) {
         socket = sock;
         socket?.listen(dataHandler,
             onError: errorHandler, onDone: doneHandler, cancelOnError: true);
@@ -121,8 +118,7 @@ class JsonRPC {
     }
 
     if (useSSL) {
-      await SecureSocket.connect(
-          this.address ?? "electrumx.firo.org", this.port ?? 50002,
+      await SecureSocket.connect(this.address, this.port,
           onBadCertificate: (_) => true).then((Socket sock) {
         socket = sock;
         socket?.listen(dataHandler,
@@ -132,9 +128,7 @@ class JsonRPC {
         socket?.destroy();
       });
     } else {
-      await Socket.connect(
-              this.address ?? "electrumx.firo.org", this.port ?? 50001)
-          .then((Socket sock) {
+      await Socket.connect(this.address, this.port).then((Socket sock) {
         socket = sock;
         socket?.listen(dataHandler,
             onError: errorHandler, onDone: doneHandler, cancelOnError: true);
@@ -183,8 +177,7 @@ class JsonRPC {
     }
 
     if (useSSL) {
-      await SecureSocket.connect(
-          this.address ?? "electrumx.firo.org", this.port ?? 50002,
+      await SecureSocket.connect(this.address, this.port,
           onBadCertificate: (_) => true).then((Socket sock) {
         socket = sock;
         socket?.listen(dataHandler,
@@ -194,9 +187,7 @@ class JsonRPC {
         socket?.destroy();
       });
     } else {
-      await Socket.connect(
-              this.address ?? "electrumx.firo.org", this.port ?? 50001)
-          .then((Socket sock) {
+      await Socket.connect(this.address, this.port).then((Socket sock) {
         socket = sock;
         socket?.listen(dataHandler,
             onError: errorHandler, onDone: doneHandler, cancelOnError: false);
