@@ -1701,22 +1701,42 @@ class Firo extends CoinServiceAPI {
   }
 
   Future<FeeObject> _getFees() async {
-    final Map<String, dynamic> requestBody = {"url": await _getEsploraUrl()};
-
-    final response = await http.post(
-      Uri.parse('$MIDDLE_SERVER/fees'),
-      body: jsonEncode(requestBody),
-      headers: {'Content-Type': 'application/json'},
-    );
-
-    if (response.statusCode == 200 || response.statusCode == 201) {
-      final FeeObject feeObj = FeeObject.fromJson(json.decode(response.body));
-      return feeObj;
-    } else {
-      throw Exception('Something happened: ' +
-          response.statusCode.toString() +
-          response.body);
+    try {
+      final result = await ElectrumX.getFeeRate();
+      //TODO THIS IS BAD!!
+      // legacy db stores floating point numbers which aren't precise and should not be used for financial data
+      // Will need continue using them here to ensure backwards compatibility
+      // The FeeObject class stores them as dynamic types but they are floating point numbers from:
+      // https://git.cypherstack.com/marco/FiroWallet-API-v2/src/branch/anonymity/functions/handlers/fees.handler.js
+      double fee = result["rate"] / 100000000.0;
+      final fees = {
+        "fast": fee,
+        "average": fee,
+        "slow": fee,
+      };
+      final FeeObject feeObject = FeeObject.fromJson(fees);
+      return feeObject;
+    } catch (e) {
+      Logger.print("Exception rethrown from _getFees(): $e");
+      throw e;
     }
+
+    // final Map<String, dynamic> requestBody = {"url": await _getEsploraUrl()};
+    //
+    // final response = await http.post(
+    //   Uri.parse('$MIDDLE_SERVER/fees'),
+    //   body: jsonEncode(requestBody),
+    //   headers: {'Content-Type': 'application/json'},
+    // );
+    //
+    // if (response.statusCode == 200 || response.statusCode == 201) {
+    //   final FeeObject feeObj = FeeObject.fromJson(json.decode(response.body));
+    //   return feeObj;
+    // } else {
+    //   throw Exception('Something happened: ' +
+    //       response.statusCode.toString() +
+    //       response.body);
+    // }
   }
 
   Future<String> _getEsploraUrl() async {

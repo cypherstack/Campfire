@@ -324,11 +324,14 @@ abstract class ElectrumX {
     }
   }
 
-  //TODO complete (and add example to) docs below
+  /// Get the current fee rate.
   ///
-  ///
-  /// Returns freerate
-  static Future<dynamic> getFeeRate() async {
+  /// Returns a map with the kay "rate" that corresponds to the free rate in satoshis
+  /// Ex:
+  /// {
+  //   "rate": 1000,
+  // }
+  static Future<Map<String, dynamic>> getFeeRate() async {
     try {
       final response = await request(
         command: 'blockchain.getfeerate',
