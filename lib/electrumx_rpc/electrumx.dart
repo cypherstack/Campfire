@@ -5,9 +5,9 @@ import 'package:paymint/utilities/address_utils.dart';
 import 'package:paymint/utilities/logger.dart';
 import 'package:uuid/uuid.dart';
 
-// const ELECTRUMX_SERVER = "electrumx-firo.cypherstack.com";
+const ELECTRUMX_SERVER = "electrumx-firo.cypherstack.com";
 // const ELECTRUMX_PORT = 50002;
-const ELECTRUMX_SERVER = "electrumx.firo.org";
+// const ELECTRUMX_SERVER = "electrumx.firo.org";
 const ELECTRUMX_PORT = 50002;
 
 abstract class ElectrumX {
@@ -20,11 +20,12 @@ abstract class ElectrumX {
     Duration connectionTimeout = const Duration(seconds: 5),
     Duration aliveTimerDuration = const Duration(seconds: 2),
   }) async {
-    // RavenElectrumClient client;
     final client = JsonRPC(
       address: server ?? ELECTRUMX_SERVER,
       port: port ?? ELECTRUMX_PORT,
       useSSL: true,
+      connectionTimeout: connectionTimeout,
+      aliveTimerDuration: aliveTimerDuration,
     );
     try {
       final requestId = Uuid().v1();
