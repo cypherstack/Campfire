@@ -2129,47 +2129,67 @@ class Firo extends CoinServiceAPI {
       }
     }
 
-    final Map<String, dynamic> requestBody = {
-      "currency": currency,
-      "allAddresses": allAddresses,
-      "url": await _getEsploraUrl(),
-    };
-
     try {
-      final response = await http.post(
-        Uri.parse('$MIDDLE_SERVER/outputData'),
-        body: jsonEncode(requestBody),
-        headers: {'Content-Type': 'application/json'},
-      );
+      final utxoData = <List<Map<String, dynamic>>>[];
 
-      if (response.statusCode == 200 || response.statusCode == 201) {
-        final List<UtxoObject> allOutputs =
-            UtxoData.fromJson(json.decode(response.body)).unspentOutputArray;
-        Logger.print('Outputs fetched: $allOutputs');
-        await _sortOutputs(allOutputs);
-        await wallet.put(
-            'latest_utxo_model', UtxoData.fromJson(json.decode(response.body)));
-        return UtxoData.fromJson(json.decode(response.body));
-      } else {
-        Logger.print("Output fetch unsuccessful");
-        final latestTxModel = await wallet.get('latest_utxo_model');
-
-        if (latestTxModel == null) {
-          final currency = await CurrencyUtilities.fetchPreferredCurrency();
-          final currencySymbol = currencyMap[currency];
-
-          final emptyModel = {
-            "total_user_currency": "${currencySymbol}0.00",
-            "total_sats": 0,
-            "total_btc": 0,
-            "outputArray": []
-          };
-          return UtxoData.fromJson(emptyModel);
-        } else {
-          Logger.print("Old output model located");
-          return latestTxModel;
+      for (int i = 0; i < allAddresses.length; i++) {
+        final utxos = await ElectrumX.getUTXOs(address: allAddresses[i]);
+        if (utxos.isNotEmpty) {
+          utxoData.add(utxos);
         }
       }
+
+      double currentPrice =
+          await _getBitcoinPrice(fiatCurrency: currency) ?? -1;
+      final List<Map<String, dynamic>> outputArray = [];
+      int satoshiBalance = 0;
+
+      for (int i = 0; i < utxoData.length; i++) {
+        for (int j = 0; j < utxoData[i].length; j++) {
+          satoshiBalance += utxoData[i][j]["value"];
+
+          final txn = await ElectrumX.getTransaction(
+              tx_hash: utxoData[i][j]["tx_hash"], verbose: true);
+
+          final Map<String, dynamic> tx = {};
+
+          tx["txid"] = txn["txid"];
+          tx["vout"] = utxoData[i][j]["tx_pos"];
+          tx["value"] = utxoData[i][j]["value"];
+
+          tx["status"] = <String, dynamic>{};
+          tx["status"]["confirmed"] =
+              txn["confirmations"] == null ? false : txn["confirmations"] > 0;
+          tx["status"]["block_height"] = txn["height"];
+          tx["status"]["block_hash"] = txn["blockhash"];
+          tx["status"]["block_time"] = txn["blocktime"];
+
+          final fiatValue =
+              (utxoData[i][j]["value"] / 100000000.0) * currentPrice;
+          tx["rawWorth"] = fiatValue;
+          tx["fiatWorth"] =
+              currencyMap[currency] + fiatValue.toStringAsFixed(2);
+          outputArray.add(tx);
+        }
+      }
+
+      double currencyBalanceRaw = currentPrice * (satoshiBalance / 100000000.0);
+
+      final Map<String, dynamic> result = {
+        "total_user_currency":
+            currencyMap[currency] + currencyBalanceRaw.toStringAsFixed(2),
+        "total_sats": satoshiBalance,
+        "total_btc": satoshiBalance / 100000000.0,
+        "outputArray": outputArray,
+      };
+
+      final dataModel = UtxoData.fromJson(result);
+
+      final List<UtxoObject> allOutputs = dataModel.unspentOutputArray;
+      Logger.print('Outputs fetched: $allOutputs');
+      await _sortOutputs(allOutputs);
+      await wallet.put('latest_utxo_model', dataModel);
+      return dataModel;
     } catch (e) {
       Logger.print("Output fetch unsuccessful: $e");
       final latestTxModel = await wallet.get('latest_utxo_model');
@@ -2189,6 +2209,69 @@ class Firo extends CoinServiceAPI {
         return latestTxModel;
       }
     }
+
+    //=========================================================================
+
+    // final Map<String, dynamic> requestBody = {
+    //   "currency": currency,
+    //   "allAddresses": allAddresses,
+    //   "url": await _getEsploraUrl(),
+    // };
+    //
+    // try {
+    //   final response = await http.post(
+    //     Uri.parse('$MIDDLE_SERVER/outputData'),
+    //     body: jsonEncode(requestBody),
+    //     headers: {'Content-Type': 'application/json'},
+    //   );
+    //
+    //   if (response.statusCode == 200 || response.statusCode == 201) {
+    //     final List<UtxoObject> allOutputs =
+    //         UtxoData.fromJson(json.decode(response.body)).unspentOutputArray;
+    //     Logger.print('Outputs fetched: $allOutputs');
+    //     await _sortOutputs(allOutputs);
+    //     await wallet.put(
+    //         'latest_utxo_model', UtxoData.fromJson(json.decode(response.body)));
+    //     return UtxoData.fromJson(json.decode(response.body));
+    //   } else {
+    //     Logger.print("Output fetch unsuccessful");
+    //     final latestTxModel = await wallet.get('latest_utxo_model');
+    //
+    //     if (latestTxModel == null) {
+    //       final currency = await CurrencyUtilities.fetchPreferredCurrency();
+    //       final currencySymbol = currencyMap[currency];
+    //
+    //       final emptyModel = {
+    //         "total_user_currency": "${currencySymbol}0.00",
+    //         "total_sats": 0,
+    //         "total_btc": 0,
+    //         "outputArray": []
+    //       };
+    //       return UtxoData.fromJson(emptyModel);
+    //     } else {
+    //       Logger.print("Old output model located");
+    //       return latestTxModel;
+    //     }
+    //   }
+    // } catch (e) {
+    //   Logger.print("Output fetch unsuccessful: $e");
+    //   final latestTxModel = await wallet.get('latest_utxo_model');
+    //   final currency = await CurrencyUtilities.fetchPreferredCurrency();
+    //   final currencySymbol = currencyMap[currency];
+    //
+    //   if (latestTxModel == null) {
+    //     final emptyModel = {
+    //       "total_user_currency": "${currencySymbol}0.00",
+    //       "total_sats": 0,
+    //       "total_btc": 0,
+    //       "outputArray": []
+    //     };
+    //     return UtxoData.fromJson(emptyModel);
+    //   } else {
+    //     Logger.print("Old output model located");
+    //     return latestTxModel;
+    //   }
+    // }
   }
 
   Future<TransactionData> _getLelantusTransactionData() async {
