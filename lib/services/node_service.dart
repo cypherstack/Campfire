@@ -5,14 +5,22 @@ import 'package:paymint/services/event_bus/global_event_bus.dart';
 import 'package:paymint/utilities/misc_global_constants.dart';
 import 'package:uuid/uuid.dart';
 
+class Node {
+  Node({this.address, this.port, this.name, this.id});
+  final String address;
+  final int port;
+  final String name;
+  final String id;
+}
+
 class NodeService extends ChangeNotifier {
   String _walletId;
 
   String _activeNodeName;
   String get activeNodeName => _activeNodeName ??= _fetchActiveNodeName();
 
-  String _currentUrl;
-  String get currentUrl => _currentUrl ??= _getCurrentUrl();
+  Node _currentNode;
+  Node get currentNode => _currentNode ??= _getCurrentNode();
 
   Map<String, dynamic> _nodes;
   Map<String, dynamic> get nodes => _nodes ??= _fetchNodes();
@@ -23,7 +31,7 @@ class NodeService extends ChangeNotifier {
 
   refresh() {
     _walletId = _getWalletId();
-    _currentUrl = _getCurrentUrl();
+    _currentNode = _getCurrentNode();
     _nodes = _fetchNodes();
     _activeNodeName = _fetchActiveNodeName();
     notifyListeners();
@@ -36,11 +44,18 @@ class NodeService extends ChangeNotifier {
     return name;
   }
 
-  String _getCurrentUrl() {
+  Node _getCurrentNode() {
     final id = _walletId;
     final wallet = Hive.box(id);
-    final url = wallet.get('esplora_url');
-    return url;
+    final nodes = wallet.get('nodes');
+
+    final name = activeNodeName;
+
+    return Node(
+      address: nodes[name]["ipAddress"],
+      port: int.parse(nodes[name]["port"]),
+      name: name,
+    );
   }
 
   String _getWalletId() {
@@ -59,7 +74,7 @@ class NodeService extends ChangeNotifier {
       createNode(
         name: CampfireConstants.defaultNodeName,
         ipAddress: CampfireConstants.defaultIpAddress,
-        port: "",
+        port: CampfireConstants.defaultPort.toString(),
       );
       return _fetchNodes();
     }
@@ -70,15 +85,7 @@ class NodeService extends ChangeNotifier {
   setCurrentNode(String nodeName) async {
     final id = _walletId;
     final wallet = Hive.box(id);
-    final nodes = wallet.get('nodes');
-    final ipAddress = nodes[nodeName]["ipAddress"];
 
-    String port = nodes[nodeName]["port"];
-    port = port.isEmpty ? "" : ":$port";
-
-    final String url = "https://$ipAddress$port/api/FIRO/mainnet";
-
-    await wallet.put('esplora_url', url);
     await wallet.put('activeNodeName', nodeName);
     refresh();
     GlobalEventBus.instance

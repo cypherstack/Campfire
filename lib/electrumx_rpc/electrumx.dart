@@ -10,19 +10,22 @@ const ELECTRUMX_SERVER = "electrumx-firo.cypherstack.com";
 // const ELECTRUMX_SERVER = "electrumx.firo.org";
 const ELECTRUMX_PORT = 50002;
 
-abstract class ElectrumX {
+class ElectrumX {
+  final String server;
+  final int port;
+
+  ElectrumX({this.server, this.port});
+
   /// Send raw rpc command
-  static Future<dynamic> request({
-    String server,
-    int port,
+  Future<dynamic> request({
     String command,
     List<dynamic> args = const [],
     Duration connectionTimeout = const Duration(seconds: 5),
     Duration aliveTimerDuration = const Duration(seconds: 2),
   }) async {
     final client = JsonRPC(
-      address: server ?? ELECTRUMX_SERVER,
-      port: port ?? ELECTRUMX_PORT,
+      address: this.server ?? ELECTRUMX_SERVER,
+      port: this.port ?? ELECTRUMX_PORT,
       useSSL: true,
       connectionTimeout: connectionTimeout,
       aliveTimerDuration: aliveTimerDuration,
@@ -56,7 +59,7 @@ abstract class ElectrumX {
   //   "height": 520481,
   //   "hex": "00000020890208a0ae3a3892aa047c5468725846577cfcd9b512b50000000000000000005dc2b02f2d297a9064ee103036c14d678f9afc7e3d9409cf53fd58b82e938e8ecbeca05a2d2103188ce804c4"
   // }
-  static Future<Map<String, dynamic>> getBlockHeadTip() async {
+  Future<Map<String, dynamic>> getBlockHeadTip() async {
     try {
       final response = await request(
         command: 'blockchain.headers.subscribe',
@@ -70,7 +73,7 @@ abstract class ElectrumX {
   /// Broadcast a transaction to the network.
   ///
   /// The transaction hash as a hexadecimal string.
-  static Future<String> broadcastTransaction({String rawTx}) async {
+  Future<String> broadcastTransaction({String rawTx}) async {
     try {
       final response = await request(
         command: 'blockchain.transaction.broadcast',
@@ -93,7 +96,7 @@ abstract class ElectrumX {
   ///   "confirmed": 103873966,
   ///   "unconfirmed": 23684400
   /// }
-  static Future<Map<String, dynamic>> getBalance({String address}) async {
+  Future<Map<String, dynamic>> getBalance({String address}) async {
     try {
       final scripthash = AddressUtils.convertToScriptHash(address);
 
@@ -123,7 +126,7 @@ abstract class ElectrumX {
   //     "tx_hash": "f3e1bf48975b8d6060a9de8884296abb80be618dc00ae3cb2f6cee3085e09403"
   //   }
   // ]
-  static Future<List<Map<String, dynamic>>> getHistory({String address}) async {
+  Future<List<Map<String, dynamic>>> getHistory({String address}) async {
     try {
       final scripthash = AddressUtils.convertToScriptHash(address);
 
@@ -157,7 +160,7 @@ abstract class ElectrumX {
   //     "height": 441696
   //   }
   // ]
-  static Future<List<Map<String, dynamic>>> getUTXOs({String address}) async {
+  Future<List<Map<String, dynamic>>> getUTXOs({String address}) async {
     try {
       final scripthash = AddressUtils.convertToScriptHash(address);
 
@@ -220,7 +223,7 @@ abstract class ElectrumX {
   ///                                "reqSigs": 1,
   ///                                "type": "pubkeyhash"},
   ///              "value": 0.1360904}]}
-  static Future<Map<String, dynamic>> getTransaction(
+  Future<Map<String, dynamic>> getTransaction(
       {String tx_hash, bool verbose = true}) async {
     try {
       final response = await request(
@@ -239,8 +242,7 @@ abstract class ElectrumX {
   //TODO complete (and add example to) docs below
   /// Returns the whole anonymity set for denomination in the groupId.
   ///
-  static Future<dynamic> getAnonymitySet(
-      {String groupId, String blockhash}) async {
+  Future<dynamic> getAnonymitySet({String groupId, String blockhash}) async {
     try {
       final response = await request(
         command: 'sigma.getanonymityset',
@@ -259,7 +261,7 @@ abstract class ElectrumX {
   ///
   ///
   /// Returns the block height and groupId of pubcoin.
-  static Future<dynamic> getMintData({dynamic mints}) async {
+  Future<dynamic> getMintData({dynamic mints}) async {
     try {
       final response = await request(
         command: 'sigma.getmintmetadata',
@@ -277,7 +279,7 @@ abstract class ElectrumX {
   ///
   ///
   /// Returns the whole set of the used coin serials.
-  static Future<dynamic> getUsedCoinSerials() async {
+  Future<dynamic> getUsedCoinSerials() async {
     try {
       final response = await request(
         command: 'sigma.getusedcoinserials',
@@ -292,7 +294,7 @@ abstract class ElectrumX {
   //TODO complete (and add example to) docs below. I have no idea what this does as the comments on the python code I'm deriving this from are inaccurate...
   ///
   ///
-  static Future<int> getLatestCoinId() async {
+  Future<int> getLatestCoinId() async {
     try {
       final response = await request(
         command: 'sigma.getlatestcoinid',
@@ -308,8 +310,7 @@ abstract class ElectrumX {
   ///
   ///
   /// Returns getcoinsforrecovery
-  static Future<Map<String, dynamic>> getCoinsForRecovery(
-      {dynamic setId}) async {
+  Future<Map<String, dynamic>> getCoinsForRecovery({dynamic setId}) async {
     try {
       final response = await request(
         command: 'sigma.getcoinsforrecovery',
@@ -331,7 +332,7 @@ abstract class ElectrumX {
   /// {
   //   "rate": 1000,
   // }
-  static Future<Map<String, dynamic>> getFeeRate() async {
+  Future<Map<String, dynamic>> getFeeRate() async {
     try {
       final response = await request(
         command: 'blockchain.getfeerate',
