@@ -1731,12 +1731,8 @@ class Firo extends CoinServiceAPI {
       final node = await currentNode;
       final client = ElectrumX(server: node.address, port: node.port);
       final result = await client.getFeeRate();
-      //TODO THIS IS BAD!!
-      // legacy db stores floating point numbers which aren't precise and should not be used for financial data
-      // Will need continue using them here to ensure backwards compatibility
-      // The FeeObject class stores them as dynamic types but they are floating point numbers from:
-      // https://git.cypherstack.com/marco/FiroWallet-API-v2/src/branch/anonymity/functions/handlers/fees.handler.js
-      double fee = result["rate"] / 100000000.0;
+
+      final int fee = result["rate"];
       final fees = {
         "fast": fee,
         "average": fee,
