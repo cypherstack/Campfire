@@ -330,22 +330,6 @@ Future<int> getLatestSetId(Node node) async {
     Logger.print("Exception rethrown in firo_service.dart: $e");
     throw e;
   }
-  // final Map<String, dynamic> requestBody = {"url": url};
-  //
-  // final response = await http.post(
-  //   Uri.parse('$MIDDLE_SERVER/getlatestcoinid'),
-  //   body: jsonEncode(requestBody),
-  //   headers: {'Content-Type': 'application/json'},
-  // );
-  //
-  // if (response.statusCode == 200 || response.statusCode == 201) {
-  //   var tod = json.decode(response.body);
-  //   return tod;
-  // } else {
-  //   throw Exception('Something happened: ' +
-  //       response.statusCode.toString() +
-  //       response.body);
-  // }
 }
 
 Future<Map<String, dynamic>> getSetData(Node node, int setID) async {
@@ -357,24 +341,6 @@ Future<Map<String, dynamic>> getSetData(Node node, int setID) async {
     Logger.print("Exception rethrown in firo_service.dart: $e");
     throw e;
   }
-
-  // final Map<String, dynamic> requestBody = {"url": url};
-  //
-  // final response = await http.post(
-  //   Uri.parse('$MIDDLE_SERVER/getcoinsforrecovery'),
-  //   body: jsonEncode(requestBody),
-  //   headers: {'Content-Type': 'application/json'},
-  // ).timeout(Duration(minutes: 3));
-  //
-  // if (response.statusCode == 200 || response.statusCode == 201) {
-  //   var tod = json.decode(response.body);
-  //
-  //   return tod;
-  // } else {
-  //   throw Exception('Something happened: ' +
-  //       response.statusCode.toString() +
-  //       response.body);
-  // }
 }
 
 Future<dynamic> getUsedCoinSerials(Node node) async {
@@ -386,23 +352,6 @@ Future<dynamic> getUsedCoinSerials(Node node) async {
     Logger.print("Exception rethrown in firo_service.dart: $e");
     throw e;
   }
-  // final Map<String, dynamic> requestBody = {"url": url};
-  //
-  // final response = await http.post(
-  //   Uri.parse('$MIDDLE_SERVER/getusedcoinserials'),
-  //   body: jsonEncode(requestBody),
-  //   headers: {'Content-Type': 'application/json'},
-  // );
-  //
-  // if (response.statusCode == 200 || response.statusCode == 201) {
-  //   var tod = json.decode(response.body);
-  //
-  //   return tod;
-  // } else {
-  //   throw Exception('Something happened: ' +
-  //       response.statusCode.toString() +
-  //       response.body);
-  // }
 }
 
 Future<List<models.Transaction>> getJMintTransactions(
@@ -424,6 +373,7 @@ Future<List<models.Transaction>> getJMintTransactions(
           verbose: true,
         );
 
+        // TODO not sure if removing here increases or decreases performance
         // tx.remove("lelantusData");
         // tx.remove("hex");
         // tx.remove("hash");
@@ -480,34 +430,6 @@ Future<List<models.Transaction>> getJMintTransactions(
     Logger.print("Exception rethrown in getJMintTransactions(): $e");
     throw e;
   }
-
-  // final Map<String, dynamic> requestBody = {
-  //   "url": url,
-  //   "currency": currency,
-  //   "hashes": transactions,
-  // };
-  //
-  // final response = await http.post(
-  //   Uri.parse('$MIDDLE_SERVER/getjminttransactions'),
-  //   body: jsonEncode(requestBody),
-  //   headers: {'Content-Type': 'application/json'},
-  // );
-  //
-  // if (response.statusCode == 200 || response.statusCode == 201) {
-  //   var tod = json.decode(response.body);
-  //
-  //   List<models.Transaction> txs = [];
-  //   for (var i = 0; i < tod.length; i++) {
-  //     tod[i]['subType'] = "join";
-  //     txs.add(models.Transaction.fromLelantusJson(tod[i]));
-  //   }
-  //
-  //   return txs;
-  // } else {
-  //   throw Exception('Something happened: ' +
-  //       response.statusCode.toString() +
-  //       response.body);
-  // }
 }
 
 Future<LelantusFeeData> isolateEstimateJoinSplitFee(
@@ -1340,26 +1262,6 @@ class Firo extends CoinServiceAPI {
       // return an invalid tx
       return "transaction submission failed";
     }
-    // final Map<String, dynamic> obj = {
-    //   "url": await _getEsploraUrl(),
-    //   "rawTx": hex,
-    // };
-    //
-    // final res = await http.post(
-    //   Uri.parse('$MIDDLE_SERVER/pushtx'),
-    //   body: jsonEncode(obj),
-    //   headers: {'Content-Type': 'application/json'},
-    // );
-    //
-    // if (res.statusCode == 200 || res.statusCode == 201) {
-    //   if (res.body.toString().contains("error") ||
-    //       res.body.toString().contains("Error")) {
-    //     return false;
-    //   }
-    //   return true;
-    // } else {
-    //   return false;
-    // }
   }
 
   /// Builds and signs a transaction
@@ -1376,8 +1278,6 @@ class Firo extends CoinServiceAPI {
 
     // Populating the addresses to derive
     for (var i = 0; i < utxosToUse.length; i++) {
-      // List<dynamic> lookupData = [utxosToUse[i].txid, utxosToUse[i].vout];
-      //======================================================================
       final txid = utxosToUse[i].txid;
       final outputIndex = utxosToUse[i].vout;
 
@@ -1391,36 +1291,6 @@ class Firo extends CoinServiceAPI {
           addressesToDerive.add(address);
         }
       }
-
-      //======================================================================
-      // var jsonString;
-      // try {
-      //   Map<String, dynamic> requestBody = {
-      //     "url": await _getEsploraUrl(),
-      //     "lookupData": lookupData,
-      //   };
-      //   jsonString = json.encode(requestBody);
-      // } catch (e) {
-      //   throw e;
-      // }
-      //
-      // final response = await http.post(
-      //   Uri.parse('$MIDDLE_SERVER/voutLookup'),
-      //   body: jsonString,
-      //   headers: {'Content-Type': 'application/json'},
-      // );
-      //
-      // if (response.statusCode == 200 || response.statusCode == 201) {
-      //   try {
-      //     addressesToDerive.add(json.decode(response.body));
-      //   } catch (e) {
-      //     throw e;
-      //   }
-      // } else {
-      //   throw Exception('Something happened: ' +
-      //       response.statusCode.toString() +
-      //       response.body);
-      // }
     }
 
     final secureStore = new FlutterSecureStorage();
@@ -1744,23 +1614,6 @@ class Firo extends CoinServiceAPI {
       Logger.print("Exception rethrown from _getFees(): $e");
       throw e;
     }
-
-    // final Map<String, dynamic> requestBody = {"url": await _getEsploraUrl()};
-    //
-    // final response = await http.post(
-    //   Uri.parse('$MIDDLE_SERVER/fees'),
-    //   body: jsonEncode(requestBody),
-    //   headers: {'Content-Type': 'application/json'},
-    // );
-    //
-    // if (response.statusCode == 200 || response.statusCode == 201) {
-    //   final FeeObject feeObj = FeeObject.fromJson(json.decode(response.body));
-    //   return feeObj;
-    // } else {
-    //   throw Exception('Something happened: ' +
-    //       response.statusCode.toString() +
-    //       response.body);
-    // }
   }
 
   Future<Node> _getCurrentNode() async {
@@ -1841,7 +1694,6 @@ class Firo extends CoinServiceAPI {
 
     print("receiving addresses: $receivingAddresses");
     print("change addresses: $changeAddresses");
-    // //=====================================================================
 
     List<String> allTxHashes = [];
 
@@ -1885,8 +1737,6 @@ class Firo extends CoinServiceAPI {
       Map<String, dynamic> midSortedTx = {};
       List<dynamic> aliens = [];
 
-      // no addresses in any vin item??
-      // https://git.cypherstack.com/marco/FiroWallet-API-v2/src/branch/anonymity/functions/util/sorting_util.js#L82
       for (final input in txObject["vin"]) {
         final address = input["address"];
         if (address != null) {
@@ -1949,10 +1799,6 @@ class Firo extends CoinServiceAPI {
                 outAddress = address;
               }
             }
-            // else {
-            //   final type = output["scriptPubKey"]["type"];
-            //   if (type != null && type == "lelantusmint") {}
-            // }
             if (value != null) {
               outAmount += (value * 100000000).toInt();
             }
@@ -2079,71 +1925,9 @@ class Firo extends CoinServiceAPI {
       }
     }
 
-    // final orderedList = <Map<String, dynamic>>[];
-    //
-    // result["dateTimeChunks"].forEach((chunk) {
-    //   if (chunk["timestamp"] == null) {
-    //     orderedList.add(chunk);
-    //   }
-    // });
-    //
-    // result["dateTimeChunks"].forEach((chunk) {
-    //   if (chunk["timestamp"] != null) {
-    //     orderedList.add(chunk);
-    //   }
-    // });
-
-    // final txModel = TransactionData.fromJson({"dateTimeChunks": orderedList});
-    log("================================================= $result");
     final txModel = TransactionData.fromJson(result);
-    print("================================================= $txModel");
     await wallet.put('latest_tx_model', txModel);
-
     return txModel;
-    //=====================================================================
-    // final Map<String, dynamic> requestBody = {
-    //   "currency": currency,
-    //   "allAddresses": allAddresses,
-    //   "changeAddresses": changeAddresses,
-    //   "url": await _getEsploraUrl()
-    // };
-    //
-    // try {
-    //   final response = await http.post(
-    //     Uri.parse('$MIDDLE_SERVER/txData'),
-    //     body: jsonEncode(requestBody),
-    //     headers: {'Content-Type': 'application/json'},
-    //   );
-    //
-    //   if (response.statusCode == 200 || response.statusCode == 201) {
-    //     Logger.print('Transactions fetched');
-    //     await wallet.put('latest_tx_model',
-    //         TransactionData.fromJson(json.decode(response.body)));
-    //     return TransactionData.fromJson(json.decode(response.body));
-    //   } else {
-    //     Logger.print("Transaction fetch unsuccessful");
-    //     final latestModel = await wallet.get('latest_tx_model');
-    //
-    //     if (latestModel == null) {
-    //       final emptyModel = {"dateTimeChunks": []};
-    //       return TransactionData.fromJson(emptyModel);
-    //     } else {
-    //       Logger.print("Old transaction model located: ${response.body}");
-    //       return latestModel;
-    //     }
-    //   }
-    // } catch (e) {
-    //   Logger.print("Transaction fetch unsuccessful: $e");
-    //   final latestModel = await wallet.get('latest_tx_model');
-    //
-    //   if (latestModel == null) {
-    //     final emptyModel = {"dateTimeChunks": []};
-    //     return TransactionData.fromJson(emptyModel);
-    //   } else {
-    //     Logger.print("Old transaction model located");
-    //     return latestModel;
-    //   }
-    // }
   }
 
   Future<UtxoData> _fetchUtxoData() async {
@@ -2247,69 +2031,6 @@ class Firo extends CoinServiceAPI {
         return latestTxModel;
       }
     }
-
-    //=========================================================================
-
-    // final Map<String, dynamic> requestBody = {
-    //   "currency": currency,
-    //   "allAddresses": allAddresses,
-    //   "url": await _getEsploraUrl(),
-    // };
-    //
-    // try {
-    //   final response = await http.post(
-    //     Uri.parse('$MIDDLE_SERVER/outputData'),
-    //     body: jsonEncode(requestBody),
-    //     headers: {'Content-Type': 'application/json'},
-    //   );
-    //
-    //   if (response.statusCode == 200 || response.statusCode == 201) {
-    //     final List<UtxoObject> allOutputs =
-    //         UtxoData.fromJson(json.decode(response.body)).unspentOutputArray;
-    //     Logger.print('Outputs fetched: $allOutputs');
-    //     await _sortOutputs(allOutputs);
-    //     await wallet.put(
-    //         'latest_utxo_model', UtxoData.fromJson(json.decode(response.body)));
-    //     return UtxoData.fromJson(json.decode(response.body));
-    //   } else {
-    //     Logger.print("Output fetch unsuccessful");
-    //     final latestTxModel = await wallet.get('latest_utxo_model');
-    //
-    //     if (latestTxModel == null) {
-    //       final currency = await CurrencyUtilities.fetchPreferredCurrency();
-    //       final currencySymbol = currencyMap[currency];
-    //
-    //       final emptyModel = {
-    //         "total_user_currency": "${currencySymbol}0.00",
-    //         "total_sats": 0,
-    //         "total_btc": 0,
-    //         "outputArray": []
-    //       };
-    //       return UtxoData.fromJson(emptyModel);
-    //     } else {
-    //       Logger.print("Old output model located");
-    //       return latestTxModel;
-    //     }
-    //   }
-    // } catch (e) {
-    //   Logger.print("Output fetch unsuccessful: $e");
-    //   final latestTxModel = await wallet.get('latest_utxo_model');
-    //   final currency = await CurrencyUtilities.fetchPreferredCurrency();
-    //   final currencySymbol = currencyMap[currency];
-    //
-    //   if (latestTxModel == null) {
-    //     final emptyModel = {
-    //       "total_user_currency": "${currencySymbol}0.00",
-    //       "total_sats": 0,
-    //       "total_btc": 0,
-    //       "outputArray": []
-    //     };
-    //     return UtxoData.fromJson(emptyModel);
-    //   } else {
-    //     Logger.print("Old output model located");
-    //     return latestTxModel;
-    //   }
-    // }
   }
 
   Future<TransactionData> _getLelantusTransactionData() async {
