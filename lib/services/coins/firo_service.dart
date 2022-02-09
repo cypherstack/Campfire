@@ -1119,18 +1119,38 @@ class Firo extends CoinServiceAPI {
     if (_lelantus_coins == null) {
       return coins;
     }
-    _lelantus_coins.forEach((key, value) {
-      final tx = data.findTransaction(value.txId);
-      bool isUnconfirmed = tx == null ? false : !tx.confirmedStatus;
-      if (!jindexes.contains(value.index) && tx == null) {
+
+    final node = await currentNode;
+    final client = ElectrumX(server: node.address, port: node.port);
+    final lelantusCoinsList = _lelantus_coins.values.toList(growable: false);
+    for (int i = 0; i < lelantusCoinsList.length; i++) {
+      final txn = await client.getTransaction(
+          tx_hash: lelantusCoinsList[i].txId, verbose: true);
+      final confirmations = txn["confirmations"];
+      bool isUnconfirmed = confirmations is int && confirmations < 1;
+      if (!jindexes.contains(lelantusCoinsList[i].index) &&
+          data.findTransaction(lelantusCoinsList[i].txId) == null) {
         isUnconfirmed = true;
       }
-      if (!value.isUsed &&
-          value.anonymitySetId != ANONYMITY_SET_EMPTY_ID &&
+      if (!lelantusCoinsList[i].isUsed &&
+          lelantusCoinsList[i].anonymitySetId != ANONYMITY_SET_EMPTY_ID &&
           !isUnconfirmed) {
-        coins.add(value);
+        coins.add(lelantusCoinsList[i]);
       }
-    });
+    }
+
+    // _lelantus_coins.forEach((key, value) async {
+    //   final tx = data.findTransaction(value.txId);
+    //   bool isUnconfirmed = tx == null ? false : !tx.confirmedStatus;
+    //   if (!jindexes.contains(value.index) && tx == null) {
+    //     isUnconfirmed = true;
+    //   }
+    //   if (!value.isUsed &&
+    //       value.anonymitySetId != ANONYMITY_SET_EMPTY_ID &&
+    //       !isUnconfirmed) {
+    //     coins.add(value);
+    //   }
+    // });
     return coins;
   }
 
