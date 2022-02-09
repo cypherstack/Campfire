@@ -57,6 +57,17 @@ class _SendViewState extends State<SendView> {
 
   bool get _amountHasFocus => _cryptoAmountHasFocus || _fiatAmountHasFocus;
 
+  void _clearForm() {
+    _recipientAddressTextController.text = "";
+    _fiatAmountController.text = "";
+    _firoAmountController.text = "";
+    _noteTextController.text = "";
+    _firoAmount = Decimal.zero;
+    _fee = Decimal.zero;
+    _totalAmount = Decimal.zero;
+    FocusManager.instance.primaryFocus?.unfocus();
+  }
+
   /// parse args and autofill fill form
   void _parseArgs(Map<String, dynamic> args) async {
     final addressBookEntry = args["addressBookEntry"] as Map<String, String>;
@@ -816,7 +827,8 @@ class _SendViewState extends State<SendView> {
             }
 
             if (manager.validateAddress(_address)) {
-              Navigator.of(context).push(
+              Navigator.of(context)
+                  .push(
                 PageRouteBuilder(
                   opaque: false,
                   pageBuilder: (
@@ -839,6 +851,13 @@ class _SendViewState extends State<SendView> {
                     );
                   },
                 ),
+              )
+                  .then(
+                (value) {
+                  if (value != null && value is bool && value) {
+                    _clearForm();
+                  }
+                },
               );
             } else {
               showDialog(

@@ -198,11 +198,13 @@ class _ConfirmSendViewState extends State<ConfirmSendView> {
                         );
                         await Future.delayed(Duration(milliseconds: 100))
                             .then((_) {
-                          Navigator.of(context).popUntil(
-                              (route) => route.settings.name == '/mainview');
+                          // Navigator.of(context).popUntil(
+                          //     (route) => route.settings.name == '/mainview');
+                          Navigator.pop(context);
+                          Navigator.pop(context, true);
                         });
                       } catch (e) {
-                        Logger.print(e);
+                        Logger.print("Exception caught in ConfirmSendView: $e");
                         showDialog(
                           useSafeArea: false,
                           barrierDismissible: false,
