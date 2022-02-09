@@ -234,13 +234,14 @@ class _SendViewState extends State<SendView> {
                               print(
                                   "Couldn't fetch price, please check connection");
                               return _buildAmountInputBox(
-                                  Decimal.zero, manager);
+                                  Decimal.fromInt(-1), manager);
                             }
                             return _buildAmountInputBox(price.data, manager);
                           }
 
                           print("Fetching price... please wait...");
-                          return _buildAmountInputBox(Decimal.zero, manager);
+                          return _buildAmountInputBox(
+                              Decimal.fromInt(-1), manager);
                         },
                       ),
                       SizedBox(
@@ -644,7 +645,7 @@ class _SendViewState extends State<SendView> {
                           _firoAmount > Decimal.zero);
                     });
 
-                    if (firoPrice is double && firoPrice > Decimal.zero) {
+                    if (firoPrice > Decimal.zero) {
                       final String fiatAmountString =
                           (_firoAmount * firoPrice).toStringAsFixed(2);
 
@@ -708,7 +709,7 @@ class _SendViewState extends State<SendView> {
                 style: GoogleFonts.workSans(
                   color: CFColors.dusk,
                 ),
-                enabled: firoPrice is Decimal && firoPrice > Decimal.zero,
+                enabled: firoPrice > Decimal.zero,
                 controller: _fiatAmountController,
                 keyboardType: TextInputType.numberWithOptions(
                     signed: false, decimal: true),
@@ -783,7 +784,7 @@ class _SendViewState extends State<SendView> {
                           },
                         )),
                   ),
-                  hintText: firoPrice == 0 ? "..." : "0.00",
+                  hintText: firoPrice < Decimal.zero ? "..." : "0.00",
                   hintStyle: GoogleFonts.workSans(
                     color: CFColors.twilight,
                     fontWeight: FontWeight.w400,
