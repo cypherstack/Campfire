@@ -2095,7 +2095,7 @@ class Firo extends CoinServiceAPI {
         final emptyModel = {
           "total_user_currency": "${currencySymbol}0.00",
           "total_sats": 0,
-          "total_btc": 0,
+          "total_btc": "0",
           "outputArray": []
         };
         return UtxoData.fromJson(emptyModel);
