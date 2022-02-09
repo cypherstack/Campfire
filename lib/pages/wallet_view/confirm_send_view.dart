@@ -198,8 +198,8 @@ class _ConfirmSendViewState extends State<ConfirmSendView> {
                         );
                         await Future.delayed(Duration(milliseconds: 100))
                             .then((_) {
-                          Navigator.of(context).pushNamedAndRemoveUntil(
-                              "/mainview", (_) => false);
+                          Navigator.of(context).popUntil(
+                              (route) => route.settings.name == '/mainview');
                         });
                       } catch (e) {
                         Logger.print(e);

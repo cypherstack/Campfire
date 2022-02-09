@@ -389,19 +389,22 @@ class _AddressBookEntryDetailsViewState
           print("SEND button pressed");
           Navigator.pushAndRemoveUntil(
             context,
-            CupertinoPageRoute(builder: (context) {
-              return MainView(
-                pageIndex: 0, // 0 for send page index
-                args: {
-                  "addressBookEntry": {
-                    "name": _name,
-                    "address": _address,
+            CupertinoPageRoute(
+              builder: (context) {
+                return MainView(
+                  pageIndex: 0, // 0 for send page index
+                  args: {
+                    "addressBookEntry": {
+                      "name": _name,
+                      "address": _address,
+                    },
                   },
-                },
-                disableRefreshOnInit: true,
-              );
-            }),
-            ModalRoute.withName("/mainview"),
+                  disableRefreshOnInit: true,
+                );
+              },
+              settings: RouteSettings(name: "/mainview"),
+            ),
+            ModalRoute.withName("/"),
           );
         },
       ),

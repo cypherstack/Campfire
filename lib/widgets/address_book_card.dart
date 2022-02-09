@@ -152,19 +152,22 @@ class _AddressBookCardState extends State<AddressBookCard> {
                       print("send firo");
                       Navigator.pushAndRemoveUntil(
                         context,
-                        CupertinoPageRoute(builder: (context) {
-                          return MainView(
-                            pageIndex: 0, // 0 for send page index
-                            args: {
-                              "addressBookEntry": {
-                                "name": widget.name,
-                                "address": widget.address,
+                        CupertinoPageRoute(
+                          builder: (context) {
+                            return MainView(
+                              pageIndex: 0, // 0 for send page index
+                              args: {
+                                "addressBookEntry": {
+                                  "name": widget.name,
+                                  "address": widget.address,
+                                },
                               },
-                            },
-                            disableRefreshOnInit: true,
-                          );
-                        }),
-                        ModalRoute.withName("/mainview"),
+                              disableRefreshOnInit: true,
+                            );
+                          },
+                          settings: RouteSettings(name: "/mainview"),
+                        ),
+                        ModalRoute.withName("/"),
                       );
                     },
                   ),
