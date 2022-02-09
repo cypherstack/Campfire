@@ -325,7 +325,10 @@ class _MainViewState extends State<MainView> {
       manager.currentWallet = null;
       await walletsService.refreshWallets();
     }
-    return _exitOnBackButton;
+    if (_exitOnBackButton) {
+      Navigator.of(context).popUntil((route) => route.settings.name == '/');
+    }
+    return false;
   }
 
   @override
