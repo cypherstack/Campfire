@@ -44,26 +44,37 @@ class _AddCustomNodeViewState extends State<AddCustomNodeView> {
   void _onSavePressed() async {
     final name = _nameController.text;
     final url = _addressController.text;
-    final port = _portController.text;
+    final portString = _portController.text;
 
-    final nodesService = Provider.of<NodeService>(context, listen: false);
+    final int port = int.tryParse(portString);
 
-    // try to create a new node
-    final success =
-        nodesService.createNode(name: name, ipAddress: url, port: port);
+    if (port != null) {
+      final nodesService = Provider.of<NodeService>(context, listen: false);
 
-    // check for duplicate node name
-    if (success) {
-      FocusScope.of(context).unfocus();
-      await Future.delayed(Duration(milliseconds: 200));
-      Navigator.pop(context);
+      // try to create a new node
+      final success = nodesService.createNode(
+          name: name, ipAddress: url, port: port.toString());
+
+      // check for duplicate node name
+      if (success) {
+        FocusScope.of(context).unfocus();
+        await Future.delayed(Duration(milliseconds: 200));
+        Navigator.pop(context);
+      } else {
+        showDialog(
+          useSafeArea: false,
+          barrierDismissible: false,
+          context: context,
+          builder: (_) => CampfireAlert(
+              message: "A node with the name \"$name\" already exists!"),
+        );
+      }
     } else {
       showDialog(
         useSafeArea: false,
         barrierDismissible: false,
         context: context,
-        builder: (_) => CampfireAlert(
-            message: "A node with the name \"$name\" already exists!"),
+        builder: (_) => CampfireAlert(message: "Invalid port entered!"),
       );
     }
   }

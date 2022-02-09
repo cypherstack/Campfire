@@ -2334,7 +2334,7 @@ class Firo extends CoinServiceAPI {
         CampfireConstants.defaultNodeName: {
           "id": Uuid().v1(),
           "ipAddress": CampfireConstants.defaultIpAddress,
-          "port": "",
+          "port": CampfireConstants.defaultPort.toString(),
         }
       });
       await wallet.put('nodes', nodes);
