@@ -1,5 +1,6 @@
 import 'dart:async';
 
+import 'package:decimal/decimal.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_feather_icons/flutter_feather_icons.dart';
@@ -115,7 +116,7 @@ class _WalletViewState extends State<WalletView> {
                 future: _balanceToggleEnabled
                     ? manager.balance
                     : manager.totalBalance,
-                builder: (context, AsyncSnapshot<double> snapshot) {
+                builder: (context, AsyncSnapshot<Decimal> snapshot) {
                   String balance = "...";
                   if (snapshot.connectionState == ConnectionState.done &&
                       snapshot.data != null) {
@@ -148,11 +149,11 @@ class _WalletViewState extends State<WalletView> {
                     future: _balanceToggleEnabled
                         ? manager.fiatBalance
                         : manager.fiatTotalBalance,
-                    builder: (context, AsyncSnapshot<double> snapshot) {
+                    builder: (context, AsyncSnapshot<Decimal> snapshot) {
                       String balance = "...";
                       if (snapshot.connectionState == ConnectionState.done &&
                           snapshot.data != null) {
-                        if (snapshot.data > 0) {
+                        if (snapshot.data > Decimal.zero) {
                           balance = snapshot.data.toStringAsFixed(8);
                         }
                       }

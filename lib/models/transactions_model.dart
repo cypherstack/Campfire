@@ -1,4 +1,6 @@
+import 'package:decimal/decimal.dart';
 import 'package:hive/hive.dart';
+import 'package:paymint/utilities/misc_global_constants.dart';
 
 part 'type_adaptors/transactions_model.g.dart';
 
@@ -194,11 +196,17 @@ class Transaction {
         confirmedStatus: json['confirmed_status'],
         timestamp: json['timestamp'],
         txType: json['txType'],
-        amount: (json['amount'] * 100000000).toInt(),
+        amount: (Decimal.parse(json["amount"].toString()) *
+                Decimal.fromInt(CampfireConstants.satsPerCoin))
+            .toBigInt()
+            .toInt(),
         aliens: [],
         worthNow: json['worthNow'],
         worthAtBlockTimestamp: json['worthAtBlockTimestamp'],
-        fees: (json['fees'] * 100000000).toInt(),
+        fees: (Decimal.parse(json["fees"].toString()) *
+                Decimal.fromInt(CampfireConstants.satsPerCoin))
+            .toBigInt()
+            .toInt(),
         inputSize: json['inputSize'],
         outputSize: json['outputSize'],
         inputs: [],

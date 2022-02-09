@@ -1,3 +1,4 @@
+import 'package:decimal/decimal.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_spinkit/flutter_spinkit.dart';
@@ -10,6 +11,7 @@ import 'package:paymint/services/coins/manager.dart';
 import 'package:paymint/utilities/address_utils.dart';
 import 'package:paymint/utilities/cfcolors.dart';
 import 'package:paymint/utilities/currency_utils.dart';
+import 'package:paymint/utilities/misc_global_constants.dart';
 import 'package:paymint/utilities/sizing_utilities.dart';
 import 'package:paymint/widgets/custom_buttons/gradient_button.dart';
 import 'package:paymint/widgets/gradient_card.dart';
@@ -37,11 +39,11 @@ class _SendViewState extends State<SendView> {
   TextEditingController _firoAmountController = TextEditingController();
   TextEditingController _fiatAmountController = TextEditingController();
 
-  double _firoAmount = 0;
-  double _fee = 0;
-  double _totalAmount = 0;
-  double _maxFee = 0;
-  double _balanceMinusMaxFee = 0;
+  Decimal _firoAmount = Decimal.zero;
+  Decimal _fee = Decimal.zero;
+  Decimal _totalAmount = Decimal.zero;
+  Decimal _maxFee = Decimal.zero;
+  Decimal _balanceMinusMaxFee = Decimal.zero;
   String _currency = "";
 
   bool _autofill = false;
@@ -70,7 +72,7 @@ class _SendViewState extends State<SendView> {
       print("setState called with address = $_address");
     });
 
-    final cryptoAmount = args["cryptoAmount"] as double;
+    final cryptoAmount = Decimal.parse(args["cryptoAmount"].toString());
     if (cryptoAmount == null) {
       return;
     }
@@ -220,13 +222,14 @@ class _SendViewState extends State<SendView> {
                               // TODO: show proper connection error
                               print(
                                   "Couldn't fetch price, please check connection");
-                              return _buildAmountInputBox(0, manager);
+                              return _buildAmountInputBox(
+                                  Decimal.zero, manager);
                             }
                             return _buildAmountInputBox(price.data, manager);
                           }
 
                           print("Fetching price... please wait...");
-                          return _buildAmountInputBox(0, manager);
+                          return _buildAmountInputBox(Decimal.zero, manager);
                         },
                       ),
                       SizedBox(
@@ -281,7 +284,7 @@ class _SendViewState extends State<SendView> {
                 future: manager.balanceMinusMaxFee,
                 builder: (
                   BuildContext context,
-                  AsyncSnapshot<double> balanceMinusMaxFee,
+                  AsyncSnapshot<Decimal> balanceMinusMaxFee,
                 ) {
                   if (balanceMinusMaxFee.connectionState ==
                       ConnectionState.done) {
@@ -367,7 +370,7 @@ class _SendViewState extends State<SendView> {
                             _addressToggleFlag = false;
                             _sendButtonEnabled =
                                 (manager.validateAddress(_address) &&
-                                    _totalAmount > 0);
+                                    _totalAmount > Decimal.zero);
                           });
                         },
                         child: SvgPicture.asset(
@@ -392,7 +395,7 @@ class _SendViewState extends State<SendView> {
                                       .text.isNotEmpty;
                               _sendButtonEnabled =
                                   (manager.validateAddress(_address) &&
-                                      _totalAmount > 0);
+                                      _totalAmount > Decimal.zero);
                               print(_address.toString() +
                                   _totalAmount.toString());
                             });
@@ -455,7 +458,7 @@ class _SendViewState extends State<SendView> {
 
                       // autofill amount field
                       if (results["amount"] != null) {
-                        final amount = double.parse(results["amount"]);
+                        final amount = Decimal.parse(results["amount"]);
                         _firoAmountController.text = amount.toString();
                         setState(() {
                           _firoAmount = amount;
@@ -481,7 +484,10 @@ class _SendViewState extends State<SendView> {
       builder: (context, futureData) {
         if (futureData.connectionState == ConnectionState.done &&
             futureData.data != null) {
-          _maxFee = futureData.data.fee / 100000000;
+          _maxFee = (Decimal.fromInt(futureData.data.fee) /
+                  Decimal.fromInt(CampfireConstants.satsPerCoin))
+              .toDecimal(
+                  scaleOnInfinitePrecision: CampfireConstants.decimalPlaces);
           return FittedBox(
             child: Text(
               "${_maxFee.toStringAsFixed(8)} ${CurrencyUtilities.coinName}",
@@ -582,7 +588,7 @@ class _SendViewState extends State<SendView> {
     );
   }
 
-  Widget _buildAmountInputBox(dynamic firoPrice, Manager manager) {
+  Widget _buildAmountInputBox(Decimal firoPrice, Manager manager) {
     return Container(
       decoration: BoxDecoration(
         color: CFColors.fog,
@@ -620,14 +626,14 @@ class _SendViewState extends State<SendView> {
                 onChanged: (String firoAmount) {
                   print(firoAmount);
                   if (firoAmount.isNotEmpty && firoAmount != ".") {
-                    _firoAmount = double.parse(firoAmount);
+                    _firoAmount = Decimal.parse(firoAmount);
                     setState(() {
                       _totalAmount = _firoAmount + _maxFee;
                       _sendButtonEnabled = (manager.validateAddress(_address) &&
-                          _firoAmount > 0);
+                          _firoAmount > Decimal.zero);
                     });
 
-                    if (firoPrice is double && firoPrice > 0) {
+                    if (firoPrice is double && firoPrice > Decimal.zero) {
                       final String fiatAmountString =
                           (_firoAmount * firoPrice).toStringAsFixed(2);
 
@@ -635,7 +641,7 @@ class _SendViewState extends State<SendView> {
                     }
                   } else {
                     setState(() {
-                      _totalAmount = 0;
+                      _totalAmount = Decimal.zero;
                       _sendButtonEnabled = false;
                     });
                     _fiatAmountController.text = "";
@@ -691,7 +697,7 @@ class _SendViewState extends State<SendView> {
                 style: GoogleFonts.workSans(
                   color: CFColors.dusk,
                 ),
-                enabled: firoPrice is double && firoPrice > 0,
+                enabled: firoPrice is Decimal && firoPrice > Decimal.zero,
                 controller: _fiatAmountController,
                 keyboardType: TextInputType.numberWithOptions(
                     signed: false, decimal: true),
@@ -705,19 +711,21 @@ class _SendViewState extends State<SendView> {
                 ],
                 onChanged: (String fiatAmount) {
                   if (fiatAmount.isNotEmpty && fiatAmount != ".") {
-                    final fiatValue = double.parse(fiatAmount);
-                    _firoAmount = fiatValue / firoPrice;
+                    final fiatValue = Decimal.parse(fiatAmount);
+                    _firoAmount = (fiatValue / firoPrice).toDecimal(
+                        scaleOnInfinitePrecision:
+                            CampfireConstants.decimalPlaces);
 
                     final amountString = _firoAmount.toStringAsFixed(8);
 
                     setState(() {
-                      _totalAmount = double.parse(amountString) + _maxFee;
+                      _totalAmount = Decimal.parse(amountString) + _maxFee;
                     });
 
                     _firoAmountController.text = amountString;
                   } else {
                     setState(() {
-                      _totalAmount = 0;
+                      _totalAmount = Decimal.zero;
                     });
                     _firoAmountController.text = "";
                   }
@@ -788,8 +796,9 @@ class _SendViewState extends State<SendView> {
         onTap: () {
           print("SEND pressed");
 
-          final availableBalance =
-              _balanceMinusMaxFee < _maxFee ? 0.0 : _balanceMinusMaxFee;
+          final Decimal availableBalance = _balanceMinusMaxFee < _maxFee
+              ? Decimal.zero
+              : _balanceMinusMaxFee;
 
           if (_firoAmount > availableBalance) {
             showDialog(

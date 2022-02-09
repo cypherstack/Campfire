@@ -1,3 +1,4 @@
+import 'package:decimal/decimal.dart';
 import 'package:flutter/material.dart';
 import 'package:paymint/models/models.dart';
 
@@ -8,7 +9,7 @@ abstract class CoinServiceAPI {
   /// will throw exceptions on failure
   Future<String> send(
       {@required String toAddress,
-      @required double amount,
+      @required int amount,
       Map<String, String> args});
 
   Future<FeeObject> get fees;
@@ -16,14 +17,14 @@ abstract class CoinServiceAPI {
 
   Future<String> get currentReceivingAddress;
 
-  Future<double> get balance;
-  Future<double> get pendingBalance;
-  Future<double> get totalBalance;
-  Future<double> get balanceMinusMaxFee;
+  Future<Decimal> get balance;
+  Future<Decimal> get pendingBalance;
+  Future<Decimal> get totalBalance;
+  Future<Decimal> get balanceMinusMaxFee;
 
   Future<TransactionData> get transactionData;
 
-  Future<dynamic> get fiatPrice;
+  Future<Decimal> get fiatPrice;
 
   Future<String> get fiatCurrency;
   Future<void> changeFiatCurrency(String currency);

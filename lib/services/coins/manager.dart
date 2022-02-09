@@ -1,3 +1,4 @@
+import 'package:decimal/decimal.dart';
 import 'package:flutter/material.dart';
 import 'package:paymint/models/models.dart';
 import 'package:paymint/services/coins/coin_service.dart';
@@ -11,7 +12,7 @@ class Manager with ChangeNotifier {
   /// will throw exceptions on failure
   Future<String> send(
       {@required String toAddress,
-      @required double amount,
+      @required int amount,
       Map<String, String> args}) async {
     try {
       final txid = await currentWallet.send(
@@ -32,18 +33,18 @@ class Manager with ChangeNotifier {
   Future<String> get currentReceivingAddress =>
       currentWallet.currentReceivingAddress;
 
-  Future<double> get balance => currentWallet.balance;
-  Future<double> get pendingBalance => currentWallet.pendingBalance;
-  Future<double> get totalBalance => currentWallet.totalBalance;
-  Future<double> get balanceMinusMaxFee => currentWallet.balanceMinusMaxFee;
+  Future<Decimal> get balance => currentWallet.balance;
+  Future<Decimal> get pendingBalance => currentWallet.pendingBalance;
+  Future<Decimal> get totalBalance => currentWallet.totalBalance;
+  Future<Decimal> get balanceMinusMaxFee => currentWallet.balanceMinusMaxFee;
 
-  Future<double> get fiatBalance async {
+  Future<Decimal> get fiatBalance async {
     final balance = await currentWallet.balance;
     final price = await currentWallet.fiatPrice;
     return balance * price;
   }
 
-  Future<double> get fiatTotalBalance async {
+  Future<Decimal> get fiatTotalBalance async {
     final balance = await currentWallet.totalBalance;
     final price = await currentWallet.fiatPrice;
     return balance * price;

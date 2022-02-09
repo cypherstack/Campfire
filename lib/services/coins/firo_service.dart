@@ -5,6 +5,7 @@ import 'dart:typed_data';
 
 import 'package:bip32/bip32.dart' as bip32;
 import 'package:bip39/bip39.dart' as bip39;
+import 'package:decimal/decimal.dart';
 import 'package:firo_flutter/firo_flutter.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
@@ -75,7 +76,7 @@ Future<void> executeNative(arguments) async {
       bool subtractFeeFromAmount = arguments['subtractFeeFromAmount'];
       String mnemonic = arguments['mnemonic'];
       int index = arguments['index'];
-      dynamic price = arguments['price'];
+      Decimal price = arguments['price'];
       List<DartLelantusEntry> lelantusEntries = arguments['lelantusEntries'];
       if (!(spendAmount == null ||
           address == null ||
@@ -410,14 +411,16 @@ Future<List<models.Transaction>> getJMintTransactions(
         // tx.remove("vsize");
         // tx.remove("type");
         // tx.remove("locktime");
+        final decimalAmount = Decimal.parse(tx["amount"].toString());
 
-        tx["worthNow"] = currentPrice * tx["amount"];
+        tx["worthNow"] = (currentPrice * decimalAmount).toStringAsFixed(2);
 
         final priceAtBlockTimeStamp = await _getHistoricalPrice(
           fiatCurrency: currency,
           timestamp: tx["timestamp"],
         );
-        tx["worthAtBlockTimestamp"] = priceAtBlockTimeStamp * tx["amount"];
+        tx["worthAtBlockTimestamp"] =
+            (priceAtBlockTimeStamp * decimalAmount).toStringAsFixed(2);
 
         tx["subType"] = "join";
         txs.add(models.Transaction.fromLelantusJson(tx));
@@ -595,15 +598,26 @@ isolateCreateJoinSplitTransaction(
     "txid": txId,
     "txHex": txHex,
     "value": amount,
-    "fees": fee / 100000000.0,
+    // TODO: check if cast toDouble is required
+    "fees": (Decimal.fromInt(fee) /
+            Decimal.fromInt(CampfireConstants.satsPerCoin))
+        .toDecimal(scaleOnInfinitePrecision: CampfireConstants.decimalPlaces)
+        .toDouble(),
     "jmintValue": changeToMint,
     "publicCoin": "jmintData.publicCoin",
     "spendCoinIndexes": spendCoinIndexes,
     "height": locktime,
     "txType": "Sent",
     "confirmed_status": false,
-    "amount": amount / 100000000.0,
-    "worthNow": num.parse((amount / 100000000 * price).toStringAsFixed(2)),
+    // TODO: check if cast toDouble is required
+    "amount": (Decimal.fromInt(amount) /
+            Decimal.fromInt(CampfireConstants.satsPerCoin))
+        .toDecimal(scaleOnInfinitePrecision: CampfireConstants.decimalPlaces)
+        .toDouble(),
+    "worthNow": ((Decimal.fromInt(amount) * price) /
+            Decimal.fromInt(CampfireConstants.satsPerCoin))
+        .toDecimal(scaleOnInfinitePrecision: 2)
+        .toStringAsFixed(2),
     "address": address,
     "timestamp": DateTime.now().millisecondsSinceEpoch ~/ 1000,
     "subType": "join",
@@ -661,7 +675,7 @@ Future<int> getBlockHead(Node node) async {
 }
 // end of isolates
 
-Future<dynamic> _getBitcoinPrice({String fiatCurrency}) async {
+Future<Decimal> _getBitcoinPrice({String fiatCurrency}) async {
   try {
     final String currency =
         fiatCurrency ?? await CurrencyUtilities.fetchPreferredCurrency();
@@ -676,11 +690,11 @@ Future<dynamic> _getBitcoinPrice({String fiatCurrency}) async {
     if (response.statusCode == 200 || response.statusCode == 201) {
       Logger.print('Current BTC Price: ' + response.body.toString());
       if (response.body.toString().isEmpty) {
-        return -1;
+        return Decimal.fromInt(-1);
       }
       final result = json.decode(response.body);
       Logger.print("json bitcoin price result: $result");
-      return result;
+      return Decimal.parse(result.toString());
     } else {
       throw Exception('Something happened: ' +
           response.statusCode.toString() +
@@ -688,12 +702,11 @@ Future<dynamic> _getBitcoinPrice({String fiatCurrency}) async {
     }
   } catch (e) {
     Logger.print("Exception caught in getBitcoinPrice(): $e");
-    return -1;
-    // return null;
+    return Decimal.fromInt(-1);
   }
 }
 
-Future<dynamic> _getHistoricalPrice(
+Future<Decimal> _getHistoricalPrice(
     {int timestamp, String fiatCurrency}) async {
   try {
     final String currency =
@@ -712,11 +725,11 @@ Future<dynamic> _getHistoricalPrice(
     if (response.statusCode == 200 || response.statusCode == 201) {
       Logger.print('historicalBitcoinPrice body: ' + response.body.toString());
       if (response.body.toString().isEmpty) {
-        return -1;
+        return Decimal.fromInt(-1);
       }
       final result = json.decode(response.body);
       Logger.print("json historicalBitcoinPrice  result: $result");
-      return result;
+      return Decimal.parse(result.toString());
     } else {
       throw Exception('Something happened: ' +
           response.statusCode.toString() +
@@ -724,8 +737,7 @@ Future<dynamic> _getHistoricalPrice(
     }
   } catch (e) {
     Logger.print("Exception caught in _getHistoricalPrice(): $e");
-    return -1;
-    // return null;
+    return Decimal.fromInt(-1);
   }
 }
 
@@ -743,12 +755,12 @@ class Firo extends CoinServiceAPI {
   }
 
   @override
-  Future<dynamic> get fiatPrice => bitcoinPrice;
+  Future<Decimal> get fiatPrice => bitcoinPrice;
 
   // index 0 and 1 for the funds available to spend.
   // index 2 and 3 for all the funds in the wallet (including the undependable ones)
   @override
-  Future<double> get balance async {
+  Future<Decimal> get balance async {
     final balances = await this.balances;
     return balances[0];
   }
@@ -756,7 +768,7 @@ class Firo extends CoinServiceAPI {
   // index 0 and 1 for the funds available to spend.
   // index 2 and 3 for all the funds in the wallet (including the undependable ones)
   @override
-  Future<double> get pendingBalance async {
+  Future<Decimal> get pendingBalance async {
     final balances = await this.balances;
     return balances[2] - balances[0];
   }
@@ -764,17 +776,21 @@ class Firo extends CoinServiceAPI {
   // index 0 and 1 for the funds available to spend.
   // index 2 and 3 for all the funds in the wallet (including the undependable ones)
   @override
-  Future<double> get totalBalance async {
+  Future<Decimal> get totalBalance async {
     final balances = await this.balances;
     return balances[2];
   }
 
   /// return spendable balance minus the maximum tx fee
   @override
-  Future<double> get balanceMinusMaxFee async {
+  Future<Decimal> get balanceMinusMaxFee async {
     final balances = await this.balances;
     final maxFee = await this.maxFee;
-    return balances[0] - (maxFee.fee / 100000000);
+    return balances[0] -
+        (Decimal.fromInt(maxFee.fee) /
+                Decimal.fromInt(CampfireConstants.satsPerCoin))
+            .toDecimal(
+                scaleOnInfinitePrecision: CampfireConstants.decimalPlaces);
   }
 
   @override
@@ -805,15 +821,15 @@ class Firo extends CoinServiceAPI {
   Future<LelantusFeeData> get maxFee => _maxFee ??= _fetchMaxFee();
 
   /// Holds the current balance data
-  Future<List<double>> _balances;
-  Future<List<double>> get balances => _balances ??= _getFullBalance();
+  Future<List<Decimal>> _balances;
+  Future<List<Decimal>> get balances => _balances ??= _getFullBalance();
 
   /// Holds all outputs for wallet, used for displaying utxos in app security view
   List<UtxoObject> _outputsList = [];
 
   // Hold the current price of Bitcoin in the currency specified in parameter below
-  Future<dynamic> _bitcoinPrice;
-  Future<dynamic> get bitcoinPrice => _bitcoinPrice ??= _getBitcoinPrice();
+  Future<Decimal> _bitcoinPrice;
+  Future<Decimal> get bitcoinPrice => _bitcoinPrice ??= _getBitcoinPrice();
 
   // currently isn't used but required due to abstract parent class
   Future<FeeObject> _feeObject;
@@ -868,11 +884,10 @@ class Firo extends CoinServiceAPI {
   /// can throw
   @override
   Future<String> send(
-      {String toAddress, double amount, Map<String, String> args}) async {
+      {String toAddress, int amount, Map<String, String> args}) async {
     try {
-      final rawAmount = (amount * 100000000).toInt();
       dynamic txHexOrError =
-          await _createJoinSplitTransaction(rawAmount, toAddress, false);
+          await _createJoinSplitTransaction(amount, toAddress, false);
       Logger.print("txHexOrError $txHexOrError");
       if (txHexOrError is int) {
         // Here, we assume that transaction crafting returned an error
@@ -1056,7 +1071,9 @@ class Firo extends CoinServiceAPI {
     final node = await currentNode;
     ReceivePort receivePort = await getIsolate({
       "function": "estimateJoinSplit",
-      "spendAmount": (balance * 100000000).toInt(),
+      "spendAmount": (balance * Decimal.fromInt(CampfireConstants.satsPerCoin))
+          .toBigInt()
+          .toInt(),
       "subtractFeeFromAmount": true,
       "lelantusEntries": lelantusEntry,
       "node": node,
@@ -1119,17 +1136,16 @@ class Firo extends CoinServiceAPI {
 
   // index 0 and 1 for the funds available to spend.
   // index 2 and 3 for all the funds in the wallet (including the undependable ones)
-  Future<List<double>> _getFullBalance() async {
+  Future<List<Decimal>> _getFullBalance() async {
     try {
       final wallet = await Hive.openBox(this._walletId);
       final Map _lelantus_coins = await wallet.get('_lelantus_coins');
       final utxos = await utxoData;
-      var price = await bitcoinPrice;
-      price = price ?? 1;
+      final Decimal price = await bitcoinPrice;
       final data = await _txnData;
       List jindexes = await wallet.get('jindex');
-      double lelantusBalance = 0;
-      double unconfirmedLelantusBalance = 0;
+      Decimal lelantusBalance = Decimal.zero;
+      Decimal unconfirmedLelantusBalance = Decimal.zero;
       if (_lelantus_coins != null && data != null) {
         _lelantus_coins.forEach((key, value) {
           final tx = data.findTransaction(value.txId);
@@ -1137,19 +1153,29 @@ class Firo extends CoinServiceAPI {
             // This coin is not confirmed and may be replaced
           } else if (!value.isUsed &&
               (tx == null ? true : tx.confirmedStatus != false)) {
-            lelantusBalance += value.value / 100000000;
+            lelantusBalance += Decimal.fromInt(value.value);
           }
           // else if (tx != null && tx.confirmedStatus == false) {
           //   unconfirmedLelantusBalance += value.value / 100000000;
           // }
         });
       }
-      final utxosValue = utxos == null ? 0 : utxos.bitcoinBalance;
-      List<double> balances = List.empty(growable: true);
+      final int utxosIntValue = utxos == null ? 0 : utxos.satoshiBalance;
+
+      final Decimal utxosValue = (Decimal.fromInt(utxosIntValue) /
+              Decimal.fromInt(CampfireConstants.satsPerCoin))
+          .toDecimal(scaleOnInfinitePrecision: CampfireConstants.decimalPlaces);
+
+      List<Decimal> balances = List.empty(growable: true);
+
+      lelantusBalance = (lelantusBalance /
+              Decimal.fromInt(CampfireConstants.satsPerCoin))
+          .toDecimal(scaleOnInfinitePrecision: CampfireConstants.decimalPlaces);
+
       balances.add(lelantusBalance);
 
       if (price == null) {
-        balances.add(-1);
+        balances.add(Decimal.fromInt(-1));
       } else {
         balances.add(lelantusBalance * price);
       }
@@ -1157,7 +1183,7 @@ class Firo extends CoinServiceAPI {
       balances.add(lelantusBalance + utxosValue + unconfirmedLelantusBalance);
 
       if (price == null) {
-        balances.add(-1);
+        balances.add(Decimal.fromInt(-1));
       } else {
         balances.add(
             (lelantusBalance + utxosValue + unconfirmedLelantusBalance) *
@@ -1234,7 +1260,11 @@ class Firo extends CoinServiceAPI {
     final feesObject = await fees;
 
     int vsize = tmpTx['transaction'].virtualSize();
-    int firoFee = (vsize * feesObject.fast * (1 / 1000.0) * 100000000).ceil();
+    final Decimal dvsize = Decimal.fromInt(vsize);
+    final Decimal fastFee = Decimal.parse(feesObject.fast);
+    int firoFee =
+        (dvsize * fastFee * Decimal.fromInt(100000)).toDouble().ceil();
+    // int firoFee = (vsize * feesObject.fast * (1 / 1000.0) * 100000000).ceil();
 
     if (firoFee < vsize) {
       firoFee = vsize + 1;
@@ -1387,13 +1417,22 @@ class Firo extends CoinServiceAPI {
       "txid": txId,
       "txHex": txHex,
       "value": amount - fee,
-      "fees": fee / 100000000,
+      "fees": (Decimal.fromInt(fee) /
+              Decimal.fromInt(CampfireConstants.satsPerCoin))
+          .toDecimal(scaleOnInfinitePrecision: CampfireConstants.decimalPlaces)
+          .toDouble(),
       "publicCoin": "",
       "height": height,
       "txType": "Sent",
       "confirmed_status": false,
-      "amount": amount / 100000000,
-      "worthNow": num.parse((amount / 100000000 * price).toStringAsFixed(2)),
+      "amount": (Decimal.fromInt(amount) /
+              Decimal.fromInt(CampfireConstants.satsPerCoin))
+          .toDecimal(scaleOnInfinitePrecision: CampfireConstants.decimalPlaces)
+          .toDouble(),
+      "worthNow": ((Decimal.fromInt(amount) * price) /
+              Decimal.fromInt(CampfireConstants.satsPerCoin))
+          .toDecimal(scaleOnInfinitePrecision: 2)
+          .toStringAsFixed(2),
       "timestamp": DateTime.now().millisecondsSinceEpoch ~/ 1000,
       "subType": "mint",
     };
@@ -1602,7 +1641,11 @@ class Firo extends CoinServiceAPI {
       final client = ElectrumX(server: node.address, port: node.port);
       final result = await client.getFeeRate();
 
-      final int fee = result["rate"];
+      final String fee = (Decimal.fromInt(result["rate"]) /
+              Decimal.fromInt(CampfireConstants.satsPerCoin))
+          .toDecimal(scaleOnInfinitePrecision: CampfireConstants.decimalPlaces)
+          .toStringAsFixed(CampfireConstants.decimalPlaces);
+
       final fees = {
         "fast": fee,
         "average": fee,
@@ -1772,7 +1815,10 @@ class Firo extends CoinServiceAPI {
           final nFees = input["nFees"];
           if (nFees != null) {
             nFeesUsed = true;
-            fees = (nFees * 100000000).toInt();
+            fees = (Decimal.parse(nFees.toString()) *
+                    Decimal.fromInt(CampfireConstants.satsPerCoin))
+                .toBigInt()
+                .toInt();
           }
           final address = input["address"];
           final value = input["valueSat"];
@@ -1794,13 +1840,19 @@ class Firo extends CoinServiceAPI {
             final value = output["value"];
             if (address != null && value != null) {
               if (changeAddresses.contains(address)) {
-                inputAmtSentFromWallet -= (value * 100000000).toInt();
+                inputAmtSentFromWallet -= (Decimal.parse(value.toString()) *
+                        Decimal.fromInt(CampfireConstants.satsPerCoin))
+                    .toBigInt()
+                    .toInt();
               } else {
                 outAddress = address;
               }
             }
             if (value != null) {
-              outAmount += (value * 100000000).toInt();
+              outAmount += (Decimal.parse(value.toString()) *
+                      Decimal.fromInt(CampfireConstants.satsPerCoin))
+                  .toBigInt()
+                  .toInt();
             }
           }
         }
@@ -1811,7 +1863,10 @@ class Firo extends CoinServiceAPI {
         for (final input in txObject["vin"]) {
           final nFees = input["nFees"];
           if (nFees != null) {
-            fees += (nFees * 100000000).toInt();
+            fees += (Decimal.parse(nFees.toString()) *
+                    Decimal.fromInt(CampfireConstants.satsPerCoin))
+                .toBigInt()
+                .toInt();
           }
         }
 
@@ -1823,16 +1878,17 @@ class Firo extends CoinServiceAPI {
             print(address + value.toString());
             if (address != null) {
               if (allAddresses.contains(address)) {
-                outputAmtAddressedToWallet += (value * 100000000).toInt();
+                outputAmtAddressedToWallet += (Decimal.parse(value.toString()) *
+                        Decimal.fromInt(CampfireConstants.satsPerCoin))
+                    .toBigInt()
+                    .toInt();
                 outAddress = address;
               }
             }
           }
         }
       }
-      log("$outAddress  =========  inp$inputAmtSentFromWallet/oup$outputAmtAddressedToWallet ============ fees: $fees");
 
-      // if (outAddress != "") {
       // create final tx map
       midSortedTx["txid"] = txObject["txid"];
       midSortedTx["confirmed_status"] = (txObject["confirmations"] != null) &&
@@ -1841,7 +1897,11 @@ class Firo extends CoinServiceAPI {
       if (foundInSenders) {
         midSortedTx["txType"] = "Sent";
         midSortedTx["amount"] = inputAmtSentFromWallet;
-        final worthNow = currentPrice * (inputAmtSentFromWallet / 100000000.0);
+        final worthNow =
+            ((currentPrice * Decimal.fromInt(inputAmtSentFromWallet)) /
+                    Decimal.fromInt(CampfireConstants.satsPerCoin))
+                .toDecimal(scaleOnInfinitePrecision: 2)
+                .toStringAsFixed(2);
         midSortedTx["worthNow"] = worthNow;
         if (txObject["vout"][0]["scriptPubKey"]["type"] == "lelantusmint") {
           midSortedTx["subType"] = "mint";
@@ -1850,7 +1910,10 @@ class Firo extends CoinServiceAPI {
         midSortedTx["txType"] = "Received";
         midSortedTx["amount"] = outputAmtAddressedToWallet;
         final worthNow =
-            currentPrice * (outputAmtAddressedToWallet / 100000000.0);
+            ((currentPrice * Decimal.fromInt(outputAmtAddressedToWallet)) /
+                    Decimal.fromInt(CampfireConstants.satsPerCoin))
+                .toDecimal(scaleOnInfinitePrecision: 2)
+                .toStringAsFixed(2);
         midSortedTx["worthNow"] = worthNow;
       }
       midSortedTx["aliens"] = aliens;
@@ -1871,12 +1934,14 @@ class Firo extends CoinServiceAPI {
     for (int i = 0; i < midSortedArray.length; i++) {
       var priceAtBlockTimestamp = await _getHistoricalPrice(
           timestamp: midSortedArray[i]["timestamp"], fiatCurrency: currency);
-      if (priceAtBlockTimestamp == null) {
-        priceAtBlockTimestamp = -1;
-      }
-      final worthAtBlockTimestamp =
-          priceAtBlockTimestamp * (midSortedArray[i]["amount"] / 100000000.0);
-      midSortedArray[i]["worthAtBlockTimestamp"] = worthAtBlockTimestamp;
+
+      final worthAtBlockTimestamp = priceAtBlockTimestamp *
+          (Decimal.fromInt(midSortedArray[i]["amount"]) /
+                  Decimal.fromInt(CampfireConstants.satsPerCoin))
+              .toDecimal(
+                  scaleOnInfinitePrecision: CampfireConstants.decimalPlaces);
+      midSortedArray[i]["worthAtBlockTimestamp"] =
+          worthAtBlockTimestamp.toStringAsFixed(2);
     }
 
     // sort by date
@@ -1961,14 +2026,14 @@ class Firo extends CoinServiceAPI {
         }
       }
 
-      double currentPrice =
-          await _getBitcoinPrice(fiatCurrency: currency) ?? -1;
+      Decimal currentPrice = await _getBitcoinPrice(fiatCurrency: currency);
       final List<Map<String, dynamic>> outputArray = [];
       int satoshiBalance = 0;
 
       for (int i = 0; i < utxoData.length; i++) {
         for (int j = 0; j < utxoData[i].length; j++) {
-          satoshiBalance += utxoData[i][j]["value"];
+          int value = utxoData[i][j]["value"];
+          satoshiBalance += value;
 
           final txn = await client.getTransaction(
               tx_hash: utxoData[i][j]["tx_hash"], verbose: true);
@@ -1977,7 +2042,7 @@ class Firo extends CoinServiceAPI {
 
           tx["txid"] = txn["txid"];
           tx["vout"] = utxoData[i][j]["tx_pos"];
-          tx["value"] = utxoData[i][j]["value"];
+          tx["value"] = value;
 
           tx["status"] = <String, dynamic>{};
           tx["status"]["confirmed"] =
@@ -1986,22 +2051,30 @@ class Firo extends CoinServiceAPI {
           tx["status"]["block_hash"] = txn["blockhash"];
           tx["status"]["block_time"] = txn["blocktime"];
 
-          final fiatValue =
-              (utxoData[i][j]["value"] / 100000000.0) * currentPrice;
+          final fiatValue = ((Decimal.fromInt(value) * currentPrice) /
+                  Decimal.fromInt(CampfireConstants.satsPerCoin))
+              .toDecimal(scaleOnInfinitePrecision: 2);
           tx["rawWorth"] = fiatValue;
-          tx["fiatWorth"] =
-              currencyMap[currency] + fiatValue.toStringAsFixed(2);
+          tx["fiatWorth"] = currencyMap[currency] + fiatValue.toString();
+          ;
           outputArray.add(tx);
         }
       }
 
-      double currencyBalanceRaw = currentPrice * (satoshiBalance / 100000000.0);
+      Decimal currencyBalanceRaw =
+          ((Decimal.fromInt(satoshiBalance) * currentPrice) /
+                  Decimal.fromInt(CampfireConstants.satsPerCoin))
+              .toDecimal(scaleOnInfinitePrecision: 2);
 
       final Map<String, dynamic> result = {
         "total_user_currency":
-            currencyMap[currency] + currencyBalanceRaw.toStringAsFixed(2),
+            currencyMap[currency] + currencyBalanceRaw.toString(),
         "total_sats": satoshiBalance,
-        "total_btc": satoshiBalance / 100000000.0,
+        "total_btc": (Decimal.fromInt(satoshiBalance) /
+                Decimal.fromInt(CampfireConstants.satsPerCoin))
+            .toDecimal(
+                scaleOnInfinitePrecision: CampfireConstants.decimalPlaces)
+            .toString(),
         "outputArray": outputArray,
       };
 
@@ -2329,8 +2402,7 @@ class Firo extends CoinServiceAPI {
 
   Future<dynamic> _createJoinSplitTransaction(
       int spendAmount, String address, bool subtractFeeFromAmount) async {
-    var price = await bitcoinPrice;
-    price = price ?? 1;
+    final price = await bitcoinPrice;
     Node node = await currentNode;
     final wallet = await Hive.openBox(this._walletId);
     final secureStore = new FlutterSecureStorage();

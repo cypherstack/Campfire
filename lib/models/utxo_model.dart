@@ -24,7 +24,7 @@ class UtxoData {
     List<UtxoObject> utxoList =
         outputList.map((output) => UtxoObject.fromJson(output)).toList();
     final String totalUserCurr = json['total_user_currency'];
-    final double totalBtc = json['total_btc'].toDouble();
+    final String totalBtc = json['total_btc'];
 
     return UtxoData(
         totalUserCurrency: totalUserCurr,

@@ -1,3 +1,4 @@
+import 'package:decimal/decimal.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 import 'package:google_fonts/google_fonts.dart';
@@ -9,6 +10,7 @@ import 'package:paymint/services/notes_service.dart';
 import 'package:paymint/utilities/biometrics.dart';
 import 'package:paymint/utilities/cfcolors.dart';
 import 'package:paymint/utilities/logger.dart';
+import 'package:paymint/utilities/misc_global_constants.dart';
 import 'package:paymint/utilities/sizing_utilities.dart';
 import 'package:paymint/widgets/custom_pin_put/custom_pin_put.dart';
 import 'package:provider/provider.dart';
@@ -24,8 +26,8 @@ class ConfirmSendView extends StatefulWidget {
 
   final String address;
   final String note;
-  final double amount;
-  final double fee;
+  final Decimal amount;
+  final Decimal fee;
 
   @override
   _ConfirmSendViewState createState() => _ConfirmSendViewState();
@@ -177,7 +179,12 @@ class _ConfirmSendViewState extends State<ConfirmSendView> {
 
                       try {
                         final String txid = await manager.send(
-                            toAddress: widget.address, amount: widget.amount);
+                            toAddress: widget.address,
+                            amount: (widget.amount *
+                                    Decimal.fromInt(
+                                        CampfireConstants.satsPerCoin))
+                                .toBigInt()
+                                .toInt());
 
                         final notesService = Provider.of<NotesService>(
                           context,
