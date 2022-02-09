@@ -72,7 +72,7 @@ class _SendViewState extends State<SendView> {
       print("setState called with address = $_address");
     });
 
-    final cryptoAmount = Decimal.parse(args["cryptoAmount"].toString());
+    final cryptoAmount = Decimal.tryParse(args["cryptoAmount"].toString());
     if (cryptoAmount == null) {
       return;
     }
