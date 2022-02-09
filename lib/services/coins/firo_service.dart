@@ -384,7 +384,8 @@ Future<List<models.Transaction>> getJMintTransactions(
         // tx.remove("chainlock");
         // tx.remove("version");
 
-        tx["confirmed_status"] = tx["confirmations"] > 0;
+        tx["confirmed_status"] =
+            tx["confirmations"] != null && tx["confirmations"] > 0;
         // tx.remove("confirmations");
 
         tx["timestamp"] = tx["time"];
