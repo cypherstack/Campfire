@@ -36,7 +36,6 @@ const JMINT_INDEX = 5;
 const MINT_INDEX = 2;
 const TRANSACTION_LELANTUS = 8;
 const ANONYMITY_SET_EMPTY_ID = 0;
-const MIDDLE_SERVER = 'https://marcomiddle.cypherstack.com';
 
 final firoNetwork = NetworkType(
     messagePrefix: '\x18Zcoin Signed Message:\n',
@@ -415,13 +414,7 @@ Future<List<models.Transaction>> getJMintTransactions(
         final decimalAmount = Decimal.parse(tx["amount"].toString());
 
         tx["worthNow"] = (currentPrice * decimalAmount).toStringAsFixed(2);
-
-        final priceAtBlockTimeStamp = await _getHistoricalPrice(
-          fiatCurrency: currency,
-          timestamp: tx["timestamp"],
-        );
-        tx["worthAtBlockTimestamp"] =
-            (priceAtBlockTimeStamp * decimalAmount).toStringAsFixed(2);
+        tx["worthAtBlockTimestamp"] = tx["worthNow"];
 
         tx["subType"] = "join";
         txs.add(models.Transaction.fromLelantusJson(tx));
@@ -708,41 +701,6 @@ Future<Decimal> _getFiroPrice({String baseCurrency}) async {
     }
   } catch (e) {
     Logger.print("Exception caught in _getFiroPrice(): $e");
-    return Decimal.fromInt(-1);
-  }
-}
-
-Future<Decimal> _getHistoricalPrice(
-    {int timestamp, String fiatCurrency}) async {
-  try {
-    final String currency =
-        fiatCurrency ?? await CurrencyUtilities.fetchPreferredCurrency();
-    final Map<String, String> requestBody = {
-      "currency": currency,
-      "timestamp": "$timestamp",
-    };
-
-    final response = await http.post(
-      Uri.parse('$MIDDLE_SERVER/historicalBitcoinPrice'),
-      body: jsonEncode(requestBody),
-      headers: {'Content-Type': 'application/json'},
-    );
-
-    if (response.statusCode == 200 || response.statusCode == 201) {
-      Logger.print('historicalBitcoinPrice body: ' + response.body.toString());
-      if (response.body.toString().isEmpty) {
-        return Decimal.fromInt(-1);
-      }
-      final result = json.decode(response.body);
-      Logger.print("json historicalBitcoinPrice  result: $result");
-      return Decimal.parse(result.toString());
-    } else {
-      throw Exception('Something happened: ' +
-          response.statusCode.toString() +
-          response.body);
-    }
-  } catch (e) {
-    Logger.print("Exception caught in _getHistoricalPrice(): $e");
     return Decimal.fromInt(-1);
   }
 }
@@ -1968,6 +1926,7 @@ class Firo extends CoinServiceAPI {
                 .toDecimal(scaleOnInfinitePrecision: 2)
                 .toStringAsFixed(2);
         midSortedTx["worthNow"] = worthNow;
+        midSortedTx["worthAtBlockTimestamp"] = worthNow;
         if (txObject["vout"][0]["scriptPubKey"]["type"] == "lelantusmint") {
           midSortedTx["subType"] = "mint";
         }
@@ -1992,21 +1951,6 @@ class Firo extends CoinServiceAPI {
 
       midSortedArray.add(midSortedTx);
       log("midSortedTx: $midSortedTx");
-      // }
-    }
-
-    // get historical price
-    for (int i = 0; i < midSortedArray.length; i++) {
-      var priceAtBlockTimestamp = await _getHistoricalPrice(
-          timestamp: midSortedArray[i]["timestamp"], fiatCurrency: currency);
-
-      final worthAtBlockTimestamp = priceAtBlockTimestamp *
-          (Decimal.fromInt(midSortedArray[i]["amount"]) /
-                  Decimal.fromInt(CampfireConstants.satsPerCoin))
-              .toDecimal(
-                  scaleOnInfinitePrecision: CampfireConstants.decimalPlaces);
-      midSortedArray[i]["worthAtBlockTimestamp"] =
-          worthAtBlockTimestamp.toStringAsFixed(2);
     }
 
     // sort by date  ----  //TODO not sure if needed
