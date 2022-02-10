@@ -1759,7 +1759,8 @@ class Firo extends CoinServiceAPI {
     print("receiving addresses: $receivingAddresses");
     print("change addresses: $changeAddresses");
 
-    List<String> allTxHashes = [];
+    List<Map<String, dynamic>> allTxHashes = [];
+    int latestTxnBlockHeight = 0;
 
     final node = await currentNode;
     final client = ElectrumX(server: node.address, port: node.port);
@@ -1767,19 +1768,57 @@ class Firo extends CoinServiceAPI {
     for (final address in allAddresses) {
       final txs = await client.getHistory(address: address);
       for (final map in txs) {
-        final txHash = map["tx_hash"];
-        if (!allTxHashes.contains(txHash)) {
-          allTxHashes.add(txHash);
+        // check to get latest Txn Height
+        if (map["height"] > latestTxnBlockHeight) {
+          latestTxnBlockHeight = map["height"];
+        }
+        // ignore duplicates
+        if (!allTxHashes.contains(map)) {
+          allTxHashes.add(map);
         }
       }
     }
 
     log("allTxHashes: $allTxHashes");
 
+    final TransactionData storedTxnData = await wallet.get('latest_tx_model');
+    final int storedTxnDataHeight =
+        (await wallet.get('storedTxnDataHeight')) ?? 0;
+
+    final Map<String, models.Transaction> transactionsMap = {};
+
+    if (storedTxnData == null) {
+    } else {
+      final int currentHeight = (await client.getBlockHeadTip())['height'];
+      log("current chain height: $currentHeight");
+
+      // return stored txnData if no new blocks have been found since last fetch
+      // OR if no new transactions exist since last fetch
+      if (storedTxnDataHeight == currentHeight ||
+          storedTxnDataHeight == latestTxnBlockHeight) {
+        return storedTxnData;
+      }
+
+      transactionsMap.addAll(storedTxnData.getAllTransactions());
+
+      final int confirmationBuffer = 10;
+      for (int i = 0; i < allTxHashes.length; i++) {
+        if (allTxHashes[i]['height'] <=
+            (storedTxnDataHeight - confirmationBuffer)) {
+          allTxHashes.removeAt(i);
+        }
+      }
+    }
+
     List<Map<String, dynamic>> allTransactions = [];
 
     for (final txHash in allTxHashes) {
-      final tx = await client.getTransaction(tx_hash: txHash, verbose: true);
+      final tx = await client.getTransaction(
+          tx_hash: txHash["tx_hash"], verbose: true);
+      // delete unused large parts
+      tx.remove("hex");
+      tx.remove("lelantusData");
+
       allTransactions.add(tx);
     }
 
@@ -1965,7 +2004,7 @@ class Firo extends CoinServiceAPI {
           worthAtBlockTimestamp.toStringAsFixed(2);
     }
 
-    // sort by date
+    // sort by date  ----  //TODO not sure if needed
     // shouldn't be any issues with a null timestamp but I got one at some point?
     midSortedArray.sort((a, b) {
       final aT = a["timestamp"];
@@ -2011,7 +2050,10 @@ class Firo extends CoinServiceAPI {
       }
     }
 
-    final txModel = TransactionData.fromJson(result);
+    final newTxnList = TransactionData.fromJson(result).getAllTransactions();
+    transactionsMap.addAll(newTxnList);
+    final txModel = TransactionData.fromMap(transactionsMap);
+    await wallet.put('storedTxnDataHeight', latestTxnBlockHeight);
     await wallet.put('latest_tx_model', txModel);
     return txModel;
   }
