@@ -379,30 +379,34 @@ class _MainViewState extends State<MainView> {
                     color: _buildIconColor(0), // Index 0 -> send view
                     semanticsLabel: "send navigation logo",
                   ),
-                  title: Text(
-                    "Send",
-                    style: _buildTextStyle(0),
-                  ),
+                  // TODO: bring back styling that Flutter 2.10 broke
+                  label: "Send"
+                  // title: Text(
+                  //   "Send",
+                  //   style: _buildTextStyle(0),
+                  // ),
                 ),
                 BottomNavigationBarItem(
                   icon: SvgPicture.asset(
                     "assets/svg/wallet-2.svg",
                     color: _buildIconColor(1), // Index 1 -> wallet view
                   ),
-                  title: Text(
-                    "Wallet",
-                    style: _buildTextStyle(1),
-                  ),
+                  label: "Wallet"
+                  // title: Text(
+                  //   "Wallet",
+                  //   style: _buildTextStyle(1),
+                  // ),
                 ),
                 BottomNavigationBarItem(
                   icon: SvgPicture.asset(
                     "assets/svg/download-2.svg",
                     color: _buildIconColor(2), // Index 2 -> receive view
                   ),
-                  title: Text(
-                    "Receive",
-                    style: _buildTextStyle(2),
-                  ),
+                  label: "Receive"
+                  // title: Text(
+                  //   "Receive",
+                  //   style: _buildTextStyle(2),
+                  // ),
                 ),
               ],
             ),
