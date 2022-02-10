@@ -22,6 +22,8 @@ abstract class CoinServiceAPI {
   Future<Decimal> get totalBalance;
   Future<Decimal> get balanceMinusMaxFee;
 
+  Future<List<String>> get allOwnAddresses;
+
   Future<TransactionData> get transactionData;
 
   Future<Decimal> get fiatPrice;

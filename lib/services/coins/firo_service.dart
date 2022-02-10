@@ -829,6 +829,11 @@ class Firo extends CoinServiceAPI {
   Future<Node> _currentNode;
   Future<Node> get currentNode => _currentNode ?? _getCurrentNode();
 
+  Future<List<String>> _allOwnAddresses;
+  @override
+  Future<List<String>> get allOwnAddresses =>
+      _allOwnAddresses ??= _fetchAllOwnAddresses();
+
   @override
   Future<bool> testNetworkConnection(String address, int port) async {
     try {
@@ -1703,6 +1708,21 @@ class Firo extends CoinServiceAPI {
           "Exception rethrown from _checkReceivingAddressForTransactions(): $e");
       throw e;
     }
+  }
+
+  Future<List<String>> _fetchAllOwnAddresses() async {
+    final List<String> allAddresses = [];
+    final wallet = await Hive.openBox(this._walletId);
+    final List receivingAddresses = await wallet.get('receivingAddresses');
+    final List changeAddresses = await wallet.get('changeAddresses');
+
+    for (var i = 0; i < receivingAddresses.length; i++) {
+      allAddresses.add(receivingAddresses[i]);
+    }
+    for (var i = 0; i < changeAddresses.length; i++) {
+      allAddresses.add(changeAddresses[i]);
+    }
+    return allAddresses;
   }
 
   Future<TransactionData> _fetchTransactionData() async {

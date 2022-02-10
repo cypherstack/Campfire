@@ -50,6 +50,8 @@ class Manager with ChangeNotifier {
     return balance * price;
   }
 
+  Future<List<String>> get allOwnAddresses => currentWallet.allOwnAddresses;
+
   Future<TransactionData> get transactionData => currentWallet.transactionData;
 
   Future<dynamic> get fiatPrice => currentWallet.fiatPrice;
@@ -58,7 +60,6 @@ class Manager with ChangeNotifier {
   Future<void> changeFiatCurrency(String currency) async {
     await currentWallet.changeFiatCurrency(currency);
     notifyListeners();
-    refresh();
   }
 
   Future<bool> get useBiometrics => currentWallet.useBiometrics;

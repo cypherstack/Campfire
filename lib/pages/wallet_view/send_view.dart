@@ -398,6 +398,27 @@ class _SendViewState extends State<SendView> {
                               await Clipboard.getData(Clipboard.kTextPlain);
                           if (data != null && data.text.isNotEmpty) {
                             final content = data.text.trim();
+
+                            final isValidAddress =
+                                manager.validateAddress(content);
+                            if (isValidAddress) {
+                              final myAddresses = await manager.allOwnAddresses;
+                              print(myAddresses);
+                              if (myAddresses.contains(content)) {
+                                showDialog(
+                                  context: context,
+                                  useSafeArea: false,
+                                  barrierDismissible: false,
+                                  builder: (_) {
+                                    return CampfireAlert(
+                                        message:
+                                            "Sending to your own address is currently disabled.");
+                                  },
+                                );
+                                return;
+                              }
+                            }
+
                             _recipientAddressTextController.text = content;
                             _address = content;
 
@@ -405,11 +426,8 @@ class _SendViewState extends State<SendView> {
                               _addressToggleFlag =
                                   _recipientAddressTextController
                                       .text.isNotEmpty;
-                              _sendButtonEnabled =
-                                  (manager.validateAddress(_address) &&
-                                      _totalAmount > Decimal.zero);
-                              print(_address.toString() +
-                                  _totalAmount.toString());
+                              _sendButtonEnabled = (isValidAddress &&
+                                  _totalAmount > Decimal.zero);
                             });
                           }
                         },
