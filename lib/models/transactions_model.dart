@@ -297,7 +297,8 @@ class Input {
     return Input(
         txid: json['txid'],
         vout: json['vout'],
-        prevout: Output.fromJson(json['prevout']),
+        // electrumx calls do not return prevout so we set this to null for now
+        prevout: null, //Output.fromJson(json['prevout']),
         scriptsig: json['scriptSig']['hex'],
         scriptsigAsm: json['scriptSig']['asm'],
         witness: json['witness'],
