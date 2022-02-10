@@ -55,8 +55,11 @@ class Manager with ChangeNotifier {
   Future<dynamic> get fiatPrice => currentWallet.fiatPrice;
 
   Future<String> get fiatCurrency => currentWallet.fiatCurrency;
-  Future<void> changeFiatCurrency(String currency) =>
-      currentWallet.changeFiatCurrency(currency);
+  Future<void> changeFiatCurrency(String currency) async {
+    await currentWallet.changeFiatCurrency(currency);
+    notifyListeners();
+    refresh();
+  }
 
   Future<bool> get useBiometrics => currentWallet.useBiometrics;
   Future<void> updateBiometricsUsage(bool useBiometrics) =>
