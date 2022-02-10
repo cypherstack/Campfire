@@ -361,7 +361,7 @@ Future<List<models.Transaction>> getJMintTransactions(
   String currency,
 ) async {
   try {
-    final currentPrice = await _getBitcoinPrice(fiatCurrency: currency);
+    final currentPrice = await _getFiroPrice(baseCurrency: currency);
 
     List<models.Transaction> txs = [];
 
@@ -676,33 +676,38 @@ Future<int> getBlockHead(Node node) async {
 }
 // end of isolates
 
-Future<Decimal> _getBitcoinPrice({String fiatCurrency}) async {
+Future<Decimal> _getFiroPrice({String baseCurrency}) async {
   try {
-    final String currency =
-        fiatCurrency ?? await CurrencyUtilities.fetchPreferredCurrency();
-    final Map<String, String> requestBody = {"currency": currency};
+    String currency =
+        baseCurrency ?? await CurrencyUtilities.fetchPreferredCurrency();
+    currency = currency.toLowerCase();
 
-    final response = await http.post(
-      Uri.parse('$MIDDLE_SERVER/currentBitcoinPrice'),
-      body: jsonEncode(requestBody),
+    final binanceResponse = await http.get(
+      Uri.parse("https://api.binance.com/api/v3/ticker/price?symbol=FIROBTC"),
       headers: {'Content-Type': 'application/json'},
     );
 
-    if (response.statusCode == 200 || response.statusCode == 201) {
-      Logger.print('Current BTC Price: ' + response.body.toString());
-      if (response.body.toString().isEmpty) {
-        return Decimal.fromInt(-1);
-      }
-      final result = json.decode(response.body);
-      Logger.print("json bitcoin price result: $result");
-      return Decimal.parse(result.toString());
+    final coinGeckoResponse = await http.get(
+      Uri.parse(
+          "https://api.coingecko.com/api/v3/simple/price?ids=bitcoin&vs_currencies=$currency"),
+      headers: {'Content-Type': 'application/json'},
+    );
+
+    final binanceData = json.decode(binanceResponse.body);
+    final Decimal firoBtcPrice = Decimal.tryParse(binanceData["price"]);
+
+    final coinGeckoData = json.decode(coinGeckoResponse.body);
+    final Decimal btcUsdPrice =
+        Decimal.tryParse(coinGeckoData["bitcoin"][currency].toString());
+
+    if (btcUsdPrice != null && firoBtcPrice != null) {
+      return firoBtcPrice * btcUsdPrice;
     } else {
-      throw Exception('Something happened: ' +
-          response.statusCode.toString() +
-          response.body);
+      Logger.print("Firo price API call(s) failed.");
+      return Decimal.fromInt(-1);
     }
   } catch (e) {
-    Logger.print("Exception caught in getBitcoinPrice(): $e");
+    Logger.print("Exception caught in _getFiroPrice(): $e");
     return Decimal.fromInt(-1);
   }
 }
@@ -830,7 +835,7 @@ class Firo extends CoinServiceAPI {
 
   // Hold the current price of Bitcoin in the currency specified in parameter below
   Future<Decimal> _bitcoinPrice;
-  Future<Decimal> get bitcoinPrice => _bitcoinPrice ??= _getBitcoinPrice();
+  Future<Decimal> get bitcoinPrice => _bitcoinPrice ??= _getFiroPrice();
 
   // currently isn't used but required due to abstract parent class
   Future<FeeObject> _feeObject;
@@ -1016,7 +1021,7 @@ class Firo extends CoinServiceAPI {
       final TransactionData newTxData = await _fetchTransactionData();
       GlobalEventBus.instance.fire(RefreshPercentChangedEvent(0.2));
 
-      final dynamic newBtcPrice = await _getBitcoinPrice();
+      final dynamic newBtcPrice = await _getFiroPrice();
       GlobalEventBus.instance.fire(RefreshPercentChangedEvent(0.25));
 
       final FeeObject feeObj = await _getFees();
@@ -1825,7 +1830,7 @@ class Firo extends CoinServiceAPI {
     log("allTransactions length: ${allTransactions.length}");
 
     // sort thing stuff
-    final currentPrice = await _getBitcoinPrice(fiatCurrency: currency);
+    final currentPrice = await _getFiroPrice(baseCurrency: currency);
     final List<Map<String, dynamic>> midSortedArray = [];
 
     for (final txObject in allTransactions) {
@@ -2089,7 +2094,7 @@ class Firo extends CoinServiceAPI {
         }
       }
 
-      Decimal currentPrice = await _getBitcoinPrice(fiatCurrency: currency);
+      Decimal currentPrice = await _getFiroPrice(baseCurrency: currency);
       final List<Map<String, dynamic>> outputArray = [];
       int satoshiBalance = 0;
 
