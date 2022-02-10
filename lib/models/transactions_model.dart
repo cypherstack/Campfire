@@ -295,11 +295,11 @@ class Input {
 
   factory Input.fromJson(Map<String, dynamic> json) {
     return Input(
-        txid: json['mintTxid'],
+        txid: json['txid'],
         vout: json['vout'],
         prevout: Output.fromJson(json['prevout']),
-        scriptsig: json['scriptsig'],
-        scriptsigAsm: json['scriptsig_asm'],
+        scriptsig: json['scriptSig']['hex'],
+        scriptsigAsm: json['scriptSig']['asm'],
         witness: json['witness'],
         isCoinbase: json['is_coinbase'],
         sequence: json['sequence'],
@@ -334,12 +334,18 @@ class Output {
 
   factory Output.fromJson(Map<String, dynamic> json) {
     // TODO determine if any of this code is needed.
+    final address = json["scriptPubKey"]["addresses"] == null
+        ? json['scriptPubKey']['type']
+        : json["scriptPubKey"]["addresses"][0];
     return Output(
-      scriptpubkey: "json['scriptpubkey']",
-      scriptpubkeyAsm: "json['scriptpubkey_asm']",
-      scriptpubkeyType: "json['scriptpubkey_type']",
-      scriptpubkeyAddress: "json['scriptpubkey_address']",
-      value: 0,
+      scriptpubkey: json['scriptPubKey']['hex'],
+      scriptpubkeyAsm: json['scriptPubKey']['asm'],
+      scriptpubkeyType: json['scriptPubKey']['type'],
+      scriptpubkeyAddress: address,
+      value: (Decimal.parse(json["value"].toString()) *
+              Decimal.fromInt(CampfireConstants.satsPerCoin))
+          .toBigInt()
+          .toInt(),
     );
   }
 }
