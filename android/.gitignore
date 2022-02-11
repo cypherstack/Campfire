@@ -5,4 +5,5 @@ gradle-wrapper.jar
 /gradlew.bat
 /local.properties
 /key.properties
+app/upload-keystore-campfire.jks
 GeneratedPluginRegistrant.java

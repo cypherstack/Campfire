@@ -33,6 +33,7 @@ dependencies:
   # Utility plugins
   provider: ^6.0.1
   http: ^0.13.4
+  # TODO remove majascan and replace with a null safe library
   majascan: ^0.4.0
   local_auth: ^1.1.10
   permission_handler: ^8.3.0

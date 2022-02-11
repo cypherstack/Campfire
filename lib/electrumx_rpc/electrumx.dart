@@ -5,9 +5,9 @@ import 'package:paymint/utilities/address_utils.dart';
 import 'package:paymint/utilities/logger.dart';
 import 'package:uuid/uuid.dart';
 
-const ELECTRUMX_SERVER = "electrumx-firo.cypherstack.com";
+// const ELECTRUMX_SERVER = "electrumx-firo.cypherstack.com";
 // const ELECTRUMX_PORT = 50002;
-// const ELECTRUMX_SERVER = "electrumx.firo.org";
+const ELECTRUMX_SERVER = "electrumx.firo.org";
 const ELECTRUMX_PORT = 50002;
 
 class ElectrumX {
