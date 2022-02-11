@@ -5,16 +5,16 @@ import 'package:paymint/utilities/address_utils.dart';
 import 'package:paymint/utilities/logger.dart';
 import 'package:uuid/uuid.dart';
 
-const ELECTRUMX_SERVER = "electrumx-firo.cypherstack.com";
-// const ELECTRUMX_PORT = 50002;
-// const ELECTRUMX_SERVER = "electrumx.firo.org";
+// const ELECTRUMX_SERVER = "electrumx-firo.cypherstack.com";
+const ELECTRUMX_SERVER = "electrumx.firo.org";
 const ELECTRUMX_PORT = 50002;
 
 class ElectrumX {
   final String server;
   final int port;
+  final bool useSSL;
 
-  ElectrumX({this.server, this.port});
+  ElectrumX({this.server, this.port, this.useSSL: true});
 
   /// Send raw rpc command
   Future<dynamic> request({
@@ -26,7 +26,7 @@ class ElectrumX {
     final client = JsonRPC(
       address: this.server ?? ELECTRUMX_SERVER,
       port: this.port ?? ELECTRUMX_PORT,
-      useSSL: true,
+      useSSL: this.useSSL,
       connectionTimeout: connectionTimeout,
       aliveTimerDuration: aliveTimerDuration,
     );

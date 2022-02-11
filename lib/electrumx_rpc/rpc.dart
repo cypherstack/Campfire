@@ -68,7 +68,7 @@ class JsonRPC {
       await Future.delayed(Duration(milliseconds: 100));
     }
 
-    final int millisecondTimeout = 500;
+    final int millisecondTimeout = 1000;
 
     /// wait while data comes back and only continue when time between receiving
     /// chunks of data is greater than millisecondTimeout
