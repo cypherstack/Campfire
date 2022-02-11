@@ -144,102 +144,108 @@ isolateRestore(
   List<int> jindexes = [];
   Map<dynamic, LelantusCoin> _lelantus_coins = Map();
   final setDataMap = Map();
-  final latestSetId = await getLatestSetId(node);
-  for (var setId = 1; setId <= latestSetId; setId++) {
-    final setData = await getSetData(node, setId);
-    setDataMap[setId] = setData;
-  }
-
-  final usedSerialNumbers = (await getUsedCoinSerials(node))['serials'];
-  Set usedSerialNumbersSet = Set();
-  for (int ind = 0; ind < usedSerialNumbers.length; ind++) {
-    usedSerialNumbersSet.add(usedSerialNumbers[ind]);
-  }
 
   final spendTxIds = List.empty(growable: true);
-
   var lastFoundIndex = 0;
   var currentIndex = 0;
-  while (currentIndex < lastFoundIndex + 20) {
-    final mintKeyPair = await _getNode(MINT_INDEX, currentIndex, mnemonic);
-    final mintTag = CreateTag(uint8listToString(mintKeyPair.privateKey),
-        currentIndex, uint8listToString(mintKeyPair.identifier));
 
+  try {
+    final latestSetId = await getLatestSetId(node);
     for (var setId = 1; setId <= latestSetId; setId++) {
-      final Map<String, dynamic> setData = setDataMap[setId];
-      setData.forEach((key, value) {});
-      var foundMint = null;
-      for (int indexMint = 0;
-          indexMint < setData['mints'].length;
-          indexMint++) {
-        if (setData['mints'][indexMint][1] == mintTag) {
-          foundMint = setData['mints'][indexMint];
-          break;
-        }
-      }
-      if (foundMint != null) {
-        lastFoundIndex = currentIndex;
-        final amount = foundMint[2];
-        final serialNumber = GetSerialNumber(
-          amount,
-          uint8listToString(mintKeyPair.privateKey),
-          currentIndex,
-        );
-        _lelantus_coins[foundMint[3]] = LelantusCoin(
-          currentIndex,
-          amount,
-          foundMint[0],
-          foundMint[3],
-          setId,
-          usedSerialNumbersSet.contains(serialNumber),
-        );
-        print(
-            "amount ${_lelantus_coins[foundMint[3]].value} used ${_lelantus_coins[foundMint[3]].isUsed}");
-      } else {
-        var foundJmint = null;
-        for (int indexJmint = 0;
-            indexJmint < setData['jmints'].length;
-            indexJmint++) {
-          if (setData['jmints'][indexJmint][1] == mintTag) {
-            foundJmint = setData['jmints'][indexJmint];
+      final setData = await getSetData(node, setId);
+      setDataMap[setId] = setData;
+    }
+
+    final usedSerialNumbers = (await getUsedCoinSerials(node))['serials'];
+    Set usedSerialNumbersSet = Set();
+    for (int ind = 0; ind < usedSerialNumbers.length; ind++) {
+      usedSerialNumbersSet.add(usedSerialNumbers[ind]);
+    }
+
+    while (currentIndex < lastFoundIndex + 20) {
+      final mintKeyPair = await _getNode(MINT_INDEX, currentIndex, mnemonic);
+      final mintTag = CreateTag(uint8listToString(mintKeyPair.privateKey),
+          currentIndex, uint8listToString(mintKeyPair.identifier));
+
+      for (var setId = 1; setId <= latestSetId; setId++) {
+        final Map<String, dynamic> setData = setDataMap[setId];
+        setData.forEach((key, value) {});
+        var foundMint = null;
+        for (int indexMint = 0;
+            indexMint < setData['mints'].length;
+            indexMint++) {
+          if (setData['mints'][indexMint][1] == mintTag) {
+            foundMint = setData['mints'][indexMint];
             break;
           }
         }
-        if (foundJmint != null) {
+        if (foundMint != null) {
           lastFoundIndex = currentIndex;
+          final amount = foundMint[2];
+          final serialNumber = GetSerialNumber(
+            amount,
+            uint8listToString(mintKeyPair.privateKey),
+            currentIndex,
+          );
+          _lelantus_coins[foundMint[3]] = LelantusCoin(
+            currentIndex,
+            amount,
+            foundMint[0],
+            foundMint[3],
+            setId,
+            usedSerialNumbersSet.contains(serialNumber),
+          );
+          print(
+              "amount ${_lelantus_coins[foundMint[3]].value} used ${_lelantus_coins[foundMint[3]].isUsed}");
+        } else {
+          var foundJmint = null;
+          for (int indexJmint = 0;
+              indexJmint < setData['jmints'].length;
+              indexJmint++) {
+            if (setData['jmints'][indexJmint][1] == mintTag) {
+              foundJmint = setData['jmints'][indexJmint];
+              break;
+            }
+          }
+          if (foundJmint != null) {
+            lastFoundIndex = currentIndex;
 
-          final keyPath = GetAesKeyPath(foundJmint[0]);
-          final aesKeyPair = await _getNode(JMINT_INDEX, keyPath, mnemonic);
-          final aesPrivateKey = uint8listToString(aesKeyPair.privateKey);
-          if (aesPrivateKey != null) {
-            final amount = decryptMintAmount(
-              aesPrivateKey,
-              foundJmint[2],
-            );
+            final keyPath = GetAesKeyPath(foundJmint[0]);
+            final aesKeyPair = await _getNode(JMINT_INDEX, keyPath, mnemonic);
+            final aesPrivateKey = uint8listToString(aesKeyPair.privateKey);
+            if (aesPrivateKey != null) {
+              final amount = decryptMintAmount(
+                aesPrivateKey,
+                foundJmint[2],
+              );
 
-            final serialNumber = GetSerialNumber(
-              amount,
-              uint8listToString(mintKeyPair.privateKey),
-              currentIndex,
-            );
+              final serialNumber = GetSerialNumber(
+                amount,
+                uint8listToString(mintKeyPair.privateKey),
+                currentIndex,
+              );
 
-            _lelantus_coins[foundJmint[3]] = LelantusCoin(
-              currentIndex,
-              amount,
-              foundJmint[0],
-              foundJmint[3],
-              setId,
-              usedSerialNumbersSet.contains(serialNumber),
-            );
-            jindexes.add(currentIndex);
+              _lelantus_coins[foundJmint[3]] = LelantusCoin(
+                currentIndex,
+                amount,
+                foundJmint[0],
+                foundJmint[3],
+                setId,
+                usedSerialNumbersSet.contains(serialNumber),
+              );
+              jindexes.add(currentIndex);
 
-            spendTxIds.add(foundJmint[3]);
+              spendTxIds.add(foundJmint[3]);
+            }
           }
         }
       }
-    }
 
-    currentIndex++;
+      currentIndex++;
+    }
+  } catch (e) {
+    Logger.print("Exception rethrown from isolateRestore(): $e");
+    throw e;
   }
 
   Map<String, dynamic> result = Map();
@@ -2256,9 +2262,15 @@ class Firo extends CoinServiceAPI {
     }
   }
 
+  /// wrapper for recoverWalletFromBIP32SeedPhrase()
   @override
   dynamic recoverFromMnemonic(String mnemonic) async {
-    return await recoverWalletFromBIP32SeedPhrase(mnemonic);
+    try {
+      await recoverWalletFromBIP32SeedPhrase(mnemonic);
+    } catch (e) {
+      Logger.print("Exception rethrown from recoverFromMnemonic(): $e");
+      throw e;
+    }
   }
 
   /// Recovers wallet from [suppliedMnemonic]. Expects a valid mnemonic.
@@ -2403,7 +2415,7 @@ class Firo extends CoinServiceAPI {
     if (message is String) {
       Logger.print("restore() ->> this is a string");
       stop();
-      return;
+      throw Exception("isolate restore failed.");
     }
     stop();
 
