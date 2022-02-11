@@ -12,9 +12,8 @@ const ELECTRUMX_PORT = 50002;
 class ElectrumX {
   final String server;
   final int port;
-  final bool useSSL;
 
-  ElectrumX({this.server, this.port, this.useSSL: true});
+  ElectrumX({this.server, this.port});
 
   /// Send raw rpc command
   Future<dynamic> request({
@@ -26,7 +25,7 @@ class ElectrumX {
     final client = JsonRPC(
       address: this.server ?? ELECTRUMX_SERVER,
       port: this.port ?? ELECTRUMX_PORT,
-      useSSL: this.useSSL,
+      useSSL: true,
       connectionTimeout: connectionTimeout,
       aliveTimerDuration: aliveTimerDuration,
     );
