@@ -12,6 +12,7 @@ import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 import 'package:hive/hive.dart';
 import 'package:http/http.dart' as http;
 import 'package:lelantus/lelantus.dart';
+import 'package:paymint/electrumx_rpc/cached_electrumx.dart';
 import 'package:paymint/electrumx_rpc/electrumx.dart';
 import 'package:paymint/models/fee_object_model.dart';
 import 'package:paymint/models/lelantus_coin.dart';
@@ -115,10 +116,11 @@ Future<void> executeNative(arguments) async {
       String mnemonic = arguments['mnemonic'];
       TransactionData transactionData = arguments['transactionData'];
       String currency = arguments['currency'];
+      String coinName = arguments['coinName'];
 
       if (!(mnemonic == null || transactionData == null || node == null)) {
-        var restoreData =
-            await isolateRestore(node, mnemonic, transactionData, currency);
+        var restoreData = await isolateRestore(
+            node, mnemonic, transactionData, currency, coinName);
         sendPort.send(restoreData);
         return;
       }
@@ -139,8 +141,8 @@ void stop() {
   }
 }
 
-isolateRestore(
-    Node node, String mnemonic, TransactionData data, String currency) async {
+isolateRestore(Node node, String mnemonic, TransactionData data,
+    String currency, String coinName) async {
   List<int> jindexes = [];
   Map<dynamic, LelantusCoin> _lelantus_coins = Map();
   final setDataMap = Map();
@@ -316,7 +318,8 @@ isolateRestore(
   });
 
   // Create the joinsplit transactions.
-  final spendTxs = await getJMintTransactions(node, spendTxIds, currency);
+  final spendTxs =
+      await getJMintTransactions(node, spendTxIds, currency, coinName);
   print(spendTxs);
   spendTxs.forEach((element) {
     transactionMap[element.txid] = element;
@@ -364,19 +367,21 @@ Future<List<models.Transaction>> getJMintTransactions(
   Node node,
   List transactions,
   String currency,
+  String coinName,
 ) async {
   try {
     final currentPrice = await _getFiroPrice(baseCurrency: currency);
 
     List<models.Transaction> txs = [];
 
-    final client = ElectrumX(server: node.address, port: node.port);
+    final cachedClient = CachedElectrumX(server: node.address, port: node.port);
 
     for (int i = 0; i < transactions.length; i++) {
       try {
-        final tx = await client.getTransaction(
+        final tx = await cachedClient.getTransaction(
           tx_hash: transactions[i],
           verbose: true,
+          coinName: coinName,
         );
 
         // TODO not sure if removing here increases or decreases performance
@@ -1103,11 +1108,14 @@ class Firo extends CoinServiceAPI {
     }
 
     final node = await currentNode;
-    final client = ElectrumX(server: node.address, port: node.port);
+    final cachedClient = CachedElectrumX(server: node.address, port: node.port);
     final lelantusCoinsList = _lelantus_coins.values.toList(growable: false);
     for (int i = 0; i < lelantusCoinsList.length; i++) {
-      final txn = await client.getTransaction(
-          tx_hash: lelantusCoinsList[i].txId, verbose: true);
+      final txn = await cachedClient.getTransaction(
+        tx_hash: lelantusCoinsList[i].txId,
+        verbose: true,
+        coinName: this.coinName,
+      );
       final confirmations = txn["confirmations"];
       bool isUnconfirmed = confirmations is int && confirmations < 1;
       if (!jindexes.contains(lelantusCoinsList[i].index) &&
@@ -1306,7 +1314,7 @@ class Firo extends CoinServiceAPI {
     List<String> addressesToDerive = [];
 
     final node = await currentNode;
-    final client = ElectrumX(server: node.address, port: node.port);
+    final cachedClient = CachedElectrumX(server: node.address, port: node.port);
 
     // Populating the addresses to derive
     for (var i = 0; i < utxosToUse.length; i++) {
@@ -1314,7 +1322,11 @@ class Firo extends CoinServiceAPI {
       final outputIndex = utxosToUse[i].vout;
 
       // txid may not work for this as txid may not always be the same as tx_hash?
-      final tx = await client.getTransaction(tx_hash: txid, verbose: true);
+      final tx = await cachedClient.getTransaction(
+        tx_hash: txid,
+        verbose: true,
+        coinName: this.coinName,
+      );
 
       final vouts = tx["vout"];
       if (vouts != null && vouts.length <= outputIndex + 1) {
@@ -1470,8 +1482,8 @@ class Firo extends CoinServiceAPI {
 
     final String currency = await CurrencyUtilities.fetchPreferredCurrency();
     // Grab the most recent information on all the joinsplits
-    final updatedJSplit =
-        await getJMintTransactions(await currentNode, joinsplits, currency);
+    final updatedJSplit = await getJMintTransactions(
+        await currentNode, joinsplits, currency, this.coinName);
 
     // update all of joinsplits that are now confirmed.
     for (final tx in updatedJSplit) {
@@ -1808,9 +1820,10 @@ class Firo extends CoinServiceAPI {
 
     List<Map<String, dynamic>> allTransactions = [];
 
+    final cachedClient = CachedElectrumX(server: node.address, port: node.port);
     for (final txHash in allTxHashes) {
-      final tx = await client.getTransaction(
-          tx_hash: txHash["tx_hash"], verbose: true);
+      final tx = await cachedClient.getTransaction(
+          tx_hash: txHash["tx_hash"], verbose: true, coinName: this.coinName);
       // delete unused large parts
       tx.remove("hex");
       tx.remove("lelantusData");
@@ -2075,13 +2088,18 @@ class Firo extends CoinServiceAPI {
       final List<Map<String, dynamic>> outputArray = [];
       int satoshiBalance = 0;
 
+      final cachedClient =
+          CachedElectrumX(server: node.address, port: node.port);
       for (int i = 0; i < utxoData.length; i++) {
         for (int j = 0; j < utxoData[i].length; j++) {
           int value = utxoData[i][j]["value"];
           satoshiBalance += value;
 
-          final txn = await client.getTransaction(
-              tx_hash: utxoData[i][j]["tx_hash"], verbose: true);
+          final txn = await cachedClient.getTransaction(
+            tx_hash: utxoData[i][j]["tx_hash"],
+            verbose: true,
+            coinName: this.coinName,
+          );
 
           final Map<String, dynamic> tx = {};
 
@@ -2416,6 +2434,7 @@ class Firo extends CoinServiceAPI {
       "mnemonic": mnemonic,
       "transactionData": data,
       "currency": currency,
+      "coinName": this.coinName,
     });
 
     var message = await receivePort.first;
