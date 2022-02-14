@@ -1,6 +1,8 @@
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
+import 'package:paymint/electrumx_rpc/cached_electrumx.dart';
+import 'package:paymint/notifications/campfire_alert.dart';
 import 'package:paymint/notifications/modal_popup_dialog.dart';
 import 'package:paymint/pages/settings_view/helpers/builders.dart';
 import 'package:paymint/pages/settings_view/settings_subviews/wallet_settings_subviews/rename_wallet_view.dart';
@@ -16,22 +18,8 @@ import 'package:provider/provider.dart';
 
 import '../../lockscreen2.dart';
 
-class WalletSettingsView extends StatefulWidget {
+class WalletSettingsView extends StatelessWidget {
   const WalletSettingsView({Key key}) : super(key: key);
-
-  @override
-  _WalletSettingsViewState createState() => _WalletSettingsViewState();
-}
-
-class _WalletSettingsViewState extends State<WalletSettingsView> {
-  final _itemTextStyle = GoogleFonts.workSans(
-    color: CFColors.starryNight,
-    fontWeight: FontWeight.w600,
-    fontSize: 14,
-    letterSpacing: 0.25,
-  );
-
-  bool _useBiometrics = false;
 
   @override
   Widget build(BuildContext context) {
@@ -52,21 +40,38 @@ class _WalletSettingsViewState extends State<WalletSettingsView> {
           bottom: SizingUtilities.standardPadding,
         ),
         child: SingleChildScrollView(
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: _buildOptionsList(context, _itemWidth),
-          ),
+          child: WalletSettingsList(itemWidth: _itemWidth),
         ),
       ),
     );
   }
+}
 
-  List<Widget> _buildOptionsList(BuildContext context, double itemWidth) {
+class WalletSettingsList extends StatefulWidget {
+  const WalletSettingsList({Key key, this.itemWidth}) : super(key: key);
+
+  final itemWidth;
+  @override
+  _WalletSettingsListState createState() => _WalletSettingsListState();
+}
+
+class _WalletSettingsListState extends State<WalletSettingsList> {
+  final _itemTextStyle = GoogleFonts.workSans(
+    color: CFColors.starryNight,
+    fontWeight: FontWeight.w600,
+    fontSize: 14,
+    letterSpacing: 0.25,
+  );
+
+  bool _useBiometrics = false;
+
+  @override
+  Widget build(BuildContext context) {
     final manager = Provider.of<Manager>(context);
-    return [
-      Container(
-        // width: itemWidth,
-        child: GestureDetector(
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        GestureDetector(
           onTap: () {
             Navigator.push(context, CupertinoPageRoute(builder: (context) {
               return Lockscreen2View(
@@ -89,59 +94,104 @@ class _WalletSettingsViewState extends State<WalletSettingsView> {
             ),
           ),
         ),
-      ),
-      _buildDivider(itemWidth),
-      GestureDetector(
-        onTap: () async {
-          if (_useBiometrics) {
-            await manager.updateBiometricsUsage(false);
-          } else {
-            if (await Biometrics.authenticate(
-              cancelButtonText: "CANCEL",
-              localizedReason:
-                  "Unlock wallet and confirm transactions with your fingerprint",
-              title: "Enable fingerprint authentication",
-            )) {
-              await manager.updateBiometricsUsage(true);
+        Divider(width: widget.itemWidth),
+        GestureDetector(
+          onTap: () async {
+            if (_useBiometrics) {
+              await manager.updateBiometricsUsage(false);
+            } else {
+              if (await Biometrics.authenticate(
+                cancelButtonText: "CANCEL",
+                localizedReason:
+                    "Unlock wallet and confirm transactions with your fingerprint",
+                title: "Enable fingerprint authentication",
+              )) {
+                await manager.updateBiometricsUsage(true);
+              }
             }
-          }
-        },
-        child: Row(
-          children: [
-            Container(
-              child: Padding(
-                padding: const EdgeInsets.only(
-                  top: 16,
-                  bottom: 16,
-                  right: 10,
-                ),
-                child: Text(
-                  "Enable biometric authentication",
-                  style: _itemTextStyle,
+          },
+          child: Row(
+            children: [
+              Container(
+                child: Padding(
+                  padding: const EdgeInsets.only(
+                    top: 16,
+                    bottom: 16,
+                    right: 10,
+                  ),
+                  child: Text(
+                    "Enable biometric authentication",
+                    style: _itemTextStyle,
+                  ),
                 ),
               ),
-            ),
-            Spacer(),
-            FutureBuilder(
-              future: manager.useBiometrics,
-              builder: (context, AsyncSnapshot<bool> snapshot) {
-                if (snapshot.connectionState == ConnectionState.done) {
-                  _useBiometrics =
-                      snapshot.data == null ? false : snapshot.data;
-                  return _buildSwitch(context, 18, 36, _useBiometrics);
-                } else {
-                  // possibly display loading animation here but likely not needed
-                  return _buildSwitch(context, 18, 36, false);
-                }
-              },
-            ),
-          ],
+              Spacer(),
+              FutureBuilder(
+                future: manager.useBiometrics,
+                builder: (context, AsyncSnapshot<bool> snapshot) {
+                  final double height = 18;
+                  final double width = 36;
+                  if (snapshot.connectionState == ConnectionState.done) {
+                    _useBiometrics =
+                        snapshot.data == null ? false : snapshot.data;
+                  }
+                  return Container(
+                    height: height,
+                    width: width,
+                    child: Stack(
+                      children: [
+                        Container(
+                          width: width,
+                          height: height,
+                          decoration: BoxDecoration(
+                            color:
+                                _useBiometrics ? CFColors.spark : CFColors.fog,
+                            borderRadius: BorderRadius.circular(height / 2),
+                            border: Border.all(
+                              color: _useBiometrics
+                                  ? CFColors.spark
+                                  : CFColors.dew,
+                              width: 2,
+                            ),
+                          ),
+                        ),
+                        Container(
+                          height: height,
+                          width: width,
+                          child: Row(
+                            mainAxisAlignment: _useBiometrics
+                                ? MainAxisAlignment.end
+                                : MainAxisAlignment.start,
+                            children: [
+                              // if (_enabled) Spacer(),
+                              Container(
+                                height: height,
+                                width: height,
+                                decoration: BoxDecoration(
+                                  color: CFColors.white,
+                                  borderRadius:
+                                      BorderRadius.circular(height / 2),
+                                  border: Border.all(
+                                    color: _useBiometrics
+                                        ? CFColors.spark
+                                        : CFColors.dew,
+                                    width: 2,
+                                  ),
+                                ),
+                              )
+                            ],
+                          ),
+                        ),
+                      ],
+                    ),
+                  );
+                },
+              ),
+            ],
+          ),
         ),
-      ),
-      _buildDivider(itemWidth),
-      Container(
-        // width: itemWidth,
-        child: GestureDetector(
+        Divider(width: widget.itemWidth),
+        GestureDetector(
           onTap: () async {
             final walletName =
                 await Provider.of<WalletsService>(context, listen: false)
@@ -167,19 +217,15 @@ class _WalletSettingsViewState extends State<WalletSettingsView> {
             ),
           ),
         ),
-      ),
-      _buildDivider(itemWidth),
-      Container(
-        // width: itemWidth,
-        child: GestureDetector(
+        Divider(width: widget.itemWidth),
+        GestureDetector(
           onTap: () async {
-            final confirmDialog = await _buildWalletDeleteConfirmDialog();
             showDialog(
               useSafeArea: false,
               barrierColor: Colors.transparent,
               barrierDismissible: false,
               context: context,
-              builder: (context) => confirmDialog,
+              builder: (context) => WalletDeleteConfirmDialog(),
             );
           },
           child: Padding(
@@ -194,69 +240,53 @@ class _WalletSettingsViewState extends State<WalletSettingsView> {
             ),
           ),
         ),
-      ),
-    ];
-  }
-
-  _buildSwitch(
-      BuildContext context, double height, double width, bool isActive) {
-    return Container(
-      height: height,
-      width: width,
-      child: Stack(
-        children: [
-          Container(
-            width: width,
-            height: height,
-            decoration: BoxDecoration(
-              color: isActive ? CFColors.spark : CFColors.fog,
-              borderRadius: BorderRadius.circular(height / 2),
-              border: Border.all(
-                color: isActive ? CFColors.spark : CFColors.dew,
-                width: 2,
-              ),
+        Divider(width: widget.itemWidth),
+        GestureDetector(
+          onTap: () async {
+            showDialog(
+              useSafeArea: false,
+              barrierColor: Colors.transparent,
+              barrierDismissible: false,
+              context: context,
+              builder: (context) => ClearSharedCacheConfirmDialog(),
+            );
+          },
+          child: Padding(
+            padding: const EdgeInsets.only(
+              top: 16,
+              bottom: 16,
+              right: 10,
+            ),
+            child: Text(
+              "Clear shared transaction cache",
+              style: _itemTextStyle,
             ),
           ),
-          Container(
-            height: height,
-            width: width,
-            child: Row(
-              mainAxisAlignment:
-                  isActive ? MainAxisAlignment.end : MainAxisAlignment.start,
-              children: [
-                // if (_enabled) Spacer(),
-                Container(
-                  height: height,
-                  width: height,
-                  decoration: BoxDecoration(
-                    color: CFColors.white,
-                    borderRadius: BorderRadius.circular(height / 2),
-                    border: Border.all(
-                      color: isActive ? CFColors.spark : CFColors.dew,
-                      width: 2,
-                    ),
-                  ),
-                )
-              ],
-            ),
-          ),
-        ],
-      ),
+        )
+      ],
     );
   }
+}
 
-  _buildDivider(double width) {
+class Divider extends StatelessWidget {
+  const Divider({Key key, this.width}) : super(key: key);
+
+  final width;
+  @override
+  Widget build(BuildContext context) {
     return Container(
       height: 1,
       width: width,
       color: CFColors.fog,
     );
   }
+}
 
-  _buildWalletDeleteConfirmDialog() async {
-    final walletsService = Provider.of<WalletsService>(context, listen: false);
-    final walletName = await walletsService.currentWalletName;
+class WalletDeleteConfirmDialog extends StatelessWidget {
+  const WalletDeleteConfirmDialog({Key key}) : super(key: key);
 
+  @override
+  Widget build(BuildContext context) {
     return ModalPopupDialog(
       child: Column(
         children: [
@@ -267,13 +297,27 @@ class _WalletSettingsViewState extends State<WalletSettingsView> {
               right: 24,
               bottom: 12,
             ),
-            child: Text(
-              "Do you want to delete $walletName Wallet?",
-              style: GoogleFonts.workSans(
-                color: CFColors.dusk,
-                fontWeight: FontWeight.w600,
-                fontSize: 18,
-              ),
+            child: Provider<Future<String>>.value(
+              value: Provider.of<WalletsService>(context).currentWalletName,
+              builder: (context, child) {
+                return FutureBuilder(
+                  future: context.watch<Future<String>>(),
+                  builder: (context, AsyncSnapshot<String> name) {
+                    String walletName = "...";
+                    if (name.connectionState == ConnectionState.done) {
+                      walletName = name.data;
+                    }
+                    return Text(
+                      "Do you want to delete $walletName Wallet?",
+                      style: GoogleFonts.workSans(
+                        color: CFColors.dusk,
+                        fontWeight: FontWeight.w600,
+                        fontSize: 18,
+                      ),
+                    );
+                  },
+                );
+              },
             ),
           ),
           Padding(
@@ -312,16 +356,118 @@ class _WalletSettingsViewState extends State<WalletSettingsView> {
                         ),
                       ),
                       onTap: () async {
-                        Navigator.push(context,
-                            CupertinoPageRoute(builder: (context) {
-                          return Lockscreen2View(
-                            routeOnSuccess: '/settings/deletewalletwarningview',
-                            biometricsAuthenticationTitle: "Confirm delete",
-                            biometricsCancelButtonString: "CANCEL",
-                            biometricsLocalizedReason:
-                                "Continue wallet deletion process via fingerprint authentication",
-                          );
-                        }));
+                        Navigator.push(
+                          context,
+                          CupertinoPageRoute(
+                            builder: (context) {
+                              return Lockscreen2View(
+                                routeOnSuccess:
+                                    '/settings/deletewalletwarningview',
+                                biometricsAuthenticationTitle: "Confirm delete",
+                                biometricsCancelButtonString: "CANCEL",
+                                biometricsLocalizedReason:
+                                    "Continue wallet deletion process via fingerprint authentication",
+                              );
+                            },
+                          ),
+                        );
+                      },
+                    ),
+                  ),
+                )
+              ],
+            ),
+          )
+        ],
+      ),
+    );
+  }
+}
+
+class ClearSharedCacheConfirmDialog extends StatelessWidget {
+  const ClearSharedCacheConfirmDialog({Key key}) : super(key: key);
+
+  @override
+  Widget build(BuildContext context) {
+    return ModalPopupDialog(
+      child: Column(
+        children: [
+          Padding(
+              padding: const EdgeInsets.only(
+                top: 28,
+                left: 24,
+                right: 24,
+                bottom: 12,
+              ),
+              child: Provider<String>.value(
+                value: Provider.of<Manager>(context).coinName,
+                builder: (context, child) {
+                  return Text(
+                    "Are you sure you want to clear all shared cached ${context.watch<String>()} transaction data?",
+                    style: GoogleFonts.workSans(
+                      color: CFColors.dusk,
+                      fontWeight: FontWeight.w600,
+                      fontSize: 18,
+                    ),
+                  );
+                },
+              )),
+          Padding(
+            padding: const EdgeInsets.all(SizingUtilities.standardPadding),
+            child: Row(
+              children: [
+                Expanded(
+                  child: SizedBox(
+                    height: SizingUtilities.standardButtonHeight,
+                    child: SimpleButton(
+                      child: FittedBox(
+                        child: Text(
+                          "CANCEL",
+                          style: CFTextStyles.button.copyWith(
+                            color: CFColors.dusk,
+                          ),
+                        ),
+                      ),
+                      onTap: () {
+                        Navigator.pop(context);
+                      },
+                    ),
+                  ),
+                ),
+                SizedBox(
+                  width: 16,
+                ),
+                Expanded(
+                  child: SizedBox(
+                    height: SizingUtilities.standardButtonHeight,
+                    child: GradientButton(
+                      child: FittedBox(
+                        child: Text(
+                          "CLEAR",
+                          style: CFTextStyles.button,
+                        ),
+                      ),
+                      onTap: () async {
+                        final client = CachedElectrumX();
+                        final manager =
+                            Provider.of<Manager>(context, listen: false);
+                        final success =
+                            await client.clearSharedTransactionCache(
+                                coinName: manager.coinName);
+                        String message = "";
+                        if (success) {
+                          message = "Transaction cache cleared!";
+                        } else {
+                          message = "Failed to clear transaction cache.";
+                        }
+                        Navigator.of(context).pop();
+                        showDialog(
+                          useSafeArea: false,
+                          barrierColor: Colors.transparent,
+                          barrierDismissible: false,
+                          context: context,
+                          builder: (context) => CampfireAlert(message: message),
+                        );
                       },
                     ),
                   ),

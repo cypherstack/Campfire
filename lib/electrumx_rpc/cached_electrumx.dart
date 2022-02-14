@@ -41,4 +41,15 @@ class CachedElectrumX {
       throw e;
     }
   }
+
+  /// Clear all cached transactions for the specified coin
+  Future<bool> clearSharedTransactionCache({String coinName}) async {
+    try {
+      await Hive.deleteBoxFromDisk('${coinName}_txCache');
+      return true;
+    } catch (e) {
+      print("Clear transaction cache for coin $coinName failed.");
+      return false;
+    }
+  }
 }
