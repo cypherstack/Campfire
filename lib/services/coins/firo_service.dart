@@ -991,6 +991,7 @@ class Firo extends CoinServiceAPI {
       GlobalEventBus.instance.fire(RefreshPercentChangedEvent(0.2));
 
       final dynamic newBtcPrice = await _getFiroPrice();
+      Logger.print("Refreshed price: $newBtcPrice");
       GlobalEventBus.instance.fire(RefreshPercentChangedEvent(0.25));
 
       final FeeObject feeObj = await _getFees();
@@ -1009,7 +1010,7 @@ class Firo extends CoinServiceAPI {
 
       final wallet = await Hive.openBox(this._walletId);
       final Map _lelantus_coins = await wallet.get('_lelantus_coins');
-      Logger.print(_lelantus_coins);
+      Logger.print("_lelantus_coins at refresh: $_lelantus_coins");
       GlobalEventBus.instance.fire(RefreshPercentChangedEvent(0.70));
 
       await _refreshLelantusData();
