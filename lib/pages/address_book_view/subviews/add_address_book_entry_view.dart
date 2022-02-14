@@ -1,7 +1,7 @@
+import 'package:barcode_scan2/platform_wrapper.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_svg/svg.dart';
-import 'package:majascan/majascan.dart';
 import 'package:paymint/notifications/campfire_alert.dart';
 import 'package:paymint/services/address_book_service.dart';
 import 'package:paymint/services/coins/manager.dart';
@@ -212,18 +212,10 @@ class _AddAddressBookEntryViewState extends State<AddAddressBookEntryView> {
                             ),
                             GestureDetector(
                               onTap: () async {
-                                String qrResult = await MajaScan.startScan(
-                                  title: "Scan address QR Code",
-                                  barColor: CFColors.white,
-                                  titleColor: CFColors.dusk,
-                                  qRCornerColor: CFColors.spark,
-                                  qRScannerColor: CFColors.midnight,
-                                  flashlightEnable: true,
-                                  scanAreaScale: 0.7,
-                                );
+                                final qrResult = await BarcodeScanner.scan();
 
-                                final results =
-                                    AddressUtils.parseFiroUri(qrResult);
+                                final results = AddressUtils.parseFiroUri(
+                                    qrResult.rawContent);
                                 if (results.isNotEmpty) {
                                   addressTextController.text =
                                       results["address"];

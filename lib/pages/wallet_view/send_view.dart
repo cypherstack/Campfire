@@ -1,10 +1,10 @@
+import 'package:barcode_scan2/platform_wrapper.dart';
 import 'package:decimal/decimal.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_spinkit/flutter_spinkit.dart';
 import 'package:flutter_svg/svg.dart';
 import 'package:google_fonts/google_fonts.dart';
-import 'package:majascan/majascan.dart';
 import 'package:paymint/notifications/campfire_alert.dart';
 import 'package:paymint/pages/wallet_view/confirm_send_view.dart';
 import 'package:paymint/services/coins/manager.dart';
@@ -464,17 +464,9 @@ class _SendViewState extends State<SendView> {
                 ),
                 GestureDetector(
                   onTap: () async {
-                    print("read qr code icon button tapped");
-                    String qrResult = await MajaScan.startScan(
-                      title: "Scan address QR Code",
-                      barColor: CFColors.white,
-                      titleColor: CFColors.dusk,
-                      qRCornerColor: CFColors.spark,
-                      qRScannerColor: CFColors.midnight,
-                      flashlightEnable: true,
-                      scanAreaScale: 0.7,
-                    );
-                    final results = AddressUtils.parseFiroUri(qrResult);
+                    final qrResult = await BarcodeScanner.scan();
+                    final results =
+                        AddressUtils.parseFiroUri(qrResult.rawContent);
                     if (results.isNotEmpty) {
                       // auto fill address
                       _recipientAddressTextController.text = results["address"];

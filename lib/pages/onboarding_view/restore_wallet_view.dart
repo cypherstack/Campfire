@@ -2,6 +2,7 @@ import 'dart:async';
 import 'dart:collection';
 import 'dart:math';
 
+import 'package:barcode_scan2/platform_wrapper.dart';
 import 'package:bip39/bip39.dart' as bip39;
 import 'package:bip39/src/wordlists/english.dart' as bip39wordlist;
 import 'package:flutter/cupertino.dart';
@@ -10,7 +11,6 @@ import 'package:flutter/services.dart';
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 import 'package:flutter_svg/flutter_svg.dart';
 import 'package:google_fonts/google_fonts.dart';
-import 'package:majascan/majascan.dart';
 import 'package:paymint/notifications/campfire_alert.dart';
 import 'package:paymint/notifications/modal_popup_dialog.dart';
 import 'package:paymint/pages/onboarding_view/onboarding_view.dart';
@@ -222,18 +222,9 @@ class _RestoreWalletFormViewState extends State<RestoreWalletFormView> {
                         height: 48,
                         child: SimpleButton(
                           onTap: () async {
-                            String qrResult = await MajaScan.startScan(
-                              title: "Scan backup key QR Code",
-                              barColor: CFColors.white,
-                              titleColor: CFColors.dusk,
-                              qRCornerColor: CFColors.spark,
-                              qRScannerColor: CFColors.midnight,
-                              flashlightEnable: true,
-                              scanAreaScale: 0.7,
-                            );
-                            print("QR scanned: $qrResult");
-                            final results =
-                                AddressUtils.decodeQRSeedData(qrResult);
+                            final qrResult = await BarcodeScanner.scan();
+                            final results = AddressUtils.decodeQRSeedData(
+                                qrResult.rawContent);
 
                             if (results["mnemonic"] != null) {
                               final list = (results["mnemonic"] as List)
