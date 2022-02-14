@@ -1,16 +1,20 @@
 import 'package:decimal/decimal.dart';
 import 'package:paymint/services/globals.dart';
+import 'package:paymint/utilities/misc_global_constants.dart';
 
 class Utilities {
-  static double satoshisToAmount(int sats) =>
-      double.parse((sats / 100000000.0).toStringAsFixed(8));
+  static Decimal satoshisToAmount(int sats) =>
+      (Decimal.fromInt(sats) / Decimal.fromInt(CampfireConstants.satsPerCoin))
+          .toDecimal(scaleOnInfinitePrecision: CampfireConstants.decimalPlaces);
 
   static String amountToPrettyString(double amount) =>
       "${Decimal.parse(amount.toString())}";
 
   ///
-  static String satoshiAmountToPrettyString(int sats) =>
-      "${Decimal.parse(satoshisToAmount(sats).toString())}";
+  static String satoshiAmountToPrettyString(int sats) {
+    final amount = satoshisToAmount(sats);
+    return amount.toStringAsFixed(CampfireConstants.decimalPlaces);
+  }
 
   // format date string from unix timestamp
   static String extractDateFrom(int timestamp) {

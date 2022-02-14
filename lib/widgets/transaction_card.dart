@@ -24,7 +24,7 @@ class TransactionCard extends StatelessWidget {
   final String txType;
   final String date;
   final String amount;
-  final dynamic fiatValue;
+  final String fiatValue;
 
   final Transaction transaction;
 
@@ -196,54 +196,31 @@ class TransactionCard extends StatelessWidget {
                           SizedBox(
                             width: 10,
                           ),
-                          if (fiatValue is String)
-                            Flexible(
-                              child: FittedBox(
-                                fit: BoxFit.scaleDown,
-                                child: Text(
-                                  fiatValue,
-                                  style: GoogleFonts.workSans(
-                                    color: CFColors.twilight,
-                                    fontSize: 16,
-                                    fontWeight: FontWeight.w500,
-                                  ),
-                                ),
+                          Flexible(
+                            child: FittedBox(
+                              fit: BoxFit.scaleDown,
+                              child: FutureBuilder(
+                                future:
+                                    CurrencyUtilities.fetchPreferredCurrency(),
+                                builder:
+                                    (context, AsyncSnapshot<String> snapshot) {
+                                  String symbol = "";
+                                  if (snapshot.connectionState ==
+                                      ConnectionState.done) {
+                                    symbol = currencyMap[snapshot.data];
+                                  }
+                                  return Text(
+                                    symbol + fiatValue,
+                                    style: GoogleFonts.workSans(
+                                      color: CFColors.twilight,
+                                      fontSize: 16,
+                                      fontWeight: FontWeight.w500,
+                                    ),
+                                  );
+                                },
                               ),
                             ),
-                          if (fiatValue is double)
-                            Flexible(
-                              child: FittedBox(
-                                fit: BoxFit.scaleDown,
-                                child: FutureBuilder(
-                                  future: CurrencyUtilities
-                                      .fetchPreferredCurrency(),
-                                  builder: (context,
-                                      AsyncSnapshot<String> snapshot) {
-                                    String value = fiatValue.toStringAsFixed(2);
-                                    if (snapshot.connectionState ==
-                                        ConnectionState.done) {
-                                      return Text(
-                                        currencyMap[snapshot.data] + value,
-                                        style: GoogleFonts.workSans(
-                                          color: CFColors.twilight,
-                                          fontSize: 16,
-                                          fontWeight: FontWeight.w500,
-                                        ),
-                                      );
-                                    } else {
-                                      return Text(
-                                        value,
-                                        style: GoogleFonts.workSans(
-                                          color: CFColors.twilight,
-                                          fontSize: 16,
-                                          fontWeight: FontWeight.w500,
-                                        ),
-                                      );
-                                    }
-                                  },
-                                ),
-                              ),
-                            ),
+                          ),
                         ],
                       ),
                     ],

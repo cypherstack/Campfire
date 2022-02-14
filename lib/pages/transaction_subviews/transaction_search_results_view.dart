@@ -275,7 +275,7 @@ class TransactionSearchResultsView extends StatelessWidget {
               txType: results[index].txType,
               date: Utilities.extractDateFrom(results[index].timestamp),
               amount:
-                  "${Utilities.satoshisToAmount(results[index].amount)} ${CurrencyUtilities.coinName}",
+                  "${Utilities.satoshiAmountToPrettyString(results[index].amount)} ${CurrencyUtilities.coinName}",
               fiatValue: results[index].worthNow,
             ),
           );

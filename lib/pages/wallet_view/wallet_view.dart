@@ -340,7 +340,7 @@ Widget _buildTransactionList(BuildContext context, List<Transaction> txList) {
             txType: txList[index].txType,
             date: Utilities.extractDateFrom(txList[index].timestamp),
             amount:
-                "${Utilities.satoshisToAmount(txList[index].amount)} ${CurrencyUtilities.coinName}",
+                "${Utilities.satoshiAmountToPrettyString(txList[index].amount)} ${CurrencyUtilities.coinName}",
             fiatValue: txList[index].worthNow,
           ),
         );

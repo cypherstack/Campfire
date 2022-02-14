@@ -29,6 +29,7 @@ import 'package:paymint/services/node_service.dart';
 import 'package:paymint/utilities/currency_utils.dart';
 import 'package:paymint/utilities/logger.dart';
 import 'package:paymint/utilities/misc_global_constants.dart';
+import 'package:paymint/utilities/shared_utilities.dart';
 import 'package:uuid/uuid.dart';
 
 import '../globals.dart';
@@ -604,10 +605,7 @@ isolateCreateJoinSplitTransaction(
     "txHex": txHex,
     "value": amount,
     // TODO: check if cast toDouble is required
-    "fees": (Decimal.fromInt(fee) /
-            Decimal.fromInt(CampfireConstants.satsPerCoin))
-        .toDecimal(scaleOnInfinitePrecision: CampfireConstants.decimalPlaces)
-        .toDouble(),
+    "fees": Utilities.satoshisToAmount(fee).toDouble(),
     "jmintValue": changeToMint,
     "publicCoin": "jmintData.publicCoin",
     "spendCoinIndexes": spendCoinIndexes,
@@ -615,10 +613,7 @@ isolateCreateJoinSplitTransaction(
     "txType": "Sent",
     "confirmed_status": false,
     // TODO: check if cast toDouble is required
-    "amount": (Decimal.fromInt(amount) /
-            Decimal.fromInt(CampfireConstants.satsPerCoin))
-        .toDecimal(scaleOnInfinitePrecision: CampfireConstants.decimalPlaces)
-        .toDouble(),
+    "amount": Utilities.satoshisToAmount(fee).toDouble(),
     "worthNow": ((Decimal.fromInt(amount) * price) /
             Decimal.fromInt(CampfireConstants.satsPerCoin))
         .toDecimal(scaleOnInfinitePrecision: 2)
@@ -767,11 +762,7 @@ class Firo extends CoinServiceAPI {
   Future<Decimal> get balanceMinusMaxFee async {
     final balances = await this.balances;
     final maxFee = await this.maxFee;
-    return balances[0] -
-        (Decimal.fromInt(maxFee.fee) /
-                Decimal.fromInt(CampfireConstants.satsPerCoin))
-            .toDecimal(
-                scaleOnInfinitePrecision: CampfireConstants.decimalPlaces);
+    return balances[0] - Utilities.satoshisToAmount(maxFee.fee);
   }
 
   @override
@@ -1154,7 +1145,7 @@ class Firo extends CoinServiceAPI {
       final Decimal price = await bitcoinPrice;
       final data = await _txnData;
       List jindexes = await wallet.get('jindex');
-      Decimal lelantusBalance = Decimal.zero;
+      int intLelantusBalance = 0;
       Decimal unconfirmedLelantusBalance = Decimal.zero;
       if (_lelantus_coins != null && data != null) {
         _lelantus_coins.forEach((key, value) {
@@ -1163,7 +1154,7 @@ class Firo extends CoinServiceAPI {
             // This coin is not confirmed and may be replaced
           } else if (!value.isUsed &&
               (tx == null ? true : tx.confirmedStatus != false)) {
-            lelantusBalance += Decimal.fromInt(value.value);
+            intLelantusBalance += value.value;
           }
           // else if (tx != null && tx.confirmedStatus == false) {
           //   unconfirmedLelantusBalance += value.value / 100000000;
@@ -1171,16 +1162,11 @@ class Firo extends CoinServiceAPI {
         });
       }
       final int utxosIntValue = utxos == null ? 0 : utxos.satoshiBalance;
-
-      final Decimal utxosValue = (Decimal.fromInt(utxosIntValue) /
-              Decimal.fromInt(CampfireConstants.satsPerCoin))
-          .toDecimal(scaleOnInfinitePrecision: CampfireConstants.decimalPlaces);
+      final Decimal utxosValue = Utilities.satoshisToAmount(utxosIntValue);
 
       List<Decimal> balances = List.empty(growable: true);
 
-      lelantusBalance = (lelantusBalance /
-              Decimal.fromInt(CampfireConstants.satsPerCoin))
-          .toDecimal(scaleOnInfinitePrecision: CampfireConstants.decimalPlaces);
+      Decimal lelantusBalance = Utilities.satoshisToAmount(intLelantusBalance);
 
       balances.add(lelantusBalance);
 
@@ -1431,18 +1417,12 @@ class Firo extends CoinServiceAPI {
       "txid": txId,
       "txHex": txHex,
       "value": amount - fee,
-      "fees": (Decimal.fromInt(fee) /
-              Decimal.fromInt(CampfireConstants.satsPerCoin))
-          .toDecimal(scaleOnInfinitePrecision: CampfireConstants.decimalPlaces)
-          .toDouble(),
+      "fees": Utilities.satoshisToAmount(fee).toDouble(),
       "publicCoin": "",
       "height": height,
       "txType": "Sent",
       "confirmed_status": false,
-      "amount": (Decimal.fromInt(amount) /
-              Decimal.fromInt(CampfireConstants.satsPerCoin))
-          .toDecimal(scaleOnInfinitePrecision: CampfireConstants.decimalPlaces)
-          .toDouble(),
+      "amount": Utilities.satoshisToAmount(amount).toDouble(),
       "worthNow": ((Decimal.fromInt(amount) * price) /
               Decimal.fromInt(CampfireConstants.satsPerCoin))
           .toDecimal(scaleOnInfinitePrecision: 2)
@@ -1655,10 +1635,7 @@ class Firo extends CoinServiceAPI {
       final client = ElectrumX(server: node.address, port: node.port);
       final result = await client.getFeeRate();
 
-      final String fee = (Decimal.fromInt(result["rate"]) /
-              Decimal.fromInt(CampfireConstants.satsPerCoin))
-          .toDecimal(scaleOnInfinitePrecision: CampfireConstants.decimalPlaces)
-          .toStringAsFixed(CampfireConstants.decimalPlaces);
+      final String fee = Utilities.satoshiAmountToPrettyString(result["rate"]);
 
       final fees = {
         "fast": fee,
