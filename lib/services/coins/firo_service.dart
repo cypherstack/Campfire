@@ -1,4 +1,3 @@
-import 'dart:convert';
 import 'dart:developer';
 import 'dart:isolate';
 import 'dart:typed_data';
@@ -10,7 +9,6 @@ import 'package:firo_flutter/firo_flutter.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 import 'package:hive/hive.dart';
-import 'package:http/http.dart' as http;
 import 'package:lelantus/lelantus.dart';
 import 'package:paymint/electrumx_rpc/cached_electrumx.dart';
 import 'package:paymint/electrumx_rpc/electrumx.dart';
@@ -26,6 +24,7 @@ import 'package:paymint/services/event_bus/events/nodes_changed_event.dart';
 import 'package:paymint/services/event_bus/events/refresh_percent_changed_event.dart';
 import 'package:paymint/services/event_bus/global_event_bus.dart';
 import 'package:paymint/services/node_service.dart';
+import 'package:paymint/services/price.dart';
 import 'package:paymint/utilities/currency_utils.dart';
 import 'package:paymint/utilities/logger.dart';
 import 'package:paymint/utilities/misc_global_constants.dart';
@@ -371,7 +370,8 @@ Future<List<models.Transaction>> getJMintTransactions(
   String coinName,
 ) async {
   try {
-    final currentPrice = await _getFiroPrice(baseCurrency: currency);
+    final currentPrice = await PriceAPI.getPrice(
+        ticker: coinName.toUpperCase(), baseCurrency: currency);
 
     List<models.Transaction> txs = [];
 
@@ -675,42 +675,6 @@ Future<int> getBlockHead(Node node) async {
 }
 // end of isolates
 
-Future<Decimal> _getFiroPrice({String baseCurrency}) async {
-  try {
-    String currency =
-        baseCurrency ?? await CurrencyUtilities.fetchPreferredCurrency();
-    currency = currency.toLowerCase();
-
-    final binanceResponse = await http.get(
-      Uri.parse("https://api.binance.com/api/v3/ticker/price?symbol=FIROBTC"),
-      headers: {'Content-Type': 'application/json'},
-    );
-
-    final coinGeckoResponse = await http.get(
-      Uri.parse(
-          "https://api.coingecko.com/api/v3/simple/price?ids=bitcoin&vs_currencies=$currency"),
-      headers: {'Content-Type': 'application/json'},
-    );
-
-    final binanceData = json.decode(binanceResponse.body);
-    final Decimal firoBtcPrice = Decimal.tryParse(binanceData["price"]);
-
-    final coinGeckoData = json.decode(coinGeckoResponse.body);
-    final Decimal btcUsdPrice =
-        Decimal.tryParse(coinGeckoData["bitcoin"][currency].toString());
-
-    if (btcUsdPrice != null && firoBtcPrice != null) {
-      return firoBtcPrice * btcUsdPrice;
-    } else {
-      Logger.print("Firo price API call(s) failed.");
-      return Decimal.fromInt(-1);
-    }
-  } catch (e) {
-    Logger.print("Exception caught in _getFiroPrice(): $e");
-    return Decimal.fromInt(-1);
-  }
-}
-
 /// Handles a single instance of a firo wallet
 class Firo extends CoinServiceAPI {
   @override
@@ -801,7 +765,11 @@ class Firo extends CoinServiceAPI {
 
   // Hold the current price of Bitcoin in the currency specified in parameter below
   Future<Decimal> _bitcoinPrice;
-  Future<Decimal> get bitcoinPrice => _bitcoinPrice ??= _getFiroPrice();
+  Future<Decimal> get bitcoinPrice => _bitcoinPrice ??= Future(() async {
+        final String baseCurrency = await currency;
+        return PriceAPI.getPrice(
+            ticker: coinTicker, baseCurrency: baseCurrency);
+      });
 
   // currently isn't used but required due to abstract parent class
   Future<FeeObject> _feeObject;
@@ -992,7 +960,9 @@ class Firo extends CoinServiceAPI {
       final TransactionData newTxData = await _fetchTransactionData();
       GlobalEventBus.instance.fire(RefreshPercentChangedEvent(0.2));
 
-      final dynamic newBtcPrice = await _getFiroPrice();
+      final baseCurrency = await currency;
+      final dynamic newBtcPrice = await PriceAPI.getPrice(
+          ticker: coinTicker, baseCurrency: baseCurrency);
       Logger.print("Refreshed price: $newBtcPrice");
       GlobalEventBus.instance.fire(RefreshPercentChangedEvent(0.25));
 
@@ -1811,7 +1781,8 @@ class Firo extends CoinServiceAPI {
     log("allTransactions length: ${allTransactions.length}");
 
     // sort thing stuff
-    final currentPrice = await _getFiroPrice(baseCurrency: currency);
+    final currentPrice =
+        await PriceAPI.getPrice(ticker: coinTicker, baseCurrency: currency);
     final List<Map<String, dynamic>> midSortedArray = [];
 
     for (final txObject in allTransactions) {
@@ -2061,7 +2032,8 @@ class Firo extends CoinServiceAPI {
         }
       }
 
-      Decimal currentPrice = await _getFiroPrice(baseCurrency: currency);
+      Decimal currentPrice =
+          await PriceAPI.getPrice(ticker: coinTicker, baseCurrency: currency);
       final List<Map<String, dynamic>> outputArray = [];
       int satoshiBalance = 0;
 
