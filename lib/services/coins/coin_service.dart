@@ -3,6 +3,14 @@ import 'package:flutter/material.dart';
 import 'package:paymint/models/models.dart';
 
 abstract class CoinServiceAPI {
+  String get coinName {
+    throw Exception("This getter \"coinName\" musty be overridden!");
+  }
+
+  String get coinTicker {
+    throw Exception("This getter \"coinTicker\" musty be overridden!");
+  }
+
   /// create and submit tx to network
   ///
   /// Returns the txid of the sent tx

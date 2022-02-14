@@ -714,6 +714,12 @@ Future<Decimal> _getFiroPrice({String baseCurrency}) async {
 /// Handles a single instance of a firo wallet
 class Firo extends CoinServiceAPI {
   @override
+  String get coinName => "Firo";
+
+  @override
+  String get coinTicker => "FIRO";
+
+  @override
   Future<List<String>> get mnemonic => getMnemonicList();
 
   @override

@@ -6,6 +6,9 @@ import 'package:paymint/services/coins/coin_service.dart';
 class Manager with ChangeNotifier {
   CoinServiceAPI currentWallet;
 
+  String get coinName => currentWallet.coinName;
+  String get coinTicker => currentWallet.coinTicker;
+
   /// create and submit tx to network
   ///
   /// Returns the txid of the sent tx
