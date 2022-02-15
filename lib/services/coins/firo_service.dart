@@ -10,6 +10,7 @@ import 'package:flutter/cupertino.dart';
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 import 'package:hive/hive.dart';
 import 'package:lelantus/lelantus.dart';
+import 'package:path_provider/path_provider.dart';
 import 'package:paymint/electrumx_rpc/cached_electrumx.dart';
 import 'package:paymint/electrumx_rpc/electrumx.dart';
 import 'package:paymint/models/fee_object_model.dart';
@@ -117,10 +118,11 @@ Future<void> executeNative(arguments) async {
       TransactionData transactionData = arguments['transactionData'];
       String currency = arguments['currency'];
       String coinName = arguments['coinName'];
+      final String hivePath = arguments['hivePath'];
 
       if (!(mnemonic == null || transactionData == null || node == null)) {
         var restoreData = await isolateRestore(
-            node, mnemonic, transactionData, currency, coinName);
+            node, mnemonic, transactionData, currency, coinName, hivePath);
         sendPort.send(restoreData);
         return;
       }
@@ -142,7 +144,7 @@ void stop() {
 }
 
 isolateRestore(Node node, String mnemonic, TransactionData data,
-    String currency, String coinName) async {
+    String currency, String coinName, String hivePath) async {
   List<int> jindexes = [];
   Map<dynamic, LelantusCoin> _lelantus_coins = Map();
   final setDataMap = Map();
@@ -318,8 +320,8 @@ isolateRestore(Node node, String mnemonic, TransactionData data,
   });
 
   // Create the joinsplit transactions.
-  final spendTxs =
-      await getJMintTransactions(node, spendTxIds, currency, coinName);
+  final spendTxs = await getJMintTransactions(
+      node, spendTxIds, currency, coinName, hivePath);
   print(spendTxs);
   spendTxs.forEach((element) {
     transactionMap[element.txid] = element;
@@ -363,11 +365,13 @@ Future<dynamic> getUsedCoinSerials(Node node) async {
   }
 }
 
+/// set hivePath to null unless calling this function in an isolate
 Future<List<models.Transaction>> getJMintTransactions(
   Node node,
   List transactions,
   String currency,
   String coinName,
+  String hivePath,
 ) async {
   try {
     final currentPrice = await PriceAPI.getPrice(
@@ -375,7 +379,8 @@ Future<List<models.Transaction>> getJMintTransactions(
 
     List<models.Transaction> txs = [];
 
-    final cachedClient = CachedElectrumX(server: node.address, port: node.port);
+    final cachedClient = CachedElectrumX(
+        server: node.address, port: node.port, hivePath: hivePath);
 
     for (int i = 0; i < transactions.length; i++) {
       try {
@@ -1433,7 +1438,7 @@ class Firo extends CoinServiceAPI {
     final String currency = await CurrencyUtilities.fetchPreferredCurrency();
     // Grab the most recent information on all the joinsplits
     final updatedJSplit = await getJMintTransactions(
-        await currentNode, joinsplits, currency, this.coinName);
+        await currentNode, joinsplits, currency, this.coinName, null);
 
     // update all of joinsplits that are now confirmed.
     for (final tx in updatedJSplit) {
@@ -2376,6 +2381,7 @@ class Firo extends CoinServiceAPI {
     TransactionData data = await _txnData;
     Node node = await currentNode;
     final String currency = await CurrencyUtilities.fetchPreferredCurrency();
+    final appDir = await getApplicationDocumentsDirectory();
 
     ReceivePort receivePort = await getIsolate({
       "function": "restore",
@@ -2384,6 +2390,7 @@ class Firo extends CoinServiceAPI {
       "transactionData": data,
       "currency": currency,
       "coinName": this.coinName,
+      "hivePath": appDir.path,
     });
 
     var message = await receivePort.first;
