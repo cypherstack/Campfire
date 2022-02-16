@@ -238,10 +238,22 @@ class ElectrumX {
     }
   }
 
-  //TODO complete (and add example to) docs below
   /// Returns the whole anonymity set for denomination in the groupId.
   ///
-  Future<dynamic> getAnonymitySet({String groupId, String blockhash}) async {
+  /// ex:
+  ///  {
+  ///     "blockHash": "37effb57352693f4efcb1710bf68e3a0d79ff6b8f1605529de3e0706d9ca21da",
+  ///     "setHash": "aae1a64f19f5ccce1c242dfe331d8db2883a9508d998efa3def8a64844170fe4",
+  ///     "serializedCoins": [
+  ///         "1a0d9a5aa8ec83771ead4271d90b6bac2b99879a6233c4d7700eafcd312e5a020100",
+  ///         "47c3a2c837fa67a10b6d32d1f92e42c19b6bb88fa65034f778307bfc0305f12d0000",
+  ///         ...
+  ///         "7a9e57560d4abc384a48bf850a12df94e83d33496bb456aad26e7317921845330000",
+  ///         "a7a8ddf79fdaf6846c0c19eb00ba7a95713a1a62df91761cb74b122606385fb80000"
+  ///      ]
+  ///   }
+  Future<Map<String, dynamic>> getAnonymitySet(
+      {String groupId, String blockhash}) async {
     try {
       final response = await request(
         command: 'sigma.getanonymityset',
@@ -256,7 +268,7 @@ class ElectrumX {
     }
   }
 
-  //TODO complete (and add example to) docs below
+  //TODO add example to docs
   ///
   ///
   /// Returns the block height and groupId of pubcoin.
@@ -274,9 +286,7 @@ class ElectrumX {
     }
   }
 
-  //TODO complete (and add example to) docs below
-  ///
-  ///
+  //TODO add example to docs
   /// Returns the whole set of the used coin serials.
   Future<dynamic> getUsedCoinSerials() async {
     try {
@@ -290,9 +300,9 @@ class ElectrumX {
     }
   }
 
-  //TODO complete (and add example to) docs below. I have no idea what this does as the comments on the python code I'm deriving this from are inaccurate...
+  /// Returns the latest set id
   ///
-  ///
+  /// ex: 1
   Future<int> getLatestCoinId() async {
     try {
       final response = await request(
@@ -305,7 +315,7 @@ class ElectrumX {
     }
   }
 
-  //TODO complete (and add example to) docs below
+  //TODO add example to docs
   ///
   ///
   /// Returns getcoinsforrecovery

@@ -79,6 +79,7 @@ Future<void> executeNative(arguments) async {
       int index = arguments['index'];
       Decimal price = arguments['price'];
       List<DartLelantusEntry> lelantusEntries = arguments['lelantusEntries'];
+      final String hivePath = arguments['hivePath'];
       if (!(spendAmount == null ||
           address == null ||
           subtractFeeFromAmount == null ||
@@ -86,7 +87,8 @@ Future<void> executeNative(arguments) async {
           index == null ||
           price == null ||
           lelantusEntries == null ||
-          node == null)) {
+          node == null ||
+          hivePath == null)) {
         var joinSplit = await isolateCreateJoinSplitTransaction(
             spendAmount,
             address,
@@ -95,7 +97,8 @@ Future<void> executeNative(arguments) async {
             index,
             price,
             lelantusEntries,
-            node);
+            node,
+            hivePath);
         sendPort.send(joinSplit);
         return;
       }
@@ -120,7 +123,10 @@ Future<void> executeNative(arguments) async {
       String coinName = arguments['coinName'];
       final String hivePath = arguments['hivePath'];
 
-      if (!(mnemonic == null || transactionData == null || node == null)) {
+      if (!(mnemonic == null ||
+          transactionData == null ||
+          node == null ||
+          hivePath == null)) {
         var restoreData = await isolateRestore(
             node, mnemonic, transactionData, currency, coinName, hivePath);
         sendPort.send(restoreData);
@@ -478,8 +484,9 @@ isolateCreateJoinSplitTransaction(
   dynamic price,
   List<DartLelantusEntry> lelantusEntries,
   Node node,
+  String hivePath,
 ) async {
-  final getanonymityset = await getAnonymitySet(node);
+  final getanonymityset = await getAnonymitySet(node, hivePath);
 
   final estimateJoinSplitFee = await isolateEstimateJoinSplitFee(
       spendAmount, subtractFeeFromAmount, lelantusEntries, node);
@@ -655,10 +662,11 @@ Future<bip32.BIP32> _getNode(int chain, int index, String mnemonic) async {
   return node;
 }
 
-Future<dynamic> getAnonymitySet(Node node) async {
+Future<dynamic> getAnonymitySet(Node node, String hivePath) async {
   try {
-    final client = ElectrumX(server: node.address, port: node.port);
-    var tod = await client.getAnonymitySet();
+    final cachedClient = CachedElectrumX(
+        server: node.address, port: node.port, hivePath: hivePath);
+    var tod = await cachedClient.getAnonymitySet();
     tod['serializedCoins'] = tod['serializedCoins'].cast<String>();
 
     return tod;
@@ -2436,6 +2444,8 @@ class Firo extends CoinServiceAPI {
     final index = await wallet.get('mintIndex');
     var lelantusEntry = await _getLelantusEntry();
 
+    final appDir = await getApplicationDocumentsDirectory();
+
     ReceivePort receivePort = await getIsolate({
       "function": "createJoinSplit",
       "spendAmount": spendAmount,
@@ -2446,6 +2456,7 @@ class Firo extends CoinServiceAPI {
       "price": price,
       "lelantusEntries": lelantusEntry,
       "node": node,
+      "hivePath": appDir.path,
     });
     var message = await receivePort.first;
     if (message is String) {

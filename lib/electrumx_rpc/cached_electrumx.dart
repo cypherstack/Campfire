@@ -15,6 +15,55 @@ class CachedElectrumX {
     _client = ElectrumX(server: server, port: port);
   }
 
+  Future<Map<String, dynamic>> getAnonymitySet(
+      {String groupId, String coinName}) async {
+    try {
+      // hive must be initialized when this function is called outside of flutter
+      // such as within an isolate
+      if (_hivePath != null) {
+        Hive.init(_hivePath);
+      }
+      final box = await Hive.openBox('${coinName}_anonymitySetCache');
+      final cachedSet = await box.get(groupId);
+
+      Map<String, dynamic> set;
+
+      // null check to see if there is a cached set
+      if (cachedSet == null) {
+        set = {
+          "setId": groupId,
+          "blockHash": "",
+          "setHash": "",
+          "serializedCoins": <String>[],
+        };
+      } else {
+        set = Map<String, dynamic>.from(cachedSet);
+      }
+
+      final newSet = await _client.getAnonymitySet(
+        groupId: groupId,
+        blockhash: set["blockHash"],
+      );
+
+      // update set with new data
+      if (newSet["setHash"] != "" && set["setHash"] != newSet["setHash"]) {
+        set["setHash"] = newSet["setHash"];
+        set["blockHash"] = newSet["blockHash"];
+        for (int i = newSet["serializedCoins"].length - 1; i >= 0; i--) {
+          set["serializedCoins"].insert(0, newSet["serializedCoins"][i]);
+        }
+        // save set to db
+        await box.put(groupId, set);
+        log("Updated currently anonymity set for $coinName with group ID $groupId");
+      }
+
+      return set;
+    } catch (e) {
+      Logger.print("Failed to process CachedElectrumX.getAnonymitySet(): $e");
+      throw e;
+    }
+  }
+
   /// Call electrumx getTransaction on a per coin basis, storing the result in local db if not already there.
   ///
   /// ElectrumX api only called if the tx does not exist in local db
@@ -25,6 +74,8 @@ class CachedElectrumX {
     }
 
     try {
+      // hive must be initialized when this function is called outside of flutter
+      // such as within an isolate
       if (_hivePath != null) {
         Hive.init(_hivePath);
       }
