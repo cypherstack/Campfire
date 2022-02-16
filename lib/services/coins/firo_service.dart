@@ -1019,10 +1019,11 @@ class Firo extends CoinServiceAPI {
 
       GlobalEventBus.instance
           .fire(NodeConnectionStatusChangedEvent(NodeConnectionStatus.synced));
-    } catch (error) {
+    } catch (error, strace) {
       GlobalEventBus.instance.fire(
           NodeConnectionStatusChangedEvent(NodeConnectionStatus.disconnected));
       Logger.print("Caught exception in refreshWalletData(): $error");
+      log(strace.toString());
     }
   }
 
@@ -1957,7 +1958,6 @@ class Firo extends CoinServiceAPI {
       midSortedTx["outputs"] = txObject["vout"];
 
       midSortedArray.add(midSortedTx);
-      log("midSortedTx: $midSortedTx");
     }
 
     // sort by date  ----  //TODO not sure if needed
@@ -1978,7 +1978,7 @@ class Firo extends CoinServiceAPI {
     });
 
     // buildDateTimeChunks
-    final result = {"dateTimeChunks": <dynamic>[]};
+    final Map<String, dynamic> result = {"dateTimeChunks": <dynamic>[]};
     final dateArray = <dynamic>[];
 
     for (int i = 0; i < midSortedArray.length; i++) {

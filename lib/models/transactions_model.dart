@@ -166,10 +166,12 @@ class Transaction {
     var inputArray = json['inputs'] as List;
     var outputArray = json['outputs'] as List;
 
-    List<Input> inputList =
-        inputArray.map((input) => Input.fromJson(input)).toList();
-    List<Output> outputList =
-        outputArray.map((output) => Output.fromJson(output)).toList();
+    List<Input> inputList = inputArray
+        .map((input) => Input.fromJson(Map<String, dynamic>.from(input)))
+        .toList();
+    List<Output> outputList = outputArray
+        .map((output) => Output.fromJson(Map<String, dynamic>.from(output)))
+        .toList();
 
     return Transaction(
         txid: json['txid'],
