@@ -117,6 +117,9 @@ Future<void> executeNative(arguments) async {
         return;
       }
     } else if (function == "restore") {
+      int latestSetId = arguments['latestSetId'];
+      Map setDataMap = arguments['setDataMap'];
+      dynamic usedSerialNumbers = arguments['usedSerialNumbers'];
       String mnemonic = arguments['mnemonic'];
       TransactionData transactionData = arguments['transactionData'];
       String currency = arguments['currency'];
@@ -126,9 +129,20 @@ Future<void> executeNative(arguments) async {
       if (!(mnemonic == null ||
           transactionData == null ||
           node == null ||
-          hivePath == null)) {
+          hivePath == null ||
+          latestSetId == null ||
+          setDataMap == null ||
+          usedSerialNumbers == null)) {
         var restoreData = await isolateRestore(
-            node, mnemonic, transactionData, currency, coinName, hivePath);
+            node,
+            mnemonic,
+            transactionData,
+            currency,
+            coinName,
+            hivePath,
+            latestSetId,
+            setDataMap,
+            usedSerialNumbers);
         sendPort.send(restoreData);
         return;
       }
@@ -149,24 +163,43 @@ void stop() {
   }
 }
 
-isolateRestore(Node node, String mnemonic, TransactionData data,
-    String currency, String coinName, String hivePath) async {
+isolateRestore(
+    Node node,
+    String mnemonic,
+    TransactionData data,
+    String currency,
+    String coinName,
+    String hivePath,
+    int _latestSetId,
+    Map _setDataMap,
+    dynamic _usedSerialNumbers) async {
   List<int> jindexes = [];
   Map<dynamic, LelantusCoin> _lelantus_coins = Map();
-  final setDataMap = Map();
 
   final spendTxIds = List.empty(growable: true);
   var lastFoundIndex = 0;
   var currentIndex = 0;
 
   try {
-    final latestSetId = await getLatestSetId(node);
-    for (var setId = 1; setId <= latestSetId; setId++) {
-      final setData = await getSetData(node, setId);
-      setDataMap[setId] = setData;
+    Map dataMintMaps = Map();
+    Map dataJMintMaps = Map();
+    for (var setId = 1; setId <= _latestSetId; setId++) {
+      final Map<String, dynamic> setData = _setDataMap[setId];
+      Map<String, dynamic> setDataMints = Map();
+      for (int i = 0; i < setData['mints'].length; i++) {
+        final value = setData['mints'][i];
+        setDataMints[value[1]] = value;
+      }
+      Map<String, dynamic> setDataJMints = Map();
+      for (int i = 0; i < setData['jmints'].length; i++) {
+        final value = setData['jmints'][i];
+        setDataJMints[value[1]] = value;
+      }
+      dataMintMaps[setId] = setDataMints;
+      dataJMintMaps[setId] = setDataJMints;
     }
 
-    final usedSerialNumbers = (await getUsedCoinSerials(node))['serials'];
+    final usedSerialNumbers = _usedSerialNumbers['serials'];
     Set usedSerialNumbersSet = Set();
     for (int ind = 0; ind < usedSerialNumbers.length; ind++) {
       usedSerialNumbersSet.add(usedSerialNumbers[ind]);
@@ -177,18 +210,9 @@ isolateRestore(Node node, String mnemonic, TransactionData data,
       final mintTag = CreateTag(uint8listToString(mintKeyPair.privateKey),
           currentIndex, uint8listToString(mintKeyPair.identifier));
 
-      for (var setId = 1; setId <= latestSetId; setId++) {
-        final Map<String, dynamic> setData = setDataMap[setId];
-        setData.forEach((key, value) {});
-        var foundMint = null;
-        for (int indexMint = 0;
-            indexMint < setData['mints'].length;
-            indexMint++) {
-          if (setData['mints'][indexMint][1] == mintTag) {
-            foundMint = setData['mints'][indexMint];
-            break;
-          }
-        }
+      for (var setId = 1; setId <= _latestSetId; setId++) {
+        var foundMint = dataMintMaps[setId][mintTag];
+
         if (foundMint != null) {
           lastFoundIndex = currentIndex;
           final amount = foundMint[2];
@@ -208,15 +232,7 @@ isolateRestore(Node node, String mnemonic, TransactionData data,
           print(
               "amount ${_lelantus_coins[foundMint[3]].value} used ${_lelantus_coins[foundMint[3]].isUsed}");
         } else {
-          var foundJmint = null;
-          for (int indexJmint = 0;
-              indexJmint < setData['jmints'].length;
-              indexJmint++) {
-            if (setData['jmints'][indexJmint][1] == mintTag) {
-              foundJmint = setData['jmints'][indexJmint];
-              break;
-            }
-          }
+          var foundJmint = dataJMintMaps[setId][mintTag];
           if (foundJmint != null) {
             lastFoundIndex = currentIndex;
 
@@ -967,10 +983,10 @@ class Firo extends CoinServiceAPI {
 
       GlobalEventBus.instance.fire(RefreshPercentChangedEvent(0.0));
 
-      final UtxoData newUtxoData = await _fetchUtxoData();
+      final newUtxoData = _fetchUtxoData();
       GlobalEventBus.instance.fire(RefreshPercentChangedEvent(0.1));
 
-      final TransactionData newTxData = await _fetchTransactionData();
+      final newTxData = _fetchTransactionData();
       GlobalEventBus.instance.fire(RefreshPercentChangedEvent(0.2));
 
       final baseCurrency = await currency;
@@ -2263,6 +2279,29 @@ class Firo extends CoinServiceAPI {
   /// Recovers wallet from [suppliedMnemonic]. Expects a valid mnemonic.
   dynamic recoverWalletFromBIP32SeedPhrase(String suppliedMnemonic) async {
     try {
+      final wallet = await Hive.openBox(this._walletId);
+
+      // initialize default node
+      final nodes = <String, dynamic>{};
+      nodes.addAll({
+        CampfireConstants.defaultNodeName: {
+          "id": Uuid().v1(),
+          "ipAddress": CampfireConstants.defaultIpAddress,
+          "port": CampfireConstants.defaultPort.toString(),
+        }
+      });
+      await wallet.put('nodes', nodes);
+      await wallet.put('activeNodeName', CampfireConstants.defaultNodeName);
+
+      Node node = await currentNode;
+      final setDataMap = Map();
+      final latestSetId = await getLatestSetId(node);
+      for (var setId = 1; setId <= latestSetId; setId++) {
+        final setData = getSetData(node, setId);
+        setDataMap[setId] = setData;
+      }
+      final usedSerialNumbers = getUsedCoinSerials(node);
+
       final String mnemonic = suppliedMnemonic;
       final seed = bip39.mnemonicToSeed(mnemonic);
       final root = bip32.BIP32.fromSeed(seed);
@@ -2279,9 +2318,9 @@ class Firo extends CoinServiceAPI {
 
       // Deriving and checking for receiving addresses
       for (var i = 0; i < 1000; i++) {
-        await Future.delayed(Duration(milliseconds: 650));
         // Break out of loop when receivingGapCounter hits 20
-        if (receivingGapCounter == 20) {
+        // Same gap limit for change as for receiving, breaks when it hits 20
+        if (receivingGapCounter >= 20 && changeGapCounter >= 20) {
           break;
         }
 
@@ -2292,43 +2331,45 @@ class Firo extends CoinServiceAPI {
             .data
             .address;
 
+        final _currentNode = root.derivePath("m/44'/136'/0'/1/$i");
+        final _address = P2PKH(
+                network: firoNetwork,
+                data: new PaymentData(pubkey: _currentNode.publicKey))
+            .data
+            .address;
+        dynamic futureNumTxs = null;
+        dynamic _futureNumTxs = null;
+        if (receivingGapCounter < 20) {
+          futureNumTxs = _getReceivedTxCount(address: address);
+        }
+        if (changeGapCounter < 20) {
+          _futureNumTxs = _getReceivedTxCount(address: _address);
+        }
         try {
-          final int numTxs = await _getReceivedTxCount(address: address);
-          if (numTxs >= 1) {
-            receivingIndex = i;
-            receivingAddressArray.add(address);
-          } else if (numTxs == 0) {
-            receivingGapCounter += 1;
+          if (futureNumTxs != null) {
+            int numTxs = await futureNumTxs;
+            if (numTxs >= 1) {
+              receivingIndex = i;
+              receivingAddressArray.add(address);
+            } else if (numTxs == 0) {
+              receivingGapCounter += 1;
+            }
           }
         } catch (e) {
           Logger.print(
               "Exception rethrown from recoverWalletFromBIP32SeedPhrase(): $e");
           throw e;
         }
-      }
-
-      // Deriving and checking for change addresses
-      for (var i = 0; i < 1000; i++) {
-        await Future.delayed(Duration(milliseconds: 650));
-        // Same gap limit for change as for receiving, breaks when it hits 20
-        if (changeGapCounter == 20) {
-          break;
-        }
-
-        final currentNode = root.derivePath("m/44'/136'/0'/1/$i");
-        final address = P2PKH(
-                network: firoNetwork,
-                data: new PaymentData(pubkey: currentNode.publicKey))
-            .data
-            .address;
 
         try {
-          final int numTxs = await _getReceivedTxCount(address: address);
-          if (numTxs >= 1) {
-            changeIndex = i;
-            changeAddressArray.add(address);
-          } else if (numTxs == 0) {
-            changeGapCounter += 1;
+          if (_futureNumTxs != null) {
+            int numTxs = await _futureNumTxs;
+            if (numTxs >= 1) {
+              changeIndex = i;
+              changeAddressArray.add(_address);
+            } else if (numTxs == 0) {
+              changeGapCounter += 1;
+            }
           }
         } catch (e) {
           Logger.print(
@@ -2353,28 +2394,18 @@ class Firo extends CoinServiceAPI {
         changeAddressArray.add(changeAddress);
       }
 
-      final wallet = await Hive.openBox(this._walletId);
       await wallet.put('receivingAddresses', receivingAddressArray);
       await wallet.put('changeAddresses', changeAddressArray);
       await wallet.put('receivingIndex', receivingIndex);
       await wallet.put('changeIndex', changeIndex);
 
-      // initialize default node
-      final nodes = <String, dynamic>{};
-      nodes.addAll({
-        CampfireConstants.defaultNodeName: {
-          "id": Uuid().v1(),
-          "ipAddress": CampfireConstants.defaultIpAddress,
-          "port": CampfireConstants.defaultPort.toString(),
-        }
-      });
-      await wallet.put('nodes', nodes);
-      await wallet.put('activeNodeName', CampfireConstants.defaultNodeName);
-
       final secureStore = new FlutterSecureStorage();
       await secureStore.write(
           key: '${this._walletId}_mnemonic', value: suppliedMnemonic.trim());
-      await _restore();
+      for (int setId = 1; setId <= latestSetId; setId++) {
+        setDataMap[setId] = await setDataMap[setId];
+      }
+      await _restore(latestSetId, setDataMap, await usedSerialNumbers);
     } catch (e) {
       Logger.print(
           "Exception rethrown from recoverWalletFromBIP32SeedPhrase(): $e");
@@ -2382,7 +2413,7 @@ class Firo extends CoinServiceAPI {
     }
   }
 
-  _restore() async {
+  _restore(int latestSetId, Map setDataMap, dynamic usedSerialNumbers) async {
     final wallet = await Hive.openBox(this._walletId);
     final secureStore = new FlutterSecureStorage();
     final mnemonic = await secureStore.read(key: '${this._walletId}_mnemonic');
@@ -2399,6 +2430,9 @@ class Firo extends CoinServiceAPI {
       "currency": currency,
       "coinName": this.coinName,
       "hivePath": appDir.path,
+      "latestSetId": latestSetId,
+      "setDataMap": setDataMap,
+      "usedSerialNumbers": usedSerialNumbers,
     });
 
     var message = await receivePort.first;
