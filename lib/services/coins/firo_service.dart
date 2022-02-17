@@ -1786,7 +1786,7 @@ class Firo extends CoinServiceAPI {
 
       transactionsMap.addAll(storedTxnData.getAllTransactions());
 
-      final int confirmationBuffer = 10;
+      final int confirmationBuffer = 30;
       for (int i = 0; i < allTxHashes.length; i++) {
         if (allTxHashes[i]['height'] <=
             (storedTxnDataHeight - confirmationBuffer)) {
