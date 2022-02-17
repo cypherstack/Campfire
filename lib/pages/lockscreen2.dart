@@ -6,7 +6,7 @@ import 'package:flutter_svg/flutter_svg.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:hive/hive.dart';
 import 'package:paymint/notifications/overlay_notification.dart';
-import 'package:paymint/services/coins/firo_service.dart';
+import 'package:paymint/services/coins/firo/firo_service.dart';
 import 'package:paymint/services/coins/manager.dart';
 import 'package:paymint/services/wallets_service.dart';
 import 'package:paymint/utilities/biometrics.dart';

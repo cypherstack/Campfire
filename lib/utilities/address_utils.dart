@@ -2,7 +2,7 @@ import 'dart:convert';
 
 import 'package:crypto/crypto.dart';
 import 'package:firo_flutter/firo_flutter.dart';
-import 'package:paymint/services/coins/firo_service.dart';
+import 'package:paymint/services/coins/firo/firo_service.dart';
 
 class AddressUtils {
   static String condenseAddress(String address) {

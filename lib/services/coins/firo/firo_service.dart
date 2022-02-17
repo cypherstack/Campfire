@@ -32,7 +32,7 @@ import 'package:paymint/utilities/misc_global_constants.dart';
 import 'package:paymint/utilities/shared_utilities.dart';
 import 'package:uuid/uuid.dart';
 
-import '../globals.dart';
+import '../../globals.dart';
 
 const JMINT_INDEX = 5;
 const MINT_INDEX = 2;
