@@ -19,7 +19,7 @@ class JsonRPC {
   Duration connectionTimeout;
   Duration aliveTimerDuration;
 
-  Future<dynamic> request(String jsonRpcRequest) async {
+  Future<dynamic> request1(String jsonRpcRequest) async {
     var socket;
     final _data = <int>[];
 
@@ -89,22 +89,34 @@ class JsonRPC {
     }
   }
 
-  Future<String> request2(String jsonRpc) async {
+  Future<dynamic> request(String jsonRpcRequest) async {
     var socket;
-    String jsonString = "";
-    String result;
+    dynamic result;
+    final chunks = <String>[];
+    int openBracketCount = 0;
 
     void dataHandler(data) {
-      jsonString += String.fromCharCodes(data);
-      try {
-        json.decode(jsonString);
-        // json succeeded
-        socket?.destroy();
-        result = jsonString;
-      } on FormatException catch (_) {
-        // continue reading socket
-      } catch (e) {
-        print(e);
+      final jsonString = String.fromCharCodes(data);
+      chunks.add(jsonString);
+      for (int i = 0; i < jsonString.length; i++) {
+        if (jsonString[i] == "{" || jsonString[i] == "[") {
+          openBracketCount += 1;
+        } else if (jsonString[i] == "}" || jsonString[i] == "]") {
+          openBracketCount -= 1;
+        }
+      }
+
+      // complete/valid json so we attempt to parse and return
+      if (openBracketCount == 0) {
+        try {
+          result = json.decode(chunks.join());
+        } catch (e, s) {
+          print(e);
+          print(s);
+          throw e;
+        } finally {
+          socket?.destroy();
+        }
       }
     }
 
@@ -138,7 +150,7 @@ class JsonRPC {
       });
     }
 
-    socket?.write('$jsonRpc\r\n');
+    socket?.write('$jsonRpcRequest\r\n');
 
     // wait for call to complete and return result
     while (result == null) {
@@ -148,22 +160,25 @@ class JsonRPC {
     return result;
   }
 
-  void request1(String jsonRpc, Function(String) callback) async {
+  Future<dynamic> request2(String jsonRpcRequest) async {
     var socket;
+    dynamic result;
     String jsonString = "";
 
     void dataHandler(data) {
       jsonString += String.fromCharCodes(data);
 
       try {
-        json.decode(jsonString);
-        // json succeeded
+        final jsonObject = json.decode(jsonString);
+
         socket?.destroy();
-        callback(jsonString);
-      } on FormatException catch (_) {
-        // continue reading socket
-      } catch (e) {
+        result = jsonObject;
+      } on FormatException catch (e) {
+        // do nothing
+      } catch (e, s) {
         print(e);
+        print(s);
+        throw e;
       }
     }
 
@@ -181,7 +196,7 @@ class JsonRPC {
           onBadCertificate: (_) => true).then((Socket sock) {
         socket = sock;
         socket?.listen(dataHandler,
-            onError: errorHandler, onDone: doneHandler, cancelOnError: false);
+            onError: errorHandler, onDone: doneHandler, cancelOnError: true);
       }).catchError((e) {
         print("Unable to connect: $e");
         socket?.destroy();
@@ -190,13 +205,20 @@ class JsonRPC {
       await Socket.connect(this.address, this.port).then((Socket sock) {
         socket = sock;
         socket?.listen(dataHandler,
-            onError: errorHandler, onDone: doneHandler, cancelOnError: false);
+            onError: errorHandler, onDone: doneHandler, cancelOnError: true);
       }).catchError((e) {
         print("Unable to connect: $e");
         socket?.destroy();
       });
     }
 
-    socket?.write('$jsonRpc\r\n');
+    socket?.write('$jsonRpcRequest\r\n');
+
+    // wait for call to complete and return result
+    while (result == null) {
+      // sleep
+      await Future.delayed(Duration(milliseconds: 100));
+    }
+    return result;
   }
 }
