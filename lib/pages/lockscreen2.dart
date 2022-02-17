@@ -236,8 +236,10 @@ class _Lockscreen2ViewState extends State<Lockscreen2View> {
                   if (widget.routeOnSuccess == "/mainview") {
                     final manager =
                         Provider.of<Manager>(context, listen: false);
-                    manager.currentWallet =
-                        Firo(walletId: id, walletName: walletName);
+                    manager.currentWallet = Firo(
+                        walletId: id,
+                        walletName: walletName,
+                        networkType: FiroNetworkType.main);
                   }
 
                   await Future.delayed(Duration(milliseconds: 600));

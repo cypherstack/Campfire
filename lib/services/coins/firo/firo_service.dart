@@ -47,11 +47,30 @@ final firoNetwork = NetworkType(
     scriptHash: 0x07,
     wif: 0xd2);
 
-final firoNetworkType = bip32.NetworkType(
-    wif: 0xd2, bip32: bip32.Bip32Type(public: 0x0488b21e, private: 0x0488ade4));
+final firoTestNetwork = NetworkType(
+    messagePrefix: '\x18Zcoin Signed Message:\n',
+    bech32: 'bc',
+    bip32: Bip32Type(public: 0x043587cf, private: 0x04358394),
+    pubKeyHash: 0x41,
+    scriptHash: 0xb2,
+    wif: 0xb9);
+
+enum FiroNetworkType { main, test }
 
 /// Handles a single instance of a firo wallet
 class Firo extends CoinServiceAPI {
+  FiroNetworkType _networkType;
+  FiroNetworkType get networkType => _networkType;
+
+  NetworkType get _network {
+    switch (networkType) {
+      case FiroNetworkType.main:
+        return firoNetwork;
+      case FiroNetworkType.test:
+        return firoTestNetwork;
+    }
+  }
+
   @override
   String get coinName => "Firo";
 
@@ -109,7 +128,7 @@ class Firo extends CoinServiceAPI {
 
   @override
   bool validateAddress(String address) {
-    return Address.validateAddress(address, firoNetwork);
+    return Address.validateAddress(address, _network);
   }
 
   /// Holds final balances, all utxos under control
@@ -243,9 +262,13 @@ class Firo extends CoinServiceAPI {
   }
 
   // Constructor
-  Firo({@required String walletId, @required String walletName}) {
+  Firo(
+      {@required String walletId,
+      @required String walletName,
+      @required FiroNetworkType networkType}) {
     this._walletId = walletId;
     this._walletName = walletName;
+    this._networkType = networkType;
 
     // add listener for nodes changed
     GlobalEventBus.instance.on<NodesChangedEvent>().listen((event) async {
@@ -673,6 +696,14 @@ class Firo extends CoinServiceAPI {
     final seed = bip39.mnemonicToSeed(
         await secureStore.read(key: '${this._walletId}_mnemonic'));
 
+    final firoNetworkType = bip32.NetworkType(
+      wif: _network.wif,
+      bip32: bip32.Bip32Type(
+        public: _network.bip32.public,
+        private: _network.bip32.private,
+      ),
+    );
+
     final root = bip32.BIP32.fromSeed(seed, firoNetworkType);
 
     List<ECPair> elipticCurvePairArray = [];
@@ -686,33 +717,33 @@ class Firo extends CoinServiceAPI {
         final nodeChange = root.derivePath("m/44'/136'/0'/1/$i");
 
         if (P2PKH(
-                    network: firoNetwork,
+                    network: _network,
                     data: new PaymentData(pubkey: nodeReceiving.publicKey))
                 .data
                 .address ==
             addressToCheckFor) {
           Logger.print('Receiving found on loop $i');
           elipticCurvePairArray
-              .add(ECPair.fromWIF(nodeReceiving.toWIF(), network: firoNetwork));
+              .add(ECPair.fromWIF(nodeReceiving.toWIF(), network: _network));
           outputDataArray.add(P2PKH(
-                  network: firoNetwork,
+                  network: _network,
                   data: new PaymentData(pubkey: nodeReceiving.publicKey))
               .data
               .output);
           break;
         }
         if (P2PKH(
-                    network: firoNetwork,
+                    network: _network,
                     data: new PaymentData(pubkey: nodeChange.publicKey))
                 .data
                 .address ==
             addressToCheckFor) {
           Logger.print('Change found on loop $i');
           elipticCurvePairArray
-              .add(ECPair.fromWIF(nodeChange.toWIF(), network: firoNetwork));
+              .add(ECPair.fromWIF(nodeChange.toWIF(), network: _network));
 
           outputDataArray.add(P2PKH(
-                  network: firoNetwork,
+                  network: _network,
                   data: new PaymentData(pubkey: nodeChange.publicKey))
               .data
               .output);
@@ -721,7 +752,7 @@ class Firo extends CoinServiceAPI {
       }
     }
 
-    final txb = new TransactionBuilder(network: firoNetwork);
+    final txb = new TransactionBuilder(network: _network);
     txb.setVersion(2);
     int height = await getBlockHead(node);
     txb.setLockTime(height);
@@ -1532,7 +1563,7 @@ class Firo extends CoinServiceAPI {
     final node = root.derivePath("m/44'/136'/0'/$chain/$index");
 
     return P2PKH(
-            network: firoNetwork, data: new PaymentData(pubkey: node.publicKey))
+            network: _network, data: new PaymentData(pubkey: node.publicKey))
         .data
         .address;
   }
@@ -1672,14 +1703,14 @@ class Firo extends CoinServiceAPI {
 
         final currentNode = root.derivePath("m/44'/136'/0'/0/$i");
         final address = P2PKH(
-                network: firoNetwork,
+                network: _network,
                 data: new PaymentData(pubkey: currentNode.publicKey))
             .data
             .address;
 
         final _currentNode = root.derivePath("m/44'/136'/0'/1/$i");
         final _address = P2PKH(
-                network: firoNetwork,
+                network: _network,
                 data: new PaymentData(pubkey: _currentNode.publicKey))
             .data
             .address;
@@ -2320,7 +2351,7 @@ class Firo extends CoinServiceAPI {
       return 1;
     }
 
-    final tx = new TransactionBuilder(network: firoNetwork);
+    final tx = new TransactionBuilder(network: _network);
     int locktime = await getBlockHead(node);
     tx.setLockTime(locktime);
 
@@ -2404,7 +2435,7 @@ class Firo extends CoinServiceAPI {
         anonymitySetHashes,
         groupBlockHashes);
 
-    final finalTx = new TransactionBuilder(network: firoNetwork);
+    final finalTx = new TransactionBuilder(network: _network);
     finalTx.setLockTime(locktime);
 
     finalTx.setVersion(3 | (TRANSACTION_LELANTUS << 16));

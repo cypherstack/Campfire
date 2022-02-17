@@ -205,8 +205,10 @@ class _CreatePinViewState extends State<CreatePinView> {
                           );
 
                           // TODO do this differently - causes short lockup of UI
-                          manager.currentWallet =
-                              Firo(walletId: id, walletName: widget.walletName);
+                          manager.currentWallet = Firo(
+                              walletId: id,
+                              walletName: widget.walletName,
+                              networkType: FiroNetworkType.main);
                           await manager.updateBiometricsUsage(useBiometrics);
                           await Future.delayed(Duration(seconds: 3));
 

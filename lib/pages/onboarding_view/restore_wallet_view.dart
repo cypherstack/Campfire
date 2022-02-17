@@ -465,8 +465,10 @@ class _RestoreWalletFormViewState extends State<RestoreWalletFormView> {
 
                 final walletName = await walletsService.currentWalletName;
                 final walletId = await walletsService.getWalletId(walletName);
-                manager.currentWallet =
-                    Firo(walletId: walletId, walletName: walletName);
+                manager.currentWallet = Firo(
+                    walletId: walletId,
+                    walletName: walletName,
+                    networkType: FiroNetworkType.main);
 
                 try {
                   final secureStore = new FlutterSecureStorage();
