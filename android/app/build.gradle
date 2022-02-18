@@ -64,10 +64,9 @@ android {
     buildTypes {
         release {
             signingConfig signingConfigs.release
-            // TODO remove majascan and upgrade gradle to get debug symbols
-//            ndk {
-//                debugSymbolLevel 'FULL'
-//            }
+            ndk {
+                debugSymbolLevel 'FULL'
+            }
         }
     }
 }
