@@ -58,7 +58,7 @@ final firoTestNetwork = NetworkType(
 enum FiroNetworkType { main, test }
 
 /// Handles a single instance of a firo wallet
-class Firo extends CoinServiceAPI {
+class FiroWallet extends CoinServiceAPI {
   FiroNetworkType _networkType;
   FiroNetworkType get networkType => _networkType;
 
@@ -68,6 +68,8 @@ class Firo extends CoinServiceAPI {
         return firoNetwork;
       case FiroNetworkType.test:
         return firoTestNetwork;
+      default:
+        throw Exception("Firo network type not set!");
     }
   }
 
@@ -262,7 +264,7 @@ class Firo extends CoinServiceAPI {
   }
 
   // Constructor
-  Firo(
+  FiroWallet(
       {@required String walletId,
       @required String walletName,
       @required FiroNetworkType networkType}) {
@@ -2196,7 +2198,7 @@ class Firo extends CoinServiceAPI {
       final id = await client.getLatestCoinId();
       return id;
     } catch (e) {
-      Logger.print("Exception rethrown in firo_service.dart: $e");
+      Logger.print("Exception rethrown in firo_wallet.dart: $e");
       throw e;
     }
   }
@@ -2207,7 +2209,7 @@ class Firo extends CoinServiceAPI {
       final response = await client.getCoinsForRecovery(setId: setID);
       return response;
     } catch (e) {
-      Logger.print("Exception rethrown in firo_service.dart: $e");
+      Logger.print("Exception rethrown in firo_wallet.dart: $e");
       throw e;
     }
   }
@@ -2218,7 +2220,7 @@ class Firo extends CoinServiceAPI {
       final response = await client.getUsedCoinSerials();
       return response;
     } catch (e) {
-      Logger.print("Exception rethrown in firo_service.dart: $e");
+      Logger.print("Exception rethrown in firo_wallet.dart: $e");
       throw e;
     }
   }

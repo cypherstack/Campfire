@@ -6,7 +6,7 @@ import 'package:paymint/notifications/modal_popup_dialog.dart';
 import 'package:paymint/notifications/overlay_notification.dart';
 import 'package:paymint/pages/onboarding_view/helpers/builders.dart';
 import 'package:paymint/pages/onboarding_view/restore_wallet_view.dart';
-import 'package:paymint/services/coins/firo/firo_service.dart';
+import 'package:paymint/services/coins/firo/firo_wallet.dart';
 import 'package:paymint/services/coins/manager.dart';
 import 'package:paymint/services/wallets_service.dart';
 import 'package:paymint/utilities/biometrics.dart';
@@ -205,7 +205,7 @@ class _CreatePinViewState extends State<CreatePinView> {
                           );
 
                           // TODO do this differently - causes short lockup of UI
-                          manager.currentWallet = Firo(
+                          manager.currentWallet = FiroWallet(
                               walletId: id,
                               walletName: widget.walletName,
                               networkType: FiroNetworkType.main);

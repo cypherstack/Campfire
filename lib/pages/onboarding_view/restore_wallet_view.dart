@@ -14,7 +14,7 @@ import 'package:google_fonts/google_fonts.dart';
 import 'package:paymint/notifications/campfire_alert.dart';
 import 'package:paymint/notifications/modal_popup_dialog.dart';
 import 'package:paymint/pages/onboarding_view/onboarding_view.dart';
-import 'package:paymint/services/coins/firo/firo_service.dart';
+import 'package:paymint/services/coins/firo/firo_wallet.dart';
 import 'package:paymint/services/coins/manager.dart';
 import 'package:paymint/services/wallets_service.dart';
 import 'package:paymint/utilities/address_utils.dart';
@@ -465,7 +465,7 @@ class _RestoreWalletFormViewState extends State<RestoreWalletFormView> {
 
                 final walletName = await walletsService.currentWalletName;
                 final walletId = await walletsService.getWalletId(walletName);
-                manager.currentWallet = Firo(
+                manager.currentWallet = FiroWallet(
                     walletId: walletId,
                     walletName: walletName,
                     networkType: FiroNetworkType.main);
