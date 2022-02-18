@@ -2520,7 +2520,10 @@ class FiroWallet extends CoinServiceAPI {
     try {
       final cachedClient = CachedElectrumX(
           server: node.address, port: node.port, hivePath: hivePath);
-      var tod = await cachedClient.getAnonymitySet();
+      var tod = await cachedClient.getAnonymitySet(
+        groupId: "1",
+        coinName: coinName,
+      );
       tod['serializedCoins'] = tod['serializedCoins'].cast<String>();
 
       return tod;

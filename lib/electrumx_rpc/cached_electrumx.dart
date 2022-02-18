@@ -1,5 +1,6 @@
 import 'dart:developer';
 
+import 'package:flutter/cupertino.dart';
 import 'package:hive/hive.dart';
 import 'package:paymint/utilities/logger.dart';
 
@@ -16,7 +17,7 @@ class CachedElectrumX {
   }
 
   Future<Map<String, dynamic>> getAnonymitySet(
-      {String groupId, String coinName}) async {
+      {@required String groupId, @required String coinName}) async {
     try {
       // hive must be initialized when this function is called outside of flutter
       // such as within an isolate
@@ -85,7 +86,8 @@ class CachedElectrumX {
         final Map<String, dynamic> result =
             await _client.getTransaction(tx_hash: tx_hash, verbose: verbose);
 
-        if (result["confirmations"] > minCacheConfirms) {
+        if (result["confirmations"] != null &&
+            result["confirmations"] > minCacheConfirms) {
           await txCache.put(tx_hash, result);
         }
 
