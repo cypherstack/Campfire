@@ -10,7 +10,6 @@ import 'package:paymint/pages/wallet_view/confirm_send_view.dart';
 import 'package:paymint/services/coins/manager.dart';
 import 'package:paymint/utilities/address_utils.dart';
 import 'package:paymint/utilities/cfcolors.dart';
-import 'package:paymint/utilities/currency_utils.dart';
 import 'package:paymint/utilities/misc_global_constants.dart';
 import 'package:paymint/utilities/sizing_utilities.dart';
 import 'package:paymint/widgets/custom_buttons/gradient_button.dart';
@@ -304,7 +303,7 @@ class _SendViewState extends State<SendView> {
                         balanceMinusMaxFee.hasError ||
                         balanceMinusMaxFee.data == null) {
                       return Text(
-                        "... ${CurrencyUtilities.coinName}",
+                        "... ${manager.coinTicker}",
                         style: GoogleFonts.workSans(
                           color: CFColors.white,
                           fontSize: 16,
@@ -316,7 +315,7 @@ class _SendViewState extends State<SendView> {
 
                     return FittedBox(
                       child: Text(
-                        "${_balanceMinusMaxFee < _maxFee ? "0.00000000" : _balanceMinusMaxFee.toStringAsFixed(8)} ${CurrencyUtilities.coinName}",
+                        "${_balanceMinusMaxFee < _maxFee ? "0.00000000" : _balanceMinusMaxFee.toStringAsFixed(8)} ${manager.coinTicker}",
                         style: GoogleFonts.workSans(
                           color: CFColors.white,
                           fontSize: 16,
@@ -512,7 +511,7 @@ class _SendViewState extends State<SendView> {
                   scaleOnInfinitePrecision: CampfireConstants.decimalPlaces);
           return FittedBox(
             child: Text(
-              "${_maxFee.toStringAsFixed(8)} ${CurrencyUtilities.coinName}",
+              "${_maxFee.toStringAsFixed(8)} ${manager.coinTicker}",
               style: GoogleFonts.workSans(
                 color: CFColors.twilight,
                 fontWeight: FontWeight.w600,
@@ -523,7 +522,7 @@ class _SendViewState extends State<SendView> {
         } else {
           return FittedBox(
             child: Text(
-              "${_maxFee.toStringAsFixed(8)} ${CurrencyUtilities.coinName}",
+              "${_maxFee.toStringAsFixed(8)} ${manager.coinTicker}",
               style: GoogleFonts.workSans(
                 color: CFColors.twilight,
                 fontWeight: FontWeight.w600,
@@ -539,7 +538,7 @@ class _SendViewState extends State<SendView> {
   _buildTotal() {
     return FittedBox(
       child: Text(
-        "${_totalAmount.toStringAsFixed(8)} ${CurrencyUtilities.coinName}",
+        "${_totalAmount.toStringAsFixed(8)} ${Provider.of<Manager>(context, listen: false).coinTicker}",
         style: GoogleFonts.workSans(
           color: CFColors.twilight,
           fontWeight: FontWeight.w600,
@@ -686,7 +685,7 @@ class _SendViewState extends State<SendView> {
                     child: Padding(
                       padding: const EdgeInsets.only(right: 16),
                       child: Text(
-                        CurrencyUtilities.coinName,
+                        Provider.of<Manager>(context, listen: false).coinTicker,
                         style: TextStyle(
                           color: CFColors.twilight,
                           fontWeight: FontWeight.w600,
@@ -767,32 +766,22 @@ class _SendViewState extends State<SendView> {
                   ),
                   suffixIcon: UnconstrainedBox(
                     child: Padding(
-                        padding: const EdgeInsets.only(right: 16),
-                        child: FutureBuilder(
-                          future: CurrencyUtilities.fetchPreferredCurrency(),
-                          builder: (context, futureData) {
-                            if (futureData.connectionState ==
-                                ConnectionState.done) {
-                              _currency = futureData.data;
-                              return Text(
-                                _currency,
-                                style: TextStyle(
-                                  color: CFColors.twilight,
-                                  fontWeight: FontWeight.w600,
-                                  fontSize: 16,
-                                ),
-                              );
-                            }
-                            return Text(
-                              _currency == "" ? "..." : _currency,
-                              style: TextStyle(
-                                color: CFColors.twilight,
-                                fontWeight: FontWeight.w600,
-                                fontSize: 16,
-                              ),
-                            );
-                          },
-                        )),
+                      padding: const EdgeInsets.only(right: 16),
+                      child: Provider<String>.value(
+                        value: Provider.of<Manager>(context).fiatCurrency,
+                        builder: (context, child) {
+                          _currency = context.watch<String>();
+                          return Text(
+                            _currency,
+                            style: TextStyle(
+                              color: CFColors.twilight,
+                              fontWeight: FontWeight.w600,
+                              fontSize: 16,
+                            ),
+                          );
+                        },
+                      ),
+                    ),
                   ),
                   hintText: firoPrice < Decimal.zero ? "..." : "0.00",
                   hintStyle: GoogleFonts.workSans(

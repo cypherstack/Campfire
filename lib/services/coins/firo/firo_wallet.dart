@@ -26,7 +26,6 @@ import 'package:paymint/services/event_bus/events/refresh_percent_changed_event.
 import 'package:paymint/services/event_bus/global_event_bus.dart';
 import 'package:paymint/services/node_service.dart';
 import 'package:paymint/services/price.dart';
-import 'package:paymint/utilities/currency_utils.dart';
 import 'package:paymint/utilities/logger.dart';
 import 'package:paymint/utilities/misc_global_constants.dart';
 import 'package:paymint/utilities/shared_utilities.dart';
@@ -83,11 +82,11 @@ class FiroWallet extends CoinServiceAPI {
   Future<List<String>> get mnemonic => getMnemonicList();
 
   @override
-  Future<String> get fiatCurrency => currency;
+  String get fiatCurrency => currency;
 
   @override
-  Future<void> changeFiatCurrency(String currency) async {
-    await changeCurrency(currency);
+  void changeFiatCurrency(String currency) {
+    changeCurrency(currency);
   }
 
   @override
@@ -160,12 +159,8 @@ class FiroWallet extends CoinServiceAPI {
   List<UtxoObject> _outputsList = [];
 
   // Hold the current price of Bitcoin in the currency specified in parameter below
-  Future<Decimal> _firoPrice;
-  Future<Decimal> get firoPrice => _firoPrice ??= Future(() async {
-        final String baseCurrency = await currency;
-        return PriceAPI.getPrice(
-            ticker: coinTicker, baseCurrency: baseCurrency);
-      });
+  Future<Decimal> get firoPrice => Future(() async =>
+      PriceAPI.getPrice(ticker: coinTicker, baseCurrency: currency));
 
   // currently isn't used but required due to abstract parent class
   Future<FeeObject> _feeObject;
@@ -173,9 +168,8 @@ class FiroWallet extends CoinServiceAPI {
   Future<FeeObject> get fees => _feeObject;
 
   /// Holds preferred fiat currency
-  Future<String> _currency;
-  Future<String> get currency =>
-      _currency ??= CurrencyUtilities.fetchPreferredCurrency();
+  String _currency;
+  String get currency => _currency ??= fetchPreferredCurrency();
 
   /// Holds updated receiving address
   Future<String> _currentReceivingAddress;
@@ -360,10 +354,6 @@ class FiroWallet extends CoinServiceAPI {
       final newTxData = _fetchTransactionData();
       GlobalEventBus.instance.fire(RefreshPercentChangedEvent(0.2));
 
-      final baseCurrency = await currency;
-      final dynamic newPrice = await PriceAPI.getPrice(
-          ticker: coinTicker, baseCurrency: baseCurrency);
-      Logger.print("Refreshed price: $newPrice");
       GlobalEventBus.instance.fire(RefreshPercentChangedEvent(0.25));
 
       final FeeObject feeObj = await _getFees();
@@ -375,7 +365,6 @@ class FiroWallet extends CoinServiceAPI {
 
       this._utxoData = Future(() => newUtxoData);
       this._transactionData = Future(() => newTxData);
-      this._firoPrice = Future(() => newPrice);
       this._feeObject = Future(() => feeObj);
       this._useBiometrics = Future(() => useBiometrics);
       GlobalEventBus.instance.fire(RefreshPercentChangedEvent(0.60));
@@ -839,7 +828,7 @@ class FiroWallet extends CoinServiceAPI {
       }
     }
 
-    final String currency = await CurrencyUtilities.fetchPreferredCurrency();
+    final String currency = fetchPreferredCurrency();
     // Grab the most recent information on all the joinsplits
     final updatedJSplit = await getJMintTransactions(
         await currentNode, joinsplits, currency, this.coinName, null);
@@ -1109,7 +1098,7 @@ class FiroWallet extends CoinServiceAPI {
   Future<TransactionData> _fetchTransactionData() async {
     final wallet = await Hive.openBox(this._walletId);
     final List<String> allAddresses = [];
-    final String currency = await CurrencyUtilities.fetchPreferredCurrency();
+    final String currency = fetchPreferredCurrency();
     final List receivingAddresses = await wallet.get('receivingAddresses');
     final List changeAddresses = await wallet.get('changeAddresses');
 
@@ -1412,7 +1401,7 @@ class FiroWallet extends CoinServiceAPI {
   Future<UtxoData> _fetchUtxoData() async {
     final wallet = await Hive.openBox(this._walletId);
     final List<String> allAddresses = [];
-    final String currency = await CurrencyUtilities.fetchPreferredCurrency();
+    final String currency = fetchPreferredCurrency();
     final List receivingAddresses = await wallet.get('receivingAddresses');
     final List changeAddresses = await wallet.get('changeAddresses');
 
@@ -1508,7 +1497,7 @@ class FiroWallet extends CoinServiceAPI {
     } catch (e) {
       Logger.print("Output fetch unsuccessful: $e");
       final latestTxModel = await wallet.get('latest_utxo_model');
-      final currency = await CurrencyUtilities.fetchPreferredCurrency();
+      final currency = fetchPreferredCurrency();
       final currencySymbol = currencyMap[currency];
 
       if (latestTxModel == null) {
@@ -1798,7 +1787,7 @@ class FiroWallet extends CoinServiceAPI {
     final mnemonic = await secureStore.read(key: '${this._walletId}_mnemonic');
     TransactionData data = await _txnData;
     Node node = await currentNode;
-    final String currency = await CurrencyUtilities.fetchPreferredCurrency();
+    final String currency = fetchPreferredCurrency();
     final appDir = await getApplicationDocumentsDirectory();
 
     ReceivePort receivePort = await getIsolate({
@@ -1841,10 +1830,21 @@ class FiroWallet extends CoinServiceAPI {
   }
 
   /// Switches preferred fiat currency for display and data fetching purposes
-  changeCurrency(String newCurrency) async {
-    final prefs = await Hive.openBox('prefs');
-    await prefs.put('currency', newCurrency);
-    this._currency = Future(() => newCurrency);
+  changeCurrency(String newCurrency) {
+    final wallet = Hive.box(this._walletId);
+    wallet.put("preferredFiatCurrency", newCurrency);
+    this._currency = newCurrency;
+  }
+
+  String fetchPreferredCurrency() {
+    final wallet = Hive.box(this._walletId);
+    final currency = wallet.get("preferredFiatCurrency");
+    if (currency == null) {
+      wallet.put("preferredFiatCurrency", "USD");
+      return "USD";
+    } else {
+      return currency;
+    }
   }
 
   Future<dynamic> _createJoinSplitTransaction(

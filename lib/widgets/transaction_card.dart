@@ -1,24 +1,26 @@
+import 'package:decimal/decimal.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_feather_icons/flutter_feather_icons.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:paymint/models/transactions_model.dart';
 import 'package:paymint/pages/transaction_subviews/transaction_details_view.dart';
+import 'package:paymint/services/coins/manager.dart';
 import 'package:paymint/services/globals.dart';
 import 'package:paymint/services/notes_service.dart';
 import 'package:paymint/utilities/cfcolors.dart';
-import 'package:paymint/utilities/currency_utils.dart';
+import 'package:paymint/utilities/shared_utilities.dart';
 import 'package:paymint/utilities/sizing_utilities.dart';
 import 'package:provider/provider.dart';
 
-class TransactionCard extends StatelessWidget {
+class TransactionCard extends StatefulWidget {
   const TransactionCard(
       {Key key,
       this.txType,
       this.date,
       this.amount,
       this.fiatValue,
-      this.transaction})
+      @required this.transaction})
       : super(key: key);
 
   final String txType;
@@ -29,19 +31,42 @@ class TransactionCard extends StatelessWidget {
   final Transaction transaction;
 
   @override
+  _TransactionCardState createState() => _TransactionCardState();
+}
+
+class _TransactionCardState extends State<TransactionCard> {
+  String _txType;
+  String _date;
+  String _amount;
+  String _fiatValue;
+
+  Transaction _transaction;
+
+  @override
+  void initState() {
+    _txType = widget.txType;
+    _date = widget.date;
+    _amount = widget.amount;
+    _fiatValue = widget.fiatValue;
+    _transaction = widget.transaction;
+
+    super.initState();
+  }
+
+  @override
   Widget build(BuildContext context) {
     Color color;
-    String type = txType;
+    String type = _txType;
     Icon icon;
 
-    if (txType == "Received") {
+    if (_txType == "Received") {
       color = CFColors.success;
       icon = Icon(
         FeatherIcons.arrowDown,
         color: color,
         size: 20,
       );
-    } else if (txType == "Sent") {
+    } else if (_txType == "Sent") {
       color = CFColors.spark;
       type = "Sent";
       icon = Icon(
@@ -65,8 +90,8 @@ class TransactionCard extends StatelessWidget {
 
     String whatIsIt() {
       if (type == "Received") {
-        if (transaction.confirmedStatus) {
-          if (transaction.height == -1) {
+        if (_transaction.confirmedStatus) {
+          if (_transaction.height == -1) {
             return "Minting";
           } else {
             return "Received";
@@ -75,7 +100,7 @@ class TransactionCard extends StatelessWidget {
           return "Receiving";
         }
       } else {
-        if (transaction.confirmedStatus) {
+        if (_transaction.confirmedStatus) {
           return "Sent";
         } else {
           return "Sending";
@@ -94,13 +119,13 @@ class TransactionCard extends StatelessWidget {
       ),
       child: GestureDetector(
         onTap: () async {
-          final note = await notesService.getNoteFor(txid: transaction.txid);
+          final note = await notesService.getNoteFor(txid: _transaction.txid);
           Navigator.push(
             context,
             CupertinoPageRoute(
               builder: (BuildContext context) {
                 return TransactionDetailsView(
-                  transaction: transaction,
+                  transaction: _transaction,
                   note: note,
                 );
               },
@@ -161,7 +186,7 @@ class TransactionCard extends StatelessWidget {
                             child: FittedBox(
                               fit: BoxFit.scaleDown,
                               child: Text(
-                                amount,
+                                _amount,
                                 style: GoogleFonts.workSans(
                                   color: CFColors.starryNight,
                                   fontSize: 16,
@@ -184,7 +209,7 @@ class TransactionCard extends StatelessWidget {
                             child: FittedBox(
                               fit: BoxFit.scaleDown,
                               child: Text(
-                                date,
+                                _date,
                                 style: GoogleFonts.workSans(
                                   color: CFColors.twilight,
                                   fontSize: 16,
@@ -198,28 +223,43 @@ class TransactionCard extends StatelessWidget {
                           ),
                           Flexible(
                             child: FittedBox(
-                              fit: BoxFit.scaleDown,
-                              child: FutureBuilder(
-                                future:
-                                    CurrencyUtilities.fetchPreferredCurrency(),
-                                builder:
-                                    (context, AsyncSnapshot<String> snapshot) {
-                                  String symbol = "";
-                                  if (snapshot.connectionState ==
-                                      ConnectionState.done) {
-                                    symbol = currencyMap[snapshot.data];
-                                  }
-                                  return Text(
-                                    symbol + fiatValue,
-                                    style: GoogleFonts.workSans(
-                                      color: CFColors.twilight,
-                                      fontSize: 16,
-                                      fontWeight: FontWeight.w500,
-                                    ),
-                                  );
-                                },
-                              ),
-                            ),
+                                fit: BoxFit.scaleDown,
+                                child: Provider<Future<Decimal>>.value(
+                                  value:
+                                      Provider.of<Manager>(context).fiatPrice,
+                                  builder: (context, child) {
+                                    final manager = Provider.of<Manager>(
+                                        context,
+                                        listen: false);
+                                    return FutureBuilder(
+                                      future: context.watch<Future<Decimal>>(),
+                                      builder: (context,
+                                          AsyncSnapshot<Decimal> snapshot) {
+                                        String symbol = "";
+                                        if (snapshot.connectionState ==
+                                            ConnectionState.done) {
+                                          final value = snapshot.data *
+                                              Utilities.satoshisToAmount(
+                                                  _transaction.amount);
+                                          _fiatValue = value < Decimal.zero
+                                              ? "..."
+                                              : value.toStringAsFixed(8);
+
+                                          symbol =
+                                              currencyMap[manager.fiatCurrency];
+                                        }
+                                        return Text(
+                                          symbol + _fiatValue,
+                                          style: GoogleFonts.workSans(
+                                            color: CFColors.twilight,
+                                            fontSize: 16,
+                                            fontWeight: FontWeight.w500,
+                                          ),
+                                        );
+                                      },
+                                    );
+                                  },
+                                )),
                           ),
                         ],
                       ),

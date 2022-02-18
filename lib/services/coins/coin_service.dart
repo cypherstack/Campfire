@@ -36,8 +36,8 @@ abstract class CoinServiceAPI {
 
   Future<Decimal> get fiatPrice;
 
-  Future<String> get fiatCurrency;
-  Future<void> changeFiatCurrency(String currency);
+  String get fiatCurrency;
+  void changeFiatCurrency(String currency);
 
   Future<bool> get useBiometrics;
   Future<void> updateBiometricsUsage(bool useBiometrics);

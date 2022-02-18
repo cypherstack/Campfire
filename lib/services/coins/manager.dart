@@ -57,11 +57,11 @@ class Manager with ChangeNotifier {
 
   Future<TransactionData> get transactionData => currentWallet.transactionData;
 
-  Future<dynamic> get fiatPrice => currentWallet.fiatPrice;
+  Future<Decimal> get fiatPrice => currentWallet.fiatPrice;
 
-  Future<String> get fiatCurrency => currentWallet.fiatCurrency;
-  Future<void> changeFiatCurrency(String currency) async {
-    await currentWallet.changeFiatCurrency(currency);
+  String get fiatCurrency => currentWallet.fiatCurrency;
+  void changeFiatCurrency(String currency) async {
+    currentWallet.changeFiatCurrency(currency);
     notifyListeners();
   }
 

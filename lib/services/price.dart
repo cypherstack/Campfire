@@ -1,4 +1,5 @@
 import 'dart:convert';
+import 'dart:developer';
 
 import 'package:decimal/decimal.dart';
 import 'package:http/http.dart' as http;
@@ -16,9 +17,13 @@ class PriceAPI {
     DateTime now = DateTime.now();
 
     if (_lastCalled[ticker + baseCurrency] == null ||
-        now.difference(_lastCalled[ticker + baseCurrency]) > throttle) {
+        now.difference(_lastCalled[ticker + baseCurrency]) > throttle ||
+        _price[ticker + baseCurrency] == null ||
+        _price[ticker + baseCurrency] == Decimal.fromInt(-1)) {
       _lastCalled[ticker + baseCurrency] = now;
+      log("Attempting to fetch and use a new price api value");
     } else {
+      log("Using cached price api value");
       return _price[ticker + baseCurrency] ?? Decimal.fromInt(-1);
     }
 

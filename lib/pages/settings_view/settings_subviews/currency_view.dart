@@ -33,36 +33,26 @@ class _CurrencyViewState extends State<CurrencyView> {
     "XAU",
   ];
 
-  String selectedCurrency = "";
-
   @override
   Widget build(BuildContext context) {
-    final manager = Provider.of<Manager>(context);
-    return WillPopScope(
-      onWillPop: () async {
-        manager.refresh();
-        return true;
-      },
-      child: Scaffold(
-        backgroundColor: CFColors.white,
-        appBar: buildSettingsAppBar(context, "Currency"),
-        body: Padding(
-          padding: EdgeInsets.only(
-            top: 12,
-            left: SizingUtilities.standardPadding,
-            right: SizingUtilities.standardPadding,
-            bottom: SizingUtilities.standardPadding,
-          ),
-          child: FutureBuilder(
-            future: manager.fiatCurrency,
-            builder: (BuildContext context, AsyncSnapshot<String> currency) {
-              if (currency.connectionState == ConnectionState.done) {
-                selectedCurrency = currency.data;
-              }
-              return CurrencyList(
-                  currencies: currencyList, currentCurrency: selectedCurrency);
-            },
-          ),
+    return Scaffold(
+      backgroundColor: CFColors.white,
+      appBar: buildSettingsAppBar(context, "Currency"),
+      body: Padding(
+        padding: EdgeInsets.only(
+          top: 12,
+          left: SizingUtilities.standardPadding,
+          right: SizingUtilities.standardPadding,
+          bottom: SizingUtilities.standardPadding,
+        ),
+        child: Provider<String>.value(
+          value: Provider.of<Manager>(context).fiatCurrency,
+          builder: (context, child) {
+            return CurrencyList(
+              currencies: currencyList,
+              currentCurrency: context.watch<String>(),
+            );
+          },
         ),
       ),
     );
@@ -110,7 +100,7 @@ class _CurrencyListState extends State<CurrencyList> {
             current = currenciesWithoutSelected[index];
             currenciesWithoutSelected.remove(current);
             currenciesWithoutSelected.insert(0, current);
-            await manager.changeFiatCurrency(current);
+            manager.changeFiatCurrency(current);
           },
           child: Container(
             color: index == 0 ? CFColors.fog : CFColors.white,

@@ -6,9 +6,9 @@ import 'package:google_fonts/google_fonts.dart';
 import 'package:paymint/pages/settings_view/helpers/builders.dart';
 import 'package:paymint/pages/transaction_subviews/transaction_search_results_view.dart';
 import 'package:paymint/services/address_book_service.dart';
+import 'package:paymint/services/coins/manager.dart';
 import 'package:paymint/services/notes_service.dart';
 import 'package:paymint/utilities/cfcolors.dart';
-import 'package:paymint/utilities/currency_utils.dart';
 import 'package:paymint/utilities/shared_utilities.dart';
 import 'package:paymint/utilities/sizing_utilities.dart';
 import 'package:paymint/utilities/text_styles.dart';
@@ -466,7 +466,7 @@ class _TransactionSearchViewState extends State<TransactionSearchView> {
                         alignment: Alignment.centerLeft,
                         child: FittedBox(
                           child: Text(
-                            "Amount (${CurrencyUtilities.coinName})",
+                            "Amount (${Provider.of<Manager>(context, listen: false).coinTicker})",
                             style: _labelStyle,
                           ),
                         ),

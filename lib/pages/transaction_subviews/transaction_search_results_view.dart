@@ -6,7 +6,6 @@ import 'package:paymint/models/transactions_model.dart';
 import 'package:paymint/pages/settings_view/helpers/builders.dart';
 import 'package:paymint/services/coins/manager.dart';
 import 'package:paymint/utilities/cfcolors.dart';
-import 'package:paymint/utilities/currency_utils.dart';
 import 'package:paymint/utilities/shared_utilities.dart';
 import 'package:paymint/utilities/sizing_utilities.dart';
 import 'package:paymint/widgets/transaction_card.dart';
@@ -121,7 +120,7 @@ class TransactionSearchResultsView extends StatelessWidget {
             SizedBox(
               height: 6,
             ),
-            _buildSearchCriteriaRow(),
+            _buildSearchCriteriaRow(context),
             SizedBox(
               height: 16,
             ),
@@ -175,7 +174,7 @@ class TransactionSearchResultsView extends StatelessWidget {
     );
   }
 
-  _buildSearchCriteriaRow() {
+  _buildSearchCriteriaRow(BuildContext context) {
     // format date display
     String dateString = start == null
         ? Utilities.formatDate(DateTime(2007))
@@ -212,7 +211,8 @@ class TransactionSearchResultsView extends StatelessWidget {
                 width: 8,
               ),
             if (amount != null)
-              _buildSearchCriteriaBox("$amount ${CurrencyUtilities.coinName}"),
+              _buildSearchCriteriaBox(
+                  "$amount ${Provider.of<Manager>(context, listen: false).coinTicker}"),
             if (amount != null)
               SizedBox(
                 width: 8,
@@ -275,7 +275,7 @@ class TransactionSearchResultsView extends StatelessWidget {
               txType: results[index].txType,
               date: Utilities.extractDateFrom(results[index].timestamp),
               amount:
-                  "${Utilities.satoshiAmountToPrettyString(results[index].amount)} ${CurrencyUtilities.coinName}",
+                  "${Utilities.satoshiAmountToPrettyString(results[index].amount)} ${Provider.of<Manager>(context, listen: false).coinTicker}",
               fiatValue: results[index].worthNow,
             ),
           );

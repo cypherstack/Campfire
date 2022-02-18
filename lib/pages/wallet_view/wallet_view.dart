@@ -13,7 +13,6 @@ import 'package:paymint/services/coins/manager.dart';
 import 'package:paymint/services/event_bus/events/node_connection_status_changed_event.dart';
 import 'package:paymint/services/event_bus/global_event_bus.dart';
 import 'package:paymint/utilities/cfcolors.dart';
-import 'package:paymint/utilities/currency_utils.dart';
 import 'package:paymint/utilities/shared_utilities.dart';
 import 'package:paymint/utilities/sizing_utilities.dart';
 import 'package:paymint/widgets/custom_buttons/draggable_switch_button.dart';
@@ -123,7 +122,7 @@ class _WalletViewState extends State<WalletView> {
                     balance = snapshot.data.toStringAsFixed(8);
                   }
                   return Text(
-                    "$balance ${CurrencyUtilities.coinName}",
+                    "$balance ${Provider.of<Manager>(context, listen: false).coinTicker}",
                     style: GoogleFonts.workSans(
                       color: CFColors.white,
                       fontSize: 28,
@@ -138,13 +137,10 @@ class _WalletViewState extends State<WalletView> {
               height: 5,
             ),
             FittedBox(
-              child: FutureBuilder(
-                future: manager.fiatCurrency,
-                builder: (context, AsyncSnapshot<String> snapshot) {
-                  String fiatTicker = "...";
-                  if (snapshot.connectionState == ConnectionState.done) {
-                    fiatTicker = snapshot.data;
-                  }
+              child: Provider<String>.value(
+                value: Provider.of<Manager>(context).fiatCurrency,
+                builder: (context, child) {
+                  String fiatTicker = context.watch<String>();
                   return FutureBuilder(
                     future: _balanceToggleEnabled
                         ? manager.fiatBalance
@@ -340,7 +336,7 @@ Widget _buildTransactionList(BuildContext context, List<Transaction> txList) {
             txType: txList[index].txType,
             date: Utilities.extractDateFrom(txList[index].timestamp),
             amount:
-                "${Utilities.satoshiAmountToPrettyString(txList[index].amount)} ${CurrencyUtilities.coinName}",
+                "${Utilities.satoshiAmountToPrettyString(txList[index].amount)} ${Provider.of<Manager>(context, listen: false).coinTicker}",
             fiatValue: txList[index].worthNow,
           ),
         );
