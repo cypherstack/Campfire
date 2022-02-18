@@ -243,7 +243,7 @@ class _TransactionCardState extends State<TransactionCard> {
                                                   _transaction.amount);
                                           _fiatValue = value < Decimal.zero
                                               ? "..."
-                                              : value.toStringAsFixed(8);
+                                              : value.toStringAsFixed(2);
 
                                           symbol =
                                               currencyMap[manager.fiatCurrency];
