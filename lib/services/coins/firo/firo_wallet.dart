@@ -91,7 +91,7 @@ class FiroWallet extends CoinServiceAPI {
   }
 
   @override
-  Future<Decimal> get fiatPrice => bitcoinPrice;
+  Future<Decimal> get fiatPrice => firoPrice;
 
   // index 0 and 1 for the funds available to spend.
   // index 2 and 3 for all the funds in the wallet (including the undependable ones)
@@ -160,8 +160,8 @@ class FiroWallet extends CoinServiceAPI {
   List<UtxoObject> _outputsList = [];
 
   // Hold the current price of Bitcoin in the currency specified in parameter below
-  Future<Decimal> _bitcoinPrice;
-  Future<Decimal> get bitcoinPrice => _bitcoinPrice ??= Future(() async {
+  Future<Decimal> _firoPrice;
+  Future<Decimal> get firoPrice => _firoPrice ??= Future(() async {
         final String baseCurrency = await currency;
         return PriceAPI.getPrice(
             ticker: coinTicker, baseCurrency: baseCurrency);
@@ -361,9 +361,9 @@ class FiroWallet extends CoinServiceAPI {
       GlobalEventBus.instance.fire(RefreshPercentChangedEvent(0.2));
 
       final baseCurrency = await currency;
-      final dynamic newBtcPrice = await PriceAPI.getPrice(
+      final dynamic newPrice = await PriceAPI.getPrice(
           ticker: coinTicker, baseCurrency: baseCurrency);
-      Logger.print("Refreshed price: $newBtcPrice");
+      Logger.print("Refreshed price: $newPrice");
       GlobalEventBus.instance.fire(RefreshPercentChangedEvent(0.25));
 
       final FeeObject feeObj = await _getFees();
@@ -375,7 +375,7 @@ class FiroWallet extends CoinServiceAPI {
 
       this._utxoData = Future(() => newUtxoData);
       this._transactionData = Future(() => newTxData);
-      this._bitcoinPrice = Future(() => newBtcPrice);
+      this._firoPrice = Future(() => newPrice);
       this._feeObject = Future(() => feeObj);
       this._useBiometrics = Future(() => useBiometrics);
       GlobalEventBus.instance.fire(RefreshPercentChangedEvent(0.60));
@@ -513,7 +513,7 @@ class FiroWallet extends CoinServiceAPI {
       final wallet = await Hive.openBox(this._walletId);
       final Map _lelantus_coins = await wallet.get('_lelantus_coins');
       final utxos = await utxoData;
-      final Decimal price = await bitcoinPrice;
+      final Decimal price = await firoPrice;
       final data = await _txnData;
       List jindexes = await wallet.get('jindex');
       int intLelantusBalance = 0;
@@ -787,7 +787,7 @@ class FiroWallet extends CoinServiceAPI {
     var txHex = incomplete.toHex();
     int fee = amount - incomplete.outs[0].value;
 
-    var price = await bitcoinPrice;
+    var price = await firoPrice;
     price = price ?? 1;
     var builtHex = txb.build();
     // return builtHex;
@@ -1849,7 +1849,7 @@ class FiroWallet extends CoinServiceAPI {
 
   Future<dynamic> _createJoinSplitTransaction(
       int spendAmount, String address, bool subtractFeeFromAmount) async {
-    final price = await bitcoinPrice;
+    final price = await firoPrice;
     Node node = await currentNode;
     final wallet = await Hive.openBox(this._walletId);
     final secureStore = new FlutterSecureStorage();
