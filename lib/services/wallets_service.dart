@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 import 'package:hive/hive.dart';
+import 'package:paymint/services/coins/firo/firo_wallet.dart';
 import 'package:paymint/services/event_bus/events/wallet_name_changed_event.dart';
 import 'package:paymint/services/event_bus/global_event_bus.dart';
 import 'package:uuid/uuid.dart';
@@ -14,6 +15,9 @@ class WalletsService extends ChangeNotifier {
   Future<String> get currentWalletName =>
       _currentWalletName ??= _fetchCurrentWalletName();
 
+  Future<String> get networkName async =>
+      _getNetworkName(await currentWalletName);
+
   WalletsService() {
     _initialize().whenComplete(() => _walletNames = _fetchWalletNames());
   }
@@ -26,6 +30,18 @@ class WalletsService extends ChangeNotifier {
       wallets.put('currentWalletName', "");
     } else {
       this._currentWalletName = _fetchCurrentWalletName();
+    }
+  }
+
+  Future<String> _getNetworkName(String walletName) async {
+    final wallets = await Hive.openBox('wallets');
+    final network = await wallets.get("${walletName}_network");
+    if (network == null) {
+      final mainnet = FiroNetworkType.main.name;
+      await wallets.put("${walletName}_network", mainnet);
+      return mainnet;
+    } else {
+      return network;
     }
   }
 
@@ -84,7 +100,7 @@ class WalletsService extends ChangeNotifier {
     return Map<String, String>.from(names);
   }
 
-  Future<bool> addNewWalletName(String name) async {
+  Future<bool> addNewWalletName(String name, String networkName) async {
     final wallets = await Hive.openBox('wallets');
     final _names = await wallets.get('names');
 
@@ -102,6 +118,7 @@ class WalletsService extends ChangeNotifier {
     names[name] = id;
 
     await wallets.put('names', names);
+    await wallets.put("${name}_network", networkName);
     await setCurrentWalletName(name);
     await refreshWallets();
     return true;
@@ -133,6 +150,8 @@ class WalletsService extends ChangeNotifier {
     final store = new FlutterSecureStorage();
     await store.delete(key: "${id}_pin");
     await store.delete(key: "${id}_mnemonic");
+
+    await wallets.delete("${name}_network");
 
     await Hive.deleteBoxFromDisk(id);
 

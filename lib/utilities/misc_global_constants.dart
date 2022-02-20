@@ -12,4 +12,10 @@ class CampfireConstants {
   static const String defaultIpAddress = ELECTRUMX_SERVER;
   static const int defaultPort = ELECTRUMX_PORT;
   static const String defaultNodeName = "Campfire default";
+  static const String defaultIpAddressTestNet = ELECTRUMX_SERVER;
+  static const int defaultPortTestNet = ELECTRUMX_PORT;
+  static const String defaultNodeNameTestNet = "Campfire default testnet";
+
+  // enable testnet
+  static const bool allowTestnets = true;
 }

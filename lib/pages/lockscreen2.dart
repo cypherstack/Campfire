@@ -234,12 +234,24 @@ class _Lockscreen2ViewState extends State<Lockscreen2View> {
 
                   // check if initial log in
                   if (widget.routeOnSuccess == "/mainview") {
+                    final networkName = await walletsService.networkName;
+                    FiroNetworkType firoNetworkType;
+                    switch (networkName) {
+                      case "main":
+                        firoNetworkType = FiroNetworkType.main;
+                        break;
+                      case "test":
+                        firoNetworkType = FiroNetworkType.test;
+                        break;
+                      default:
+                        throw Exception("Bad firo network type encountered");
+                    }
                     final manager =
                         Provider.of<Manager>(context, listen: false);
                     manager.currentWallet = FiroWallet(
                         walletId: id,
                         walletName: walletName,
-                        networkType: FiroNetworkType.main);
+                        networkType: firoNetworkType);
                   }
 
                   await Future.delayed(Duration(milliseconds: 600));
