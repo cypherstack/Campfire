@@ -39,6 +39,20 @@ class _BackupKeyWarningViewState extends State<BackupKeyWarningView> {
         appBar: buildOnboardingAppBar(
           context,
           backButtonPressed: _onBackPressed,
+          actions: [
+            Padding(
+              padding: const EdgeInsets.symmetric(vertical: 16, horizontal: 10),
+              child: TextButton(
+                onPressed: () {
+                  Navigator.pushReplacementNamed(context, "/mainview");
+                },
+                child: Text(
+                  "SKIP",
+                  style: CFTextStyles.button,
+                ),
+              ),
+            ),
+          ],
         ),
         body: buildOnboardingBody(
           context,
