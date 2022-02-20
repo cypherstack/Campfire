@@ -13,7 +13,6 @@ import 'package:paymint/services/coins/manager.dart';
 import 'package:paymint/services/event_bus/events/node_connection_status_changed_event.dart';
 import 'package:paymint/services/event_bus/global_event_bus.dart';
 import 'package:paymint/utilities/cfcolors.dart';
-import 'package:paymint/utilities/shared_utilities.dart';
 import 'package:paymint/utilities/sizing_utilities.dart';
 import 'package:paymint/widgets/custom_buttons/draggable_switch_button.dart';
 import 'package:paymint/widgets/gradient_card.dart';
@@ -333,11 +332,6 @@ Widget _buildTransactionList(BuildContext context, List<Transaction> txList) {
           ),
           child: TransactionCard(
             transaction: txList[index],
-            txType: txList[index].txType,
-            date: Utilities.extractDateFrom(txList[index].timestamp),
-            amount:
-                "${Utilities.satoshiAmountToPrettyString(txList[index].amount)} ${Provider.of<Manager>(context, listen: false).coinTicker}",
-            fiatValue: txList[index].worthNow,
           ),
         );
       },

@@ -14,19 +14,8 @@ import 'package:paymint/utilities/sizing_utilities.dart';
 import 'package:provider/provider.dart';
 
 class TransactionCard extends StatefulWidget {
-  const TransactionCard(
-      {Key key,
-      this.txType,
-      this.date,
-      this.amount,
-      this.fiatValue,
-      @required this.transaction})
+  const TransactionCard({Key key, @required this.transaction})
       : super(key: key);
-
-  final String txType;
-  final String date;
-  final String amount;
-  final String fiatValue;
 
   final Transaction transaction;
 
@@ -35,38 +24,28 @@ class TransactionCard extends StatefulWidget {
 }
 
 class _TransactionCardState extends State<TransactionCard> {
-  String _txType;
-  String _date;
-  String _amount;
-  String _fiatValue;
-
   Transaction _transaction;
 
   @override
   void initState() {
-    _txType = widget.txType;
-    _date = widget.date;
-    _amount = widget.amount;
-    _fiatValue = widget.fiatValue;
     _transaction = widget.transaction;
-
     super.initState();
   }
 
   @override
   Widget build(BuildContext context) {
     Color color;
-    String type = _txType;
+    String type = _transaction.txType;
     Icon icon;
 
-    if (_txType == "Received") {
+    if (type == "Received") {
       color = CFColors.success;
       icon = Icon(
         FeatherIcons.arrowDown,
         color: color,
         size: 20,
       );
-    } else if (_txType == "Sent") {
+    } else if (type == "Sent") {
       color = CFColors.spark;
       type = "Sent";
       icon = Icon(
@@ -186,7 +165,7 @@ class _TransactionCardState extends State<TransactionCard> {
                             child: FittedBox(
                               fit: BoxFit.scaleDown,
                               child: Text(
-                                _amount,
+                                "${Utilities.satoshiAmountToPrettyString(_transaction.amount)} ${Provider.of<Manager>(context, listen: false).coinTicker}",
                                 style: GoogleFonts.workSans(
                                   color: CFColors.starryNight,
                                   fontSize: 16,
@@ -209,7 +188,8 @@ class _TransactionCardState extends State<TransactionCard> {
                             child: FittedBox(
                               fit: BoxFit.scaleDown,
                               child: Text(
-                                _date,
+                                Utilities.extractDateFrom(
+                                    _transaction.timestamp),
                                 style: GoogleFonts.workSans(
                                   color: CFColors.twilight,
                                   fontSize: 16,
@@ -236,6 +216,7 @@ class _TransactionCardState extends State<TransactionCard> {
                                       builder: (context,
                                           AsyncSnapshot<Decimal> snapshot) {
                                         String symbol = "";
+                                        String _fiatValue = "...";
                                         if (snapshot.connectionState ==
                                             ConnectionState.done) {
                                           final value = snapshot.data *

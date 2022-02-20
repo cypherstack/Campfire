@@ -272,11 +272,6 @@ class TransactionSearchResultsView extends StatelessWidget {
             ),
             child: TransactionCard(
               transaction: results[index],
-              txType: results[index].txType,
-              date: Utilities.extractDateFrom(results[index].timestamp),
-              amount:
-                  "${Utilities.satoshiAmountToPrettyString(results[index].amount)} ${Provider.of<Manager>(context, listen: false).coinTicker}",
-              fiatValue: results[index].worthNow,
             ),
           );
         },

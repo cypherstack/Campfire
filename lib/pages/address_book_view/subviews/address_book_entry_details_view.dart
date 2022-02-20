@@ -10,7 +10,6 @@ import 'package:paymint/notifications/overlay_notification.dart';
 import 'package:paymint/services/address_book_service.dart';
 import 'package:paymint/services/coins/manager.dart';
 import 'package:paymint/utilities/cfcolors.dart';
-import 'package:paymint/utilities/shared_utilities.dart';
 import 'package:paymint/utilities/sizing_utilities.dart';
 import 'package:paymint/utilities/text_styles.dart';
 import 'package:paymint/widgets/custom_buttons/app_bar_icon_button.dart';
@@ -235,11 +234,6 @@ class _AddressBookEntryDetailsViewState
             ),
             child: TransactionCard(
               transaction: results[index],
-              txType: results[index].txType,
-              date: Utilities.extractDateFrom(results[index].timestamp),
-              amount:
-                  "${Utilities.satoshiAmountToPrettyString(results[index].amount)} ${Provider.of<Manager>(context, listen: false).coinTicker}",
-              fiatValue: results[index].worthNow,
             ),
           );
         },
