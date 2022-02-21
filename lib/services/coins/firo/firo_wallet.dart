@@ -1,4 +1,3 @@
-import 'dart:developer';
 import 'dart:isolate';
 import 'dart:typed_data';
 
@@ -39,16 +38,16 @@ const TRANSACTION_LELANTUS = 8;
 const ANONYMITY_SET_EMPTY_ID = 0;
 
 final firoNetwork = NetworkType(
-    messagePrefix: '\x19Firo Signed Message:\n',
-    bech32: 'firo',
+    messagePrefix: '\x18Zcoin Signed Message:\n',
+    bech32: 'bc',
     bip32: Bip32Type(public: 0x0488b21e, private: 0x0488ade4),
     pubKeyHash: 0x52,
     scriptHash: 0x07,
     wif: 0xd2);
 
 final firoTestNetwork = NetworkType(
-    messagePrefix: '\x19Firo Signed Message:\n',
-    bech32: 'firo',
+    messagePrefix: '\x18Zcoin Signed Message:\n',
+    bech32: 'bc',
     bip32: Bip32Type(public: 0x043587cf, private: 0x04358394),
     pubKeyHash: 0x41,
     scriptHash: 0xb2,
