@@ -399,7 +399,7 @@ class FiroWallet extends CoinServiceAPI {
       GlobalEventBus.instance.fire(
           NodeConnectionStatusChangedEvent(NodeConnectionStatus.disconnected));
       Logger.print("Caught exception in refreshWalletData(): $error");
-      log(strace.toString());
+      Logger.print(strace.toString());
     }
   }
 
@@ -850,6 +850,7 @@ class FiroWallet extends CoinServiceAPI {
     if (txData == null) {
       return null;
     }
+    Logger.print(txData.txChunks);
     final listTxData = txData.getAllTransactions();
     listTxData.forEach((key, value) {
       // ignore change addresses
@@ -953,13 +954,11 @@ class FiroWallet extends CoinServiceAPI {
             false);
         if (jmint.value > 0) {
           coins[jmint.txId] = jmint;
-          //TODO uncomment this
           List jindexes = await wallet.get('jindex');
           jindexes.add(index);
           await wallet.put('jindex', jindexes);
           await wallet.put('mintIndex', index + 1);
         }
-        // TODO uncomment this
         await wallet.put('_lelantus_coins', coins);
 
         // add the send transaction
@@ -1132,7 +1131,7 @@ class FiroWallet extends CoinServiceAPI {
       }
     }
 
-    log("allTxHashes: $allTxHashes");
+    Logger.print("allTxHashes: $allTxHashes");
 
     final TransactionData storedTxnData = await wallet.get('latest_tx_model');
     final int storedTxnDataHeight =
@@ -1143,7 +1142,7 @@ class FiroWallet extends CoinServiceAPI {
     if (storedTxnData == null) {
     } else {
       final int currentHeight = (await client.getBlockHeadTip())['height'];
-      log("current chain height: $currentHeight");
+      Logger.print("current chain height: $currentHeight");
 
       // return stored txnData if no new blocks have been found since last fetch
       // OR if no new transactions exist since last fetch
@@ -1176,14 +1175,16 @@ class FiroWallet extends CoinServiceAPI {
       allTransactions.add(tx);
     }
 
-    log("allTransactions length: ${allTransactions.length}");
+    Logger.print("allTransactions length: ${allTransactions.length}");
 
     // sort thing stuff
     final currentPrice =
         await PriceAPI.getPrice(ticker: coinTicker, baseCurrency: currency);
     final List<Map<String, dynamic>> midSortedArray = [];
 
+    Logger.print("refresh the txs");
     for (final txObject in allTransactions) {
+      Logger.print(txObject);
       List<String> sendersArray = [];
       List<String> recipientsArray = [];
 
@@ -1202,7 +1203,7 @@ class FiroWallet extends CoinServiceAPI {
         }
       }
 
-      log("sendersArray: $sendersArray");
+      Logger.print("sendersArray: $sendersArray");
 
       for (final output in txObject["vout"]) {
         final addresses = output["scriptPubKey"]["addresses"];
@@ -1210,11 +1211,11 @@ class FiroWallet extends CoinServiceAPI {
           recipientsArray.add(addresses[0]);
         }
       }
-      log("recipientsArray: $recipientsArray");
+      Logger.print("recipientsArray: $recipientsArray");
 
       final foundInSenders =
-          allAddresses.every((element) => sendersArray.contains(element));
-      log("foundInSenders: $foundInSenders");
+          allAddresses.any((element) => sendersArray.contains(element));
+      Logger.print("foundInSenders: $foundInSenders");
 
       String outAddress = "";
 
@@ -1250,9 +1251,9 @@ class FiroWallet extends CoinServiceAPI {
 
         for (final output in txObject["vout"]) {
           final addresses = output["scriptPubKey"]["addresses"];
+          final value = output["value"];
           if (addresses != null) {
             final address = addresses[0];
-            final value = output["value"];
             if (address != null && value != null) {
               if (changeAddresses.contains(address)) {
                 inputAmtSentFromWallet -= (Decimal.parse(value.toString()) *
@@ -1263,12 +1264,12 @@ class FiroWallet extends CoinServiceAPI {
                 outAddress = address;
               }
             }
-            if (value != null) {
-              outAmount += (Decimal.parse(value.toString()) *
-                      Decimal.fromInt(CampfireConstants.satsPerCoin))
-                  .toBigInt()
-                  .toInt();
-            }
+          }
+          if (value != null) {
+            outAmount += (Decimal.parse(value.toString()) *
+                    Decimal.fromInt(CampfireConstants.satsPerCoin))
+                .toBigInt()
+                .toInt();
           }
         }
 
@@ -2479,7 +2480,7 @@ class FiroWallet extends CoinServiceAPI {
       "txType": "Sent",
       "confirmed_status": false,
       // TODO: check if cast toDouble is required
-      "amount": Utilities.satoshisToAmount(fee).toDouble(),
+      "amount": Utilities.satoshisToAmount(amount).toDouble(),
       "worthNow": ((Decimal.fromInt(amount) * price) /
               Decimal.fromInt(CampfireConstants.satsPerCoin))
           .toDecimal(scaleOnInfinitePrecision: 2)
