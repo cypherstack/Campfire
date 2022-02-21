@@ -29,6 +29,8 @@ class _AddCustomNodeViewState extends State<AddCustomNodeView> {
   // final _usernameController = TextEditingController();
   // final _passwordController = TextEditingController();
 
+  bool _useSSL = false;
+
   final TextStyle _titleStyle = GoogleFonts.workSans(
     color: CFColors.dusk,
     fontSize: 16,
@@ -53,7 +55,7 @@ class _AddCustomNodeViewState extends State<AddCustomNodeView> {
 
       // try to create a new node
       final success = nodesService.createNode(
-          name: name, ipAddress: url, port: port.toString());
+          name: name, ipAddress: url, port: port.toString(), useSSL: _useSSL);
 
       // check for duplicate node name
       if (success) {
@@ -83,7 +85,7 @@ class _AddCustomNodeViewState extends State<AddCustomNodeView> {
     final manager = Provider.of<Manager>(context, listen: false);
 
     final canConnect = await manager.testNetworkConnection(
-        _addressController.text, int.parse(_portController.text));
+        _addressController.text, int.parse(_portController.text), _useSSL);
 
     if (canConnect) {
       OverlayNotification.showSuccess(
@@ -214,28 +216,26 @@ class _AddCustomNodeViewState extends State<AddCustomNodeView> {
         // TextField(
         //   controller: _passwordController,
         // ),
-        // Row(
-        //   children: [
-        //     Checkbox(
-        //       value: _useSSL,
-        //       onChanged: _isEditing
-        //           ? (newValue) {
-        //         setState(() {
-        //           _useSSL = newValue;
-        //         });
-        //       }
-        //           : null,
-        //     ),
-        //     Text(
-        //       "Use SSL",
-        //       style: GoogleFonts.workSans(
-        //         color: CFColors.dusk,
-        //         fontWeight: FontWeight.w400,
-        //         fontSize: 14,
-        //       ),
-        //     )
-        //   ],
-        // ),
+        Row(
+          children: [
+            Checkbox(
+              value: _useSSL,
+              onChanged: (newValue) {
+                setState(() {
+                  _useSSL = newValue;
+                });
+              },
+            ),
+            Text(
+              "Use SSL",
+              style: GoogleFonts.workSans(
+                color: CFColors.dusk,
+                fontWeight: FontWeight.w400,
+                fontSize: 14,
+              ),
+            )
+          ],
+        ),
       ],
     );
   }

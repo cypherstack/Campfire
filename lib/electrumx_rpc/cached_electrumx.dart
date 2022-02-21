@@ -11,9 +11,9 @@ class CachedElectrumX {
   String _hivePath;
   static const minCacheConfirms = 30;
 
-  CachedElectrumX({String server, int port, String hivePath}) {
+  CachedElectrumX({String server, int port, bool useSSL, String hivePath}) {
     _hivePath = hivePath;
-    _client = ElectrumX(server: server, port: port);
+    _client = ElectrumX(server: server, port: port, useSSL: useSSL);
   }
 
   Future<Map<String, dynamic>> getAnonymitySet(

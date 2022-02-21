@@ -13,6 +13,7 @@ class CampfireConstants {
   // static const String defaultIpAddress = "electrumx-firo.cypherstack.com";
   static const int defaultPort = 50002;
   static const String defaultNodeName = "Campfire default";
+  static const bool defaultUseSSL = false;
 
   // default testnet
   //todo add correct testnet server info
@@ -20,6 +21,7 @@ class CampfireConstants {
       "electrumx-firo.cypherstack.com";
   static const int defaultPortTestNet = 50002;
   static const String defaultNodeNameTestNet = "Campfire default testnet";
+  static const bool defaultUseSSLTestNet = false;
 
   // enable testnet
   static const bool allowTestnets = true;

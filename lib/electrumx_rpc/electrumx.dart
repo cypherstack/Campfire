@@ -1,5 +1,6 @@
 import 'dart:convert';
 
+import 'package:flutter/cupertino.dart';
 import 'package:paymint/electrumx_rpc/rpc.dart';
 import 'package:paymint/utilities/address_utils.dart';
 import 'package:paymint/utilities/logger.dart';
@@ -9,8 +10,10 @@ import 'package:uuid/uuid.dart';
 class ElectrumX {
   final String server;
   final int port;
+  final bool useSSL;
 
-  ElectrumX({this.server, this.port});
+  ElectrumX(
+      {@required this.server, @required this.port, @required this.useSSL});
 
   /// Send raw rpc command
   Future<dynamic> request({
@@ -28,7 +31,7 @@ class ElectrumX {
     final client = JsonRPC(
       address: this.server ?? address,
       port: this.port ?? port,
-      useSSL: true,
+      useSSL: this.useSSL ?? CampfireConstants.defaultUseSSL,
       connectionTimeout: connectionTimeout,
       aliveTimerDuration: aliveTimerDuration,
     );

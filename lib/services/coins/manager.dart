@@ -82,8 +82,8 @@ class Manager with ChangeNotifier {
 
   Future<List<String>> get mnemonic => currentWallet.mnemonic;
 
-  Future<bool> testNetworkConnection(String address, int port) =>
-      currentWallet.testNetworkConnection(address, port);
+  Future<bool> testNetworkConnection(String address, int port, bool useSSL) =>
+      currentWallet.testNetworkConnection(address, port, useSSL);
 
   dynamic recoverFromMnemonic(String mnemonic) async {
     try {
