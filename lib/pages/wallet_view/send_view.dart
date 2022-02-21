@@ -431,7 +431,10 @@ class _SendViewState extends State<SendView> {
                           }
                         },
                         child: SvgPicture.asset(
-                          "assets/svg/clipboard.svg",
+                          _recipientAddressTextController.text == "" ||
+                                  _recipientAddressTextController.text == null
+                              ? "assets/svg/clipboard.svg"
+                              : "assets/svg/x.svg",
                           color: CFColors.twilight,
                           width: 20,
                           height: 20,
@@ -468,7 +471,8 @@ class _SendViewState extends State<SendView> {
                         AddressUtils.parseFiroUri(qrResult.rawContent);
                     if (results.isNotEmpty) {
                       // auto fill address
-                      _recipientAddressTextController.text = results["address"];
+                      _address = results["address"];
+                      _recipientAddressTextController.text = _address;
 
                       // autofill notes field
                       if (results["message"] != null) {
@@ -485,6 +489,13 @@ class _SendViewState extends State<SendView> {
                           _firoAmount = amount;
                         });
                       }
+                      setState(() {
+                        _addressToggleFlag =
+                            _recipientAddressTextController.text.isNotEmpty;
+                        _sendButtonEnabled =
+                            (manager.validateAddress(_address) &&
+                                _totalAmount > Decimal.zero);
+                      });
                     }
                   },
                   child: SvgPicture.asset(
