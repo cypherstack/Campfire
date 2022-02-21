@@ -240,17 +240,18 @@ class _TransactionDetailsViewState extends State<TransactionDetailsView> {
                       if (_transaction.txType == "Received") _buildSeparator(),
                       _buildItem(
                         "Amount:",
+                        // _transaction.confirmedStatus
+                        // ?
                         Utilities.satoshiAmountToPrettyString(
                             _transaction.amount),
+                        // : "Pending",
                         1,
                       ),
                       _buildSeparator(),
                       _buildItem(
                           "Fee:",
-                          _transaction.confirmedStatus
-                              ? Utilities.satoshiAmountToPrettyString(
-                                  _transaction.fees)
-                              : "Pending",
+                          Utilities.satoshiAmountToPrettyString(
+                              _transaction.fees),
                           1),
                       _buildSeparator(),
                       _buildItem(
