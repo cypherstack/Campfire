@@ -103,6 +103,7 @@ class _NodeDetailsViewState extends State<NodeDetailsView> {
     _nameController.text = widget.nodeName;
     _addressController.text = widget.nodeData["ipAddress"];
     _portController.text = widget.nodeData["port"];
+    _useSSL = widget.nodeData["useSSL"];
     super.initState();
   }
 
