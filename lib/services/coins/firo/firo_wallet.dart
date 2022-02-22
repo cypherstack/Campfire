@@ -794,7 +794,6 @@ class FiroWallet extends CoinServiceAPI {
     int fee = amount - incomplete.outs[0].value;
 
     var price = await firoPrice;
-    price = price ?? 1;
     var builtHex = txb.build();
     // return builtHex;
     return {
