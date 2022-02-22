@@ -12,6 +12,16 @@ class ElectrumXNode {
   final String name;
   final String id;
   final bool useSSL;
+
+  static ElectrumXNode from(ElectrumXNode node) {
+    return ElectrumXNode(
+      address: node.address,
+      port: node.port,
+      name: node.name,
+      id: node.id,
+      useSSL: node.useSSL,
+    );
+  }
 }
 
 class NodeService extends ChangeNotifier {
