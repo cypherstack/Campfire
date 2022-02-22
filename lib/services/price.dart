@@ -21,9 +21,9 @@ class PriceAPI {
         _price[ticker + baseCurrency] == null ||
         _price[ticker + baseCurrency] == Decimal.fromInt(-1)) {
       _lastCalled[ticker + baseCurrency] = now;
-      log("Attempting to fetch and use a new price api value");
+      Logger.print("Attempting to fetch and use a new price api value");
     } else {
-      log("Using cached price api value");
+      Logger.print("Using cached price api value");
       return _price[ticker + baseCurrency] ?? Decimal.fromInt(-1);
     }
 
