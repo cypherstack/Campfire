@@ -23,6 +23,7 @@ class Manager with ChangeNotifier {
         amount: amount,
         args: args,
       );
+      notifyListeners();
       return txid;
     } catch (e) {
       // rethrow to pass error in alert
