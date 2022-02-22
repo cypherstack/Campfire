@@ -931,7 +931,7 @@ class FiroWallet extends CoinServiceAPI {
   Future<bool> _submitLelantusToNetwork(dynamic transactionInfo) async {
     final txid = await submitHexToNetwork(transactionInfo['txHex']);
     // success if txid matches the generated txid
-    print(transactionInfo['txid']);
+    Logger.print("_submitLelantusToNetwork txid: ${transactionInfo['txid']}");
     if (txid == transactionInfo['txid']) {
       final wallet = await Hive.openBox(this._walletId);
       int index = await wallet.get('mintIndex');
@@ -1138,7 +1138,7 @@ class FiroWallet extends CoinServiceAPI {
     print("change addresses: $changeAddresses");
 
     List<Map<String, dynamic>> allTxHashes = [];
-    int latestTxnBlockHeight = 0;
+    // int latestTxnBlockHeight = 0;
 
     final node = await currentNode;
     final client = ElectrumX(
@@ -1151,9 +1151,9 @@ class FiroWallet extends CoinServiceAPI {
       final txs = await client.getHistory(address: address);
       for (final map in txs) {
         // check to get latest Txn Height
-        if (map["height"] > latestTxnBlockHeight) {
-          latestTxnBlockHeight = map["height"];
-        }
+        // if (map["height"] > latestTxnBlockHeight) {
+        //   latestTxnBlockHeight = map["height"];
+        // }
         // ignore duplicates
         if (!allTxHashes.contains(map)) {
           allTxHashes.add(map);
@@ -1163,34 +1163,34 @@ class FiroWallet extends CoinServiceAPI {
 
     Logger.print("allTxHashes: $allTxHashes");
 
-    final TransactionData storedTxnData = await wallet.get('latest_tx_model');
-    final int storedTxnDataHeight =
-        (await wallet.get('storedTxnDataHeight')) ?? 0;
+    // final TransactionData storedTxnData = await wallet.get('latest_tx_model');
+    // final int storedTxnDataHeight =
+    //     (await wallet.get('storedTxnDataHeight')) ?? 0;
 
-    final Map<String, models.Transaction> transactionsMap = {};
+    // final Map<String, models.Transaction> transactionsMap = {};
 
-    if (storedTxnData == null) {
-    } else {
-      final int currentHeight = (await client.getBlockHeadTip())['height'];
-      Logger.print("current chain height: $currentHeight");
-
-      // return stored txnData if no new blocks have been found since last fetch
-      // OR if no new transactions exist since last fetch
-      // if (storedTxnDataHeight == currentHeight ||
-      //     storedTxnDataHeight == latestTxnBlockHeight) {
-      //   return storedTxnData;
-      // }
-
-      transactionsMap.addAll(storedTxnData.getAllTransactions());
-
-      // final int confirmationBuffer = 30;
-      // for (int i = 0; i < allTxHashes.length; i++) {
-      //   if (allTxHashes[i]['height'] <=
-      //       (storedTxnDataHeight - confirmationBuffer)) {
-      //     allTxHashes.removeAt(i);
-      //   }
-      // }
-    }
+    // if (storedTxnData == null) {
+    // } else {
+    //   final int currentHeight = (await client.getBlockHeadTip())['height'];
+    //   Logger.print("current chain height: $currentHeight");
+    //
+    //   // return stored txnData if no new blocks have been found since last fetch
+    //   // OR if no new transactions exist since last fetch
+    //   // if (storedTxnDataHeight == currentHeight ||
+    //   //     storedTxnDataHeight == latestTxnBlockHeight) {
+    //   //   return storedTxnData;
+    //   // }
+    //
+    //   transactionsMap.addAll(storedTxnData.getAllTransactions());
+    //
+    //   // final int confirmationBuffer = 30;
+    //   // for (int i = 0; i < allTxHashes.length; i++) {
+    //   //   if (allTxHashes[i]['height'] <=
+    //   //       (storedTxnDataHeight - confirmationBuffer)) {
+    //   //     allTxHashes.removeAt(i);
+    //   //   }
+    //   // }
+    // }
 
     List<Map<String, dynamic>> allTransactions = [];
 
@@ -1426,12 +1426,13 @@ class FiroWallet extends CoinServiceAPI {
       }
     }
 
-    final newTxnList = TransactionData.fromJson(result).getAllTransactions();
-    transactionsMap.addAll(newTxnList);
-    final txModel = TransactionData.fromMap(transactionsMap);
-    await wallet.put('storedTxnDataHeight', latestTxnBlockHeight);
-    await wallet.put('latest_tx_model', txModel);
-    return txModel;
+    return TransactionData.fromJson(result);
+    // final newTxnList = TransactionData.fromJson(result).getAllTransactions();
+    // transactionsMap.addAll(newTxnList);
+    // final txModel = TransactionData.fromMap(transactionsMap);
+    // await wallet.put('storedTxnDataHeight', latestTxnBlockHeight);
+    // await wallet.put('latest_tx_model', txModel);
+    // return txModel;
   }
 
   Future<UtxoData> _fetchUtxoData() async {
