@@ -1176,20 +1176,20 @@ class FiroWallet extends CoinServiceAPI {
 
       // return stored txnData if no new blocks have been found since last fetch
       // OR if no new transactions exist since last fetch
-      if (storedTxnDataHeight == currentHeight ||
-          storedTxnDataHeight == latestTxnBlockHeight) {
-        return storedTxnData;
-      }
+      // if (storedTxnDataHeight == currentHeight ||
+      //     storedTxnDataHeight == latestTxnBlockHeight) {
+      //   return storedTxnData;
+      // }
 
       transactionsMap.addAll(storedTxnData.getAllTransactions());
 
-      final int confirmationBuffer = 30;
-      for (int i = 0; i < allTxHashes.length; i++) {
-        if (allTxHashes[i]['height'] <=
-            (storedTxnDataHeight - confirmationBuffer)) {
-          allTxHashes.removeAt(i);
-        }
-      }
+      // final int confirmationBuffer = 30;
+      // for (int i = 0; i < allTxHashes.length; i++) {
+      //   if (allTxHashes[i]['height'] <=
+      //       (storedTxnDataHeight - confirmationBuffer)) {
+      //     allTxHashes.removeAt(i);
+      //   }
+      // }
     }
 
     List<Map<String, dynamic>> allTransactions = [];
@@ -1343,7 +1343,8 @@ class FiroWallet extends CoinServiceAPI {
       midSortedTx["txid"] = txObject["txid"];
       midSortedTx["confirmed_status"] = (txObject["confirmations"] != null) &&
           (txObject["confirmations"] > 0);
-      midSortedTx["timestamp"] = txObject["blocktime"];
+      midSortedTx["timestamp"] = txObject["blocktime"] ??
+          (DateTime.now().millisecondsSinceEpoch ~/ 1000);
       if (foundInSenders) {
         midSortedTx["txType"] = "Sent";
         midSortedTx["amount"] = inputAmtSentFromWallet;
@@ -1507,7 +1508,6 @@ class FiroWallet extends CoinServiceAPI {
               .toDecimal(scaleOnInfinitePrecision: 2);
           tx["rawWorth"] = fiatValue;
           tx["fiatWorth"] = currencyMap[currency] + fiatValue.toString();
-          ;
           outputArray.add(tx);
         }
       }

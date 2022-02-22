@@ -55,7 +55,8 @@ class CachedElectrumX {
         }
         // save set to db
         await box.put(groupId, set);
-        log("Updated currently anonymity set for $coinName with group ID $groupId");
+        Logger.print(
+            "Updated currently anonymity set for $coinName with group ID $groupId");
       }
 
       return set;
@@ -88,13 +89,15 @@ class CachedElectrumX {
 
         if (result["confirmations"] != null &&
             result["confirmations"] > minCacheConfirms) {
+          result.remove("hex");
+          result.remove("lelantusData");
           await txCache.put(tx_hash, result);
         }
 
-        log("using fetched result");
+        Logger.print("using fetched result");
         return result;
       } else {
-        log("using cached result");
+        Logger.print("using cached result");
         return Map<String, dynamic>.from(cachedTx);
       }
     } catch (e) {

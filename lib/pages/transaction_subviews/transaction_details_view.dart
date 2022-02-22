@@ -250,8 +250,10 @@ class _TransactionDetailsViewState extends State<TransactionDetailsView> {
                       _buildSeparator(),
                       _buildItem(
                           "Fee:",
-                          Utilities.satoshiAmountToPrettyString(
-                              _transaction.fees),
+                          _transaction.confirmedStatus
+                              ? Utilities.satoshiAmountToPrettyString(
+                                  _transaction.fees)
+                              : "Pending",
                           1),
                       _buildSeparator(),
                       _buildItem(
