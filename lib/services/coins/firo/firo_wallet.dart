@@ -72,10 +72,11 @@ class FiroWallet extends CoinServiceAPI {
   }
 
   @override
-  String get coinName => "Firo";
+  String get coinName => networkType == FiroNetworkType.main ? "Firo" : "tFiro";
 
   @override
-  String get coinTicker => "FIRO";
+  String get coinTicker =>
+      networkType == FiroNetworkType.main ? "FIRO" : "tFIRO";
 
   @override
   Future<List<String>> get mnemonic => getMnemonicList();
