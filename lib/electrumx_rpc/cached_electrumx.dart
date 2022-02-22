@@ -1,5 +1,3 @@
-import 'dart:developer';
-
 import 'package:flutter/cupertino.dart';
 import 'package:hive/hive.dart';
 import 'package:paymint/utilities/logger.dart';
@@ -87,10 +85,11 @@ class CachedElectrumX {
         final Map<String, dynamic> result =
             await _client.getTransaction(tx_hash: tx_hash, verbose: verbose);
 
+        result.remove("hex");
+        result.remove("lelantusData");
+
         if (result["confirmations"] != null &&
             result["confirmations"] > minCacheConfirms) {
-          result.remove("hex");
-          result.remove("lelantusData");
           await txCache.put(tx_hash, result);
         }
 
