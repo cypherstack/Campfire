@@ -64,7 +64,12 @@ class _SendViewState extends State<SendView> {
     _firoAmount = Decimal.zero;
     _fee = Decimal.zero;
     _totalAmount = Decimal.zero;
+    _address = "";
+    _contactName = null;
     FocusManager.instance.primaryFocus?.unfocus();
+    setState(() {
+      _addressToggleFlag = false;
+    });
   }
 
   /// parse args and autofill fill form
