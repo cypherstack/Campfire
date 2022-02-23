@@ -317,10 +317,11 @@ class _SendViewState extends State<SendView> {
                       );
                     }
                     _balanceMinusMaxFee = balanceMinusMaxFee.data;
+                    print("_balanceMinusMaxFee $_balanceMinusMaxFee");
 
                     return FittedBox(
                       child: Text(
-                        "${_balanceMinusMaxFee < _maxFee ? "0.00000000" : _balanceMinusMaxFee.toStringAsFixed(8)} ${manager.coinTicker}",
+                        "${_balanceMinusMaxFee <= Decimal.zero ? "0.00000000" : _balanceMinusMaxFee.toStringAsFixed(8)} ${manager.coinTicker}",
                         style: GoogleFonts.workSans(
                           color: CFColors.white,
                           fontSize: 16,
@@ -823,7 +824,7 @@ class _SendViewState extends State<SendView> {
         onTap: () {
           print("SEND pressed");
 
-          final Decimal availableBalance = _balanceMinusMaxFee < _maxFee
+          final Decimal availableBalance = _balanceMinusMaxFee < Decimal.zero
               ? Decimal.zero
               : _balanceMinusMaxFee;
 
