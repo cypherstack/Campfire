@@ -242,6 +242,14 @@ class FiroWallet extends CoinServiceAPI {
       } else {
         if (await _submitLelantusToNetwork(txHexOrError)) {
           final txid = (txHexOrError as Map<String, dynamic>)["txid"] as String;
+
+          // temporarily update apdate available balance until a full refresh is done
+          Decimal sendTotal = Utilities.satoshisToAmount(txHexOrError["value"]);
+          sendTotal += Decimal.parse(txHexOrError["fees"].toString());
+          final bals = await balances;
+          bals[0] -= sendTotal;
+          _balances = Future(() => bals);
+
           return txid;
         } else {
           //TODO provide more info
