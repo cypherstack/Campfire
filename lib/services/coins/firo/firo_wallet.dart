@@ -420,11 +420,15 @@ class FiroWallet extends CoinServiceAPI {
     var lelantusEntry = await _getLelantusEntry();
     final balance = await this.balance;
     final node = await currentNode;
+    int spendAmount = (balance * Decimal.fromInt(CampfireConstants.satsPerCoin))
+        .toBigInt()
+        .toInt();
+    if (spendAmount == 0 || lelantusEntry.isEmpty) {
+      return LelantusFeeData(0, 0, []);
+    }
     ReceivePort receivePort = await getIsolate({
       "function": "estimateJoinSplit",
-      "spendAmount": (balance * Decimal.fromInt(CampfireConstants.satsPerCoin))
-          .toBigInt()
-          .toInt(),
+      "spendAmount": spendAmount,
       "subtractFeeFromAmount": true,
       "lelantusEntries": lelantusEntry,
       "node": node,
@@ -458,12 +462,15 @@ class FiroWallet extends CoinServiceAPI {
 
     final lelantusEntries = await Future.wait(waitLelantusEntries);
 
+    lelantusEntries.removeWhere((element) => element.amount == 0);
+
     return lelantusEntries;
   }
 
   _getUnspentCoins() async {
     final wallet = await Hive.openBox(this._walletId);
-    final Map _lelantus_coins = await wallet.get('_lelantus_coins');
+    Map _lelantus_coins = await wallet.get('_lelantus_coins');
+    _lelantus_coins.removeWhere((key, value) => value.value == 0);
     List jindexes = await wallet.get('jindex');
     final data = await _txnData;
     List<LelantusCoin> coins = [];
@@ -479,6 +486,7 @@ class FiroWallet extends CoinServiceAPI {
     );
     final lelantusCoinsList = _lelantus_coins.values.toList(growable: false);
     for (int i = 0; i < lelantusCoinsList.length; i++) {
+      print("hi ${lelantusCoinsList[i]}");
       final txn = await cachedClient.getTransaction(
         tx_hash: lelantusCoinsList[i].txId,
         verbose: true,
@@ -517,25 +525,28 @@ class FiroWallet extends CoinServiceAPI {
   Future<List<Decimal>> _getFullBalance() async {
     try {
       final wallet = await Hive.openBox(this._walletId);
-      final Map _lelantus_coins = await wallet.get('_lelantus_coins');
+      Map _lelantus_coins = await wallet.get('_lelantus_coins');
+      _lelantus_coins.removeWhere((key, value) => value.value == 0);
       final utxos = await utxoData;
       final Decimal price = await firoPrice;
       final data = await _txnData;
       List jindexes = await wallet.get('jindex');
       int intLelantusBalance = 0;
-      Decimal unconfirmedLelantusBalance = Decimal.zero;
+      int unconfirmedLelantusBalance = 0;
       if (_lelantus_coins != null && data != null) {
         _lelantus_coins.forEach((key, value) {
           final tx = data.findTransaction(value.txId);
+          Logger.print("$value $tx");
           if (!jindexes.contains(value.index) && tx == null) {
             // This coin is not confirmed and may be replaced
+          } else if (jindexes.contains(value.index)) {
+            intLelantusBalance += value.value;
           } else if (!value.isUsed &&
               (tx == null ? true : tx.confirmedStatus != false)) {
             intLelantusBalance += value.value;
+          } else if (tx != null && tx.confirmedStatus == false) {
+            unconfirmedLelantusBalance += value.value;
           }
-          // else if (tx != null && tx.confirmedStatus == false) {
-          //   unconfirmedLelantusBalance += value.value / 100000000;
-          // }
         });
       }
       final int utxosIntValue = utxos == null ? 0 : utxos.satoshiBalance;
@@ -553,13 +564,16 @@ class FiroWallet extends CoinServiceAPI {
         balances.add(lelantusBalance * price);
       }
 
-      balances.add(lelantusBalance + utxosValue + unconfirmedLelantusBalance);
+      Decimal _unconfirmedLelantusBalance =
+          Utilities.satoshisToAmount(unconfirmedLelantusBalance);
+
+      balances.add(lelantusBalance + utxosValue + _unconfirmedLelantusBalance);
 
       if (price == null) {
         balances.add(Decimal.fromInt(-1));
       } else {
         balances.add(
-            (lelantusBalance + utxosValue + unconfirmedLelantusBalance) *
+            (lelantusBalance + utxosValue + _unconfirmedLelantusBalance) *
                 price);
       }
       return balances;
@@ -596,7 +610,8 @@ class FiroWallet extends CoinServiceAPI {
     }
 
     final wallet = await Hive.openBox(this._walletId);
-    final Map _lelantus_coins = await wallet.get('_lelantus_coins');
+    Map _lelantus_coins = await wallet.get('_lelantus_coins');
+    _lelantus_coins.removeWhere((key, value) => value.value == 0);
     final data = await _txnData;
     if (data != null && _lelantus_coins != null) {
       final dataMap = data.getAllTransactions();
