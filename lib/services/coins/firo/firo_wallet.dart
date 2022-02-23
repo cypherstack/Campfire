@@ -2,6 +2,7 @@ import 'dart:isolate';
 import 'dart:typed_data';
 
 import 'package:bip32/bip32.dart' as bip32;
+import 'package:bip32/src/utils/wif.dart' as wif;
 import 'package:bip39/bip39.dart' as bip39;
 import 'package:decimal/decimal.dart';
 import 'package:firo_flutter/firo_flutter.dart';
@@ -135,6 +136,7 @@ Future<void> executeNative(arguments) async {
       String currency = arguments['currency'];
       String coinName = arguments['coinName'];
       final String hivePath = arguments['hivePath'];
+      dynamic network = arguments['network'];
 
       if (!(mnemonic == null ||
           transactionData == null ||
@@ -152,7 +154,8 @@ Future<void> executeNative(arguments) async {
             hivePath,
             latestSetId,
             setDataMap,
-            usedSerialNumbers);
+            usedSerialNumbers,
+            network);
         sendPort.send(restoreData);
         return;
       }
@@ -189,13 +192,11 @@ void stop(ReceivePort port) {
 }
 
 isolateDerive(String mnemonic, int from, int to, dynamic _network) async {
-  final seed = bip39.mnemonicToSeed(mnemonic);
-  final root = bip32.BIP32.fromSeed(seed);
   Map<String, dynamic> result = Map();
   Map<int, dynamic> allReceive = Map();
   Map<int, dynamic> allChange = Map();
   for (int i = from; i < to; i++) {
-    var currentNode = root.derivePath("m/44'/136'/0'/0/$i");
+    var currentNode = await _getNode(0, i, mnemonic, _network);
     var address = P2PKH(
             network: _network,
             data: new PaymentData(pubkey: currentNode.publicKey))
@@ -210,7 +211,7 @@ isolateDerive(String mnemonic, int from, int to, dynamic _network) async {
       "address": address,
     };
 
-    currentNode = root.derivePath("m/44'/136'/0'/1/$i");
+    currentNode = await _getNode(1, i, mnemonic, _network);
     address = P2PKH(
             network: _network,
             data: new PaymentData(pubkey: currentNode.publicKey))
@@ -239,7 +240,8 @@ isolateRestore(
     String hivePath,
     int _latestSetId,
     Map _setDataMap,
-    dynamic _usedSerialNumbers) async {
+    dynamic _usedSerialNumbers,
+    dynamic network) async {
   List<int> jindexes = [];
   Map<dynamic, LelantusCoin> _lelantus_coins = Map();
 
@@ -273,7 +275,8 @@ isolateRestore(
     }
 
     while (currentIndex < lastFoundIndex + 20) {
-      final mintKeyPair = await _getNode(MINT_INDEX, currentIndex, mnemonic);
+      final mintKeyPair =
+          await _getNode(MINT_INDEX, currentIndex, mnemonic, network);
       final mintTag = CreateTag(uint8listToString(mintKeyPair.privateKey),
           currentIndex, uint8listToString(mintKeyPair.identifier));
 
@@ -304,7 +307,8 @@ isolateRestore(
             lastFoundIndex = currentIndex;
 
             final keyPath = GetAesKeyPath(foundJmint[0]);
-            final aesKeyPair = await _getNode(JMINT_INDEX, keyPath, mnemonic);
+            final aesKeyPair =
+                await _getNode(JMINT_INDEX, keyPath, mnemonic, network);
             final aesPrivateKey = uint8listToString(aesKeyPair.privateKey);
             if (aesPrivateKey != null) {
               final amount = decryptMintAmount(
@@ -483,13 +487,13 @@ isolateCreateJoinSplitTransaction(
     Uint8List(0),
   );
 
-  final jmintKeyPair = await _getNode(MINT_INDEX, index, mnemonic);
+  final jmintKeyPair = await _getNode(MINT_INDEX, index, mnemonic, _network);
 
   final String jmintprivatekey = uint8listToString(jmintKeyPair.privateKey);
 
   final keyPath = getMintKeyPath(changeToMint, jmintprivatekey, index);
 
-  final aesKeyPair = await _getNode(JMINT_INDEX, keyPath, mnemonic);
+  final aesKeyPair = await _getNode(JMINT_INDEX, keyPath, mnemonic, _network);
   final aesPrivateKey = uint8listToString(aesKeyPair.privateKey);
   if (aesPrivateKey == null) {
     print(
@@ -748,9 +752,18 @@ stringToUint8List(String string) {
   return mintu8;
 }
 
-Future<bip32.BIP32> _getNode(int chain, int index, String mnemonic) async {
+Future<bip32.BIP32> _getNode(
+    int chain, int index, String mnemonic, NetworkType network) async {
   final seed = bip39.mnemonicToSeed(mnemonic);
-  final root = bip32.BIP32.fromSeed(seed);
+  final firoNetworkType = bip32.NetworkType(
+    wif: network.wif,
+    bip32: bip32.Bip32Type(
+      public: network.bip32.public,
+      private: network.bip32.private,
+    ),
+  );
+
+  final root = bip32.BIP32.fromSeed(seed, firoNetworkType);
 
   final node = root.derivePath("m/44'/136'/0'/$chain/$index");
   return node;
@@ -1159,7 +1172,8 @@ class FiroWallet extends CoinServiceAPI {
     final mnemonic = await secureStore.read(key: '${this._walletId}_mnemonic');
     final List<LelantusCoin> lelantusCoins = await _getUnspentCoins();
     final waitLelantusEntries = lelantusCoins.map((coin) async {
-      final keyPair = await _getNode(MINT_INDEX, coin.index, mnemonic);
+      final keyPair =
+          await _getNode(MINT_INDEX, coin.index, mnemonic, this._network);
       final String privateKey = uint8listToString(keyPair.privateKey);
       if (privateKey == null) {
         Logger.print("error bad key");
@@ -1307,8 +1321,9 @@ class FiroWallet extends CoinServiceAPI {
         return;
       }
       await _submitLelantusToNetwork(mintResult);
-    } catch (e) {
+    } catch (e, st) {
       Logger.print("Exception caught in _autoMint(): $e");
+      Logger.print(st);
     }
   }
 
@@ -1442,20 +1457,6 @@ class FiroWallet extends CoinServiceAPI {
       }
     }
 
-    final secureStore = new FlutterSecureStorage();
-    final seed = bip39.mnemonicToSeed(
-        await secureStore.read(key: '${this._walletId}_mnemonic'));
-
-    final firoNetworkType = bip32.NetworkType(
-      wif: _network.wif,
-      bip32: bip32.Bip32Type(
-        public: _network.bip32.public,
-        private: _network.bip32.private,
-      ),
-    );
-
-    final root = bip32.BIP32.fromSeed(seed, firoNetworkType);
-
     List<ECPair> elipticCurvePairArray = [];
     List<Uint8List> outputDataArray = [];
     var receiveDerivations = wallet.get('receiveDerivations');
@@ -1470,6 +1471,8 @@ class FiroWallet extends CoinServiceAPI {
 
         if (receive['address'] == addressToCheckFor) {
           Logger.print('Receiving found on loop $i');
+          Logger.print(
+              'decoded receive[\'wif\'] version: ${wif.decode(receive['wif'])}, _network: $_network');
           elipticCurvePairArray
               .add(ECPair.fromWIF(receive['wif'], network: _network));
           outputDataArray.add(P2PKH(
@@ -1482,6 +1485,8 @@ class FiroWallet extends CoinServiceAPI {
         }
         if (change['address'] == addressToCheckFor) {
           Logger.print('Change found on loop $i');
+          Logger.print(
+              'decoded change[\'wif\'] version: ${wif.decode(change['wif'])}, _network: $_network');
           elipticCurvePairArray
               .add(ECPair.fromWIF(change['wif'], network: _network));
 
@@ -1656,7 +1661,8 @@ class FiroWallet extends CoinServiceAPI {
   _getMintHex(int amount, int index) async {
     final secureStore = new FlutterSecureStorage();
     final mnemonic = await secureStore.read(key: '${this._walletId}_mnemonic');
-    final mintKeyPair = await _getNode(MINT_INDEX, index, mnemonic);
+    final mintKeyPair =
+        await _getNode(MINT_INDEX, index, mnemonic, this._network);
     String keydata = uint8listToString(mintKeyPair.privateKey);
     String seedID = uint8listToString(mintKeyPair.identifier);
     String mintHex = getMintScript(amount, keydata, index, seedID);
@@ -2387,10 +2393,7 @@ class FiroWallet extends CoinServiceAPI {
       }
       return derivations[index]['address'];
     } else {
-      final seed = bip39.mnemonicToSeed(mnemonic);
-      final root = bip32.BIP32.fromSeed(seed);
-      final node = root.derivePath("m/44'/136'/0'/$chain/$index");
-
+      final node = await _getNode(chain, index, mnemonic, this._network);
       return P2PKH(
               network: _network, data: new PaymentData(pubkey: node.publicKey))
           .data
@@ -2633,6 +2636,7 @@ class FiroWallet extends CoinServiceAPI {
       "latestSetId": latestSetId,
       "setDataMap": setDataMap,
       "usedSerialNumbers": usedSerialNumbers,
+      "network": this._network,
     });
 
     var message = await receivePort.first;
