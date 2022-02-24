@@ -1,6 +1,6 @@
+import 'dart:io';
 import 'dart:isolate';
 import 'dart:typed_data';
-import 'dart:io';
 
 import 'package:bip32/bip32.dart' as bip32;
 import 'package:bip32/src/utils/wif.dart' as wif;
@@ -1056,7 +1056,6 @@ class FiroWallet extends CoinServiceAPI {
         value: bip39.generateMnemonic(strength: 256));
     // Set relevant indexes
     await wallet.put('receivingIndex', 0);
-    await wallet.put('use_biometrics', false);
     await wallet.put('changeIndex', 0);
     await wallet.put('mintIndex', 0);
     await wallet.put('blocked_tx_hashes', [
