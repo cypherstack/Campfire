@@ -2530,8 +2530,9 @@ class FiroWallet extends CoinServiceAPI {
   dynamic recoverFromMnemonic(String mnemonic) async {
     try {
       await recoverWalletFromBIP32SeedPhrase(mnemonic);
-    } catch (e) {
+    } catch (e, s) {
       Logger.print("Exception rethrown from recoverFromMnemonic(): $e");
+      Logger.print(s);
       throw e;
     }
   }
