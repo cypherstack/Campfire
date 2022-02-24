@@ -434,7 +434,11 @@ Future<LelantusFeeData> isolateEstimateJoinSplitFee(
     bool subtractFeeFromAmount,
     List<DartLelantusEntry> lelantusEntries,
     ElectrumXNode node) async {
-  for (int i = 0; i < lelantusEntries.length; i++) {}
+  Logger.print("estimateJoinsplit ree");
+  for (int i = 0; i < lelantusEntries.length; i++) {
+    Logger.print(lelantusEntries[i]);
+  }
+  Logger.print("$spendAmount $subtractFeeFromAmount");
 
   List<int> changeToMint = List.empty(growable: true);
   List<int> spendCoinIndexes = List.empty(growable: true);
@@ -449,6 +453,8 @@ Future<LelantusFeeData> isolateEstimateJoinSplitFee(
 
   final estimateFeeData =
       LelantusFeeData(changeToMint[0], fee, spendCoinIndexes);
+  Logger.print(
+      "estimateFeeData ${estimateFeeData.changeToMint} ${estimateFeeData.fee} ${estimateFeeData.spendCoinIndexes}");
   return estimateFeeData;
 }
 
@@ -1217,6 +1223,7 @@ class FiroWallet extends CoinServiceAPI {
     }
     List jindexes = await wallet.get('jindex');
     final data = await _txnData;
+    final lelantusData = await _lelantusTransactionData;
     List<LelantusCoin> coins = [];
     if (_lelantus_coins == null) {
       return coins;
@@ -1241,6 +1248,18 @@ class FiroWallet extends CoinServiceAPI {
       if (!jindexes.contains(lelantusCoinsList[i].index) &&
           data.findTransaction(lelantusCoinsList[i].txId) == null) {
         isUnconfirmed = true;
+      }
+      if ((data != null &&
+              data.findTransaction(lelantusCoinsList[i].txId) != null &&
+              !data
+                  .findTransaction(lelantusCoinsList[i].txId)
+                  .confirmedStatus) ||
+          (lelantusData != null &&
+              lelantusData.findTransaction(lelantusCoinsList[i].txId) != null &&
+              !lelantusData
+                  .findTransaction(lelantusCoinsList[i].txId)
+                  .confirmedStatus)) {
+        continue;
       }
       if (!lelantusCoinsList[i].isUsed &&
           lelantusCoinsList[i].anonymitySetId != ANONYMITY_SET_EMPTY_ID &&
@@ -1276,15 +1295,26 @@ class FiroWallet extends CoinServiceAPI {
       final utxos = await utxoData;
       final Decimal price = await firoPrice;
       final data = await _txnData;
+      final lData = await _lelantusTransactionData;
       List jindexes = await wallet.get('jindex');
       int intLelantusBalance = 0;
       int unconfirmedLelantusBalance = 0;
       if (_lelantus_coins != null && data != null) {
         _lelantus_coins.forEach((key, value) {
           final tx = data.findTransaction(value.txId);
-          Logger.print("$value $tx");
+          var ltx;
+          if (lData != null) {
+            ltx = lData.findTransaction(value.txId);
+          }
+          Logger.print("$value $tx $ltx");
           if (!jindexes.contains(value.index) && tx == null) {
             // This coin is not confirmed and may be replaced
+          } else if (jindexes.contains(value.index) &&
+              tx == null &&
+              !value.isUsed &&
+              ltx != null &&
+              !ltx.confirmedStatus) {
+            unconfirmedLelantusBalance += value.value;
           } else if (jindexes.contains(value.index) && !value.isUsed) {
             intLelantusBalance += value.value;
           } else if (!value.isUsed &&

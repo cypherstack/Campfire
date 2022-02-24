@@ -200,6 +200,7 @@ class _ConfirmSendViewState extends State<ConfirmSendView> {
                             .then((_) {
                           // Navigator.of(context).popUntil(
                           //     (route) => route.settings.name == '/mainview');
+                          manager.currentWallet.refresh();
                           Navigator.pop(context);
                           Navigator.pop(context, true);
                         });
