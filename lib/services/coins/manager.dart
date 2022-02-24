@@ -67,8 +67,10 @@ class Manager with ChangeNotifier {
   }
 
   Future<bool> get useBiometrics => currentWallet.useBiometrics;
-  Future<void> updateBiometricsUsage(bool useBiometrics) =>
-      currentWallet.updateBiometricsUsage(useBiometrics);
+  Future<void> updateBiometricsUsage(bool useBiometrics) async {
+    currentWallet.updateBiometricsUsage(useBiometrics);
+    notifyListeners();
+  }
 
   Future<void> refresh() async {
     await currentWallet.refresh();
