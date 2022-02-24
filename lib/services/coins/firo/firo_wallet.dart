@@ -1,5 +1,6 @@
 import 'dart:isolate';
 import 'dart:typed_data';
+import 'dart:io';
 
 import 'package:bip32/bip32.dart' as bip32;
 import 'package:bip32/src/utils/wif.dart' as wif;
@@ -195,8 +196,9 @@ isolateDerive(String mnemonic, int from, int to, dynamic _network) async {
   Map<String, dynamic> result = Map();
   Map<int, dynamic> allReceive = Map();
   Map<int, dynamic> allChange = Map();
+  final root = _getRoot(mnemonic, _network);
   for (int i = from; i < to; i++) {
-    var currentNode = await _getNode(0, i, mnemonic, _network);
+    var currentNode = _getNodeFromRoot(0, i, root);
     var address = P2PKH(
             network: _network,
             data: new PaymentData(pubkey: currentNode.publicKey))
@@ -211,7 +213,7 @@ isolateDerive(String mnemonic, int from, int to, dynamic _network) async {
       "address": address,
     };
 
-    currentNode = await _getNode(1, i, mnemonic, _network);
+    currentNode = _getNodeFromRoot(1, i, root);
     address = P2PKH(
             network: _network,
             data: new PaymentData(pubkey: currentNode.publicKey))
@@ -225,6 +227,9 @@ isolateDerive(String mnemonic, int from, int to, dynamic _network) async {
       "privateKey": uint8listToString(currentNode.privateKey),
       "address": address,
     };
+    if (i % 50 == 0) {
+      Logger.print("thread at $i");
+    }
   }
   result['receive'] = allReceive;
   result['change'] = allChange;
@@ -274,9 +279,9 @@ isolateRestore(
       usedSerialNumbersSet.add(usedSerialNumbers[ind]);
     }
 
+    final root = _getRoot(mnemonic, network);
     while (currentIndex < lastFoundIndex + 20) {
-      final mintKeyPair =
-          await _getNode(MINT_INDEX, currentIndex, mnemonic, network);
+      final mintKeyPair = _getNodeFromRoot(MINT_INDEX, currentIndex, root);
       final mintTag = CreateTag(uint8listToString(mintKeyPair.privateKey),
           currentIndex, uint8listToString(mintKeyPair.identifier));
 
@@ -307,8 +312,7 @@ isolateRestore(
             lastFoundIndex = currentIndex;
 
             final keyPath = GetAesKeyPath(foundJmint[0]);
-            final aesKeyPair =
-                await _getNode(JMINT_INDEX, keyPath, mnemonic, network);
+            final aesKeyPair = _getNodeFromRoot(JMINT_INDEX, keyPath, root);
             final aesPrivateKey = uint8listToString(aesKeyPair.privateKey);
             if (aesPrivateKey != null) {
               final amount = decryptMintAmount(
@@ -487,13 +491,13 @@ isolateCreateJoinSplitTransaction(
     Uint8List(0),
   );
 
-  final jmintKeyPair = await _getNode(MINT_INDEX, index, mnemonic, _network);
+  final jmintKeyPair = _getNode(MINT_INDEX, index, mnemonic, _network);
 
   final String jmintprivatekey = uint8listToString(jmintKeyPair.privateKey);
 
   final keyPath = getMintKeyPath(changeToMint, jmintprivatekey, index);
 
-  final aesKeyPair = await _getNode(JMINT_INDEX, keyPath, mnemonic, _network);
+  final aesKeyPair = _getNode(JMINT_INDEX, keyPath, mnemonic, _network);
   final aesPrivateKey = uint8listToString(aesKeyPair.privateKey);
   if (aesPrivateKey == null) {
     print(
@@ -752,8 +756,20 @@ stringToUint8List(String string) {
   return mintu8;
 }
 
-Future<bip32.BIP32> _getNode(
-    int chain, int index, String mnemonic, NetworkType network) async {
+bip32.BIP32 _getNode(
+    int chain, int index, String mnemonic, NetworkType network) {
+  final root = _getRoot(mnemonic, network);
+
+  final node = root.derivePath("m/44'/136'/0'/$chain/$index");
+  return node;
+}
+
+bip32.BIP32 _getNodeFromRoot(int chain, int index, bip32.BIP32 root) {
+  final node = root.derivePath("m/44'/136'/0'/$chain/$index");
+  return node;
+}
+
+bip32.BIP32 _getRoot(String mnemonic, NetworkType network) {
   final seed = bip39.mnemonicToSeed(mnemonic);
   final firoNetworkType = bip32.NetworkType(
     wif: network.wif,
@@ -764,9 +780,7 @@ Future<bip32.BIP32> _getNode(
   );
 
   final root = bip32.BIP32.fromSeed(seed, firoNetworkType);
-
-  final node = root.derivePath("m/44'/136'/0'/$chain/$index");
-  return node;
+  return root;
 }
 
 /// Handles a single instance of a firo wallet
@@ -1069,6 +1083,7 @@ class FiroWallet extends CoinServiceAPI {
   /// Refreshes display data for the wallet
   @override
   Future<void> refresh() async {
+    Logger.print("PROCESSORS ${Platform.numberOfProcessors}");
     try {
       GlobalEventBus.instance
           .fire(NodeConnectionStatusChangedEvent(NodeConnectionStatus.loading));
@@ -1081,7 +1096,9 @@ class FiroWallet extends CoinServiceAPI {
         final secureStore = new FlutterSecureStorage();
         final mnemonic =
             await secureStore.read(key: '${this._walletId}_mnemonic');
-        await fillAddresses(mnemonic);
+        await fillAddresses(mnemonic,
+            NUMBER_OF_THREADS:
+                Platform.numberOfProcessors - isolates.length - 1);
       }
 
       final newUtxoData = _fetchUtxoData();
@@ -1171,9 +1188,9 @@ class FiroWallet extends CoinServiceAPI {
     final secureStore = new FlutterSecureStorage();
     final mnemonic = await secureStore.read(key: '${this._walletId}_mnemonic');
     final List<LelantusCoin> lelantusCoins = await _getUnspentCoins();
+    final root = _getRoot(mnemonic, _network);
     final waitLelantusEntries = lelantusCoins.map((coin) async {
-      final keyPair =
-          await _getNode(MINT_INDEX, coin.index, mnemonic, this._network);
+      final keyPair = _getNodeFromRoot(MINT_INDEX, coin.index, root);
       final String privateKey = uint8listToString(keyPair.privateKey);
       if (privateKey == null) {
         Logger.print("error bad key");
@@ -1465,7 +1482,7 @@ class FiroWallet extends CoinServiceAPI {
     for (var i = 0; i < addressesToDerive.length; i++) {
       final addressToCheckFor = addressesToDerive[i];
 
-      for (var i = 0; i < 2000; i++) {
+      for (var i = 0; i < receiveDerivations.length; i++) {
         var receive = receiveDerivations[i];
         var change = changeDerivations[i];
 
@@ -1661,8 +1678,7 @@ class FiroWallet extends CoinServiceAPI {
   _getMintHex(int amount, int index) async {
     final secureStore = new FlutterSecureStorage();
     final mnemonic = await secureStore.read(key: '${this._walletId}_mnemonic');
-    final mintKeyPair =
-        await _getNode(MINT_INDEX, index, mnemonic, this._network);
+    final mintKeyPair = _getNode(MINT_INDEX, index, mnemonic, this._network);
     String keydata = uint8listToString(mintKeyPair.privateKey);
     String seedID = uint8listToString(mintKeyPair.identifier);
     String mintHex = getMintScript(amount, keydata, index, seedID);
@@ -2329,6 +2345,9 @@ class FiroWallet extends CoinServiceAPI {
 
   fillAddresses(String suppliedMnemonic,
       {int PER_BATCH = 250, int NUMBER_OF_THREADS = 4}) async {
+    if (NUMBER_OF_THREADS < 0) {
+      NUMBER_OF_THREADS = 1;
+    }
     final wallet = await Hive.openBox(this._walletId);
     var receiveDerivations = wallet.get('receiveDerivations');
     var changeDerivations = wallet.get('changeDerivations');
@@ -2388,12 +2407,14 @@ class FiroWallet extends CoinServiceAPI {
 
     if (derivations != null) {
       if (derivations[index] == null) {
-        await fillAddresses(mnemonic);
+        await fillAddresses(mnemonic,
+            NUMBER_OF_THREADS:
+                Platform.numberOfProcessors - isolates.length - 1);
         return _generateAddressForChain(chain, index);
       }
       return derivations[index]['address'];
     } else {
-      final node = await _getNode(chain, index, mnemonic, this._network);
+      final node = _getNode(chain, index, mnemonic, this._network);
       return P2PKH(
               network: _network, data: new PaymentData(pubkey: node.publicKey))
           .data
@@ -2488,6 +2509,7 @@ class FiroWallet extends CoinServiceAPI {
 
   /// Recovers wallet from [suppliedMnemonic]. Expects a valid mnemonic.
   dynamic recoverWalletFromBIP32SeedPhrase(String suppliedMnemonic) async {
+    Logger.print("PROCESSORS ${Platform.numberOfProcessors}");
     try {
       final wallet = await Hive.openBox(this._walletId);
 
@@ -2522,13 +2544,14 @@ class FiroWallet extends CoinServiceAPI {
       int receivingGapCounter = 0;
       int changeGapCounter = 0;
 
-      await fillAddresses(suppliedMnemonic);
+      await fillAddresses(suppliedMnemonic,
+          NUMBER_OF_THREADS: Platform.numberOfProcessors - isolates.length - 1);
 
       var receiveDerivations = wallet.get('receiveDerivations');
       var changeDerivations = wallet.get('changeDerivations');
 
       // Deriving and checking for receiving addresses
-      for (var i = 0; i < 1000; i++) {
+      for (var i = 0; i < receiveDerivations.length; i++) {
         // Break out of loop when receivingGapCounter hits 20
         // Same gap limit for change as for receiving, breaks when it hits 20
         if (receivingGapCounter >= 20 && changeGapCounter >= 20) {
