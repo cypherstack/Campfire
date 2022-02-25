@@ -48,6 +48,7 @@ class JsonRPC {
       }).catchError((e) {
         Logger.print("Unable to connect: $e");
         socket?.destroy();
+        throw e;
       });
     } else {
       await Socket.connect(this.address, this.port).then((Socket sock) {
@@ -57,6 +58,7 @@ class JsonRPC {
       }).catchError((e) {
         Logger.print("Unable to connect: $e");
         socket?.destroy();
+        throw e;
       });
     }
 
@@ -138,6 +140,7 @@ class JsonRPC {
       }).catchError((e) {
         print("Unable to connect: $e");
         socket?.destroy();
+        throw e;
       });
     } else {
       await Socket.connect(this.address, this.port).then((Socket sock) {
@@ -147,6 +150,7 @@ class JsonRPC {
       }).catchError((e) {
         print("Unable to connect: $e");
         socket?.destroy();
+        throw e;
       });
     }
 
@@ -200,6 +204,7 @@ class JsonRPC {
       }).catchError((e) {
         print("Unable to connect: $e");
         socket?.destroy();
+        throw e;
       });
     } else {
       await Socket.connect(this.address, this.port).then((Socket sock) {
@@ -209,6 +214,7 @@ class JsonRPC {
       }).catchError((e) {
         print("Unable to connect: $e");
         socket?.destroy();
+        throw e;
       });
     }
 
