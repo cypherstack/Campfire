@@ -20,11 +20,16 @@ import 'backup_key_warning_view.dart';
 import 'helpers/create_wallet_type.dart';
 
 class CreatePinView extends StatefulWidget {
-  const CreatePinView({Key key, @required this.type, @required this.walletName})
+  const CreatePinView(
+      {Key key,
+      @required this.type,
+      @required this.walletName,
+      this.useTestNet})
       : super(key: key);
 
   final CreateWalletType type;
   final String walletName;
+  final bool useTestNet;
 
   @override
   _CreatePinViewState createState() => _CreatePinViewState();
@@ -186,7 +191,14 @@ class _CreatePinViewState extends State<CreatePinView> {
                             Provider.of<WalletsService>(context, listen: false);
                         final store = new FlutterSecureStorage();
 
-                        await walletService.addNewWalletName(widget.walletName);
+                        final firoNetworkType = widget.useTestNet
+                            ? FiroNetworkType.test
+                            : FiroNetworkType.main;
+
+                        await walletService.addNewWalletName(
+                          widget.walletName,
+                          firoNetworkType.name,
+                        );
                         final id =
                             await walletService.getWalletId(widget.walletName);
                         await store.write(key: "${id}_pin", value: pin);
@@ -208,7 +220,7 @@ class _CreatePinViewState extends State<CreatePinView> {
                           manager.currentWallet = FiroWallet(
                               walletId: id,
                               walletName: widget.walletName,
-                              networkType: FiroNetworkType.main);
+                              networkType: firoNetworkType);
                           await manager.updateBiometricsUsage(useBiometrics);
                           await Future.delayed(Duration(seconds: 3));
 
@@ -223,7 +235,9 @@ class _CreatePinViewState extends State<CreatePinView> {
                           case CreateWalletType.RESTORE:
                             // message = "PIN code successfully set";
                             nextView = RestoreWalletFormView(
-                                walletName: widget.walletName);
+                              walletName: widget.walletName,
+                              firoNetworkType: firoNetworkType,
+                            );
 
                             break;
 

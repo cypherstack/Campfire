@@ -1,9 +1,11 @@
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
+import 'package:google_fonts/google_fonts.dart';
 import 'package:paymint/notifications/overlay_notification.dart';
 import 'package:paymint/pages/onboarding_view/create_pin_view.dart';
 import 'package:paymint/services/wallets_service.dart';
 import 'package:paymint/utilities/cfcolors.dart';
+import 'package:paymint/utilities/misc_global_constants.dart';
 import 'package:paymint/utilities/sizing_utilities.dart';
 import 'package:paymint/utilities/text_styles.dart';
 import 'package:paymint/widgets/custom_buttons/gradient_button.dart';
@@ -23,6 +25,8 @@ class NameYourWalletView extends StatefulWidget {
 
 class _NameYourWalletViewState extends State<NameYourWalletView> {
   final _nameTextEditingController = TextEditingController();
+
+  bool _useTestNet = false;
 
   @override
   Widget build(BuildContext context) {
@@ -67,6 +71,44 @@ class _NameYourWalletViewState extends State<NameYourWalletView> {
                           ),
                         ),
                         _buildNameField(),
+                        SizedBox(
+                          height: 12,
+                        ),
+                        if (CampfireConstants.allowTestnets)
+                          Row(
+                            children: [
+                              SizedBox(
+                                height: 20,
+                                width: 20,
+                                child: Checkbox(
+                                  materialTapTargetSize:
+                                      MaterialTapTargetSize.shrinkWrap,
+                                  value: _useTestNet,
+                                  onChanged: (newValue) {
+                                    setState(() {
+                                      _useTestNet = newValue;
+                                    });
+                                  },
+                                ),
+                              ),
+                              SizedBox(
+                                width: 14,
+                              ),
+                              Align(
+                                alignment: Alignment.centerLeft,
+                                child: FittedBox(
+                                  child: Text(
+                                    "Test net",
+                                    style: GoogleFonts.workSans(
+                                      color: CFColors.dusk,
+                                      fontWeight: FontWeight.w400,
+                                      fontSize: 14,
+                                    ),
+                                  ),
+                                ),
+                              )
+                            ],
+                          ),
                         Spacer(),
                         _buildNextButton(walletsService),
                       ],
@@ -134,7 +176,10 @@ class _NameYourWalletViewState extends State<NameYourWalletView> {
                     CupertinoPageRoute(
                       builder: (context) {
                         return CreatePinView(
-                            type: widget.type, walletName: walletName);
+                          type: widget.type,
+                          walletName: walletName,
+                          useTestNet: _useTestNet,
+                        );
                       },
                     ),
                   );

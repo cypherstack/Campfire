@@ -35,10 +35,12 @@ enum InputStatus {
 }
 
 class RestoreWalletFormView extends StatefulWidget {
-  const RestoreWalletFormView({Key key, @required this.walletName})
+  const RestoreWalletFormView(
+      {Key key, @required this.walletName, @required this.firoNetworkType})
       : super(key: key);
 
   final String walletName;
+  final FiroNetworkType firoNetworkType;
 
   @override
   _RestoreWalletFormViewState createState() => _RestoreWalletFormViewState();
@@ -466,9 +468,10 @@ class _RestoreWalletFormViewState extends State<RestoreWalletFormView> {
                 final walletName = await walletsService.currentWalletName;
                 final walletId = await walletsService.getWalletId(walletName);
                 manager.currentWallet = FiroWallet(
-                    walletId: walletId,
-                    walletName: walletName,
-                    networkType: FiroNetworkType.main);
+                  walletId: walletId,
+                  walletName: walletName,
+                  networkType: widget.firoNetworkType,
+                );
 
                 try {
                   final secureStore = new FlutterSecureStorage();

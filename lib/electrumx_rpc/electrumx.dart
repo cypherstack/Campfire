@@ -1,19 +1,19 @@
 import 'dart:convert';
 
+import 'package:flutter/cupertino.dart';
 import 'package:paymint/electrumx_rpc/rpc.dart';
 import 'package:paymint/utilities/address_utils.dart';
 import 'package:paymint/utilities/logger.dart';
+import 'package:paymint/utilities/misc_global_constants.dart';
 import 'package:uuid/uuid.dart';
-
-// const ELECTRUMX_SERVER = "electrumx-firo.cypherstack.com";
-const ELECTRUMX_SERVER = "electrumx.firo.org";
-const ELECTRUMX_PORT = 50002;
 
 class ElectrumX {
   final String server;
   final int port;
+  final bool useSSL;
 
-  ElectrumX({this.server, this.port});
+  ElectrumX(
+      {@required this.server, @required this.port, @required this.useSSL});
 
   /// Send raw rpc command
   Future<dynamic> request({
@@ -22,10 +22,16 @@ class ElectrumX {
     Duration connectionTimeout = const Duration(seconds: 5),
     Duration aliveTimerDuration = const Duration(seconds: 2),
   }) async {
+    final address = CampfireConstants.allowTestnets
+        ? CampfireConstants.defaultIpAddressTestNet
+        : CampfireConstants.defaultIpAddress;
+    final port = CampfireConstants.allowTestnets
+        ? CampfireConstants.defaultPortTestNet
+        : CampfireConstants.defaultPort;
     final client = JsonRPC(
-      address: this.server ?? ELECTRUMX_SERVER,
-      port: this.port ?? ELECTRUMX_PORT,
-      useSSL: true,
+      address: this.server ?? address,
+      port: this.port ?? port,
+      useSSL: this.useSSL ?? CampfireConstants.defaultUseSSL,
       connectionTimeout: connectionTimeout,
       aliveTimerDuration: aliveTimerDuration,
     );

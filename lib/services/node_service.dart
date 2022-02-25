@@ -5,12 +5,23 @@ import 'package:paymint/services/event_bus/global_event_bus.dart';
 import 'package:paymint/utilities/misc_global_constants.dart';
 import 'package:uuid/uuid.dart';
 
-class Node {
-  Node({this.address, this.port, this.name, this.id});
+class ElectrumXNode {
+  ElectrumXNode({this.address, this.port, this.name, this.id, this.useSSL});
   final String address;
   final int port;
   final String name;
   final String id;
+  final bool useSSL;
+
+  static ElectrumXNode from(ElectrumXNode node) {
+    return ElectrumXNode(
+      address: node.address,
+      port: node.port,
+      name: node.name,
+      id: node.id,
+      useSSL: node.useSSL,
+    );
+  }
 }
 
 class NodeService extends ChangeNotifier {
@@ -19,8 +30,8 @@ class NodeService extends ChangeNotifier {
   String _activeNodeName;
   String get activeNodeName => _activeNodeName ??= _fetchActiveNodeName();
 
-  Node _currentNode;
-  Node get currentNode => _currentNode ??= _getCurrentNode();
+  ElectrumXNode _currentNode;
+  ElectrumXNode get currentNode => _currentNode ??= _getCurrentNode();
 
   Map<String, dynamic> _nodes;
   Map<String, dynamic> get nodes => _nodes ??= _fetchNodes();
@@ -44,17 +55,18 @@ class NodeService extends ChangeNotifier {
     return name;
   }
 
-  Node _getCurrentNode() {
+  ElectrumXNode _getCurrentNode() {
     final id = _walletId;
     final wallet = Hive.box(id);
     final nodes = wallet.get('nodes');
 
     final name = activeNodeName;
 
-    return Node(
+    return ElectrumXNode(
       address: nodes[name]["ipAddress"],
       port: int.parse(nodes[name]["port"]),
       name: name,
+      useSSL: nodes[name]["useSSL"],
     );
   }
 
@@ -75,6 +87,7 @@ class NodeService extends ChangeNotifier {
         name: CampfireConstants.defaultNodeName,
         ipAddress: CampfireConstants.defaultIpAddress,
         port: CampfireConstants.defaultPort.toString(),
+        useSSL: CampfireConstants.defaultUseSSL,
       );
       return _fetchNodes();
     }
@@ -93,7 +106,7 @@ class NodeService extends ChangeNotifier {
   }
 
   /// returns false if node with same name exists, true on success
-  bool createNode({String name, String ipAddress, String port}) {
+  bool createNode({String name, String ipAddress, String port, bool useSSL}) {
     final id = _walletId;
     final wallet = Hive.box(id);
     var nodes = wallet.get('nodes');
@@ -110,6 +123,7 @@ class NodeService extends ChangeNotifier {
       "id": Uuid().v1(),
       "ipAddress": ipAddress,
       "port": port,
+      "useSSL": useSSL,
     };
 
     wallet.put('nodes', nodes);
@@ -124,6 +138,7 @@ class NodeService extends ChangeNotifier {
     String updatedName,
     String updatedIpAddress,
     String updatedPort,
+    bool useSSL,
   }) {
     final id = _walletId;
     final wallet = Hive.box(id);
@@ -137,6 +152,7 @@ class NodeService extends ChangeNotifier {
     final node = nodes.remove(originalName);
     node["ipAddress"] = updatedIpAddress;
     node["port"] = updatedPort;
+    node["useSSL"] = useSSL;
     nodes[updatedName] = node;
 
     wallet.put('nodes', nodes);

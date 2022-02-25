@@ -43,7 +43,7 @@ class _ConfirmSendViewState extends State<ConfirmSendView> {
           localizedReason: "Confirm transaction",
           title: manager.walletName,
         )) {
-      Navigator.pushReplacementNamed(context, '/mainview');
+      await attemptSend(context, manager);
     }
   }
 
@@ -166,63 +166,7 @@ class _ConfirmSendViewState extends State<ConfirmSendView> {
                         await store.read(key: '${manager.walletId}_pin');
 
                     if (storedPin == pin) {
-                      // show sending dialog
-                      showDialog(
-                        useSafeArea: false,
-                        barrierDismissible: false,
-                        context: context,
-                        builder: (_) => _buildSendingDialog(),
-                      );
-
-                      print("widget.amount: ${widget.amount}");
-                      print("widget.address: ${widget.address}");
-
-                      try {
-                        final String txid = await manager.send(
-                            toAddress: widget.address,
-                            amount: (widget.amount *
-                                    Decimal.fromInt(
-                                        CampfireConstants.satsPerCoin))
-                                .toBigInt()
-                                .toInt());
-
-                        final notesService = Provider.of<NotesService>(
-                          context,
-                          listen: false,
-                        );
-                        notesService.addNote(txid: txid, note: widget.note);
-                        OverlayNotification.showSuccess(
-                          context,
-                          "Transaction sent",
-                          Duration(milliseconds: 2700),
-                        );
-                        await Future.delayed(Duration(milliseconds: 100))
-                            .then((_) {
-                          // Navigator.of(context).popUntil(
-                          //     (route) => route.settings.name == '/mainview');
-                          Navigator.pop(context);
-                          Navigator.pop(context, true);
-                        });
-                      } catch (e) {
-                        Logger.print("Exception caught in ConfirmSendView: $e");
-                        showDialog(
-                          useSafeArea: false,
-                          barrierDismissible: false,
-                          context: context,
-                          builder: (_) => CampfireAlert(message: e.toString()),
-                        ).then((_) {
-                          final navigator = Navigator.of(context);
-                          navigator.pop();
-                          navigator.pop();
-                        });
-                        OverlayNotification.showError(
-                          context,
-                          "Transaction failed.",
-                          Duration(milliseconds: 2000),
-                        );
-                      }
-
-                      // Navigator.pop(context);
+                      await attemptSend(context, manager);
                     } else {
                       OverlayNotification.showError(
                         context,
@@ -244,6 +188,60 @@ class _ConfirmSendViewState extends State<ConfirmSendView> {
         ],
       ),
     );
+  }
+
+  Future<void> attemptSend(BuildContext context, Manager manager) async {
+    showDialog(
+      useSafeArea: false,
+      barrierDismissible: false,
+      context: context,
+      builder: (_) => _buildSendingDialog(),
+    );
+
+    Logger.print("widget.amount: ${widget.amount}");
+    Logger.print("widget.address: ${widget.address}");
+
+    try {
+      final String txid = await manager.send(
+          toAddress: widget.address,
+          amount:
+              (widget.amount * Decimal.fromInt(CampfireConstants.satsPerCoin))
+                  .toBigInt()
+                  .toInt());
+
+      final notesService = Provider.of<NotesService>(
+        context,
+        listen: false,
+      );
+      notesService.addNote(txid: txid, note: widget.note);
+      OverlayNotification.showSuccess(
+        context,
+        "Transaction sent",
+        Duration(milliseconds: 2700),
+      );
+      await Future.delayed(Duration(milliseconds: 100)).then((_) {
+        manager.currentWallet.refresh();
+        Navigator.pop(context);
+        Navigator.pop(context, true);
+      });
+    } catch (e) {
+      Logger.print("Exception caught in ConfirmSendView: $e");
+      showDialog(
+        useSafeArea: false,
+        barrierDismissible: false,
+        context: context,
+        builder: (_) => CampfireAlert(message: e.toString()),
+      ).then((_) {
+        final navigator = Navigator.of(context);
+        navigator.pop();
+        navigator.pop();
+      });
+      OverlayNotification.showError(
+        context,
+        "Transaction failed.",
+        Duration(milliseconds: 2000),
+      );
+    }
   }
 
   _buildSendingDialog() {

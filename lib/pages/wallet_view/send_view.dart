@@ -64,7 +64,12 @@ class _SendViewState extends State<SendView> {
     _firoAmount = Decimal.zero;
     _fee = Decimal.zero;
     _totalAmount = Decimal.zero;
+    _address = "";
+    _contactName = null;
     FocusManager.instance.primaryFocus?.unfocus();
+    setState(() {
+      _addressToggleFlag = false;
+    });
   }
 
   /// parse args and autofill fill form
@@ -312,10 +317,11 @@ class _SendViewState extends State<SendView> {
                       );
                     }
                     _balanceMinusMaxFee = balanceMinusMaxFee.data;
+                    print("_balanceMinusMaxFee $_balanceMinusMaxFee");
 
                     return FittedBox(
                       child: Text(
-                        "${_balanceMinusMaxFee < _maxFee ? "0.00000000" : _balanceMinusMaxFee.toStringAsFixed(8)} ${manager.coinTicker}",
+                        "${_balanceMinusMaxFee <= Decimal.zero ? "0.00000000" : _balanceMinusMaxFee.toStringAsFixed(8)} ${manager.coinTicker}",
                         style: GoogleFonts.workSans(
                           color: CFColors.white,
                           fontSize: 16,
@@ -431,7 +437,10 @@ class _SendViewState extends State<SendView> {
                           }
                         },
                         child: SvgPicture.asset(
-                          "assets/svg/clipboard.svg",
+                          _recipientAddressTextController.text == "" ||
+                                  _recipientAddressTextController.text == null
+                              ? "assets/svg/clipboard.svg"
+                              : "assets/svg/x.svg",
                           color: CFColors.twilight,
                           width: 20,
                           height: 20,
@@ -468,7 +477,8 @@ class _SendViewState extends State<SendView> {
                         AddressUtils.parseFiroUri(qrResult.rawContent);
                     if (results.isNotEmpty) {
                       // auto fill address
-                      _recipientAddressTextController.text = results["address"];
+                      _address = results["address"];
+                      _recipientAddressTextController.text = _address;
 
                       // autofill notes field
                       if (results["message"] != null) {
@@ -485,6 +495,13 @@ class _SendViewState extends State<SendView> {
                           _firoAmount = amount;
                         });
                       }
+                      setState(() {
+                        _addressToggleFlag =
+                            _recipientAddressTextController.text.isNotEmpty;
+                        _sendButtonEnabled =
+                            (manager.validateAddress(_address) &&
+                                _totalAmount > Decimal.zero);
+                      });
                     }
                   },
                   child: SvgPicture.asset(
@@ -807,7 +824,7 @@ class _SendViewState extends State<SendView> {
         onTap: () {
           print("SEND pressed");
 
-          final Decimal availableBalance = _balanceMinusMaxFee < _maxFee
+          final Decimal availableBalance = _balanceMinusMaxFee < Decimal.zero
               ? Decimal.zero
               : _balanceMinusMaxFee;
 

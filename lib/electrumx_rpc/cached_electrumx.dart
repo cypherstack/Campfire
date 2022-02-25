@@ -1,5 +1,3 @@
-import 'dart:developer';
-
 import 'package:flutter/cupertino.dart';
 import 'package:hive/hive.dart';
 import 'package:paymint/utilities/logger.dart';
@@ -11,9 +9,9 @@ class CachedElectrumX {
   String _hivePath;
   static const minCacheConfirms = 30;
 
-  CachedElectrumX({String server, int port, String hivePath}) {
+  CachedElectrumX({String server, int port, bool useSSL, String hivePath}) {
     _hivePath = hivePath;
-    _client = ElectrumX(server: server, port: port);
+    _client = ElectrumX(server: server, port: port, useSSL: useSSL);
   }
 
   Future<Map<String, dynamic>> getAnonymitySet(
@@ -55,7 +53,8 @@ class CachedElectrumX {
         }
         // save set to db
         await box.put(groupId, set);
-        log("Updated currently anonymity set for $coinName with group ID $groupId");
+        Logger.print(
+            "Updated currently anonymity set for $coinName with group ID $groupId");
       }
 
       return set;
@@ -86,15 +85,18 @@ class CachedElectrumX {
         final Map<String, dynamic> result =
             await _client.getTransaction(tx_hash: tx_hash, verbose: verbose);
 
+        result.remove("hex");
+        result.remove("lelantusData");
+
         if (result["confirmations"] != null &&
             result["confirmations"] > minCacheConfirms) {
           await txCache.put(tx_hash, result);
         }
 
-        log("using fetched result");
+        Logger.print("using fetched result");
         return result;
       } else {
-        log("using cached result");
+        Logger.print("using cached result");
         return Map<String, dynamic>.from(cachedTx);
       }
     } catch (e) {

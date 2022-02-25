@@ -35,12 +35,11 @@ class Lockscreen2View extends StatefulWidget {
 class _Lockscreen2ViewState extends State<Lockscreen2View> {
   _checkUseBiometrics() async {
     final manager = Provider.of<Manager>(context, listen: false);
+    final walletsService = Provider.of<WalletsService>(context, listen: false);
     bool useBiometrics = false;
 
     // check if authenticating wallet log in
     if (manager.currentWallet == null) {
-      final walletsService =
-          Provider.of<WalletsService>(context, listen: false);
       final walletId = await walletsService
           .getWalletId(await walletsService.currentWalletName);
       final wallet = await Hive.openBox(walletId);
@@ -58,6 +57,29 @@ class _Lockscreen2ViewState extends State<Lockscreen2View> {
           title: title,
           localizedReason: localizedReason,
           cancelButtonText: cancelButtonText)) {
+        // check if initial log in
+        if (widget.routeOnSuccess == "/mainview") {
+          final networkName = await walletsService.networkName;
+          final walletName = await walletsService.currentWalletName;
+          final id = await walletsService.getWalletId(walletName);
+          FiroNetworkType firoNetworkType;
+          switch (networkName) {
+            case "main":
+              firoNetworkType = FiroNetworkType.main;
+              break;
+            case "test":
+              firoNetworkType = FiroNetworkType.test;
+              break;
+            default:
+              throw Exception("Bad firo network type encountered");
+          }
+          final manager = Provider.of<Manager>(context, listen: false);
+          manager.currentWallet = FiroWallet(
+              walletId: id,
+              walletName: walletName,
+              networkType: firoNetworkType);
+        }
+
         Navigator.pushReplacementNamed(context, widget.routeOnSuccess);
       }
       // leave this commented to enable pin fall back should biometrics not work properly
@@ -234,12 +256,24 @@ class _Lockscreen2ViewState extends State<Lockscreen2View> {
 
                   // check if initial log in
                   if (widget.routeOnSuccess == "/mainview") {
+                    final networkName = await walletsService.networkName;
+                    FiroNetworkType firoNetworkType;
+                    switch (networkName) {
+                      case "main":
+                        firoNetworkType = FiroNetworkType.main;
+                        break;
+                      case "test":
+                        firoNetworkType = FiroNetworkType.test;
+                        break;
+                      default:
+                        throw Exception("Bad firo network type encountered");
+                    }
                     final manager =
                         Provider.of<Manager>(context, listen: false);
                     manager.currentWallet = FiroWallet(
                         walletId: id,
                         walletName: walletName,
-                        networkType: FiroNetworkType.main);
+                        networkType: firoNetworkType);
                   }
 
                   await Future.delayed(Duration(milliseconds: 600));

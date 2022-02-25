@@ -7,6 +7,7 @@ import 'package:flutter_svg/flutter_svg.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:paymint/notifications/modal_popup_dialog.dart';
 import 'package:paymint/pages/settings_view/settings_view.dart';
+import 'package:paymint/pages/wallet_selection_view.dart';
 import 'package:paymint/pages/wallet_view/receive_view.dart';
 import 'package:paymint/pages/wallet_view/send_view.dart';
 import 'package:paymint/pages/wallet_view/wallet_view.dart';
@@ -326,7 +327,15 @@ class _MainViewState extends State<MainView> {
       await walletsService.refreshWallets();
     }
     if (_exitOnBackButton) {
-      Navigator.of(context).popUntil((route) => route.settings.name == '/');
+      // Navigator.of(context).popUntil((route) => route.settings.name == '/');
+      Navigator.pushAndRemoveUntil(
+        context,
+        CupertinoPageRoute(
+          maintainState: false,
+          builder: (_) => WalletSelectionView(),
+        ),
+        (_) => false,
+      );
     }
     return false;
   }
@@ -374,40 +383,40 @@ class _MainViewState extends State<MainView> {
               showUnselectedLabels: true,
               items: [
                 BottomNavigationBarItem(
-                  icon: SvgPicture.asset(
-                    "assets/svg/upload-2.svg",
-                    color: _buildIconColor(0), // Index 0 -> send view
-                    semanticsLabel: "send navigation logo",
-                  ),
-                  // TODO: bring back styling that Flutter 2.10 broke
-                  label: "Send"
-                  // title: Text(
-                  //   "Send",
-                  //   style: _buildTextStyle(0),
-                  // ),
-                ),
+                    icon: SvgPicture.asset(
+                      "assets/svg/upload-2.svg",
+                      color: _buildIconColor(0), // Index 0 -> send view
+                      semanticsLabel: "send navigation logo",
+                    ),
+                    // TODO: bring back styling that Flutter 2.10 broke
+                    label: "Send"
+                    // title: Text(
+                    //   "Send",
+                    //   style: _buildTextStyle(0),
+                    // ),
+                    ),
                 BottomNavigationBarItem(
-                  icon: SvgPicture.asset(
-                    "assets/svg/wallet-2.svg",
-                    color: _buildIconColor(1), // Index 1 -> wallet view
-                  ),
-                  label: "Wallet"
-                  // title: Text(
-                  //   "Wallet",
-                  //   style: _buildTextStyle(1),
-                  // ),
-                ),
+                    icon: SvgPicture.asset(
+                      "assets/svg/wallet-2.svg",
+                      color: _buildIconColor(1), // Index 1 -> wallet view
+                    ),
+                    label: "Wallet"
+                    // title: Text(
+                    //   "Wallet",
+                    //   style: _buildTextStyle(1),
+                    // ),
+                    ),
                 BottomNavigationBarItem(
-                  icon: SvgPicture.asset(
-                    "assets/svg/download-2.svg",
-                    color: _buildIconColor(2), // Index 2 -> receive view
-                  ),
-                  label: "Receive"
-                  // title: Text(
-                  //   "Receive",
-                  //   style: _buildTextStyle(2),
-                  // ),
-                ),
+                    icon: SvgPicture.asset(
+                      "assets/svg/download-2.svg",
+                      color: _buildIconColor(2), // Index 2 -> receive view
+                    ),
+                    label: "Receive"
+                    // title: Text(
+                    //   "Receive",
+                    //   style: _buildTextStyle(2),
+                    // ),
+                    ),
               ],
             ),
           ),

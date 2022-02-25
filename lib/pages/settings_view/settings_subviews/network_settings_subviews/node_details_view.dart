@@ -40,7 +40,7 @@ class _NodeDetailsViewState extends State<NodeDetailsView> {
   // final _usernameController = TextEditingController();
   // final _passwordController = TextEditingController();
 
-  // var _useSSL = false;
+  var _useSSL = false;
   final _isEditing;
 
   final TextStyle _titleStyle = GoogleFonts.workSans(
@@ -64,6 +64,7 @@ class _NodeDetailsViewState extends State<NodeDetailsView> {
       updatedName: name,
       updatedIpAddress: ipAddress,
       updatedPort: port,
+      useSSL: _useSSL,
     );
 
     // check for duplicate node name
@@ -86,7 +87,7 @@ class _NodeDetailsViewState extends State<NodeDetailsView> {
     final manager = Provider.of<Manager>(context, listen: false);
 
     final canConnect = await manager.testNetworkConnection(
-        _addressController.text, int.parse(_portController.text));
+        _addressController.text, int.parse(_portController.text), _useSSL);
 
     if (canConnect) {
       OverlayNotification.showSuccess(
@@ -102,6 +103,7 @@ class _NodeDetailsViewState extends State<NodeDetailsView> {
     _nameController.text = widget.nodeName;
     _addressController.text = widget.nodeData["ipAddress"];
     _portController.text = widget.nodeData["port"];
+    _useSSL = widget.nodeData["useSSL"];
     super.initState();
   }
 
@@ -437,28 +439,28 @@ class _NodeDetailsViewState extends State<NodeDetailsView> {
         //   enabled: _isEditing,
         //   controller: _passwordController,
         // ),
-        // Row(
-        //   children: [
-        //     Checkbox(
-        //       value: _useSSL,
-        //       onChanged: _isEditing
-        //           ? (newValue) {
-        //               setState(() {
-        //                 _useSSL = newValue;
-        //               });
-        //             }
-        //           : null,
-        //     ),
-        //     Text(
-        //       "Use SSL",
-        //       style: GoogleFonts.workSans(
-        //         color: CFColors.dusk,
-        //         fontWeight: FontWeight.w400,
-        //         fontSize: 14,
-        //       ),
-        //     )
-        //   ],
-        // ),
+        Row(
+          children: [
+            Checkbox(
+              value: _useSSL,
+              onChanged: _isEditing
+                  ? (newValue) {
+                      setState(() {
+                        _useSSL = newValue;
+                      });
+                    }
+                  : null,
+            ),
+            Text(
+              "Use SSL",
+              style: GoogleFonts.workSans(
+                color: CFColors.dusk,
+                fontWeight: FontWeight.w400,
+                fontSize: 14,
+              ),
+            )
+          ],
+        ),
       ],
     );
   }

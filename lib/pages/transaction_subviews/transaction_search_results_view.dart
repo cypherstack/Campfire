@@ -230,10 +230,11 @@ class TransactionSearchResultsView extends StatelessWidget {
     final list =
         txData.txChunks.expand((element) => element.transactions).toList();
 
+    // might not even be needed?
     // hide/remove self lelantus mints. They are needed in backend for calculating balances correctly
-    list.removeWhere(
-      (tx) => tx.fees == 0 && tx.amount == 0 && tx.txType == "Received",
-    );
+    // list.removeWhere(
+    //   (tx) => tx.fees == 0 && tx.amount == 0 && tx.txType == "Received",
+    // );
 
     final results = _filterTransactions(list);
     if (results.length == 0) {
@@ -272,11 +273,6 @@ class TransactionSearchResultsView extends StatelessWidget {
             ),
             child: TransactionCard(
               transaction: results[index],
-              txType: results[index].txType,
-              date: Utilities.extractDateFrom(results[index].timestamp),
-              amount:
-                  "${Utilities.satoshiAmountToPrettyString(results[index].amount)} ${Provider.of<Manager>(context, listen: false).coinTicker}",
-              fiatValue: results[index].worthNow,
             ),
           );
         },

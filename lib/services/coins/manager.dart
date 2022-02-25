@@ -23,6 +23,7 @@ class Manager with ChangeNotifier {
         amount: amount,
         args: args,
       );
+      notifyListeners();
       return txid;
     } catch (e) {
       // rethrow to pass error in alert
@@ -66,8 +67,10 @@ class Manager with ChangeNotifier {
   }
 
   Future<bool> get useBiometrics => currentWallet.useBiometrics;
-  Future<void> updateBiometricsUsage(bool useBiometrics) =>
-      currentWallet.updateBiometricsUsage(useBiometrics);
+  Future<void> updateBiometricsUsage(bool useBiometrics) async {
+    currentWallet.updateBiometricsUsage(useBiometrics);
+    notifyListeners();
+  }
 
   Future<void> refresh() async {
     await currentWallet.refresh();
@@ -82,8 +85,8 @@ class Manager with ChangeNotifier {
 
   Future<List<String>> get mnemonic => currentWallet.mnemonic;
 
-  Future<bool> testNetworkConnection(String address, int port) =>
-      currentWallet.testNetworkConnection(address, port);
+  Future<bool> testNetworkConnection(String address, int port, bool useSSL) =>
+      currentWallet.testNetworkConnection(address, port, useSSL);
 
   dynamic recoverFromMnemonic(String mnemonic) async {
     try {

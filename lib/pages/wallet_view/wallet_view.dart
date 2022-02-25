@@ -13,7 +13,6 @@ import 'package:paymint/services/coins/manager.dart';
 import 'package:paymint/services/event_bus/events/node_connection_status_changed_event.dart';
 import 'package:paymint/services/event_bus/global_event_bus.dart';
 import 'package:paymint/utilities/cfcolors.dart';
-import 'package:paymint/utilities/shared_utilities.dart';
 import 'package:paymint/utilities/sizing_utilities.dart';
 import 'package:paymint/widgets/custom_buttons/draggable_switch_button.dart';
 import 'package:paymint/widgets/gradient_card.dart';
@@ -252,29 +251,8 @@ class _WalletViewState extends State<WalletView> {
                 ),
               ),
             Expanded(
-              child: FutureBuilder(
-                future: manager.transactionData,
-                builder: (context, AsyncSnapshot<TransactionData> txData) {
-                  if (txData.connectionState == ConnectionState.done) {
-                    if (_nodeStatus == NodeConnectionStatus.synced) {
-                      _cachedTransactions = txData.data.txChunks
-                          .expand((element) => element.transactions)
-                          .toList();
-                      // hide/remove self lelantus mints. They are needed in backend for calculating balances correctly
-                      _cachedTransactions.removeWhere(
-                        (tx) =>
-                            tx.fees == 0 &&
-                            tx.amount == 0 &&
-                            tx.txType == "Received",
-                      );
-                    }
-                  }
-                  if (_cachedTransactions.length == 0) {
-                    return _buildNoTransactionsFound(context);
-                  } else {
-                    return _buildTransactionList(context, _cachedTransactions);
-                  }
-                },
+              child: TransactionList(
+                key: ValueKey("main view transactions list"),
               ),
             ),
           ],
@@ -284,63 +262,95 @@ class _WalletViewState extends State<WalletView> {
   }
 }
 
-_buildNoTransactionsFound(BuildContext context) {
-  return Center(
-    child: Column(
-      children: [
-        Spacer(
-          flex: 1,
-        ),
-        SvgPicture.asset(
-          "assets/svg/empty-tx-list.svg",
-          width: MediaQuery.of(context).size.width * 0.52,
-        ),
-        SizedBox(
-          height: 8,
-        ),
-        FittedBox(
-          child: Text(
-            "NO TRANSACTIONS YET",
-            style: GoogleFonts.workSans(
-              color: CFColors.dew,
-              fontWeight: FontWeight.w600,
-              fontSize: 12,
-              letterSpacing: 0.25,
+class NoTransActionsFound extends StatelessWidget {
+  const NoTransActionsFound({Key key}) : super(key: key);
+
+  @override
+  Widget build(BuildContext context) {
+    return Center(
+      child: Column(
+        children: [
+          Spacer(
+            flex: 1,
+          ),
+          SvgPicture.asset(
+            "assets/svg/empty-tx-list.svg",
+            width: MediaQuery.of(context).size.width * 0.52,
+          ),
+          SizedBox(
+            height: 8,
+          ),
+          FittedBox(
+            child: Text(
+              "NO TRANSACTIONS YET",
+              style: GoogleFonts.workSans(
+                color: CFColors.dew,
+                fontWeight: FontWeight.w600,
+                fontSize: 12,
+                letterSpacing: 0.25,
+              ),
             ),
           ),
-        ),
-        Spacer(
-          flex: 2,
-        ),
-      ],
-    ),
-  );
+          Spacer(
+            flex: 2,
+          ),
+        ],
+      ),
+    );
+  }
 }
 
-// build transaction list after loading data
-Widget _buildTransactionList(BuildContext context, List<Transaction> txList) {
-  return Container(
-    padding: EdgeInsets.symmetric(
-      vertical: 0,
-      horizontal: 16,
-    ),
-    child: ListView.builder(
-      itemCount: txList.length,
-      itemBuilder: (context, index) {
-        return Padding(
-          padding: EdgeInsets.all(
-            SizingUtilities.listItemSpacing / 2,
-          ),
-          child: TransactionCard(
-            transaction: txList[index],
-            txType: txList[index].txType,
-            date: Utilities.extractDateFrom(txList[index].timestamp),
-            amount:
-                "${Utilities.satoshiAmountToPrettyString(txList[index].amount)} ${Provider.of<Manager>(context, listen: false).coinTicker}",
-            fiatValue: txList[index].worthNow,
-          ),
+class TransactionList extends StatefulWidget {
+  const TransactionList({Key key}) : super(key: key);
+
+  @override
+  _TransactionListState createState() => _TransactionListState();
+}
+
+class _TransactionListState extends State<TransactionList> {
+  TransactionData txData;
+
+  @override
+  Widget build(BuildContext context) {
+    return Provider<Future<TransactionData>>.value(
+      value: Provider.of<Manager>(context).transactionData,
+      builder: (context, child) {
+        return FutureBuilder(
+          future: context.watch<Future<TransactionData>>(),
+          builder: (context, snapshot) {
+            if (snapshot.connectionState == ConnectionState.done) {
+              txData = snapshot.data;
+            }
+            if (txData == null || txData.txChunks.length == 0) {
+              return NoTransActionsFound();
+            } else {
+              final list = txData.txChunks
+                  .expand((element) => element.transactions)
+                  .toList();
+              return Padding(
+                padding: EdgeInsets.symmetric(
+                  vertical: 0,
+                  horizontal: 16,
+                ),
+                child: ListView.builder(
+                  itemCount: list.length,
+                  itemBuilder: (context, index) {
+                    return Padding(
+                      padding: EdgeInsets.all(
+                        SizingUtilities.listItemSpacing / 2,
+                      ),
+                      child: TransactionCard(
+                        key: ValueKey(list[index]),
+                        transaction: list[index],
+                      ),
+                    );
+                  },
+                ),
+              );
+            }
+          },
         );
       },
-    ),
-  );
+    );
+  }
 }

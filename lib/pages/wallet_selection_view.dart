@@ -4,7 +4,6 @@ import 'package:flutter/services.dart';
 import 'package:flutter_spinkit/flutter_spinkit.dart';
 import 'package:flutter_svg/flutter_svg.dart';
 import 'package:google_fonts/google_fonts.dart';
-import 'package:paymint/services/coins/manager.dart';
 import 'package:paymint/services/wallets_service.dart';
 import 'package:paymint/utilities/cfcolors.dart';
 import 'package:paymint/utilities/sizing_utilities.dart';
@@ -49,7 +48,7 @@ class _WalletSelectionViewState extends State<WalletSelectionView> {
     } else {
       names = snapshot.data.keys.toList();
     }
-    final manager = Provider.of<Manager>(context, listen: false);
+
     if (names.length == 0) {
       // this should never actually appear as when the last wallet is
       // deleted the user then gets sent back to the welcome screen
