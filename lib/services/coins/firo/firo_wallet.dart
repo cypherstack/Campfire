@@ -1071,6 +1071,7 @@ class FiroWallet extends CoinServiceAPI {
         "id": Uuid().v1(),
         "ipAddress": CampfireConstants.defaultIpAddress,
         "port": CampfireConstants.defaultPort.toString(),
+        "useSSL": CampfireConstants.defaultUseSSL,
       }
     });
     await wallet.put('nodes', nodes);
@@ -2550,6 +2551,7 @@ class FiroWallet extends CoinServiceAPI {
           "id": Uuid().v1(),
           "ipAddress": CampfireConstants.defaultIpAddress,
           "port": CampfireConstants.defaultPort.toString(),
+          "useSSL": CampfireConstants.defaultUseSSL,
         }
       });
       await wallet.put('nodes', nodes);

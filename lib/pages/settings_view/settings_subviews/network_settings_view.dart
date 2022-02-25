@@ -83,7 +83,7 @@ class _NetworkSettingsViewState extends State<NetworkSettingsView> {
       backgroundColor: CFColors.white,
       appBar: buildSettingsAppBar(
         context,
-        "Settings",
+        "Network",
         rightButton: Padding(
           padding: EdgeInsets.only(
             top: 10,
