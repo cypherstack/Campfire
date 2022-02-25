@@ -2,7 +2,6 @@ import 'dart:convert';
 
 import 'package:crypto/crypto.dart';
 import 'package:firo_flutter/firo_flutter.dart';
-import 'package:paymint/services/coins/firo/firo_wallet.dart';
 
 class AddressUtils {
   static String condenseAddress(String address) {
@@ -14,9 +13,9 @@ class AddressUtils {
   /// attempts to convert a string to a valid scripthash
   ///
   /// Returns the scripthash or throws an exception on invalid firo address
-  static String convertToScriptHash(String firoAddress) {
+  static String convertToScriptHash(String firoAddress, NetworkType network) {
     try {
-      final output = Address.addressToOutputScript(firoAddress, firoNetwork);
+      final output = Address.addressToOutputScript(firoAddress, network);
       final hash = sha256.convert(output.toList(growable: false)).toString();
 
       final chars = hash.split("");

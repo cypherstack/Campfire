@@ -2,7 +2,6 @@ import 'dart:convert';
 
 import 'package:flutter/cupertino.dart';
 import 'package:paymint/electrumx_rpc/rpc.dart';
-import 'package:paymint/utilities/address_utils.dart';
 import 'package:paymint/utilities/logger.dart';
 import 'package:paymint/utilities/misc_global_constants.dart';
 import 'package:uuid/uuid.dart';
@@ -92,7 +91,7 @@ class ElectrumX {
     }
   }
 
-  /// Return the confirmed and unconfirmed balances for the scripthash of a given firo address
+  /// Return the confirmed and unconfirmed balances for the scripthash of a given scripthash
   ///
   /// Returns a map with keys confirmed and unconfirmed. The value of each is
   /// the appropriate balance in minimum coin units (satoshis).
@@ -101,10 +100,8 @@ class ElectrumX {
   ///   "confirmed": 103873966,
   ///   "unconfirmed": 23684400
   /// }
-  Future<Map<String, dynamic>> getBalance({String address}) async {
+  Future<Map<String, dynamic>> getBalance({String scripthash}) async {
     try {
-      final scripthash = AddressUtils.convertToScriptHash(address);
-
       final response = await request(
         command: 'blockchain.scripthash.get_balance',
         args: [
@@ -117,7 +114,7 @@ class ElectrumX {
     }
   }
 
-  /// Return the confirmed and unconfirmed history for the given firo address.
+  /// Return the confirmed and unconfirmed history for the given scripthash.
   ///
   /// Returns a list of maps that contain the tx_hash and height of the tx.
   /// Ex:
@@ -131,10 +128,8 @@ class ElectrumX {
   //     "tx_hash": "f3e1bf48975b8d6060a9de8884296abb80be618dc00ae3cb2f6cee3085e09403"
   //   }
   // ]
-  Future<List<Map<String, dynamic>>> getHistory({String address}) async {
+  Future<List<Map<String, dynamic>>> getHistory({String scripthash}) async {
     try {
-      final scripthash = AddressUtils.convertToScriptHash(address);
-
       final response = await request(
         command: 'blockchain.scripthash.get_history',
         args: [
@@ -147,7 +142,7 @@ class ElectrumX {
     }
   }
 
-  /// Return an ordered list of UTXOs sent to a script hash of the given firo address.
+  /// Return an ordered list of UTXOs sent to a script hash of the given scripthash.
   ///
   /// Returns a list of maps.
   /// Ex:
@@ -165,10 +160,8 @@ class ElectrumX {
   //     "height": 441696
   //   }
   // ]
-  Future<List<Map<String, dynamic>>> getUTXOs({String address}) async {
+  Future<List<Map<String, dynamic>>> getUTXOs({String scripthash}) async {
     try {
-      final scripthash = AddressUtils.convertToScriptHash(address);
-
       final response = await request(
         command: 'blockchain.scripthash.listunspent',
         args: [

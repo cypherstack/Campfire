@@ -83,13 +83,7 @@ class NodeService extends ChangeNotifier {
     final nodes = wallet.get('nodes');
 
     if (nodes == null || nodes.isEmpty) {
-      createNode(
-        name: CampfireConstants.defaultNodeName,
-        ipAddress: CampfireConstants.defaultIpAddress,
-        port: CampfireConstants.defaultPort.toString(),
-        useSSL: CampfireConstants.defaultUseSSL,
-      );
-      return _fetchNodes();
+      return {};
     }
 
     return Map<String, dynamic>.from(nodes);
