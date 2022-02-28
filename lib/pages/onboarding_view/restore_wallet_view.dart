@@ -11,6 +11,9 @@ import 'package:flutter/services.dart';
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 import 'package:flutter_svg/flutter_svg.dart';
 import 'package:google_fonts/google_fonts.dart';
+import 'package:path_provider/path_provider.dart';
+import 'package:paymint/electrumx_rpc/cached_electrumx.dart';
+import 'package:paymint/electrumx_rpc/electrumx.dart';
 import 'package:paymint/notifications/campfire_alert.dart';
 import 'package:paymint/notifications/modal_popup_dialog.dart';
 import 'package:paymint/pages/onboarding_view/onboarding_view.dart';
@@ -25,6 +28,7 @@ import 'package:paymint/utilities/text_styles.dart';
 import 'package:paymint/widgets/custom_buttons/gradient_button.dart';
 import 'package:paymint/widgets/custom_buttons/simple_button.dart';
 import 'package:provider/provider.dart';
+import 'package:uuid/uuid.dart';
 
 import 'helpers/builders.dart';
 
@@ -467,10 +471,37 @@ class _RestoreWalletFormViewState extends State<RestoreWalletFormView> {
 
                 final walletName = await walletsService.currentWalletName;
                 final walletId = await walletsService.getWalletId(walletName);
+                ElectrumXNode defaultNode;
+                switch (widget.firoNetworkType) {
+                  case FiroNetworkType.main:
+                    defaultNode = ElectrumXNode(
+                      address: CampfireConstants.defaultIpAddress,
+                      port: CampfireConstants.defaultPort,
+                      name: CampfireConstants.defaultNodeName,
+                      id: Uuid().v1(),
+                      useSSL: CampfireConstants.defaultUseSSL,
+                    );
+                    break;
+                  case FiroNetworkType.test:
+                    defaultNode = ElectrumXNode(
+                      address: CampfireConstants.defaultIpAddressTestNet,
+                      port: CampfireConstants.defaultPortTestNet,
+                      name: CampfireConstants.defaultNodeNameTestNet,
+                      id: Uuid().v1(),
+                      useSSL: CampfireConstants.defaultUseSSLTestNet,
+                    );
+                    break;
+                  default:
+                    throw Exception("Bad firo network type encountered");
+                }
+                final appDir = await getApplicationDocumentsDirectory();
                 manager.currentWallet = FiroWallet(
                   walletId: walletId,
                   walletName: walletName,
                   networkType: widget.firoNetworkType,
+                  client: ElectrumX.from(node: defaultNode),
+                  cachedClient: CachedElectrumX.from(
+                      node: defaultNode, hivePath: appDir.path),
                 );
 
                 try {

@@ -2,6 +2,9 @@ import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 import 'package:google_fonts/google_fonts.dart';
+import 'package:path_provider/path_provider.dart';
+import 'package:paymint/electrumx_rpc/cached_electrumx.dart';
+import 'package:paymint/electrumx_rpc/electrumx.dart';
 import 'package:paymint/notifications/modal_popup_dialog.dart';
 import 'package:paymint/notifications/overlay_notification.dart';
 import 'package:paymint/pages/onboarding_view/helpers/builders.dart';
@@ -11,10 +14,12 @@ import 'package:paymint/services/coins/manager.dart';
 import 'package:paymint/services/wallets_service.dart';
 import 'package:paymint/utilities/biometrics.dart';
 import 'package:paymint/utilities/cfcolors.dart';
+import 'package:paymint/utilities/misc_global_constants.dart';
 import 'package:paymint/utilities/sizing_utilities.dart';
 import 'package:paymint/utilities/text_styles.dart';
 import 'package:paymint/widgets/custom_pin_put/custom_pin_put.dart';
 import 'package:provider/provider.dart';
+import 'package:uuid/uuid.dart';
 
 import 'backup_key_warning_view.dart';
 import 'helpers/create_wallet_type.dart';
@@ -216,11 +221,43 @@ class _CreatePinViewState extends State<CreatePinView> {
                             },
                           );
 
+                          ElectrumXNode defaultNode;
+                          switch (firoNetworkType) {
+                            case FiroNetworkType.main:
+                              defaultNode = ElectrumXNode(
+                                address: CampfireConstants.defaultIpAddress,
+                                port: CampfireConstants.defaultPort,
+                                name: CampfireConstants.defaultNodeName,
+                                id: Uuid().v1(),
+                                useSSL: CampfireConstants.defaultUseSSL,
+                              );
+                              break;
+                            case FiroNetworkType.test:
+                              defaultNode = ElectrumXNode(
+                                address:
+                                    CampfireConstants.defaultIpAddressTestNet,
+                                port: CampfireConstants.defaultPortTestNet,
+                                name: CampfireConstants.defaultNodeNameTestNet,
+                                id: Uuid().v1(),
+                                useSSL: CampfireConstants.defaultUseSSLTestNet,
+                              );
+                              break;
+                            default:
+                              throw Exception(
+                                  "Bad firo network type encountered");
+                          }
+
+                          final appDir =
+                              await getApplicationDocumentsDirectory();
                           // TODO do this differently - causes short lockup of UI
                           manager.currentWallet = FiroWallet(
-                              walletId: id,
-                              walletName: widget.walletName,
-                              networkType: firoNetworkType);
+                            walletId: id,
+                            walletName: widget.walletName,
+                            networkType: firoNetworkType,
+                            client: ElectrumX.from(node: defaultNode),
+                            cachedClient: CachedElectrumX.from(
+                                node: defaultNode, hivePath: appDir.path),
+                          );
                           await manager.updateBiometricsUsage(useBiometrics);
                           await Future.delayed(Duration(seconds: 3));
 

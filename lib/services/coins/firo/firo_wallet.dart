@@ -25,7 +25,6 @@ import 'package:paymint/services/event_bus/events/node_connection_status_changed
 import 'package:paymint/services/event_bus/events/nodes_changed_event.dart';
 import 'package:paymint/services/event_bus/events/refresh_percent_changed_event.dart';
 import 'package:paymint/services/event_bus/global_event_bus.dart';
-import 'package:paymint/services/node_service.dart';
 import 'package:paymint/services/price.dart';
 import 'package:paymint/utilities/address_utils.dart';
 import 'package:paymint/utilities/logger.dart';
@@ -81,7 +80,6 @@ Future<void> executeNative(arguments) async {
   print(arguments);
   SendPort sendPort = arguments['sendPort'];
   String function = arguments['function'];
-  ElectrumXNode node = arguments['node'];
   try {
     if (function == "createJoinSplit") {
       int spendAmount = arguments['spendAmount'];
@@ -91,9 +89,10 @@ Future<void> executeNative(arguments) async {
       int index = arguments['index'];
       Decimal price = arguments['price'];
       List<DartLelantusEntry> lelantusEntries = arguments['lelantusEntries'];
-      final String hivePath = arguments['hivePath'];
       String coinName = arguments['coinName'];
       dynamic network = arguments['network'];
+      ElectrumX client = arguments['electrumXClient'];
+      CachedElectrumX cachedClient = arguments['cachedElectrumXClient'];
       if (!(spendAmount == null ||
           address == null ||
           subtractFeeFromAmount == null ||
@@ -101,8 +100,8 @@ Future<void> executeNative(arguments) async {
           index == null ||
           price == null ||
           lelantusEntries == null ||
-          node == null ||
-          hivePath == null ||
+          client == null ||
+          cachedClient == null ||
           coinName == null ||
           network == null)) {
         var joinSplit = await isolateCreateJoinSplitTransaction(
@@ -113,8 +112,8 @@ Future<void> executeNative(arguments) async {
             index,
             price,
             lelantusEntries,
-            node,
-            hivePath,
+            client,
+            cachedClient,
             coinName,
             network);
         sendPort.send(joinSplit);
@@ -141,23 +140,23 @@ Future<void> executeNative(arguments) async {
       TransactionData transactionData = arguments['transactionData'];
       String currency = arguments['currency'];
       String coinName = arguments['coinName'];
-      final String hivePath = arguments['hivePath'];
       dynamic network = arguments['network'];
-
+      CachedElectrumX cachedClient = arguments['cachedElectrumXClient'];
       if (!(mnemonic == null ||
           transactionData == null ||
-          node == null ||
-          hivePath == null ||
+          cachedClient == null ||
           latestSetId == null ||
           setDataMap == null ||
-          usedSerialNumbers == null)) {
+          usedSerialNumbers == null ||
+          network == null ||
+          coinName == null ||
+          currency == null)) {
         var restoreData = await isolateRestore(
-            node,
+            cachedClient,
             mnemonic,
             transactionData,
             currency,
             coinName,
-            hivePath,
             latestSetId,
             setDataMap,
             usedSerialNumbers,
@@ -242,12 +241,11 @@ isolateDerive(String mnemonic, int from, int to, dynamic _network) async {
 }
 
 isolateRestore(
-    ElectrumXNode node,
+    CachedElectrumX cachedClient,
     String mnemonic,
     TransactionData data,
     String currency,
     String coinName,
-    String hivePath,
     int _latestSetId,
     Map _setDataMap,
     dynamic _usedSerialNumbers,
@@ -423,7 +421,7 @@ isolateRestore(
 
   // Create the joinsplit transactions.
   final spendTxs = await getJMintTransactions(
-      node, spendTxIds, currency, coinName, hivePath);
+      cachedClient, spendTxIds, currency, coinName, true);
   print(spendTxs);
   spendTxs.forEach((element) {
     transactionMap[element.txid] = element;
@@ -468,12 +466,12 @@ isolateCreateJoinSplitTransaction(
   int index,
   dynamic price,
   List<DartLelantusEntry> lelantusEntries,
-  ElectrumXNode node,
-  String hivePath,
+  ElectrumX client,
+  CachedElectrumX cachedClient,
   String coinName,
   dynamic _network,
 ) async {
-  final getanonymityset = await getAnonymitySet(node, hivePath, coinName);
+  final getanonymityset = await getAnonymitySet(cachedClient, true, coinName);
 
   final estimateJoinSplitFee = await isolateEstimateJoinSplitFee(
       spendAmount, subtractFeeFromAmount, lelantusEntries);
@@ -487,7 +485,7 @@ isolateCreateJoinSplitTransaction(
   }
 
   final tx = new TransactionBuilder(network: _network);
-  int locktime = await getBlockHead(node);
+  int locktime = await getBlockHead(client);
   tx.setLockTime(locktime);
 
   tx.setVersion(3 | (TRANSACTION_LELANTUS << 16));
@@ -625,11 +623,11 @@ isolateCreateJoinSplitTransaction(
 
 /// set hivePath to null unless calling this function in an isolate
 Future<List<models.Transaction>> getJMintTransactions(
-  ElectrumXNode node,
+  CachedElectrumX cachedClient,
   List transactions,
   String currency,
   String coinName,
-  String hivePath,
+  bool outsideMainIsolate,
 ) async {
   try {
     final currentPrice = await PriceAPI.getPrice(
@@ -637,19 +635,13 @@ Future<List<models.Transaction>> getJMintTransactions(
 
     List<models.Transaction> txs = [];
 
-    final cachedClient = CachedElectrumX(
-      server: node.address,
-      port: node.port,
-      hivePath: hivePath,
-      useSSL: node.useSSL,
-    );
-
     for (int i = 0; i < transactions.length; i++) {
       try {
         final tx = await cachedClient.getTransaction(
           tx_hash: transactions[i],
           verbose: true,
           coinName: coinName,
+          callOutSideMainIsolate: outsideMainIsolate,
         );
 
         // TODO not sure if removing here increases or decreases performance
@@ -708,18 +700,13 @@ Future<List<models.Transaction>> getJMintTransactions(
   }
 }
 
-Future<dynamic> getAnonymitySet(
-    ElectrumXNode node, String hivePath, String coinName) async {
+Future<dynamic> getAnonymitySet(CachedElectrumX cachedClient,
+    bool callOutSideMainIsolate, String coinName) async {
   try {
-    final cachedClient = CachedElectrumX(
-      server: node.address,
-      port: node.port,
-      hivePath: hivePath,
-      useSSL: node.useSSL,
-    );
     var tod = await cachedClient.getAnonymitySet(
       groupId: "1",
       coinName: coinName,
+      callOutSideMainIsolate: callOutSideMainIsolate,
     );
     tod['serializedCoins'] = tod['serializedCoins'].cast<String>();
 
@@ -730,13 +717,8 @@ Future<dynamic> getAnonymitySet(
   }
 }
 
-Future<int> getBlockHead(ElectrumXNode node) async {
+Future<int> getBlockHead(ElectrumX client) async {
   try {
-    final client = ElectrumX(
-      server: node.address,
-      port: node.port,
-      useSSL: node.useSSL,
-    );
     final tip = await client.getBlockHeadTip();
     return tip["height"];
   } catch (e) {
@@ -945,12 +927,22 @@ class FiroWallet extends CoinServiceAPI {
         port: port,
         useSSL: useSSL,
       );
-      final response =
-          await client.request(command: 'blockchain.headers.subscribe');
 
-      return response != null;
+      final features = await client.getServerFeatures();
+      print("features: ${features}");
+      if (_networkType == FiroNetworkType.main) {
+        if (features['genesis_hash'] != FiroGenesisHash) {
+          throw Exception("genesis hash does not match!");
+        }
+      } else if (_networkType == FiroNetworkType.test) {
+        if (features['genesis_hash'] != FiroTestGenesisHash) {
+          throw Exception("genesis hash does not match!");
+        }
+      }
+
+      return features != null;
     } catch (e) {
-      Logger.print("Exception caught in getBlockHead(): $e");
+      Logger.print("Exception caught in testNetworkConnection(): $e");
       return false;
     }
   }
@@ -1006,19 +998,33 @@ class FiroWallet extends CoinServiceAPI {
     return data;
   }
 
+  ElectrumX _electrumXClient;
+  ElectrumX get electrumXClient => _electrumXClient;
+
+  CachedElectrumX _cachedElectrumXClient;
+  CachedElectrumX get cachedElectrumXClient => _cachedElectrumXClient;
+
   // Constructor
-  FiroWallet(
-      {@required String walletId,
-      @required String walletName,
-      @required FiroNetworkType networkType}) {
+  FiroWallet({
+    @required String walletId,
+    @required String walletName,
+    @required FiroNetworkType networkType,
+    @required ElectrumX client,
+    @required CachedElectrumX cachedClient,
+  }) {
     this._walletId = walletId;
     this._walletName = walletName;
     this._networkType = networkType;
+    this._electrumXClient = client;
+    this._cachedElectrumXClient = cachedClient;
 
     // add listener for nodes changed
     GlobalEventBus.instance.on<NodesChangedEvent>().listen((event) async {
+      final appDir = await getApplicationDocumentsDirectory();
       final newNode = await _getCurrentNode();
       this._currentNode = Future(() => newNode);
+      this._cachedElectrumXClient =
+          CachedElectrumX.from(node: newNode, hivePath: appDir.path);
       refresh();
     });
 
@@ -1154,7 +1160,6 @@ class FiroWallet extends CoinServiceAPI {
   Future<LelantusFeeData> _fetchMaxFee() async {
     var lelantusEntry = await _getLelantusEntry();
     final balance = await this.balance;
-    final node = await currentNode;
     int spendAmount = (balance * Decimal.fromInt(CampfireConstants.satsPerCoin))
         .toBigInt()
         .toInt();
@@ -1166,7 +1171,6 @@ class FiroWallet extends CoinServiceAPI {
       "spendAmount": spendAmount,
       "subtractFeeFromAmount": true,
       "lelantusEntries": lelantusEntry,
-      "node": node,
     });
 
     var message = await receivePort.first;
@@ -1219,19 +1223,14 @@ class FiroWallet extends CoinServiceAPI {
       return coins;
     }
 
-    final node = await currentNode;
-    final cachedClient = CachedElectrumX(
-      server: node.address,
-      port: node.port,
-      useSSL: node.useSSL,
-    );
     final lelantusCoinsList = _lelantus_coins.values.toList(growable: false);
     for (int i = 0; i < lelantusCoinsList.length; i++) {
       print("hi ${lelantusCoinsList[i]}");
-      final txn = await cachedClient.getTransaction(
+      final txn = await cachedElectrumXClient.getTransaction(
         tx_hash: lelantusCoinsList[i].txId,
         verbose: true,
         coinName: this.coinName,
+        callOutSideMainIsolate: false,
       );
       final confirmations = txn["confirmations"];
       bool isUnconfirmed = confirmations is int && confirmations < 1;
@@ -1441,13 +1440,7 @@ class FiroWallet extends CoinServiceAPI {
   /// returns a valid txid if successful
   Future<String> submitHexToNetwork(String hex) async {
     try {
-      final node = await currentNode;
-      final client = ElectrumX(
-        server: node.address,
-        port: node.port,
-        useSSL: node.useSSL,
-      );
-      final txid = await client.broadcastTransaction(rawTx: hex);
+      final txid = await electrumXClient.broadcastTransaction(rawTx: hex);
       return txid;
     } catch (e) {
       Logger.print("Caught exception in submitHexToNetwork(\"$hex\"): $e");
@@ -1466,12 +1459,6 @@ class FiroWallet extends CoinServiceAPI {
     List<String> addressesToDerive = [];
 
     final wallet = await Hive.openBox(this._walletId);
-    final node = await currentNode;
-    final cachedClient = CachedElectrumX(
-      server: node.address,
-      port: node.port,
-      useSSL: node.useSSL,
-    );
 
     // Populating the addresses to derive
     for (var i = 0; i < utxosToUse.length; i++) {
@@ -1479,10 +1466,11 @@ class FiroWallet extends CoinServiceAPI {
       final outputIndex = utxosToUse[i].vout;
 
       // txid may not work for this as txid may not always be the same as tx_hash?
-      final tx = await cachedClient.getTransaction(
+      final tx = await cachedElectrumXClient.getTransaction(
         tx_hash: txid,
         verbose: true,
         coinName: this.coinName,
+        callOutSideMainIsolate: false,
       );
 
       final vouts = tx["vout"];
@@ -1540,7 +1528,8 @@ class FiroWallet extends CoinServiceAPI {
 
     final txb = new TransactionBuilder(network: _network);
     txb.setVersion(2);
-    int height = await getBlockHead(node);
+
+    int height = await getBlockHead(electrumXClient);
     txb.setLockTime(height);
     int amount = 0;
     // Add transaction inputs
@@ -1623,8 +1612,9 @@ class FiroWallet extends CoinServiceAPI {
 
     final String currency = fetchPreferredCurrency();
     // Grab the most recent information on all the joinsplits
+
     final updatedJSplit = await getJMintTransactions(
-        await currentNode, joinsplits, currency, this.coinName, null);
+        cachedElectrumXClient, joinsplits, currency, this.coinName, null);
 
     // update all of joinsplits that are now confirmed.
     for (final tx in updatedJSplit) {
@@ -1792,13 +1782,7 @@ class FiroWallet extends CoinServiceAPI {
 
   Future<FeeObject> _getFees() async {
     try {
-      final node = await currentNode;
-      final client = ElectrumX(
-        server: node.address,
-        port: node.port,
-        useSSL: node.useSSL,
-      );
-      final result = await client.getFeeRate();
+      final result = await electrumXClient.getFeeRate();
 
       final String fee = Utilities.satoshiAmountToPrettyString(result["rate"]);
 
@@ -1846,12 +1830,12 @@ class FiroWallet extends CoinServiceAPI {
           "useSSL": useSSL,
         }
       });
-      final client = ElectrumX(
-        server: ip,
-        port: int.parse(port),
-        useSSL: useSSL,
-      );
-      final features = await client.getServerFeatures();
+      // final client = ElectrumX(
+      //   server: ip,
+      //   port: int.parse(port),
+      //   useSSL: useSSL,
+      // );
+      final features = await electrumXClient.getServerFeatures();
       print("features: ${features}");
       if (_networkType == FiroNetworkType.main) {
         if (features['genesis_hash'] != FiroGenesisHash) {
@@ -1887,14 +1871,9 @@ class FiroWallet extends CoinServiceAPI {
   //TODO call get transaction and check each tx to see if it is a "received" tx?
   Future<int> _getReceivedTxCount({String address}) async {
     try {
-      final node = await currentNode;
-      final client = ElectrumX(
-        server: node.address,
-        port: node.port,
-        useSSL: node.useSSL,
-      );
       final scripthash = AddressUtils.convertToScriptHash(address, _network);
-      final transactions = await client.getHistory(scripthash: scripthash);
+      final transactions =
+          await electrumXClient.getHistory(scripthash: scripthash);
       return transactions.length;
     } catch (e) {
       Logger.print(
@@ -1969,16 +1948,9 @@ class FiroWallet extends CoinServiceAPI {
     List<Map<String, dynamic>> allTxHashes = [];
     // int latestTxnBlockHeight = 0;
 
-    final node = await currentNode;
-    final client = ElectrumX(
-      server: node.address,
-      port: node.port,
-      useSSL: node.useSSL,
-    );
-
     for (final address in allAddresses) {
       final scripthash = AddressUtils.convertToScriptHash(address, _network);
-      final txs = await client.getHistory(scripthash: scripthash);
+      final txs = await electrumXClient.getHistory(scripthash: scripthash);
       for (final map in txs) {
         // check to get latest Txn Height
         // if (map["height"] > latestTxnBlockHeight) {
@@ -2024,14 +1996,13 @@ class FiroWallet extends CoinServiceAPI {
 
     List<Map<String, dynamic>> allTransactions = [];
 
-    final cachedClient = CachedElectrumX(
-      server: node.address,
-      port: node.port,
-      useSSL: node.useSSL,
-    );
     for (final txHash in allTxHashes) {
-      final tx = await cachedClient.getTransaction(
-          tx_hash: txHash["tx_hash"], verbose: true, coinName: this.coinName);
+      final tx = await cachedElectrumXClient.getTransaction(
+        tx_hash: txHash["tx_hash"],
+        verbose: true,
+        coinName: this.coinName,
+        callOutSideMainIsolate: false,
+      );
       // delete unused large parts
       tx.remove("hex");
       tx.remove("lelantusData");
@@ -2284,19 +2255,12 @@ class FiroWallet extends CoinServiceAPI {
     }
 
     try {
-      final node = await currentNode;
-      final client = ElectrumX(
-        server: node.address,
-        port: node.port,
-        useSSL: node.useSSL,
-      );
-
       final utxoData = <List<Map<String, dynamic>>>[];
 
       for (int i = 0; i < allAddresses.length; i++) {
         final scripthash =
             AddressUtils.convertToScriptHash(allAddresses[i], _network);
-        final utxos = await client.getUTXOs(scripthash: scripthash);
+        final utxos = await electrumXClient.getUTXOs(scripthash: scripthash);
         if (utxos.isNotEmpty) {
           utxoData.add(utxos);
         }
@@ -2307,20 +2271,16 @@ class FiroWallet extends CoinServiceAPI {
       final List<Map<String, dynamic>> outputArray = [];
       int satoshiBalance = 0;
 
-      final cachedClient = CachedElectrumX(
-        server: node.address,
-        port: node.port,
-        useSSL: node.useSSL,
-      );
       for (int i = 0; i < utxoData.length; i++) {
         for (int j = 0; j < utxoData[i].length; j++) {
           int value = utxoData[i][j]["value"];
           satoshiBalance += value;
 
-          final txn = await cachedClient.getTransaction(
+          final txn = await cachedElectrumXClient.getTransaction(
             tx_hash: utxoData[i][j]["tx_hash"],
             verbose: true,
             coinName: this.coinName,
+            callOutSideMainIsolate: false,
           );
 
           final Map<String, dynamic> tx = {};
@@ -2433,7 +2393,6 @@ class FiroWallet extends CoinServiceAPI {
     } else {
       start = receiveDerivations.length;
     }
-    ElectrumXNode node = await currentNode;
     List<ReceivePort> ports = List.empty(growable: true);
     for (int i = 0; i < NUMBER_OF_THREADS; i++) {
       ReceivePort receivePort = await getIsolate({
@@ -2441,7 +2400,6 @@ class FiroWallet extends CoinServiceAPI {
         "mnemonic": suppliedMnemonic,
         "from": start + i * PER_BATCH,
         "to": start + (i + 1) * PER_BATCH,
-        "node": node,
         "network": _network,
       });
       ports.add(receivePort);
@@ -2590,9 +2548,9 @@ class FiroWallet extends CoinServiceAPI {
       final wallet = await Hive.openBox(this._walletId);
       final ElectrumXNode node = await currentNode;
       final setDataMap = Map();
-      final latestSetId = await getLatestSetId(node);
+      final latestSetId = await getLatestSetId();
       for (var setId = 1; setId <= latestSetId; setId++) {
-        final setData = getSetData(node, setId);
+        final setData = getSetData(setId);
         setDataMap[setId] = setData;
       }
       final usedSerialNumbers = getUsedCoinSerials(node);
@@ -2707,22 +2665,19 @@ class FiroWallet extends CoinServiceAPI {
     final secureStore = new FlutterSecureStorage();
     final mnemonic = await secureStore.read(key: '${this._walletId}_mnemonic');
     TransactionData data = await _txnData;
-    ElectrumXNode node = await currentNode;
     final String currency = fetchPreferredCurrency();
-    final appDir = await getApplicationDocumentsDirectory();
 
     ReceivePort receivePort = await getIsolate({
       "function": "restore",
-      "node": node,
       "mnemonic": mnemonic,
       "transactionData": data,
       "currency": currency,
       "coinName": this.coinName,
-      "hivePath": appDir.path,
       "latestSetId": latestSetId,
       "setDataMap": setDataMap,
       "usedSerialNumbers": usedSerialNumbers,
       "network": this._network,
+      "cachedElectrumXClient": this.cachedElectrumXClient,
     });
 
     var message = await receivePort.first;
@@ -2772,14 +2727,11 @@ class FiroWallet extends CoinServiceAPI {
   Future<dynamic> _createJoinSplitTransaction(
       int spendAmount, String address, bool subtractFeeFromAmount) async {
     final price = await firoPrice;
-    ElectrumXNode node = await currentNode;
     final wallet = await Hive.openBox(this._walletId);
     final secureStore = new FlutterSecureStorage();
     final mnemonic = await secureStore.read(key: '${this._walletId}_mnemonic');
     final index = await wallet.get('mintIndex');
     var lelantusEntry = await _getLelantusEntry();
-
-    final appDir = await getApplicationDocumentsDirectory();
 
     ReceivePort receivePort = await getIsolate({
       "function": "createJoinSplit",
@@ -2790,8 +2742,8 @@ class FiroWallet extends CoinServiceAPI {
       "index": index,
       "price": price,
       "lelantusEntries": lelantusEntry,
-      "node": node,
-      "hivePath": appDir.path,
+      "electrumXClient": this.electrumXClient,
+      "cachedElectrumXClient": this.cachedElectrumXClient,
       "coinName": coinName,
       "network": _network,
     });
@@ -2810,14 +2762,9 @@ class FiroWallet extends CoinServiceAPI {
     return message;
   }
 
-  Future<int> getLatestSetId(ElectrumXNode node) async {
+  Future<int> getLatestSetId() async {
     try {
-      final client = ElectrumX(
-        server: node.address,
-        port: node.port,
-        useSSL: node.useSSL,
-      );
-      final id = await client.getLatestCoinId();
+      final id = await electrumXClient.getLatestCoinId();
       return id;
     } catch (e) {
       Logger.print("Exception rethrown in firo_wallet.dart: $e");
@@ -2825,14 +2772,9 @@ class FiroWallet extends CoinServiceAPI {
     }
   }
 
-  Future<Map<String, dynamic>> getSetData(ElectrumXNode node, int setID) async {
+  Future<Map<String, dynamic>> getSetData(int setID) async {
     try {
-      final client = ElectrumX(
-        server: node.address,
-        port: node.port,
-        useSSL: node.useSSL,
-      );
-      final response = await client.getCoinsForRecovery(setId: setID);
+      final response = await electrumXClient.getCoinsForRecovery(setId: setID);
       return response;
     } catch (e) {
       Logger.print("Exception rethrown in firo_wallet.dart: $e");
@@ -2842,12 +2784,7 @@ class FiroWallet extends CoinServiceAPI {
 
   Future<dynamic> getUsedCoinSerials(ElectrumXNode node) async {
     try {
-      final client = ElectrumX(
-        server: node.address,
-        port: node.port,
-        useSSL: node.useSSL,
-      );
-      final response = await client.getUsedCoinSerials();
+      final response = await electrumXClient.getUsedCoinSerials();
       return response;
     } catch (e) {
       Logger.print("Exception rethrown in firo_wallet.dart: $e");
