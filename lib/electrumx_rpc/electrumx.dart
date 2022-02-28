@@ -6,13 +6,44 @@ import 'package:paymint/utilities/logger.dart';
 import 'package:paymint/utilities/misc_global_constants.dart';
 import 'package:uuid/uuid.dart';
 
-class ElectrumX {
-  final String server;
+class ElectrumXNode {
+  ElectrumXNode({this.address, this.port, this.name, this.id, this.useSSL});
+  final String address;
   final int port;
+  final String name;
+  final String id;
   final bool useSSL;
 
+  factory ElectrumXNode.from(ElectrumXNode node) {
+    return ElectrumXNode(
+      address: node.address,
+      port: node.port,
+      name: node.name,
+      id: node.id,
+      useSSL: node.useSSL,
+    );
+  }
+}
+
+class ElectrumX {
+  String get server => _server;
+  String _server;
+
+  int get port => _port;
+  int _port;
+
+  bool get useSSL => _useSSL;
+  bool _useSSL;
+
   ElectrumX(
-      {@required this.server, @required this.port, @required this.useSSL});
+      {@required String server, @required int port, @required bool useSSL}) {
+    _server = server;
+    _port = port;
+    _useSSL = useSSL;
+  }
+
+  factory ElectrumX.from({@required ElectrumXNode node}) =>
+      ElectrumX(server: node.address, port: node.port, useSSL: node.useSSL);
 
   /// Send raw rpc command
   Future<dynamic> request({

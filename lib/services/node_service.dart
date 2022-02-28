@@ -1,28 +1,10 @@
 import 'package:flutter/material.dart';
 import 'package:hive/hive.dart';
+import 'package:paymint/electrumx_rpc/electrumx.dart';
 import 'package:paymint/services/event_bus/events/nodes_changed_event.dart';
 import 'package:paymint/services/event_bus/global_event_bus.dart';
 import 'package:paymint/utilities/misc_global_constants.dart';
 import 'package:uuid/uuid.dart';
-
-class ElectrumXNode {
-  ElectrumXNode({this.address, this.port, this.name, this.id, this.useSSL});
-  final String address;
-  final int port;
-  final String name;
-  final String id;
-  final bool useSSL;
-
-  static ElectrumXNode from(ElectrumXNode node) {
-    return ElectrumXNode(
-      address: node.address,
-      port: node.port,
-      name: node.name,
-      id: node.id,
-      useSSL: node.useSSL,
-    );
-  }
-}
 
 class NodeService extends ChangeNotifier {
   String _walletId;

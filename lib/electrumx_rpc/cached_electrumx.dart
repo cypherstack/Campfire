@@ -14,6 +14,14 @@ class CachedElectrumX {
     _client = ElectrumX(server: server, port: port, useSSL: useSSL);
   }
 
+  factory CachedElectrumX.from(
+          {@required ElectrumXNode node, String hivePath}) =>
+      CachedElectrumX(
+          server: node.address,
+          port: node.port,
+          useSSL: node.useSSL,
+          hivePath: hivePath);
+
   Future<Map<String, dynamic>> getAnonymitySet(
       {@required String groupId, @required String coinName}) async {
     try {
