@@ -202,9 +202,9 @@ isolateDerive(String mnemonic, int from, int to, dynamic _network) async {
   Map<String, dynamic> result = Map();
   Map<int, dynamic> allReceive = Map();
   Map<int, dynamic> allChange = Map();
-  final root = _getRoot(mnemonic, _network);
+  final root = getBip32Root(mnemonic, _network);
   for (int i = from; i < to; i++) {
-    var currentNode = _getNodeFromRoot(0, i, root);
+    var currentNode = getBip32NodeFromRoot(0, i, root);
     var address = P2PKH(
             network: _network,
             data: new PaymentData(pubkey: currentNode.publicKey))
@@ -219,7 +219,7 @@ isolateDerive(String mnemonic, int from, int to, dynamic _network) async {
       "address": address,
     };
 
-    currentNode = _getNodeFromRoot(1, i, root);
+    currentNode = getBip32NodeFromRoot(1, i, root);
     address = P2PKH(
             network: _network,
             data: new PaymentData(pubkey: currentNode.publicKey))
@@ -285,9 +285,9 @@ isolateRestore(
       usedSerialNumbersSet.add(usedSerialNumbers[ind]);
     }
 
-    final root = _getRoot(mnemonic, network);
+    final root = getBip32Root(mnemonic, network);
     while (currentIndex < lastFoundIndex + 20) {
-      final mintKeyPair = _getNodeFromRoot(MINT_INDEX, currentIndex, root);
+      final mintKeyPair = getBip32NodeFromRoot(MINT_INDEX, currentIndex, root);
       final mintTag = CreateTag(uint8listToString(mintKeyPair.privateKey),
           currentIndex, uint8listToString(mintKeyPair.identifier));
 
@@ -318,7 +318,7 @@ isolateRestore(
             lastFoundIndex = currentIndex;
 
             final keyPath = GetAesKeyPath(foundJmint[0]);
-            final aesKeyPair = _getNodeFromRoot(JMINT_INDEX, keyPath, root);
+            final aesKeyPair = getBip32NodeFromRoot(JMINT_INDEX, keyPath, root);
             final aesPrivateKey = uint8listToString(aesKeyPair.privateKey);
             if (aesPrivateKey != null) {
               final amount = decryptMintAmount(
@@ -503,13 +503,13 @@ isolateCreateJoinSplitTransaction(
     Uint8List(0),
   );
 
-  final jmintKeyPair = _getNode(MINT_INDEX, index, mnemonic, _network);
+  final jmintKeyPair = getBip32Node(MINT_INDEX, index, mnemonic, _network);
 
   final String jmintprivatekey = uint8listToString(jmintKeyPair.privateKey);
 
   final keyPath = getMintKeyPath(changeToMint, jmintprivatekey, index);
 
-  final aesKeyPair = _getNode(JMINT_INDEX, keyPath, mnemonic, _network);
+  final aesKeyPair = getBip32Node(JMINT_INDEX, keyPath, mnemonic, _network);
   final aesPrivateKey = uint8listToString(aesKeyPair.privateKey);
   if (aesPrivateKey == null) {
     print(
@@ -768,20 +768,20 @@ stringToUint8List(String string) {
   return mintu8;
 }
 
-bip32.BIP32 _getNode(
+bip32.BIP32 getBip32Node(
     int chain, int index, String mnemonic, NetworkType network) {
-  final root = _getRoot(mnemonic, network);
+  final root = getBip32Root(mnemonic, network);
 
+  final node = getBip32NodeFromRoot(chain, index, root);
+  return node;
+}
+
+bip32.BIP32 getBip32NodeFromRoot(int chain, int index, bip32.BIP32 root) {
   final node = root.derivePath("m/44'/136'/0'/$chain/$index");
   return node;
 }
 
-bip32.BIP32 _getNodeFromRoot(int chain, int index, bip32.BIP32 root) {
-  final node = root.derivePath("m/44'/136'/0'/$chain/$index");
-  return node;
-}
-
-bip32.BIP32 _getRoot(String mnemonic, NetworkType network) {
+bip32.BIP32 getBip32Root(String mnemonic, NetworkType network) {
   final seed = bip39.mnemonicToSeed(mnemonic);
   final firoNetworkType = bip32.NetworkType(
     wif: network.wif,
@@ -1188,9 +1188,9 @@ class FiroWallet extends CoinServiceAPI {
     final secureStore = new FlutterSecureStorage();
     final mnemonic = await secureStore.read(key: '${this._walletId}_mnemonic');
     final List<LelantusCoin> lelantusCoins = await _getUnspentCoins();
-    final root = _getRoot(mnemonic, _network);
+    final root = getBip32Root(mnemonic, _network);
     final waitLelantusEntries = lelantusCoins.map((coin) async {
-      final keyPair = _getNodeFromRoot(MINT_INDEX, coin.index, root);
+      final keyPair = getBip32NodeFromRoot(MINT_INDEX, coin.index, root);
       final String privateKey = uint8listToString(keyPair.privateKey);
       if (privateKey == null) {
         Logger.print("error bad key");
@@ -1702,7 +1702,8 @@ class FiroWallet extends CoinServiceAPI {
   _getMintHex(int amount, int index) async {
     final secureStore = new FlutterSecureStorage();
     final mnemonic = await secureStore.read(key: '${this._walletId}_mnemonic');
-    final mintKeyPair = _getNode(MINT_INDEX, index, mnemonic, this._network);
+    final mintKeyPair =
+        getBip32Node(MINT_INDEX, index, mnemonic, this._network);
     String keydata = uint8listToString(mintKeyPair.privateKey);
     String seedID = uint8listToString(mintKeyPair.identifier);
     String mintHex = getMintScript(amount, keydata, index, seedID);
@@ -2492,7 +2493,7 @@ class FiroWallet extends CoinServiceAPI {
       }
       return derivations[index]['address'];
     } else {
-      final node = _getNode(chain, index, mnemonic, this._network);
+      final node = getBip32Node(chain, index, mnemonic, this._network);
       return P2PKH(
               network: _network, data: new PaymentData(pubkey: node.publicKey))
           .data
