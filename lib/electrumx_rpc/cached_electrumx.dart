@@ -23,11 +23,13 @@ class CachedElectrumX {
           hivePath: hivePath);
 
   Future<Map<String, dynamic>> getAnonymitySet(
-      {@required String groupId, @required String coinName}) async {
+      {@required String groupId,
+      @required String coinName,
+      @required bool callOutSideMainIsolate}) async {
     try {
-      // hive must be initialized when this function is called outside of flutter
+      // hive must be initialized when this function is called outside of flutter main
       // such as within an isolate
-      if (_hivePath != null) {
+      if (callOutSideMainIsolate) {
         Hive.init(_hivePath);
       }
       final box = await Hive.openBox('${coinName}_anonymitySetCache');
@@ -76,15 +78,18 @@ class CachedElectrumX {
   ///
   /// ElectrumX api only called if the tx does not exist in local db
   Future<Map<String, dynamic>> getTransaction(
-      {String tx_hash, bool verbose: true, String coinName}) async {
+      {@required String tx_hash,
+      bool verbose: true,
+      @required String coinName,
+      @required bool callOutSideMainIsolate}) async {
     if (coinName == null || coinName.isEmpty) {
       throw Exception("Invalid argument: coinName cannot be empty!");
     }
 
     try {
-      // hive must be initialized when this function is called outside of flutter
+      // hive must be initialized when this function is called outside of flutter main
       // such as within an isolate
-      if (_hivePath != null) {
+      if (callOutSideMainIsolate) {
         Hive.init(_hivePath);
       }
       final txCache = await Hive.openBox('${coinName}_txCache');
@@ -117,6 +122,7 @@ class CachedElectrumX {
   Future<bool> clearSharedTransactionCache({String coinName}) async {
     try {
       await Hive.deleteBoxFromDisk('${coinName}_txCache');
+      await Hive.deleteBoxFromDisk('${coinName}_anonymitySetCache');
       return true;
     } catch (e) {
       print("Clear transaction cache for coin $coinName failed.");
