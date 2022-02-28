@@ -127,10 +127,9 @@ Future<void> executeNative(arguments) async {
 
       if (!(spendAmount == null ||
           subtractFeeFromAmount == null ||
-          lelantusEntries == null ||
-          node == null)) {
+          lelantusEntries == null)) {
         var feeData = await isolateEstimateJoinSplitFee(
-            spendAmount, subtractFeeFromAmount, lelantusEntries, node);
+            spendAmount, subtractFeeFromAmount, lelantusEntries);
         sendPort.send(feeData);
         return;
       }
@@ -435,11 +434,8 @@ isolateRestore(
   return result;
 }
 
-Future<LelantusFeeData> isolateEstimateJoinSplitFee(
-    int spendAmount,
-    bool subtractFeeFromAmount,
-    List<DartLelantusEntry> lelantusEntries,
-    ElectrumXNode node) async {
+Future<LelantusFeeData> isolateEstimateJoinSplitFee(int spendAmount,
+    bool subtractFeeFromAmount, List<DartLelantusEntry> lelantusEntries) async {
   Logger.print("estimateJoinsplit ree");
   for (int i = 0; i < lelantusEntries.length; i++) {
     Logger.print(lelantusEntries[i]);
@@ -480,7 +476,7 @@ isolateCreateJoinSplitTransaction(
   final getanonymityset = await getAnonymitySet(node, hivePath, coinName);
 
   final estimateJoinSplitFee = await isolateEstimateJoinSplitFee(
-      spendAmount, subtractFeeFromAmount, lelantusEntries, node);
+      spendAmount, subtractFeeFromAmount, lelantusEntries);
   var changeToMint = estimateJoinSplitFee.changeToMint;
   var fee = estimateJoinSplitFee.fee;
   var spendCoinIndexes = estimateJoinSplitFee.spendCoinIndexes;
