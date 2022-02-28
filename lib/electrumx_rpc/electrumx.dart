@@ -74,6 +74,31 @@ class ElectrumX {
     }
   }
 
+  /// Get most recent block header.
+  ///
+  /// Returns a map with keys 'height' and 'hex' corresponding to the block height
+  /// and the binary header as a hexadecimal string.
+  /// Ex:
+  // {
+  // "genesis_hash": "000000000933ea01ad0ee984209779baaec3ced90fa3f408719526f8d77f4943",
+  // "hosts": {"14.3.140.101": {"tcp_port": 51001, "ssl_port": 51002}},
+  // "protocol_max": "1.0",
+  // "protocol_min": "1.0",
+  // "pruning": null,
+  // "server_version": "ElectrumX 1.0.17",
+  // "hash_function": "sha256"
+  // }
+  Future<Map<String, dynamic>> getServerFeatures() async {
+    try {
+      final response = await request(
+        command: 'server.features',
+      );
+      return response["result"];
+    } catch (e) {
+      throw e;
+    }
+  }
+
   /// Broadcast a transaction to the network.
   ///
   /// The transaction hash as a hexadecimal string.

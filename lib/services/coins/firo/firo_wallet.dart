@@ -56,6 +56,11 @@ final firoTestNetwork = NetworkType(
     scriptHash: 0xb2,
     wif: 0xb9);
 
+const String FiroGenesisHash =
+    "4381deb85b1b2c9843c222944b616d997516dcbd6a964e1eaf0def0830695233";
+const String FiroTestGenesisHash =
+    "aa22adcc12becaf436027ffe62a8fb21b234c58c23865291e5dc52cf53f64fca";
+
 enum FiroNetworkType { main, test }
 
 // isolate
@@ -1835,6 +1840,7 @@ class FiroWallet extends CoinServiceAPI {
         useSSL = CampfireConstants.defaultUseSSLTestNet;
         nodeName = CampfireConstants.defaultNodeNameTestNet;
       }
+
       nodes.addAll({
         nodeName: {
           "id": Uuid().v1(),
@@ -1843,6 +1849,22 @@ class FiroWallet extends CoinServiceAPI {
           "useSSL": useSSL,
         }
       });
+      final client = ElectrumX(
+        server: ip,
+        port: int.parse(port),
+        useSSL: useSSL,
+      );
+      final features = await client.getServerFeatures();
+      print("features: ${features}");
+      if (_networkType == FiroNetworkType.main) {
+        if (features['genesis_hash'] != FiroGenesisHash) {
+          throw Exception("genesis hash does not match!");
+        }
+      } else if (_networkType == FiroNetworkType.test) {
+        if (features['genesis_hash'] != FiroTestGenesisHash) {
+          throw Exception("genesis hash does not match!");
+        }
+      }
       await wallet.put('nodes', nodes);
       await wallet.put('activeNodeName', nodeName);
     }
