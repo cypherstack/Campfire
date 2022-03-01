@@ -8,6 +8,7 @@ import 'package:paymint/electrumx_rpc/cached_electrumx.dart';
 import 'package:paymint/electrumx_rpc/electrumx.dart';
 import 'package:paymint/services/coins/firo/firo_wallet.dart';
 import 'package:paymint/utilities/flutter_secure_storage_interface.dart';
+import 'package:paymint/utilities/misc_global_constants.dart';
 
 import 'firo_wallet_tests.mocks.dart';
 
@@ -394,6 +395,128 @@ void main() {
 
     tearDown(() async {
       await tearDownTestHive();
+    });
+  });
+
+  group("testNetworkConnection", () {
+    test("try connecting to main net server when configured to use main net",
+        () async {
+      final client = MockElectrumX();
+      when(client.getServerFeatures()).thenAnswer((_) async => {
+            "hosts": {},
+            "pruning": null,
+            "server_version": "Unit tests",
+            "protocol_min": "1.4",
+            "protocol_max": "1.4.2",
+            "genesis_hash": FiroGenesisHash,
+            "hash_function": "sha256",
+            "services": []
+          });
+      final firo = FiroWallet(
+        walletName: 'unit test',
+        walletId: 'some id',
+        networkType: FiroNetworkType.main,
+        client: client,
+        cachedClient: MockCachedElectrumX(),
+        secureStore: FakeSecureStorage(),
+      );
+      final bool result = await firo.testNetworkConnection(
+        CampfireConstants.defaultIpAddress,
+        CampfireConstants.defaultPort,
+        CampfireConstants.defaultUseSSL,
+      );
+
+      expect(result, true);
+    });
+
+    test("try connecting to test net server when configured to use test net",
+        () async {
+      final client = MockElectrumX();
+      when(client.getServerFeatures()).thenAnswer((_) async => {
+            "hosts": {},
+            "pruning": null,
+            "server_version": "Unit tests",
+            "protocol_min": "1.4",
+            "protocol_max": "1.4.2",
+            "genesis_hash": FiroTestGenesisHash,
+            "hash_function": "sha256",
+            "services": []
+          });
+      final firo = FiroWallet(
+        walletName: 'unit test',
+        walletId: 'some id',
+        networkType: FiroNetworkType.test,
+        client: client,
+        cachedClient: MockCachedElectrumX(),
+        secureStore: FakeSecureStorage(),
+      );
+      final bool result = await firo.testNetworkConnection(
+        CampfireConstants.defaultIpAddressTestNet,
+        CampfireConstants.defaultPortTestNet,
+        CampfireConstants.defaultUseSSLTestNet,
+      );
+
+      expect(result, true);
+    });
+
+    test("try connecting to test net server when configured to use main net",
+        () async {
+      final client = MockElectrumX();
+      when(client.getServerFeatures()).thenAnswer((_) async => {
+            "hosts": {},
+            "pruning": null,
+            "server_version": "Unit tests",
+            "protocol_min": "1.4",
+            "protocol_max": "1.4.2",
+            "genesis_hash": FiroTestGenesisHash,
+            "hash_function": "sha256",
+            "services": []
+          });
+      final firo = FiroWallet(
+        walletName: 'unit test',
+        walletId: 'some id',
+        networkType: FiroNetworkType.main,
+        client: client,
+        cachedClient: MockCachedElectrumX(),
+        secureStore: FakeSecureStorage(),
+      );
+      final bool result = await firo.testNetworkConnection(
+        CampfireConstants.defaultIpAddressTestNet,
+        CampfireConstants.defaultPortTestNet,
+        CampfireConstants.defaultUseSSLTestNet,
+      );
+
+      expect(result, false);
+    });
+
+    test("try connecting to main net server when configured to use test net",
+        () async {
+      final client = MockElectrumX();
+      when(client.getServerFeatures()).thenAnswer((_) async => {
+            "hosts": {},
+            "pruning": null,
+            "server_version": "Unit tests",
+            "protocol_min": "1.4",
+            "protocol_max": "1.4.2",
+            "genesis_hash": FiroGenesisHash,
+            "hash_function": "sha256",
+            "services": []
+          });
+      final firo = FiroWallet(
+        walletName: 'unit test',
+        walletId: 'some id',
+        networkType: FiroNetworkType.test,
+        client: client,
+        cachedClient: MockCachedElectrumX(),
+        secureStore: FakeSecureStorage(),
+      );
+      final bool result = await firo.testNetworkConnection(
+        CampfireConstants.defaultIpAddress,
+        CampfireConstants.defaultPort,
+        CampfireConstants.defaultUseSSL,
+      );
+
+      expect(result, false);
     });
   });
 }
