@@ -7,6 +7,7 @@ import 'package:mockito/mockito.dart';
 import 'package:paymint/electrumx_rpc/cached_electrumx.dart';
 import 'package:paymint/electrumx_rpc/electrumx.dart';
 import 'package:paymint/services/coins/firo/firo_wallet.dart';
+import 'package:paymint/services/price.dart';
 import 'package:paymint/utilities/flutter_secure_storage_interface.dart';
 import 'package:paymint/utilities/misc_global_constants.dart';
 
@@ -15,7 +16,7 @@ import 'firo_wallet_tests.mocks.dart';
 const TEST_MNEMONIC =
     "remove veteran gauge wink fatigue cabbage better hello wave resist hybrid cigar middle can weasel enemy skirt insane helmet enter error circle fringe elder";
 
-@GenerateMocks([ElectrumX, CachedElectrumX])
+@GenerateMocks([ElectrumX, CachedElectrumX, PriceAPI])
 void main() {
   group("isolate functions", () {
     test("isolateDerive", () async {
@@ -518,5 +519,127 @@ void main() {
 
       expect(result, false);
     });
+  });
+
+  group("getMnemonicList", () {
+    test("fetch and convert properly stored mnemonic to list of words",
+        () async {
+      final store = FakeSecureStorage();
+      store.write(key: "some id_mnemonic", value: TEST_MNEMONIC);
+
+      final firo = FiroWallet(
+        walletName: 'unit test',
+        walletId: 'some id',
+        networkType: FiroNetworkType.test,
+        client: MockElectrumX(),
+        cachedClient: MockCachedElectrumX(),
+        secureStore: store,
+      );
+      final List<String> result = await firo.getMnemonicList();
+
+      expect(result, [
+        "remove",
+        "veteran",
+        "gauge",
+        "wink",
+        "fatigue",
+        "cabbage",
+        "better",
+        "hello",
+        "wave",
+        "resist",
+        "hybrid",
+        "cigar",
+        "middle",
+        "can",
+        "weasel",
+        "enemy",
+        "skirt",
+        "insane",
+        "helmet",
+        "enter",
+        "error",
+        "circle",
+        "fringe",
+        "elder"
+      ]);
+    });
+
+    test("attempt fetch and convert non existent mnemonic to list of words",
+        () async {
+      final store = FakeSecureStorage();
+      store.write(key: "some id_mnemonic", value: TEST_MNEMONIC);
+
+      final firo = FiroWallet(
+        walletName: 'unit test',
+        walletId: 'some other id',
+        networkType: FiroNetworkType.test,
+        client: MockElectrumX(),
+        cachedClient: MockCachedElectrumX(),
+        secureStore: store,
+      );
+      expectLater(
+          () => firo.getMnemonicList(), throwsA(isA<NoSuchMethodError>()));
+    });
+  });
+
+  group("send", () {
+    // todo build send tests
+  });
+
+  group("initializeWallet", () {
+    // todo build tests
+  });
+
+  group("refreshIfThereIsNewData", () {
+    // todo build tests
+  });
+
+  group("getAllTxsToWatch", () {
+    // todo build tests
+  });
+
+  group("submitHexToNetwork", () {
+    // todo build tests
+  });
+
+  group("buildMintTransaction", () {
+    // todo build tests
+  });
+
+  group("fillAddresses", () {
+    // todo build tests
+  });
+
+  group("recoverFromMnemonic", () {
+    // todo build tests
+  });
+
+  group("updateBiometricsUsage", () {
+    // todo build tests
+  });
+
+  group("changeCurrency", () {
+    // todo build tests
+  });
+
+  group("getLatestSetId", () {
+    // todo build tests
+  });
+
+  group("getSetData", () {
+    // todo build tests
+  });
+
+  group("getUsedCoinSerials", () {
+    // todo build tests
+  });
+
+  group("exit", () {
+    // todo build tests
+  });
+
+  group("refresh", () {
+    // todo build tests
   });
 }
