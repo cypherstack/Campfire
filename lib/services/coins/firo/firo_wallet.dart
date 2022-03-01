@@ -1039,13 +1039,10 @@ class FiroWallet extends CoinServiceAPI {
           CachedElectrumX.from(node: newNode, hivePath: appDir.path);
       refresh();
     });
-
-    // _initializeWallet().whenComplete(() {
-    //   this._utxoData = _fetchUtxoData();
-    //   this._transactionData = _fetchTransactionData();
-    // }).whenComplete(() => _checkReceivingAddressForTransactions());
   }
 
+  /// Initializes the wallet class and sets class getters. Will create a wallet if one does not
+  /// already exist.
   Future<void> initializeWallet() async {
     final wallet = await Hive.openBox(this._walletId);
 
@@ -1074,19 +1071,15 @@ class FiroWallet extends CoinServiceAPI {
 
     await _checkReceivingAddressForTransactions();
   }
+
   Future<bool> refreshIfThereIsNewData() async {
     if (longMutex) return false;
     Logger.print("refreshIfThereIsNewData");
-    final node = await currentNode;
-    final client = ElectrumX(
-      server: node.address,
-      port: node.port,
-      useSSL: node.useSSL,
-    );
+
     bool wasRefreshed = false;
     Logger.print("unonconfirmeds $unconfirmedTxs");
     for (String txid in unconfirmedTxs) {
-      final txn = await client.getTransaction(tx_hash: txid);
+      final txn = await electrumXClient.getTransaction(tx_hash: txid);
       var confirmations = txn["confirmations"];
       if (!(confirmations is int)) continue;
       bool isUnconfirmed = confirmations < 1;
@@ -1161,27 +1154,6 @@ class FiroWallet extends CoinServiceAPI {
     Logger.print("needRefresh $needRefresh");
     unconfirmedTxs = needRefresh;
   }
-  // /// Initializes the user's wallet and sets class getters. Will create a wallet if one does not
-  // /// already exist.
-  // Future<void> _initializeWallet() async {
-  //   final wallet = await Hive.openBox(this._walletId);
-  //
-  //   if (wallet.isEmpty) {
-  //     // Triggers for new users automatically. Generates new wallet
-  //     await _generateNewWallet(wallet);
-  //     wallet.put("id", this._walletId);
-  //     final newNode = await _getCurrentNode();
-  //     this._currentNode = Future(() => newNode);
-  //     this._lelantusTransactionData = _getLelantusTransactionData();
-  //   } else {
-  //     // Wallet already exists, triggers for a returning user
-  //     final newNode = await _getCurrentNode();
-  //     this._currentNode = Future(() => newNode);
-  //     this._lelantusTransactionData = _getLelantusTransactionData();
-  //     this._currentReceivingAddress = _getCurrentAddressForChain(0);
-  //     this._useBiometrics = _fetchUseBiometrics();
-  //   }
-  // }
 
   /// Generates initial wallet values such as mnemonic, chain (receive/change) arrays and indexes.
   Future<void> _generateNewWallet(Box<dynamic> wallet) async {
@@ -1969,11 +1941,7 @@ class FiroWallet extends CoinServiceAPI {
           "useSSL": useSSL,
         }
       });
-      // final client = ElectrumX(
-      //   server: ip,
-      //   port: int.parse(port),
-      //   useSSL: useSSL,
-      // );
+
       final features = await electrumXClient.getServerFeatures();
       print("features: $features");
       if (_networkType == FiroNetworkType.main) {
@@ -2104,38 +2072,8 @@ class FiroWallet extends CoinServiceAPI {
     print("change addresses: $changeAddresses");
 
     List<Map<String, dynamic>> allTxHashes = [];
-    // int latestTxnBlockHeight = 0;
 
     allTxHashes = await _fetchHistory(allAddresses);
-
-    // final TransactionData storedTxnData = await wallet.get('latest_tx_model');
-    // final int storedTxnDataHeight =
-    //     (await wallet.get('storedTxnDataHeight')) ?? 0;
-
-    // final Map<String, models.Transaction> transactionsMap = {};
-
-    // if (storedTxnData == null) {
-    // } else {
-    //   final int currentHeight = (await client.getBlockHeadTip())['height'];
-    //   Logger.print("current chain height: $currentHeight");
-    //
-    //   // return stored txnData if no new blocks have been found since last fetch
-    //   // OR if no new transactions exist since last fetch
-    //   // if (storedTxnDataHeight == currentHeight ||
-    //   //     storedTxnDataHeight == latestTxnBlockHeight) {
-    //   //   return storedTxnData;
-    //   // }
-    //
-    //   transactionsMap.addAll(storedTxnData.getAllTransactions());
-    //
-    //   // final int confirmationBuffer = 30;
-    //   // for (int i = 0; i < allTxHashes.length; i++) {
-    //   //   if (allTxHashes[i]['height'] <=
-    //   //       (storedTxnDataHeight - confirmationBuffer)) {
-    //   //     allTxHashes.removeAt(i);
-    //   //   }
-    //   // }
-    // }
 
     List<Map<String, dynamic>> allTransactions = [];
 
