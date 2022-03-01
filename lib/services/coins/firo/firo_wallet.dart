@@ -691,8 +691,9 @@ Future<List<models.Transaction>> getJMintTransactions(
 
         tx["subType"] = "join";
         txs.add(models.Transaction.fromLelantusJson(tx));
-      } catch (e) {
+      } catch (e, s) {
         Logger.print("Exception caught in getJMintTransactions(): $e");
+        Logger.print(s);
       }
     }
     return txs;
@@ -1726,7 +1727,7 @@ class FiroWallet extends CoinServiceAPI {
     // Grab the most recent information on all the joinsplits
 
     final updatedJSplit = await getJMintTransactions(
-        cachedElectrumXClient, joinsplits, currency, this.coinName, null);
+        cachedElectrumXClient, joinsplits, currency, this.coinName, false);
 
     // update all of joinsplits that are now confirmed.
     for (final tx in updatedJSplit) {
