@@ -249,8 +249,7 @@ class _CreatePinViewState extends State<CreatePinView> {
 
                           final appDir =
                               await getApplicationDocumentsDirectory();
-                          // TODO do this differently - causes short lockup of UI
-                          manager.currentWallet = FiroWallet(
+                          final firoWallet = FiroWallet(
                             walletId: id,
                             walletName: widget.walletName,
                             networkType: firoNetworkType,
@@ -258,6 +257,8 @@ class _CreatePinViewState extends State<CreatePinView> {
                             cachedClient: CachedElectrumX.from(
                                 node: defaultNode, hivePath: appDir.path),
                           );
+                          await firoWallet.initializeWallet();
+                          manager.currentWallet = firoWallet;
                           await manager.updateBiometricsUsage(useBiometrics);
                           await Future.delayed(Duration(seconds: 3));
 

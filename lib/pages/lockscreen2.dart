@@ -95,7 +95,7 @@ class _Lockscreen2ViewState extends State<Lockscreen2View> {
           }
           final manager = Provider.of<Manager>(context, listen: false);
           final appDir = await getApplicationDocumentsDirectory();
-          manager.currentWallet = FiroWallet(
+          final firoWallet = FiroWallet(
             walletId: id,
             walletName: walletName,
             networkType: firoNetworkType,
@@ -103,6 +103,8 @@ class _Lockscreen2ViewState extends State<Lockscreen2View> {
             cachedClient:
                 CachedElectrumX.from(node: defaultNode, hivePath: appDir.path),
           );
+          await firoWallet.initializeWallet();
+          manager.currentWallet = firoWallet;
         }
 
         Navigator.pushReplacementNamed(context, widget.routeOnSuccess);
@@ -311,7 +313,7 @@ class _Lockscreen2ViewState extends State<Lockscreen2View> {
                     final manager =
                         Provider.of<Manager>(context, listen: false);
                     final appDir = await getApplicationDocumentsDirectory();
-                    manager.currentWallet = FiroWallet(
+                    final firoWallet = FiroWallet(
                       walletId: id,
                       walletName: walletName,
                       networkType: firoNetworkType,
@@ -319,6 +321,8 @@ class _Lockscreen2ViewState extends State<Lockscreen2View> {
                       cachedClient: CachedElectrumX.from(
                           node: defaultNode, hivePath: appDir.path),
                     );
+                    await firoWallet.initializeWallet();
+                    manager.currentWallet = firoWallet;
                   }
 
                   await Future.delayed(Duration(milliseconds: 600));

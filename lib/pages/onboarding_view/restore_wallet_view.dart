@@ -495,7 +495,7 @@ class _RestoreWalletFormViewState extends State<RestoreWalletFormView> {
                     throw Exception("Bad firo network type encountered");
                 }
                 final appDir = await getApplicationDocumentsDirectory();
-                manager.currentWallet = FiroWallet(
+                final firoWallet = FiroWallet(
                   walletId: walletId,
                   walletName: walletName,
                   networkType: widget.firoNetworkType,
@@ -503,6 +503,8 @@ class _RestoreWalletFormViewState extends State<RestoreWalletFormView> {
                   cachedClient: CachedElectrumX.from(
                       node: defaultNode, hivePath: appDir.path),
                 );
+                await firoWallet.initializeWallet();
+                manager.currentWallet = firoWallet;
 
                 try {
                   final secureStore = new FlutterSecureStorage();

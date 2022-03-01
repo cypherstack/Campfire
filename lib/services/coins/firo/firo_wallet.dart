@@ -27,6 +27,7 @@ import 'package:paymint/services/event_bus/events/refresh_percent_changed_event.
 import 'package:paymint/services/event_bus/global_event_bus.dart';
 import 'package:paymint/services/price.dart';
 import 'package:paymint/utilities/address_utils.dart';
+import 'package:paymint/utilities/flutter_secure_storage_interface.dart';
 import 'package:paymint/utilities/logger.dart';
 import 'package:paymint/utilities/misc_global_constants.dart';
 import 'package:paymint/utilities/shared_utilities.dart';
@@ -991,9 +992,8 @@ class FiroWallet extends CoinServiceAPI {
   }
 
   Future<List<String>> getMnemonicList() async {
-    final secureStore = new FlutterSecureStorage();
     final mnemonicString =
-        await secureStore.read(key: '${this._walletId}_mnemonic');
+        await _secureStore.read(key: '${this._walletId}_mnemonic');
     final List<String> data = mnemonicString.split(' ');
     return data;
   }
@@ -1004,19 +1004,27 @@ class FiroWallet extends CoinServiceAPI {
   CachedElectrumX _cachedElectrumXClient;
   CachedElectrumX get cachedElectrumXClient => _cachedElectrumXClient;
 
+  FlutterSecureStorageInterface _secureStore;
+
   // Constructor
-  FiroWallet({
-    @required String walletId,
-    @required String walletName,
-    @required FiroNetworkType networkType,
-    @required ElectrumX client,
-    @required CachedElectrumX cachedClient,
-  }) {
+  FiroWallet(
+      {@required String walletId,
+      @required String walletName,
+      @required FiroNetworkType networkType,
+      @required ElectrumX client,
+      @required CachedElectrumX cachedClient,
+      FlutterSecureStorageInterface secureStore}) {
     this._walletId = walletId;
     this._walletName = walletName;
     this._networkType = networkType;
     this._electrumXClient = client;
     this._cachedElectrumXClient = cachedClient;
+
+    if (secureStore != null) {
+      _secureStore = secureStore;
+    } else {
+      _secureStore = SecureStorageWrapper(FlutterSecureStorage());
+    }
 
     // add listener for nodes changed
     GlobalEventBus.instance.on<NodesChangedEvent>().listen((event) async {
@@ -1028,15 +1036,13 @@ class FiroWallet extends CoinServiceAPI {
       refresh();
     });
 
-    _initializeWallet().whenComplete(() {
-      this._utxoData = _fetchUtxoData();
-      this._transactionData = _fetchTransactionData();
-    }).whenComplete(() => _checkReceivingAddressForTransactions());
+    // _initializeWallet().whenComplete(() {
+    //   this._utxoData = _fetchUtxoData();
+    //   this._transactionData = _fetchTransactionData();
+    // }).whenComplete(() => _checkReceivingAddressForTransactions());
   }
 
-  /// Initializes the user's wallet and sets class getters. Will create a wallet if one does not
-  /// already exist.
-  Future<void> _initializeWallet() async {
+  Future<void> initializeWallet() async {
     final wallet = await Hive.openBox(this._walletId);
 
     if (wallet.isEmpty) {
@@ -1045,21 +1051,51 @@ class FiroWallet extends CoinServiceAPI {
       wallet.put("id", this._walletId);
       final newNode = await _getCurrentNode();
       this._currentNode = Future(() => newNode);
-      this._lelantusTransactionData = _getLelantusTransactionData();
+      final lelantusTxData = await _getLelantusTransactionData();
+      this._lelantusTransactionData = Future(() => lelantusTxData);
     } else {
       // Wallet already exists, triggers for a returning user
       final newNode = await _getCurrentNode();
       this._currentNode = Future(() => newNode);
-      this._lelantusTransactionData = _getLelantusTransactionData();
-      this._currentReceivingAddress = _getCurrentAddressForChain(0);
-      this._useBiometrics = _fetchUseBiometrics();
+      final lelantusTxData = await _getLelantusTransactionData();
+      this._lelantusTransactionData = Future(() => lelantusTxData);
+      final currentAddress = await _getCurrentAddressForChain(0);
+      this._currentReceivingAddress = Future(() => currentAddress);
+      final useBio = await _fetchUseBiometrics();
+      this._useBiometrics = Future(() => useBio);
     }
+
+    this._utxoData = _fetchUtxoData();
+    this._transactionData = _fetchTransactionData();
+
+    await _checkReceivingAddressForTransactions();
   }
+
+  // /// Initializes the user's wallet and sets class getters. Will create a wallet if one does not
+  // /// already exist.
+  // Future<void> _initializeWallet() async {
+  //   final wallet = await Hive.openBox(this._walletId);
+  //
+  //   if (wallet.isEmpty) {
+  //     // Triggers for new users automatically. Generates new wallet
+  //     await _generateNewWallet(wallet);
+  //     wallet.put("id", this._walletId);
+  //     final newNode = await _getCurrentNode();
+  //     this._currentNode = Future(() => newNode);
+  //     this._lelantusTransactionData = _getLelantusTransactionData();
+  //   } else {
+  //     // Wallet already exists, triggers for a returning user
+  //     final newNode = await _getCurrentNode();
+  //     this._currentNode = Future(() => newNode);
+  //     this._lelantusTransactionData = _getLelantusTransactionData();
+  //     this._currentReceivingAddress = _getCurrentAddressForChain(0);
+  //     this._useBiometrics = _fetchUseBiometrics();
+  //   }
+  // }
 
   /// Generates initial wallet values such as mnemonic, chain (receive/change) arrays and indexes.
   Future<void> _generateNewWallet(Box<dynamic> wallet) async {
-    final secureStore = new FlutterSecureStorage();
-    await secureStore.write(
+    await _secureStore.write(
         key: '${this._walletId}_mnemonic',
         value: bip39.generateMnemonic(strength: 256));
     // Set relevant indexes
@@ -1095,9 +1131,8 @@ class FiroWallet extends CoinServiceAPI {
       final wallet = await Hive.openBox(this._walletId);
       if (wallet.get('receiveDerivations') == null) {
         GlobalEventBus.instance.fire(RefreshPercentChangedEvent(0.05));
-        final secureStore = new FlutterSecureStorage();
         final mnemonic =
-            await secureStore.read(key: '${this._walletId}_mnemonic');
+            await _secureStore.read(key: '${this._walletId}_mnemonic');
         await fillAddresses(mnemonic,
             NUMBER_OF_THREADS:
                 Platform.numberOfProcessors - isolates.length - 1);
@@ -1185,8 +1220,7 @@ class FiroWallet extends CoinServiceAPI {
   }
 
   Future<List<DartLelantusEntry>> _getLelantusEntry() async {
-    final secureStore = new FlutterSecureStorage();
-    final mnemonic = await secureStore.read(key: '${this._walletId}_mnemonic');
+    final mnemonic = await _secureStore.read(key: '${this._walletId}_mnemonic');
     final List<LelantusCoin> lelantusCoins = await _getUnspentCoins();
     final root = getBip32Root(mnemonic, _network);
     final waitLelantusEntries = lelantusCoins.map((coin) async {
@@ -1686,8 +1720,7 @@ class FiroWallet extends CoinServiceAPI {
   }
 
   _getMintHex(int amount, int index) async {
-    final secureStore = new FlutterSecureStorage();
-    final mnemonic = await secureStore.read(key: '${this._walletId}_mnemonic');
+    final mnemonic = await _secureStore.read(key: '${this._walletId}_mnemonic');
     final mintKeyPair =
         getBip32Node(MINT_INDEX, index, mnemonic, this._network);
     String keydata = uint8listToString(mintKeyPair.privateKey);
@@ -2429,8 +2462,7 @@ class FiroWallet extends CoinServiceAPI {
   /// [index] - This can be any integer >= 0
   Future<String> _generateAddressForChain(int chain, int index) async {
     final wallet = await Hive.openBox(this._walletId);
-    final secureStore = new FlutterSecureStorage();
-    final mnemonic = await secureStore.read(key: '${this._walletId}_mnemonic');
+    final mnemonic = await _secureStore.read(key: '${this._walletId}_mnemonic');
     var derivations;
     if (chain == 0) {
       derivations = wallet.get('receiveDerivations');
@@ -2646,8 +2678,7 @@ class FiroWallet extends CoinServiceAPI {
       await wallet.put('receivingIndex', receivingIndex);
       await wallet.put('changeIndex', changeIndex);
 
-      final secureStore = new FlutterSecureStorage();
-      await secureStore.write(
+      await _secureStore.write(
           key: '${this._walletId}_mnemonic', value: suppliedMnemonic.trim());
       for (int setId = 1; setId <= latestSetId; setId++) {
         setDataMap[setId] = await setDataMap[setId];
@@ -2662,8 +2693,7 @@ class FiroWallet extends CoinServiceAPI {
 
   _restore(int latestSetId, Map setDataMap, dynamic usedSerialNumbers) async {
     final wallet = await Hive.openBox(this._walletId);
-    final secureStore = new FlutterSecureStorage();
-    final mnemonic = await secureStore.read(key: '${this._walletId}_mnemonic');
+    final mnemonic = await _secureStore.read(key: '${this._walletId}_mnemonic');
     TransactionData data = await _txnData;
     final String currency = fetchPreferredCurrency();
 
@@ -2728,8 +2758,7 @@ class FiroWallet extends CoinServiceAPI {
       int spendAmount, String address, bool subtractFeeFromAmount) async {
     final price = await firoPrice;
     final wallet = await Hive.openBox(this._walletId);
-    final secureStore = new FlutterSecureStorage();
-    final mnemonic = await secureStore.read(key: '${this._walletId}_mnemonic');
+    final mnemonic = await _secureStore.read(key: '${this._walletId}_mnemonic');
     final index = await wallet.get('mintIndex');
     var lelantusEntry = await _getLelantusEntry();
 
