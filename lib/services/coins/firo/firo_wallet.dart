@@ -1322,7 +1322,7 @@ class FiroWallet extends CoinServiceAPI {
     return lelantusEntries;
   }
 
-  _getUnspentCoins() async {
+  Future<List<LelantusCoin>> _getUnspentCoins() async {
     final wallet = await Hive.openBox(this._walletId);
     Map _lelantus_coins = await wallet.get('_lelantus_coins');
     if (_lelantus_coins != null && _lelantus_coins.isNotEmpty) {
@@ -1462,10 +1462,10 @@ class FiroWallet extends CoinServiceAPI {
     }
   }
 
-  dynamic _autoMint() async {
+  Future<void> _autoMint() async {
     try {
       var mintResult = await _mintSelection();
-      if (mintResult == null || mintResult is String) {
+      if (mintResult == null || mintResult.isEmpty) {
         print("nothing to mint");
         return;
       }
@@ -1477,7 +1477,7 @@ class FiroWallet extends CoinServiceAPI {
   }
 
   /// Returns the mint transaction hex to mint all of the available funds.
-  dynamic _mintSelection() async {
+  Future<Map<String, dynamic>> _mintSelection() async {
     final List<UtxoObject> availableOutputs = this._outputsList;
     final List<UtxoObject> spendableOutputs = [];
 
@@ -1515,7 +1515,8 @@ class FiroWallet extends CoinServiceAPI {
 
     // If there is no Utxos to mint then stop the function.
     if (spendableOutputs.length == 0) {
-      return "Error None To Mint";
+      Logger.print("_mintSelection(): No spendable outputs found");
+      return {};
     }
 
     int satoshisBeingUsed = 0;
@@ -1542,7 +1543,7 @@ class FiroWallet extends CoinServiceAPI {
     firoFee = firoFee + 10;
     int satoshiAmountToSend = satoshisBeingUsed - firoFee;
 
-    dynamic transaction =
+    Map<String, dynamic> transaction =
         await buildMintTransaction(utxoObjectsToUse, satoshiAmountToSend);
     transaction['transaction'] = "";
     Logger.print(transaction.toString());
@@ -1563,11 +1564,7 @@ class FiroWallet extends CoinServiceAPI {
   }
 
   /// Builds and signs a transaction
-  ///
-  /// Throws an exception if the http response status code is not 200 or 201
-  /// OR if json encoding/decoding fails
-  /// OR rethrows earlier exception
-  Future<dynamic> buildMintTransaction(
+  Future<Map<String, dynamic>> buildMintTransaction(
       List<UtxoObject> utxosToUse, int satoshisPerRecipient) async {
     List<String> addressesToDerive = [];
 
@@ -2460,7 +2457,7 @@ class FiroWallet extends CoinServiceAPI {
     }
   }
 
-  fillAddresses(String suppliedMnemonic,
+  Future<void> fillAddresses(String suppliedMnemonic,
       {int PER_BATCH = 250, int NUMBER_OF_THREADS = 4}) async {
     if (NUMBER_OF_THREADS < 0) {
       NUMBER_OF_THREADS = 1;
@@ -2610,11 +2607,11 @@ class FiroWallet extends CoinServiceAPI {
     }
   }
 
-  /// wrapper for recoverWalletFromBIP32SeedPhrase()
+  /// wrapper for _recoverWalletFromBIP32SeedPhrase()
   @override
-  dynamic recoverFromMnemonic(String mnemonic) async {
+  Future<void> recoverFromMnemonic(String mnemonic) async {
     try {
-      await recoverWalletFromBIP32SeedPhrase(mnemonic);
+      await _recoverWalletFromBIP32SeedPhrase(mnemonic);
     } catch (e, s) {
       Logger.print("Exception rethrown from recoverFromMnemonic(): $e");
       Logger.print(s);
@@ -2625,7 +2622,8 @@ class FiroWallet extends CoinServiceAPI {
   bool longMutex = false;
 
   /// Recovers wallet from [suppliedMnemonic]. Expects a valid mnemonic.
-  dynamic recoverWalletFromBIP32SeedPhrase(String suppliedMnemonic) async {
+  Future<void> _recoverWalletFromBIP32SeedPhrase(
+      String suppliedMnemonic) async {
     longMutex = true;
     Logger.print("PROCESSORS ${Platform.numberOfProcessors}");
     try {
@@ -2783,7 +2781,7 @@ class FiroWallet extends CoinServiceAPI {
   /// Changes the biometrics auth setting used on the lockscreen as an alternative
   /// to the pattern lock
   @override
-  updateBiometricsUsage(bool enabled) async {
+  Future<void> updateBiometricsUsage(bool enabled) async {
     final wallet = await Hive.openBox(this._walletId);
 
     await wallet.put('use_biometrics', enabled);
@@ -2791,7 +2789,7 @@ class FiroWallet extends CoinServiceAPI {
   }
 
   /// Switches preferred fiat currency for display and data fetching purposes
-  changeCurrency(String newCurrency) {
+  void changeCurrency(String newCurrency) {
     final wallet = Hive.box(this._walletId);
     wallet.put("preferredFiatCurrency", newCurrency);
     this._currency = newCurrency;
