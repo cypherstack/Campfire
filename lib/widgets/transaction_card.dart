@@ -69,12 +69,10 @@ class _TransactionCardState extends State<TransactionCard> {
 
     String whatIsIt() {
       if (type == "Received") {
-        if (_transaction.confirmedStatus) {
-          if (_transaction.height == -1) {
-            return "Minting";
-          } else {
-            return "Received";
-          }
+        if (_transaction.isMinting) {
+          return "Minting";
+        } else if (_transaction.confirmedStatus) {
+          return "Received";
         } else {
           return "Receiving";
         }

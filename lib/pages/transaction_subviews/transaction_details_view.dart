@@ -67,7 +67,9 @@ class _TransactionDetailsViewState extends State<TransactionDetailsView> {
 
   String _getTitle() {
     if (_transaction.txType == "Received") {
-      if (_transaction.confirmedStatus) {
+      if (_transaction.isMinting) {
+        return "Minting (~10 min)";
+      } else if (_transaction.confirmedStatus) {
         return "Received";
       } else {
         return "Receiving (~10 min)";

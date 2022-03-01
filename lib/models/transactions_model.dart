@@ -218,6 +218,13 @@ class Transaction {
         subType: json["subType"]);
   }
 
+  bool get isMinting {
+    if (this.subType is String && this.subType.toLowerCase() == "mint") {
+      return this.confirmedStatus is bool && !this.confirmedStatus;
+    }
+    return false;
+  }
+
   copyWith(
       {txid: null,
       confirmedStatus: null,
