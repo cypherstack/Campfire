@@ -159,6 +159,7 @@ class SettingsView extends StatelessWidget {
                                       ),
                                       onTap: () async {
                                         print("log out pressed");
+                                        await manager.currentWallet.exit();
                                         manager.currentWallet = null;
                                         await walletsService
                                             .setCurrentWalletName("");

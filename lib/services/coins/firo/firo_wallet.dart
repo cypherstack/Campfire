@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'dart:io';
 import 'dart:isolate';
 import 'dart:typed_data';
@@ -776,8 +777,11 @@ bip32.BIP32 getBip32Root(String mnemonic, NetworkType network) {
 
 /// Handles a single instance of a firo wallet
 class FiroWallet extends CoinServiceAPI {
+  Timer timer;
   FiroNetworkType _networkType;
   FiroNetworkType get networkType => _networkType;
+
+  Set<String> unconfirmedTxs = {};
 
   NetworkType get _network {
     switch (networkType) {
@@ -1070,7 +1074,93 @@ class FiroWallet extends CoinServiceAPI {
 
     await _checkReceivingAddressForTransactions();
   }
+  Future<bool> refreshIfThereIsNewData() async {
+    if (longMutex) return false;
+    Logger.print("refreshIfThereIsNewData");
+    final node = await currentNode;
+    final client = ElectrumX(
+      server: node.address,
+      port: node.port,
+      useSSL: node.useSSL,
+    );
+    bool wasRefreshed = false;
+    Logger.print("unonconfirmeds $unconfirmedTxs");
+    for (String txid in unconfirmedTxs) {
+      final txn = await client.getTransaction(tx_hash: txid);
+      var confirmations = txn["confirmations"];
+      if (!(confirmations is int)) continue;
+      bool isUnconfirmed = confirmations < 1;
+      if (!isUnconfirmed) {
+        unconfirmedTxs = {};
+        await refresh();
+        wasRefreshed = true;
+        break;
+      }
+    }
+    if (!wasRefreshed) {
+      var allOwnAddresses = await this.allOwnAddresses;
+      List<Map<String, dynamic>> allTxs = await _fetchHistory(allOwnAddresses);
+      models.TransactionData txData = await _txnData;
+      for (Map transaction in allTxs) {
+        if (txData.findTransaction(transaction['tx_hash']) == null) {
+          Logger.print(
+              " txid not found in address history already ${transaction['tx_hash']}");
+          await refresh();
+          wasRefreshed = true;
+          break;
+        }
+      }
+    }
+    return true;
+  }
 
+  Future<void> getAllTxsToWatch() async {
+    Logger.print("periodic");
+    var txData = (await _txnData);
+    var lTxData = (await lelantusTransactionData);
+    Logger.print(txData.txChunks);
+    Logger.print(lTxData.txChunks);
+    Set<String> needRefresh = {};
+
+    for (models.TransactionChunk chunk in txData.txChunks) {
+      for (models.Transaction tx in chunk.transactions) {
+        models.Transaction lTx = lTxData.findTransaction(tx.txid);
+        if (!tx.confirmedStatus) {
+          // Get all normal txs that are at 0 confirmations
+          needRefresh.add(tx.txid);
+          print("1 ${tx.txid}");
+        } else if (lTx != null &&
+            (lTx.inputs.isEmpty || lTx.inputs[0].txid == null) &&
+            lTx.confirmedStatus == false &&
+            tx.txType == "Received") {
+          // If this is a received that is past 1 or more confirmations and has not been minted,
+          needRefresh.add(tx.txid);
+          print("2 ${tx.txid}");
+        }
+      }
+    }
+
+    for (models.TransactionChunk chunk in txData.txChunks) {
+      for (models.Transaction tx in chunk.transactions) {
+        if (!tx.confirmedStatus && tx.inputs[0].txid != null) {
+          // Get all normal txs that are at 0 confirmations
+          needRefresh.remove(tx.inputs[0].txid);
+        }
+      }
+    }
+    for (models.TransactionChunk chunk in lTxData.txChunks) {
+      for (models.Transaction lTX in chunk.transactions) {
+        models.Transaction tx = txData.findTransaction(lTX.txid);
+        if (!lTX.confirmedStatus && tx == null) {
+          // if this is a ltx transaction that is unconfirmed and not represented in the normal transaction set.
+          needRefresh.add(lTX.txid);
+          print("3 ${lTX.txid}");
+        }
+      }
+    }
+    Logger.print("needRefresh $needRefresh");
+    unconfirmedTxs = needRefresh;
+  }
   // /// Initializes the user's wallet and sets class getters. Will create a wallet if one does not
   // /// already exist.
   // Future<void> _initializeWallet() async {
@@ -1118,9 +1208,17 @@ class FiroWallet extends CoinServiceAPI {
     this._useBiometrics = _fetchUseBiometrics();
   }
 
+  bool refreshMutex = false;
+
   /// Refreshes display data for the wallet
   @override
   Future<void> refresh() async {
+    if (refreshMutex) {
+      print("denied");
+      return;
+    } else {
+      refreshMutex = true;
+    }
     Logger.print("PROCESSORS ${Platform.numberOfProcessors}");
     try {
       GlobalEventBus.instance
@@ -1179,12 +1277,20 @@ class FiroWallet extends CoinServiceAPI {
 
       final maxFee = await _fetchMaxFee();
       this._maxFee = Future(() => maxFee);
+      await getAllTxsToWatch();
 
       GlobalEventBus.instance.fire(RefreshPercentChangedEvent(1.0));
 
       GlobalEventBus.instance
           .fire(NodeConnectionStatusChangedEvent(NodeConnectionStatus.synced));
+      refreshMutex = false;
+      if (timer == null) {
+        timer = Timer.periodic(Duration(seconds: 150), (timer) async {
+          await refreshIfThereIsNewData();
+        });
+      }
     } catch (error, strace) {
+      refreshMutex = false;
       GlobalEventBus.instance.fire(
           NodeConnectionStatusChangedEvent(NodeConnectionStatus.disconnected));
       Logger.print("Caught exception in refreshWalletData(): $error");
@@ -1869,7 +1975,7 @@ class FiroWallet extends CoinServiceAPI {
       //   useSSL: useSSL,
       // );
       final features = await electrumXClient.getServerFeatures();
-      print("features: ${features}");
+      print("features: $features");
       if (_networkType == FiroNetworkType.main) {
         if (features['genesis_hash'] != FiroGenesisHash) {
           throw Exception("genesis hash does not match!");
@@ -1961,6 +2067,25 @@ class FiroWallet extends CoinServiceAPI {
     return allAddresses;
   }
 
+  Future<List<Map<String, dynamic>>> _fetchHistory(
+      List<String> allAddresses) async {
+    List<Map<String, dynamic>> allTxHashes = [];
+    // int latestTxnBlockHeight = 0;
+
+    for (final address in allAddresses) {
+      final scripthash = AddressUtils.convertToScriptHash(address, _network);
+      final txs = await electrumXClient.getHistory(scripthash: scripthash);
+      for (final map in txs) {
+        if (!allTxHashes.contains(map)) {
+          map['address'] = address;
+          allTxHashes.add(map);
+        }
+      }
+    }
+
+    return allTxHashes;
+  }
+
   Future<TransactionData> _fetchTransactionData() async {
     final wallet = await Hive.openBox(this._walletId);
     final List<String> allAddresses = [];
@@ -1981,22 +2106,7 @@ class FiroWallet extends CoinServiceAPI {
     List<Map<String, dynamic>> allTxHashes = [];
     // int latestTxnBlockHeight = 0;
 
-    for (final address in allAddresses) {
-      final scripthash = AddressUtils.convertToScriptHash(address, _network);
-      final txs = await electrumXClient.getHistory(scripthash: scripthash);
-      for (final map in txs) {
-        // check to get latest Txn Height
-        // if (map["height"] > latestTxnBlockHeight) {
-        //   latestTxnBlockHeight = map["height"];
-        // }
-        // ignore duplicates
-        if (!allTxHashes.contains(map)) {
-          allTxHashes.add(map);
-        }
-      }
-    }
-
-    Logger.print("allTxHashes: $allTxHashes");
+    allTxHashes = await _fetchHistory(allAddresses);
 
     // final TransactionData storedTxnData = await wallet.get('latest_tx_model');
     // final int storedTxnDataHeight =
@@ -2573,8 +2683,11 @@ class FiroWallet extends CoinServiceAPI {
     }
   }
 
+  bool longMutex = false;
+
   /// Recovers wallet from [suppliedMnemonic]. Expects a valid mnemonic.
   dynamic recoverWalletFromBIP32SeedPhrase(String suppliedMnemonic) async {
+    longMutex = true;
     Logger.print("PROCESSORS ${Platform.numberOfProcessors}");
     try {
       final wallet = await Hive.openBox(this._walletId);
@@ -2684,7 +2797,9 @@ class FiroWallet extends CoinServiceAPI {
         setDataMap[setId] = await setDataMap[setId];
       }
       await _restore(latestSetId, setDataMap, await usedSerialNumbers);
+      longMutex = false;
     } catch (e) {
+      longMutex = false;
       Logger.print(
           "Exception rethrown from recoverWalletFromBIP32SeedPhrase(): $e");
       throw e;
@@ -2819,5 +2934,10 @@ class FiroWallet extends CoinServiceAPI {
       Logger.print("Exception rethrown in firo_wallet.dart: $e");
       throw e;
     }
+  }
+
+  @override
+  Future<void> exit() {
+    timer.cancel();
   }
 }

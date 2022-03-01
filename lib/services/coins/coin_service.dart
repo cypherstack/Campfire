@@ -54,4 +54,6 @@ abstract class CoinServiceAPI {
   Future<bool> testNetworkConnection(String address, int port, bool useSSL);
 
   dynamic recoverFromMnemonic(String mnemonic);
+
+  Future<void> exit();
 }
