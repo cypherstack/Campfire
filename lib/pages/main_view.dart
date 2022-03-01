@@ -323,6 +323,7 @@ class _MainViewState extends State<MainView> {
     } else {
       final manager = Provider.of<Manager>(context);
       final walletsService = Provider.of<WalletsService>(context);
+      await manager.currentWallet.exit();
       manager.currentWallet = null;
       await walletsService.refreshWallets();
     }
