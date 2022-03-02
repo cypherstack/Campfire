@@ -2875,6 +2875,7 @@ class FiroWallet extends CoinServiceAPI {
 
   @override
   Future<void> exit() {
-    timer.cancel();
+    timer?.cancel();
+    timer = null;
   }
 }
