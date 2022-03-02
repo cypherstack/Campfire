@@ -1584,7 +1584,7 @@ class FiroWallet extends CoinServiceAPI {
       );
 
       final vouts = tx["vout"];
-      if (vouts != null && vouts.length <= outputIndex + 1) {
+      if (vouts != null && outputIndex < vouts.length) {
         final address = vouts[outputIndex]["scriptPubKey"]["addresses"][0];
         if (address != null) {
           addressesToDerive.add(address);
