@@ -290,7 +290,7 @@ class _RestoreWalletFormViewState extends State<RestoreWalletFormView> {
                             child: Row(
                               children: [
                                 SvgPicture.asset(
-                                  "assets/svg/qr-code.svg",
+                                  "assets/svg/clipboard.svg",
                                   color: CFColors.dusk,
                                 ),
                                 SizedBox(
