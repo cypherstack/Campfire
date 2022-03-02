@@ -7,6 +7,7 @@
 import 'package:mockito/mockito.dart' as _i1;
 import 'package:paymint/electrumx_rpc/cached_electrumx.dart' as _i3;
 import 'package:paymint/electrumx_rpc/electrumx.dart' as _i2;
+import 'package:paymint/services/price.dart' as _i4;
 
 // ignore_for_file: type=lint
 // ignore_for_file: avoid_redundant_argument_values
@@ -32,6 +33,15 @@ class MockElectrumX extends _i1.Mock implements _i2.ElectrumX {
 /// See the documentation for Mockito's code generation for more information.
 class MockCachedElectrumX extends _i1.Mock implements _i3.CachedElectrumX {
   MockCachedElectrumX() {
+    _i1.throwOnMissingStub(this);
+  }
+}
+
+/// A class which mocks [PriceAPI].
+///
+/// See the documentation for Mockito's code generation for more information.
+class MockPriceAPI extends _i1.Mock implements _i4.PriceAPI {
+  MockPriceAPI() {
     _i1.throwOnMissingStub(this);
   }
 }
