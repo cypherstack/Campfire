@@ -17,6 +17,7 @@ import 'package:paymint/utilities/misc_global_constants.dart';
 
 import 'firo_wallet_test_parameters.dart';
 import 'firo_wallet_tests.mocks.dart';
+import 'getcoinsforrecovery_sample_output.dart';
 
 @GenerateMocks([ElectrumX, CachedElectrumX, PriceAPI])
 void main() {
@@ -747,12 +748,43 @@ void main() {
       expect(firo.fetchPreferredCurrency(), "CAD");
     });
 
-    group("getLatestSetId", () {
-      // todo build tests
+    test("getLatestSetId", () async {
+      final client = MockElectrumX();
+
+      when(client.getLatestCoinId()).thenAnswer((_) async => 1);
+
+      final firo = FiroWallet(
+        walletId: testWalletId + "exit",
+        walletName: testWalletName,
+        networkType: firoNetworkType,
+        client: client,
+        cachedClient: MockCachedElectrumX(),
+        secureStore: FakeSecureStorage(),
+        priceAPI: MockPriceAPI(),
+      );
+
+      final setId = await firo.getLatestSetId();
+      expect(setId, 1);
     });
 
-    group("getSetData", () {
-      // todo build tests
+    test("getSetData", () async {
+      final client = MockElectrumX();
+
+      when(client.getCoinsForRecovery(setId: 1))
+          .thenAnswer((_) async => getCoinsForRecoveryResponse);
+
+      final firo = FiroWallet(
+        walletId: testWalletId + "exit",
+        walletName: testWalletName,
+        networkType: firoNetworkType,
+        client: client,
+        cachedClient: MockCachedElectrumX(),
+        secureStore: FakeSecureStorage(),
+        priceAPI: MockPriceAPI(),
+      );
+
+      final setData = await firo.getSetData(1);
+      expect(setData, getCoinsForRecoveryResponse);
     });
 
     group("getUsedCoinSerials", () {
