@@ -568,14 +568,17 @@ void main() {
 
     group("refreshIfThereIsNewData", () {
       // todo build tests
+      expect(0, 1);
     });
 
     group("getAllTxsToWatch", () {
       // todo build tests
+      expect(0, 1);
     });
 
     group("submitHexToNetwork", () {
       // todo build tests
+      expect(0, 1);
     });
 
     test("fillAddresses", () async {
@@ -673,6 +676,7 @@ void main() {
 
     group("recoverFromMnemonic", () {
       // todo build tests
+      expect(0, 1);
     });
 
     test("updateBiometricsUsage", () async {
@@ -773,14 +777,17 @@ void main() {
 
     group("getUsedCoinSerials", () {
       // todo build tests
+      expect(0, 1);
     });
 
     group("refresh", () {
       // todo build tests
+      expect(0, 1);
     });
 
     group("send", () {
       // todo build send tests
+      expect(0, 1);
     });
 
     test("exit", () {
