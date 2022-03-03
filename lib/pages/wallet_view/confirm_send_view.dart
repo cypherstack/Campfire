@@ -220,7 +220,7 @@ class _ConfirmSendViewState extends State<ConfirmSendView> {
         Duration(milliseconds: 2700),
       );
       await Future.delayed(Duration(milliseconds: 100)).then((_) {
-        manager.currentWallet.refresh();
+        manager.refresh();
         Navigator.pop(context);
         Navigator.pop(context, true);
       });

@@ -44,7 +44,7 @@ class _Lockscreen2ViewState extends State<Lockscreen2View> {
     bool useBiometrics = false;
 
     // check if authenticating wallet log in
-    if (manager.currentWallet == null) {
+    if (!manager.hasWallet) {
       final walletId = await walletsService
           .getWalletId(await walletsService.currentWalletName);
       final wallet = await Hive.openBox(walletId);

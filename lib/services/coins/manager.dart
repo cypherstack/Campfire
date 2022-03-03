@@ -5,10 +5,16 @@ import 'package:paymint/models/models.dart';
 import 'package:paymint/services/coins/coin_service.dart';
 
 class Manager with ChangeNotifier {
-  CoinServiceAPI currentWallet;
+  CoinServiceAPI _currentWallet;
 
-  String get coinName => currentWallet.coinName;
-  String get coinTicker => currentWallet.coinTicker;
+  set currentWallet(CoinServiceAPI newValue) {
+    _currentWallet = newValue;
+  }
+
+  bool get hasWallet => _currentWallet != null;
+
+  String get coinName => _currentWallet.coinName;
+  String get coinTicker => _currentWallet.coinTicker;
 
   /// create and submit tx to network
   ///
@@ -19,7 +25,7 @@ class Manager with ChangeNotifier {
       @required int amount,
       Map<String, String> args}) async {
     try {
-      final txid = await currentWallet.send(
+      final txid = await _currentWallet.send(
         toAddress: toAddress,
         amount: amount,
         args: args,
@@ -32,68 +38,73 @@ class Manager with ChangeNotifier {
     }
   }
 
-  Future<FeeObject> get fees => currentWallet.fees;
-  Future<LelantusFeeData> get maxFee => currentWallet.maxFee;
+  Future<FeeObject> get fees => _currentWallet.fees;
+  Future<LelantusFeeData> get maxFee => _currentWallet.maxFee;
 
   Future<String> get currentReceivingAddress =>
-      currentWallet.currentReceivingAddress;
+      _currentWallet.currentReceivingAddress;
 
-  Future<Decimal> get balance => currentWallet.balance;
-  Future<Decimal> get pendingBalance => currentWallet.pendingBalance;
-  Future<Decimal> get totalBalance => currentWallet.totalBalance;
-  Future<Decimal> get balanceMinusMaxFee => currentWallet.balanceMinusMaxFee;
+  Future<Decimal> get balance => _currentWallet.balance;
+  Future<Decimal> get pendingBalance => _currentWallet.pendingBalance;
+  Future<Decimal> get totalBalance => _currentWallet.totalBalance;
+  Future<Decimal> get balanceMinusMaxFee => _currentWallet.balanceMinusMaxFee;
 
   Future<Decimal> get fiatBalance async {
-    final balance = await currentWallet.balance;
-    final price = await currentWallet.fiatPrice;
+    final balance = await _currentWallet.balance;
+    final price = await _currentWallet.fiatPrice;
     return balance * price;
   }
 
   Future<Decimal> get fiatTotalBalance async {
-    final balance = await currentWallet.totalBalance;
-    final price = await currentWallet.fiatPrice;
+    final balance = await _currentWallet.totalBalance;
+    final price = await _currentWallet.fiatPrice;
     return balance * price;
   }
 
-  Future<List<String>> get allOwnAddresses => currentWallet.allOwnAddresses;
+  Future<List<String>> get allOwnAddresses => _currentWallet.allOwnAddresses;
 
-  Future<TransactionData> get transactionData => currentWallet.transactionData;
+  Future<TransactionData> get transactionData => _currentWallet.transactionData;
 
-  Future<Decimal> get fiatPrice => currentWallet.fiatPrice;
+  Future<Decimal> get fiatPrice => _currentWallet.fiatPrice;
 
-  String get fiatCurrency => currentWallet.fiatCurrency;
+  String get fiatCurrency => _currentWallet.fiatCurrency;
   void changeFiatCurrency(String currency) async {
-    currentWallet.changeFiatCurrency(currency);
+    _currentWallet.changeFiatCurrency(currency);
     notifyListeners();
   }
 
-  Future<bool> get useBiometrics => currentWallet.useBiometrics;
+  Future<bool> get useBiometrics => _currentWallet.useBiometrics;
   Future<void> updateBiometricsUsage(bool useBiometrics) async {
-    currentWallet.updateBiometricsUsage(useBiometrics);
+    _currentWallet.updateBiometricsUsage(useBiometrics);
     notifyListeners();
   }
 
   Future<void> refresh() async {
-    await currentWallet.refresh();
+    await _currentWallet.refresh();
     notifyListeners();
   }
 
-  String get walletName => currentWallet.walletName;
-  String get walletId => currentWallet.walletId;
+  String get walletName => _currentWallet.walletName;
+  String get walletId => _currentWallet.walletId;
 
   bool validateAddress(String address) =>
-      currentWallet.validateAddress(address);
+      _currentWallet.validateAddress(address);
 
-  Future<List<String>> get mnemonic => currentWallet.mnemonic;
+  Future<List<String>> get mnemonic => _currentWallet.mnemonic;
 
   Future<bool> testNetworkConnection(ElectrumX client) =>
-      currentWallet.testNetworkConnection(client);
+      _currentWallet.testNetworkConnection(client);
 
   dynamic recoverFromMnemonic(String mnemonic) async {
     try {
-      await currentWallet.recoverFromMnemonic(mnemonic);
+      await _currentWallet.recoverFromMnemonic(mnemonic);
     } catch (e) {
       throw e;
     }
+  }
+
+  Future<void> exitCurrentWallet() async {
+    await _currentWallet.exit();
+    _currentWallet = null;
   }
 }
