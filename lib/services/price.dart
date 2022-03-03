@@ -1,5 +1,4 @@
 import 'dart:convert';
-import 'dart:developer';
 
 import 'package:decimal/decimal.dart';
 import 'package:http/http.dart' as http;
@@ -11,7 +10,7 @@ class PriceAPI {
 
   static const Duration throttle = Duration(seconds: 60);
 
-  static Future<Decimal> getPrice({String ticker, String baseCurrency}) async {
+  Future<Decimal> getPrice({String ticker, String baseCurrency}) async {
     String currency = baseCurrency.toLowerCase();
 
     DateTime now = DateTime.now();

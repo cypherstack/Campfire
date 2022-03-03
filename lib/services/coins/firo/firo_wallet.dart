@@ -144,6 +144,7 @@ Future<void> executeNative(arguments) async {
       String coinName = arguments['coinName'];
       dynamic network = arguments['network'];
       CachedElectrumX cachedClient = arguments['cachedElectrumXClient'];
+      PriceAPI priceAPI = arguments['priceAPI'];
       if (!(mnemonic == null ||
           transactionData == null ||
           cachedClient == null ||
@@ -152,7 +153,8 @@ Future<void> executeNative(arguments) async {
           usedSerialNumbers == null ||
           network == null ||
           coinName == null ||
-          currency == null)) {
+          currency == null ||
+          priceAPI == null)) {
         var restoreData = await isolateRestore(
             cachedClient,
             mnemonic,
@@ -162,7 +164,8 @@ Future<void> executeNative(arguments) async {
             latestSetId,
             setDataMap,
             usedSerialNumbers,
-            network);
+            network,
+            priceAPI);
         sendPort.send(restoreData);
         return;
       }
@@ -251,7 +254,8 @@ isolateRestore(
     int _latestSetId,
     Map _setDataMap,
     dynamic _usedSerialNumbers,
-    dynamic network) async {
+    dynamic network,
+    PriceAPI priceAPI) async {
   List<int> jindexes = [];
   Map<dynamic, LelantusCoin> _lelantus_coins = Map();
 
@@ -423,7 +427,7 @@ isolateRestore(
 
   // Create the joinsplit transactions.
   final spendTxs = await getJMintTransactions(
-      cachedClient, spendTxIds, currency, coinName, true);
+      cachedClient, spendTxIds, currency, coinName, true, priceAPI);
   print(spendTxs);
   spendTxs.forEach((element) {
     transactionMap[element.txid] = element;
@@ -630,9 +634,10 @@ Future<List<models.Transaction>> getJMintTransactions(
   String currency,
   String coinName,
   bool outsideMainIsolate,
+  PriceAPI priceAPI,
 ) async {
   try {
-    final currentPrice = await PriceAPI.getPrice(
+    final currentPrice = await priceAPI.getPrice(
         ticker: coinName.toUpperCase(), baseCurrency: currency);
 
     List<models.Transaction> txs = [];
@@ -810,7 +815,7 @@ class FiroWallet extends CoinServiceAPI {
 
   @override
   void changeFiatCurrency(String currency) {
-    changeCurrency(currency);
+    _changeCurrency(currency);
   }
 
   @override
@@ -884,7 +889,7 @@ class FiroWallet extends CoinServiceAPI {
 
   // Hold the current price of Bitcoin in the currency specified in parameter below
   Future<Decimal> get firoPrice => Future(() async =>
-      PriceAPI.getPrice(ticker: coinTicker, baseCurrency: currency));
+      _priceAPI.getPrice(ticker: coinTicker, baseCurrency: currency));
 
   // currently isn't used but required due to abstract parent class
   Future<FeeObject> _feeObject;
@@ -1011,6 +1016,8 @@ class FiroWallet extends CoinServiceAPI {
 
   FlutterSecureStorageInterface _secureStore;
 
+  PriceAPI _priceAPI;
+
   // Constructor
   FiroWallet(
       {@required String walletId,
@@ -1018,6 +1025,7 @@ class FiroWallet extends CoinServiceAPI {
       @required FiroNetworkType networkType,
       @required ElectrumX client,
       @required CachedElectrumX cachedClient,
+      PriceAPI priceAPI,
       FlutterSecureStorageInterface secureStore}) {
     this._walletId = walletId;
     this._walletName = walletName;
@@ -1025,11 +1033,10 @@ class FiroWallet extends CoinServiceAPI {
     this._electrumXClient = client;
     this._cachedElectrumXClient = cachedClient;
 
-    if (secureStore != null) {
-      _secureStore = secureStore;
-    } else {
-      _secureStore = SecureStorageWrapper(FlutterSecureStorage());
-    }
+    _priceAPI = priceAPI == null ? PriceAPI() : priceAPI;
+    _secureStore = secureStore == null
+        ? SecureStorageWrapper(FlutterSecureStorage())
+        : secureStore;
 
     // add listener for nodes changed
     GlobalEventBus.instance.on<NodesChangedEvent>().listen((event) async {
@@ -1723,8 +1730,8 @@ class FiroWallet extends CoinServiceAPI {
     final String currency = fetchPreferredCurrency();
     // Grab the most recent information on all the joinsplits
 
-    final updatedJSplit = await getJMintTransactions(
-        cachedElectrumXClient, joinsplits, currency, this.coinName, false);
+    final updatedJSplit = await getJMintTransactions(cachedElectrumXClient,
+        joinsplits, currency, this.coinName, false, this._priceAPI);
 
     // update all of joinsplits that are now confirmed.
     for (final tx in updatedJSplit) {
@@ -2092,8 +2099,9 @@ class FiroWallet extends CoinServiceAPI {
     Logger.print("allTransactions length: ${allTransactions.length}");
 
     // sort thing stuff
-    final currentPrice =
-        await PriceAPI.getPrice(ticker: coinTicker, baseCurrency: currency);
+    final currentPrice = await this
+        ._priceAPI
+        .getPrice(ticker: coinTicker, baseCurrency: currency);
     final List<Map<String, dynamic>> midSortedArray = [];
 
     Logger.print("refresh the txs");
@@ -2345,8 +2353,9 @@ class FiroWallet extends CoinServiceAPI {
         }
       }
 
-      Decimal currentPrice =
-          await PriceAPI.getPrice(ticker: coinTicker, baseCurrency: currency);
+      Decimal currentPrice = await this
+          ._priceAPI
+          .getPrice(ticker: coinTicker, baseCurrency: currency);
       final List<Map<String, dynamic>> outputArray = [];
       int satoshiBalance = 0;
 
@@ -2760,6 +2769,7 @@ class FiroWallet extends CoinServiceAPI {
       "usedSerialNumbers": usedSerialNumbers,
       "network": this._network,
       "cachedElectrumXClient": this.cachedElectrumXClient,
+      "priceAPI": this._priceAPI,
     });
 
     var message = await receivePort.first;
@@ -2789,7 +2799,7 @@ class FiroWallet extends CoinServiceAPI {
   }
 
   /// Switches preferred fiat currency for display and data fetching purposes
-  void changeCurrency(String newCurrency) {
+  void _changeCurrency(String newCurrency) {
     final wallet = Hive.box(this._walletId);
     wallet.put("preferredFiatCurrency", newCurrency);
     this._currency = newCurrency;

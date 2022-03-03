@@ -1,5 +1,7 @@
+import 'dart:async';
 import 'dart:typed_data';
 
+import 'package:decimal/decimal.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:hive/hive.dart';
 import 'package:hive_test/hive_test.dart';
@@ -218,6 +220,7 @@ void main() {
         client: MockElectrumX(),
         cachedClient: MockCachedElectrumX(),
         secureStore: FakeSecureStorage(),
+        priceAPI: MockPriceAPI(),
       );
 
       expect(firo.validateAddress("a8VV7vMzJdTQj1eLEJNskhLEBUxfNWhpAg"), true);
@@ -231,6 +234,7 @@ void main() {
         client: MockElectrumX(),
         cachedClient: MockCachedElectrumX(),
         secureStore: FakeSecureStorage(),
+        priceAPI: MockPriceAPI(),
       );
 
       expect(firo.validateAddress("sDda3fsd4af"), false);
@@ -244,6 +248,7 @@ void main() {
         client: MockElectrumX(),
         cachedClient: MockCachedElectrumX(),
         secureStore: FakeSecureStorage(),
+        priceAPI: MockPriceAPI(),
       );
 
       expect(firo.validateAddress("THqfkegzJjpF4PQFAWPhJWMWagwHecfqva"), false);
@@ -257,6 +262,7 @@ void main() {
         client: MockElectrumX(),
         cachedClient: MockCachedElectrumX(),
         secureStore: FakeSecureStorage(),
+        priceAPI: MockPriceAPI(),
       );
 
       expect(firo.validateAddress("THqfkegzJjpF4PQFAWPhJWMWagwHecfqva"), true);
@@ -270,6 +276,7 @@ void main() {
         client: MockElectrumX(),
         cachedClient: MockCachedElectrumX(),
         secureStore: FakeSecureStorage(),
+        priceAPI: MockPriceAPI(),
       );
 
       expect(firo.validateAddress("sDda3fsd4af"), false);
@@ -283,6 +290,7 @@ void main() {
         client: MockElectrumX(),
         cachedClient: MockCachedElectrumX(),
         secureStore: FakeSecureStorage(),
+        priceAPI: MockPriceAPI(),
       );
 
       expect(firo.validateAddress("a8VV7vMzJdTQj1eLEJNskhLEBUxfNWhpAg"), false);
@@ -310,6 +318,7 @@ void main() {
         client: client,
         cachedClient: MockCachedElectrumX(),
         secureStore: FakeSecureStorage(),
+        priceAPI: MockPriceAPI(),
       );
       final bool result = await firo.testNetworkConnection(
         CampfireConstants.defaultIpAddress,
@@ -340,6 +349,7 @@ void main() {
         client: client,
         cachedClient: MockCachedElectrumX(),
         secureStore: FakeSecureStorage(),
+        priceAPI: MockPriceAPI(),
       );
       final bool result = await firo.testNetworkConnection(
         CampfireConstants.defaultIpAddressTestNet,
@@ -370,6 +380,7 @@ void main() {
         client: client,
         cachedClient: MockCachedElectrumX(),
         secureStore: FakeSecureStorage(),
+        priceAPI: MockPriceAPI(),
       );
       final bool result = await firo.testNetworkConnection(
         CampfireConstants.defaultIpAddressTestNet,
@@ -400,6 +411,7 @@ void main() {
         client: client,
         cachedClient: MockCachedElectrumX(),
         secureStore: FakeSecureStorage(),
+        priceAPI: MockPriceAPI(),
       );
       final bool result = await firo.testNetworkConnection(
         CampfireConstants.defaultIpAddress,
@@ -425,6 +437,7 @@ void main() {
         client: MockElectrumX(),
         cachedClient: MockCachedElectrumX(),
         secureStore: store,
+        priceAPI: MockPriceAPI(),
       );
       final List<String> result = await firo.getMnemonicList();
 
@@ -451,6 +464,7 @@ void main() {
         client: MockElectrumX(),
         cachedClient: MockCachedElectrumX(),
         secureStore: store,
+        priceAPI: MockPriceAPI(),
       );
       expectLater(
           () => firo.getMnemonicList(), throwsA(isA<NoSuchMethodError>()));
@@ -488,6 +502,9 @@ void main() {
       final client = MockElectrumX();
       final cachedClient = MockCachedElectrumX();
       final secureStore = FakeSecureStorage();
+      final priceAPI = MockPriceAPI();
+      when(priceAPI.getPrice(ticker: "FIRO", baseCurrency: "USD"))
+          .thenAnswer((_) async => Decimal.fromInt(10));
 
       when(client.getServerFeatures()).thenAnswer((_) async => {
             "hosts": {},
@@ -509,16 +526,17 @@ void main() {
 
       final firo = FiroWallet(
         walletName: testWalletName,
-        walletId: testWalletId,
+        walletId: testWalletId + "initializeWallet",
         networkType: firoNetworkType,
         client: client,
         cachedClient: cachedClient,
         secureStore: secureStore,
+        priceAPI: priceAPI,
       );
 
       await firo.initializeWallet();
 
-      final wallet = await Hive.openBox(testWalletId);
+      final wallet = await Hive.openBox(testWalletId + "initializeWallet");
 
       var result = await wallet.get("activeNodeName");
       expect(result, "Campfire default");
@@ -537,7 +555,7 @@ void main() {
       expect(result, 0);
 
       result = await wallet.get("id");
-      expect(result, testWalletId);
+      expect(result, testWalletId + "initializeWallet");
 
       result = await wallet.get("jindex");
       expect(result, []);
@@ -579,17 +597,21 @@ void main() {
       final client = MockElectrumX();
       final cachedClient = MockCachedElectrumX();
       final secureStore = FakeSecureStorage();
+      final priceAPI = MockPriceAPI();
+      // when(priceAPI.getPrice(ticker: "FIRO", baseCurrency: "USD"))
+      //     .thenAnswer((_) async => Decimal.fromInt(10));
       final firo = FiroWallet(
         walletName: testWalletName,
-        walletId: testWalletId,
+        walletId: testWalletId + "fillAddresses",
         networkType: firoNetworkType,
         client: client,
         cachedClient: cachedClient,
         secureStore: secureStore,
+        priceAPI: priceAPI,
       );
 
       await firo.fillAddresses(FillAddressesParams.mnemonic);
-      final wallet = await Hive.openBox(testWalletId);
+      final wallet = await Hive.openBox(testWalletId + "fillAddresses");
       final receiveDerivations = await wallet.get('receiveDerivations');
       final changeDerivations = await wallet.get('changeDerivations');
 
@@ -633,27 +655,21 @@ void main() {
             "services": []
           });
 
-      // final List<Map<String, dynamic>> emptyList = [];
-      //
-      // when(client.getUTXOs(scripthash: anyNamed("scripthash")))
-      //     .thenAnswer((_) async => emptyList);
-      // when(client.getHistory(scripthash: anyNamed("scripthash")))
-      //     .thenAnswer((_) async => emptyList);
-
-      //TODO proper mock price api
-      // final priceAPI = MockPriceAPI();
-      // when(priceAPI.getPrice(ticker: "FIRO", baseCurrency: "USD")).thenAnswer((_) async => Decimal.fromInt(10));
+      final priceAPI = MockPriceAPI();
+      when(priceAPI.getPrice(ticker: "FIRO", baseCurrency: "USD"))
+          .thenAnswer((_) async => Decimal.fromInt(10));
 
       final firo = FiroWallet(
         walletName: testWalletName,
-        walletId: testWalletId,
+        walletId: testWalletId + "buildMintTransaction",
         networkType: firoNetworkType,
         client: client,
         cachedClient: cachedClient,
         secureStore: secureStore,
+        priceAPI: priceAPI,
       );
 
-      final wallet = await Hive.openBox(testWalletId);
+      final wallet = await Hive.openBox(testWalletId + "buildMintTransaction");
 
       await wallet.put("mintIndex", 0);
       await wallet.put(
@@ -674,12 +690,61 @@ void main() {
       // todo build tests
     });
 
-    group("updateBiometricsUsage", () {
-      // todo build tests
+    test("updateBiometricsUsage", () async {
+      final firo = FiroWallet(
+        walletId: testWalletId + "updateBiometricsUsage",
+        walletName: testWalletName,
+        networkType: firoNetworkType,
+        client: MockElectrumX(),
+        cachedClient: MockCachedElectrumX(),
+        secureStore: FakeSecureStorage(),
+        priceAPI: MockPriceAPI(),
+      );
+      await firo.updateBiometricsUsage(true);
+      expect(await firo.useBiometrics, true);
+
+      await firo.updateBiometricsUsage(false);
+      expect(await firo.useBiometrics, false);
     });
 
-    group("changeCurrency", () {
-      // todo build tests
+    test("changeFiatCurrency", () async {
+      final firo = FiroWallet(
+        walletId: testWalletId + "changeFiatCurrency",
+        walletName: testWalletName,
+        networkType: firoNetworkType,
+        client: MockElectrumX(),
+        cachedClient: MockCachedElectrumX(),
+        secureStore: FakeSecureStorage(),
+        priceAPI: MockPriceAPI(),
+      );
+
+      final wallet = await Hive.openBox(testWalletId + "changeFiatCurrency");
+      var currentCurrency = await wallet.get("preferredFiatCurrency");
+      expect(currentCurrency, null);
+      expect(() => firo.changeFiatCurrency("USD"), returnsNormally);
+
+      currentCurrency = await wallet.get("preferredFiatCurrency");
+      expect(currentCurrency, "USD");
+    });
+
+    test("fetchPreferredCurrency", () async {
+      final firo = FiroWallet(
+        walletId: testWalletId + "fetchPreferredCurrency",
+        walletName: testWalletName,
+        networkType: firoNetworkType,
+        client: MockElectrumX(),
+        cachedClient: MockCachedElectrumX(),
+        secureStore: FakeSecureStorage(),
+        priceAPI: MockPriceAPI(),
+      );
+
+      final wallet =
+          await Hive.openBox(testWalletId + "fetchPreferredCurrency");
+      expect(wallet.isEmpty, true);
+      expect(firo.fetchPreferredCurrency(), "USD");
+
+      await wallet.put("preferredFiatCurrency", "CAD");
+      expect(firo.fetchPreferredCurrency(), "CAD");
     });
 
     group("getLatestSetId", () {
@@ -702,8 +767,21 @@ void main() {
       // todo build send tests
     });
 
-    group("exit", () {
-      // todo build tests
+    test("exit", () {
+      final firo = FiroWallet(
+        walletId: testWalletId + "exit",
+        walletName: testWalletName,
+        networkType: firoNetworkType,
+        client: MockElectrumX(),
+        cachedClient: MockCachedElectrumX(),
+        secureStore: FakeSecureStorage(),
+        priceAPI: MockPriceAPI(),
+      );
+
+      firo.timer = Timer(Duration(seconds: 2), () {});
+
+      expectLater(() => firo.exit(), returnsNormally)
+          .then((_) => expect(firo.timer, null));
     });
 
     tearDownAll(() async {
