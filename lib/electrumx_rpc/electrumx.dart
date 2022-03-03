@@ -370,10 +370,7 @@ class ElectrumX {
     }
   }
 
-  //TODO add example to docs
-  ///
-  ///
-  /// Returns getcoinsforrecovery
+  /// Returns about 13 megabytes of json data as of march 2, 2022
   Future<Map<String, dynamic>> getCoinsForRecovery({dynamic setId}) async {
     try {
       final response = await request(
