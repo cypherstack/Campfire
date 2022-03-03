@@ -25,6 +25,7 @@ import 'package:paymint/services/coins/coin_service.dart';
 import 'package:paymint/services/event_bus/events/node_connection_status_changed_event.dart';
 import 'package:paymint/services/event_bus/events/nodes_changed_event.dart';
 import 'package:paymint/services/event_bus/events/refresh_percent_changed_event.dart';
+import 'package:paymint/services/event_bus/events/updated_in_background_event.dart';
 import 'package:paymint/services/event_bus/global_event_bus.dart';
 import 'package:paymint/services/price.dart';
 import 'package:paymint/utilities/address_utils.dart';
@@ -1105,7 +1106,7 @@ class FiroWallet extends CoinServiceAPI {
         }
       }
     }
-    return true;
+    return wasRefreshed;
   }
 
   Future<void> getAllTxsToWatch() async {
@@ -1259,7 +1260,11 @@ class FiroWallet extends CoinServiceAPI {
       refreshMutex = false;
       if (timer == null) {
         timer = Timer.periodic(Duration(seconds: 150), (timer) async {
-          await refreshIfThereIsNewData();
+          bool shouldNotify = await refreshIfThereIsNewData();
+          if (shouldNotify) {
+            GlobalEventBus.instance.fire(
+                UpdatedInBackgroundEvent("New data found in background!"));
+          }
         });
       }
     } catch (error, strace) {

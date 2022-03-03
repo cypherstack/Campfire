@@ -3,12 +3,22 @@ import 'package:flutter/material.dart';
 import 'package:paymint/electrumx_rpc/electrumx.dart';
 import 'package:paymint/models/models.dart';
 import 'package:paymint/services/coins/coin_service.dart';
+import 'package:paymint/services/event_bus/events/updated_in_background_event.dart';
+import 'package:paymint/services/event_bus/global_event_bus.dart';
+import 'package:paymint/utilities/logger.dart';
 
 class Manager with ChangeNotifier {
   CoinServiceAPI _currentWallet;
 
   set currentWallet(CoinServiceAPI newValue) {
     _currentWallet = newValue;
+    GlobalEventBus.instance
+        .on<UpdatedInBackgroundEvent>()
+        .listen((event) async {
+      notifyListeners();
+      Logger.print(
+          "Event activated notifyListeners() in Manager: ${event.message}");
+    });
   }
 
   bool get hasWallet => _currentWallet != null;
