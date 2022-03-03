@@ -566,17 +566,17 @@ void main() {
       expect(result, 0);
     });
 
-    group("refreshIfThereIsNewData", () {
+    test("refreshIfThereIsNewData", () {
       // todo build tests
       expect(0, 1);
     });
 
-    group("getAllTxsToWatch", () {
+    test("getAllTxsToWatch", () {
       // todo build tests
       expect(0, 1);
     });
 
-    group("submitHexToNetwork", () {
+    test("submitHexToNetwork", () {
       // todo build tests
       expect(0, 1);
     });
@@ -623,6 +623,10 @@ void main() {
       final cachedClient = MockCachedElectrumX();
       final secureStore = FakeSecureStorage();
 
+      await secureStore.write(
+          key: "${testWalletId}buildMintTransaction_mnemonic",
+          value: BuildMintTxTestParams.mnemonic);
+
       when(cachedClient.getTransaction(
               tx_hash: BuildMintTxTestParams.utxoInfo["txid"],
               coinName: "Firo",
@@ -665,16 +669,12 @@ void main() {
       await wallet.put(
           'changeDerivations', BuildMintTxTestParams.changeDerivations);
 
-      await secureStore.write(
-          key: "${testWalletId}_mnemonic",
-          value: BuildMintTxTestParams.mnemonic);
-
       final result = await firo.buildMintTransaction(utxos, sats);
 
       expect(result["txHex"], BuildMintTxTestParams.txHex);
     });
 
-    group("recoverFromMnemonic", () {
+    test("recoverFromMnemonic", () {
       // todo build tests
       expect(0, 1);
     });
@@ -775,17 +775,17 @@ void main() {
       expect(setData, getCoinsForRecoveryResponse);
     });
 
-    group("getUsedCoinSerials", () {
+    test("getUsedCoinSerials", () {
       // todo build tests
       expect(0, 1);
     });
 
-    group("refresh", () {
+    test("refresh", () {
       // todo build tests
       expect(0, 1);
     });
 
-    group("send", () {
+    test("send", () {
       // todo build send tests
       expect(0, 1);
     });
