@@ -321,8 +321,9 @@ class _MainViewState extends State<MainView> {
         timer = null;
       });
     } else {
-      final manager = Provider.of<Manager>(context);
-      final walletsService = Provider.of<WalletsService>(context);
+      final manager = Provider.of<Manager>(context, listen: false);
+      final walletsService =
+          Provider.of<WalletsService>(context, listen: false);
       await manager.exitCurrentWallet();
       await walletsService.refreshWallets();
     }
