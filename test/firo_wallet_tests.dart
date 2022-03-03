@@ -316,16 +316,12 @@ void main() {
         walletName: 'unit test',
         walletId: 'some id',
         networkType: FiroNetworkType.main,
-        client: client,
+        client: MockElectrumX(),
         cachedClient: MockCachedElectrumX(),
         secureStore: FakeSecureStorage(),
         priceAPI: MockPriceAPI(),
       );
-      final bool result = await firo.testNetworkConnection(
-        CampfireConstants.defaultIpAddress,
-        CampfireConstants.defaultPort,
-        CampfireConstants.defaultUseSSL,
-      );
+      final bool result = await firo.testNetworkConnection(client);
 
       expect(result, true);
     });
@@ -347,16 +343,12 @@ void main() {
         walletName: 'unit test',
         walletId: 'some id',
         networkType: FiroNetworkType.test,
-        client: client,
+        client: MockElectrumX(),
         cachedClient: MockCachedElectrumX(),
         secureStore: FakeSecureStorage(),
         priceAPI: MockPriceAPI(),
       );
-      final bool result = await firo.testNetworkConnection(
-        CampfireConstants.defaultIpAddressTestNet,
-        CampfireConstants.defaultPortTestNet,
-        CampfireConstants.defaultUseSSLTestNet,
-      );
+      final bool result = await firo.testNetworkConnection(client);
 
       expect(result, true);
     });
@@ -378,16 +370,12 @@ void main() {
         walletName: 'unit test',
         walletId: 'some id',
         networkType: FiroNetworkType.main,
-        client: client,
+        client: MockElectrumX(),
         cachedClient: MockCachedElectrumX(),
         secureStore: FakeSecureStorage(),
         priceAPI: MockPriceAPI(),
       );
-      final bool result = await firo.testNetworkConnection(
-        CampfireConstants.defaultIpAddressTestNet,
-        CampfireConstants.defaultPortTestNet,
-        CampfireConstants.defaultUseSSLTestNet,
-      );
+      final bool result = await firo.testNetworkConnection(client);
 
       expect(result, false);
     });
@@ -409,16 +397,12 @@ void main() {
         walletName: 'unit test',
         walletId: 'some id',
         networkType: FiroNetworkType.test,
-        client: client,
+        client: MockElectrumX(),
         cachedClient: MockCachedElectrumX(),
         secureStore: FakeSecureStorage(),
         priceAPI: MockPriceAPI(),
       );
-      final bool result = await firo.testNetworkConnection(
-        CampfireConstants.defaultIpAddress,
-        CampfireConstants.defaultPort,
-        CampfireConstants.defaultUseSSL,
-      );
+      final bool result = await firo.testNetworkConnection(client);
 
       expect(result, false);
     });

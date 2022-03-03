@@ -1,5 +1,6 @@
 import 'package:decimal/decimal.dart';
 import 'package:flutter/material.dart';
+import 'package:paymint/electrumx_rpc/electrumx.dart';
 import 'package:paymint/models/models.dart';
 import 'package:paymint/services/coins/coin_service.dart';
 
@@ -85,8 +86,8 @@ class Manager with ChangeNotifier {
 
   Future<List<String>> get mnemonic => currentWallet.mnemonic;
 
-  Future<bool> testNetworkConnection(String address, int port, bool useSSL) =>
-      currentWallet.testNetworkConnection(address, port, useSSL);
+  Future<bool> testNetworkConnection(ElectrumX client) =>
+      currentWallet.testNetworkConnection(client);
 
   dynamic recoverFromMnemonic(String mnemonic) async {
     try {

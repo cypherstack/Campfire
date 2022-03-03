@@ -1,5 +1,6 @@
 import 'package:decimal/decimal.dart';
 import 'package:flutter/material.dart';
+import 'package:paymint/electrumx_rpc/electrumx.dart';
 import 'package:paymint/models/models.dart';
 
 abstract class CoinServiceAPI {
@@ -51,7 +52,7 @@ abstract class CoinServiceAPI {
 
   Future<List<String>> get mnemonic;
 
-  Future<bool> testNetworkConnection(String address, int port, bool useSSL);
+  Future<bool> testNetworkConnection(ElectrumX client);
 
   dynamic recoverFromMnemonic(String mnemonic);
 

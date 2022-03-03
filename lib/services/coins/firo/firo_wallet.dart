@@ -930,17 +930,10 @@ class FiroWallet extends CoinServiceAPI {
       _allOwnAddresses ??= _fetchAllOwnAddresses();
 
   @override
-  Future<bool> testNetworkConnection(
-      String address, int port, bool useSSL) async {
+  Future<bool> testNetworkConnection(ElectrumX client) async {
     try {
-      final client = ElectrumX(
-        server: address,
-        port: port,
-        useSSL: useSSL,
-      );
-
       final features = await client.getServerFeatures();
-      print("features: ${features}");
+      Logger.print("features: $features");
       if (_networkType == FiroNetworkType.main) {
         if (features['genesis_hash'] != FiroGenesisHash) {
           throw Exception("genesis hash does not match!");

@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_svg/svg.dart';
 import 'package:google_fonts/google_fonts.dart';
+import 'package:paymint/electrumx_rpc/electrumx.dart';
 import 'package:paymint/notifications/campfire_alert.dart';
 import 'package:paymint/notifications/overlay_notification.dart';
 import 'package:paymint/services/coins/manager.dart';
@@ -85,7 +86,12 @@ class _AddCustomNodeViewState extends State<AddCustomNodeView> {
     final manager = Provider.of<Manager>(context, listen: false);
 
     final canConnect = await manager.testNetworkConnection(
-        _addressController.text, int.parse(_portController.text), _useSSL);
+      ElectrumX(
+        server: _addressController.text,
+        port: int.parse(_portController.text),
+        useSSL: _useSSL,
+      ),
+    );
 
     if (canConnect) {
       OverlayNotification.showSuccess(
