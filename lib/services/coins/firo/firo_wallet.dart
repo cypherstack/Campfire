@@ -1012,6 +1012,8 @@ class FiroWallet extends CoinServiceAPI {
 
   PriceAPI _priceAPI;
 
+  StreamSubscription _nodesChangedListener;
+
   // Constructor
   FiroWallet(
       {@required String walletId,
@@ -1033,7 +1035,8 @@ class FiroWallet extends CoinServiceAPI {
         : secureStore;
 
     // add listener for nodes changed
-    GlobalEventBus.instance.on<NodesChangedEvent>().listen((event) async {
+    _nodesChangedListener =
+        GlobalEventBus.instance.on<NodesChangedEvent>().listen((event) async {
       final appDir = await getApplicationDocumentsDirectory();
       final newNode = await _getCurrentNode();
       this._currentNode = Future(() => newNode);
@@ -2883,6 +2886,8 @@ class FiroWallet extends CoinServiceAPI {
 
   @override
   Future<void> exit() async {
+    _nodesChangedListener?.cancel();
+    _nodesChangedListener = null;
     timer?.cancel();
     timer = null;
   }
