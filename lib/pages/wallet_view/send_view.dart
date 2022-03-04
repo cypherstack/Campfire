@@ -502,6 +502,18 @@ class _SendViewState extends State<SendView> {
                             (manager.validateAddress(_address) &&
                                 _totalAmount > Decimal.zero);
                       });
+
+                      // now check for non standard encoded basic address
+                    } else if (manager.validateAddress(qrResult.rawContent)) {
+                      _address = qrResult.rawContent;
+                      _recipientAddressTextController.text = _address;
+                      setState(() {
+                        _addressToggleFlag =
+                            _recipientAddressTextController.text.isNotEmpty;
+                        _sendButtonEnabled =
+                            (manager.validateAddress(_address) &&
+                                _totalAmount > Decimal.zero);
+                      });
                     }
                   },
                   child: SvgPicture.asset(

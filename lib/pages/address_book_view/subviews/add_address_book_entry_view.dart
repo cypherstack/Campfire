@@ -221,6 +221,11 @@ class _AddAddressBookEntryViewState extends State<AddAddressBookEntryView> {
                                       results["address"];
                                   nameTextController.text = results["label"] ??
                                       nameTextController.text;
+                                  // now check for non standard encoded basic address
+                                } else if (manager
+                                    .validateAddress(qrResult.rawContent)) {
+                                  addressTextController.text =
+                                      qrResult.rawContent;
                                 }
                               },
                               child: SvgPicture.asset(
