@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:decimal/decimal.dart';
 import 'package:flutter/material.dart';
 import 'package:paymint/electrumx_rpc/electrumx.dart';
@@ -9,10 +11,18 @@ import 'package:paymint/utilities/logger.dart';
 
 class Manager with ChangeNotifier {
   CoinServiceAPI _currentWallet;
+  StreamSubscription _backgroundRefreshListener;
 
   set currentWallet(CoinServiceAPI newValue) {
+    if (newValue == _currentWallet) {
+      return;
+    }
+    if (newValue == null) {
+      throw Exception(
+          "Cannot set currentWallet to null. Use Manager.exitCurrentWallet()");
+    }
     _currentWallet = newValue;
-    GlobalEventBus.instance
+    _backgroundRefreshListener = GlobalEventBus.instance
         .on<UpdatedInBackgroundEvent>()
         .listen((event) async {
       notifyListeners();
@@ -25,6 +35,12 @@ class Manager with ChangeNotifier {
 
   String get coinName => _currentWallet.coinName;
   String get coinTicker => _currentWallet.coinTicker;
+
+  @override
+  dispose() async {
+    await exitCurrentWallet();
+    super.dispose();
+  }
 
   /// create and submit tx to network
   ///
@@ -114,7 +130,9 @@ class Manager with ChangeNotifier {
   }
 
   Future<void> exitCurrentWallet() async {
-    await _currentWallet.exit();
+    await _backgroundRefreshListener?.cancel();
+    _backgroundRefreshListener = null;
+    await _currentWallet?.exit();
     _currentWallet = null;
   }
 }

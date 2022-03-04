@@ -149,7 +149,7 @@ class _RestoreWalletFormViewState extends State<RestoreWalletFormView> {
     int result = await walletsService.deleteWallet(widget.walletName);
 
     // set manager wallet to null if it isn't already
-    Provider.of<Manager>(context, listen: false).currentWallet = null;
+    Provider.of<Manager>(context, listen: false).exitCurrentWallet();
 
     // check if last wallet was deleted
     if (result == 2) {
@@ -463,7 +463,9 @@ class _RestoreWalletFormViewState extends State<RestoreWalletFormView> {
 
                 final manager = Provider.of<Manager>(context, listen: false);
                 // should already be null but just in case:
-                manager.currentWallet = null;
+                if (manager.hasWallet) {
+                  manager.exitCurrentWallet();
+                }
 
                 final walletsService =
                     Provider.of<WalletsService>(context, listen: false);

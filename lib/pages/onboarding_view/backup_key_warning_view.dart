@@ -194,7 +194,7 @@ class _BackupKeyWarningViewState extends State<BackupKeyWarningView> {
     final walletsService = Provider.of<WalletsService>(context, listen: false);
     int result = await walletsService.deleteWallet(widget.walletName);
     // set manager wallet to null if it isn't already
-    Provider.of<Manager>(context, listen: false).currentWallet = null;
+    Provider.of<Manager>(context, listen: false).exitCurrentWallet();
 
     print("delete result: $result");
     // check if last wallet was deleted
