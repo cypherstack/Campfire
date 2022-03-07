@@ -1,4 +1,4 @@
-class CampfireConstants {
+abstract class CampfireConstants {
   static const bool roundedQrCode = true;
 
   static const int seedPhraseWordCount = 24;
@@ -7,9 +7,12 @@ class CampfireConstants {
   static const int decimalPlaces = 8;
 
   // network stuff
-  // default mainnet
-  // todo replace with cypherstack server info
-  // static const String defaultIpAddress = "electrumx.firo.org";
+  static const String firoGenesisHash =
+      "4381deb85b1b2c9843c222944b616d997516dcbd6a964e1eaf0def0830695233";
+  static const String firoTestGenesisHash =
+      "aa22adcc12becaf436027ffe62a8fb21b234c58c23865291e5dc52cf53f64fca";
+
+  // default main net
   static const String defaultIpAddress = "electrumx-firo.cypherstack.com";
   static const int defaultPort = 50002;
   static const String defaultNodeName = "Campfire default";

@@ -2,18 +2,20 @@ import 'package:flutter/material.dart';
 import 'package:paymint/utilities/cfcolors.dart';
 
 class SimpleButton extends StatelessWidget {
-  const SimpleButton(
-      {Key key,
-      @required this.onTap,
-      @required this.child,
-      this.color,
-      this.shadows})
-      : super(key: key);
+  const SimpleButton({
+    Key key,
+    @required this.onTap,
+    @required this.child,
+    this.color,
+    this.shadows,
+    this.enabled,
+  }) : super(key: key);
 
   final VoidCallback onTap;
   final Widget child;
   final Color color;
   final List<BoxShadow> shadows;
+  final bool enabled;
 
   final _shape = const StadiumBorder();
 
@@ -32,12 +34,21 @@ class SimpleButton extends StatelessWidget {
         shape: _shape,
         shadows: _shadows,
       ),
-      child: MaterialButton(
-        materialTapTargetSize: MaterialTapTargetSize.shrinkWrap,
-        shape: _shape,
-        child: child,
-        onPressed: onTap,
-      ),
+      child: (enabled == null || enabled)
+          ? MaterialButton(
+              materialTapTargetSize: MaterialTapTargetSize.shrinkWrap,
+              shape: _shape,
+              child: child,
+              onPressed: onTap,
+            )
+          : Container(
+              decoration: ShapeDecoration(
+                shape: _shape,
+              ),
+              child: Center(
+                child: child,
+              ),
+            ),
     );
   }
 }
