@@ -1042,6 +1042,7 @@ class FiroWallet extends CoinServiceAPI {
       this._currentNode = Future(() => newNode);
       this._cachedElectrumXClient =
           CachedElectrumX.from(node: newNode, hivePath: appDir.path);
+      this._electrumXClient = ElectrumX.from(node: newNode);
       refresh();
     });
   }
