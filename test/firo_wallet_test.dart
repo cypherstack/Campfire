@@ -15,8 +15,8 @@ import 'package:paymint/services/price.dart';
 import 'package:paymint/utilities/flutter_secure_storage_interface.dart';
 import 'package:paymint/utilities/misc_global_constants.dart';
 
+import 'firo_wallet_test.mocks.dart';
 import 'firo_wallet_test_parameters.dart';
-import 'firo_wallet_tests.mocks.dart';
 import 'getcoinsforrecovery_sample_output.dart';
 
 @GenerateMocks([ElectrumX, CachedElectrumX, PriceAPI])
@@ -299,73 +299,10 @@ void main() {
   });
 
   group("testNetworkConnection", () {
-    test("try connecting to main net server when configured to use main net",
-        () async {
+    test("attempted connection fails due to server error", () async {
       final client = MockElectrumX();
-      when(client.getServerFeatures()).thenAnswer((_) async => {
-            "hosts": {},
-            "pruning": null,
-            "server_version": "Unit tests",
-            "protocol_min": "1.4",
-            "protocol_max": "1.4.2",
-            "genesis_hash": FiroGenesisHash,
-            "hash_function": "sha256",
-            "services": []
-          });
-      final firo = FiroWallet(
-        walletName: 'unit test',
-        walletId: 'some id',
-        networkType: FiroNetworkType.main,
-        client: MockElectrumX(),
-        cachedClient: MockCachedElectrumX(),
-        secureStore: FakeSecureStorage(),
-        priceAPI: MockPriceAPI(),
-      );
-      final bool result = await firo.testNetworkConnection(client);
+      when(client.getBlockHeadTip()).thenAnswer((_) async => null);
 
-      expect(result, true);
-    });
-
-    test("try connecting to test net server when configured to use test net",
-        () async {
-      final client = MockElectrumX();
-      when(client.getServerFeatures()).thenAnswer((_) async => {
-            "hosts": {},
-            "pruning": null,
-            "server_version": "Unit tests",
-            "protocol_min": "1.4",
-            "protocol_max": "1.4.2",
-            "genesis_hash": FiroTestGenesisHash,
-            "hash_function": "sha256",
-            "services": []
-          });
-      final firo = FiroWallet(
-        walletName: 'unit test',
-        walletId: 'some id',
-        networkType: FiroNetworkType.test,
-        client: MockElectrumX(),
-        cachedClient: MockCachedElectrumX(),
-        secureStore: FakeSecureStorage(),
-        priceAPI: MockPriceAPI(),
-      );
-      final bool result = await firo.testNetworkConnection(client);
-
-      expect(result, true);
-    });
-
-    test("try connecting to test net server when configured to use main net",
-        () async {
-      final client = MockElectrumX();
-      when(client.getServerFeatures()).thenAnswer((_) async => {
-            "hosts": {},
-            "pruning": null,
-            "server_version": "Unit tests",
-            "protocol_min": "1.4",
-            "protocol_max": "1.4.2",
-            "genesis_hash": FiroTestGenesisHash,
-            "hash_function": "sha256",
-            "services": []
-          });
       final firo = FiroWallet(
         walletName: 'unit test',
         walletId: 'some id',
@@ -380,19 +317,29 @@ void main() {
       expect(result, false);
     });
 
-    test("try connecting to main net server when configured to use test net",
-        () async {
+    test("attempted connection fails due to exception", () async {
       final client = MockElectrumX();
-      when(client.getServerFeatures()).thenAnswer((_) async => {
-            "hosts": {},
-            "pruning": null,
-            "server_version": "Unit tests",
-            "protocol_min": "1.4",
-            "protocol_max": "1.4.2",
-            "genesis_hash": FiroGenesisHash,
-            "hash_function": "sha256",
-            "services": []
-          });
+      when(client.getBlockHeadTip()).thenThrow(Exception);
+
+      final firo = FiroWallet(
+        walletName: 'unit test',
+        walletId: 'some id',
+        networkType: FiroNetworkType.main,
+        client: MockElectrumX(),
+        cachedClient: MockCachedElectrumX(),
+        secureStore: FakeSecureStorage(),
+        priceAPI: MockPriceAPI(),
+      );
+      final bool result = await firo.testNetworkConnection(client);
+
+      expect(result, false);
+    });
+
+    test("attempted connection test success", () async {
+      final client = MockElectrumX();
+      when(client.getBlockHeadTip()).thenAnswer(
+          (_) async => {"height": 455873, "hex": "this value not used here"});
+
       final firo = FiroWallet(
         walletName: 'unit test',
         walletId: 'some id',
@@ -404,7 +351,7 @@ void main() {
       );
       final bool result = await firo.testNetworkConnection(client);
 
-      expect(result, false);
+      expect(result, true);
     });
   });
 
@@ -497,7 +444,7 @@ void main() {
             "server_version": "Unit tests",
             "protocol_min": "1.4",
             "protocol_max": "1.4.2",
-            "genesis_hash": FiroGenesisHash,
+            "genesis_hash": CampfireConstants.firoGenesisHash,
             "hash_function": "sha256",
             "services": []
           });
@@ -576,9 +523,33 @@ void main() {
       expect(0, 1);
     });
 
-    test("submitHexToNetwork", () {
-      // todo build tests
-      expect(0, 1);
+    test("submitHexToNetwork", () async {
+      final client = MockElectrumX();
+      final cachedClient = MockCachedElectrumX();
+      final secureStore = FakeSecureStorage();
+      final priceAPI = MockPriceAPI();
+
+      when(client.broadcastTransaction(
+              rawTx:
+                  "0200000001ddba3ce3a3ab07d342183fa6743d3b620149c1db26efa239323384d82f9e2859010000006a47304402207d4982586eb4b0de17ee88f8eae4aaf7bc68590ae048e67e75932fe84a73f7f3022011392592558fb39d8c132234ad34a2c7f5071d2dab58d8c9220d343078413497012102f123ab9dbd627ab572de7cd77eda6e3781213a2ef4ab5e0d6e87f1c0d944b2caffffffff01e42e000000000000a5c5bc76bae786dc3a7d939757c34e15994d403bdaf418f9c9fa6eb90ac6e8ffc3550100772ad894f285988789669acd69ba695b9485c90141d7833209d05bcdad1b898b0000f5cba1a513dd97d81f89159f2be6eb012e987335fffa052c1fbef99550ba488fb6263232e7a0430c0a3ca8c728a5d8c8f2f985c8b586024a0f488c73130bd5ec9e7c23571f23c2d34da444ecc2fb65a12cee2ad3b8d3fcc337a2c2a45647eb43cff50600"))
+          .thenAnswer((_) async =>
+              "b36161c6e619395b3d40a851c45c1fef7a5c541eed911b5524a66c5703a689c9");
+
+      final firo = FiroWallet(
+        walletName: testWalletName,
+        walletId: testWalletId + "fillAddresses",
+        networkType: firoNetworkType,
+        client: client,
+        cachedClient: cachedClient,
+        secureStore: secureStore,
+        priceAPI: priceAPI,
+      );
+
+      final txid = await firo.submitHexToNetwork(
+          "0200000001ddba3ce3a3ab07d342183fa6743d3b620149c1db26efa239323384d82f9e2859010000006a47304402207d4982586eb4b0de17ee88f8eae4aaf7bc68590ae048e67e75932fe84a73f7f3022011392592558fb39d8c132234ad34a2c7f5071d2dab58d8c9220d343078413497012102f123ab9dbd627ab572de7cd77eda6e3781213a2ef4ab5e0d6e87f1c0d944b2caffffffff01e42e000000000000a5c5bc76bae786dc3a7d939757c34e15994d403bdaf418f9c9fa6eb90ac6e8ffc3550100772ad894f285988789669acd69ba695b9485c90141d7833209d05bcdad1b898b0000f5cba1a513dd97d81f89159f2be6eb012e987335fffa052c1fbef99550ba488fb6263232e7a0430c0a3ca8c728a5d8c8f2f985c8b586024a0f488c73130bd5ec9e7c23571f23c2d34da444ecc2fb65a12cee2ad3b8d3fcc337a2c2a45647eb43cff50600");
+
+      expect(txid,
+          "b36161c6e619395b3d40a851c45c1fef7a5c541eed911b5524a66c5703a689c9");
     });
 
     test("fillAddresses", () async {
@@ -586,8 +557,7 @@ void main() {
       final cachedClient = MockCachedElectrumX();
       final secureStore = FakeSecureStorage();
       final priceAPI = MockPriceAPI();
-      // when(priceAPI.getPrice(ticker: "FIRO", baseCurrency: "USD"))
-      //     .thenAnswer((_) async => Decimal.fromInt(10));
+
       final firo = FiroWallet(
         walletName: testWalletName,
         walletId: testWalletId + "fillAddresses",
@@ -635,17 +605,6 @@ void main() {
 
       when(client.getBlockHeadTip()).thenAnswer(
           (_) async => {"height": 455873, "hex": "this value not used here"});
-
-      when(client.getServerFeatures()).thenAnswer((_) async => {
-            "hosts": {},
-            "pruning": null,
-            "server_version": "Unit tests",
-            "protocol_min": "1.4",
-            "protocol_max": "1.4.2",
-            "genesis_hash": FiroGenesisHash,
-            "hash_function": "sha256",
-            "services": []
-          });
 
       final priceAPI = MockPriceAPI();
       when(priceAPI.getPrice(ticker: "FIRO", baseCurrency: "USD"))
