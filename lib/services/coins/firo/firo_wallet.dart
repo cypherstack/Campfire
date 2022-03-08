@@ -784,7 +784,7 @@ class FiroWallet extends CoinServiceAPI {
       networkType == FiroNetworkType.main ? "FIRO" : "tFIRO";
 
   @override
-  Future<List<String>> get mnemonic => getMnemonicList();
+  Future<List<String>> get mnemonic => _getMnemonicList();
 
   @override
   String get fiatCurrency => currency;
@@ -890,7 +890,7 @@ class FiroWallet extends CoinServiceAPI {
   String get walletName => _walletName;
 
   // setter for updating on rename
-  set walletName(String newName) => walletName = newName;
+  set walletName(String newName) => _walletName = newName;
 
   /// unique wallet id
   String _walletId;
@@ -959,7 +959,7 @@ class FiroWallet extends CoinServiceAPI {
     }
   }
 
-  Future<List<String>> getMnemonicList() async {
+  Future<List<String>> _getMnemonicList() async {
     final mnemonicString =
         await _secureStore.read(key: '${this._walletId}_mnemonic');
     final List<String> data = mnemonicString.split(' ');

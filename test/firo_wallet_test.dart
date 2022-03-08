@@ -399,6 +399,21 @@ void main() {
 
       expect(firo.validateAddress("a8VV7vMzJdTQj1eLEJNskhLEBUxfNWhpAg"), false);
     });
+
+    test("check valid firo address against a null net", () async {
+      final firo = FiroWallet(
+        walletName: 'unit test',
+        walletId: 'some id',
+        networkType: null,
+        client: MockElectrumX(),
+        cachedClient: MockCachedElectrumX(),
+        secureStore: FakeSecureStorage(),
+        priceAPI: MockPriceAPI(),
+      );
+
+      expect(() => firo.validateAddress("a8VV7vMzJdTQj1eLEJNskhLEBUxfNWhpAg"),
+          throwsA(isA<Exception>()));
+    });
   });
 
   group("testNetworkConnection", () {
@@ -458,54 +473,6 @@ void main() {
     });
   });
 
-  group("getMnemonicList", () {
-    test("fetch and convert properly stored mnemonic to list of words",
-        () async {
-      final store = FakeSecureStorage();
-      store.write(
-          key: "some id_mnemonic", value: "some test mnemonic string of words");
-
-      final firo = FiroWallet(
-        walletName: 'unit test',
-        walletId: 'some id',
-        networkType: FiroNetworkType.test,
-        client: MockElectrumX(),
-        cachedClient: MockCachedElectrumX(),
-        secureStore: store,
-        priceAPI: MockPriceAPI(),
-      );
-      final List<String> result = await firo.getMnemonicList();
-
-      expect(result, [
-        "some",
-        "test",
-        "mnemonic",
-        "string",
-        "of",
-        "words",
-      ]);
-    });
-
-    test("attempt fetch and convert non existent mnemonic to list of words",
-        () async {
-      final store = FakeSecureStorage();
-      store.write(
-          key: "some id_mnemonic", value: "some test mnemonic string of words");
-
-      final firo = FiroWallet(
-        walletName: 'unit test',
-        walletId: 'some other id',
-        networkType: FiroNetworkType.test,
-        client: MockElectrumX(),
-        cachedClient: MockCachedElectrumX(),
-        secureStore: store,
-        priceAPI: MockPriceAPI(),
-      );
-      expectLater(
-          () => firo.getMnemonicList(), throwsA(isA<NoSuchMethodError>()));
-    });
-  });
-
   group("FiroWallet service class functions that depend on shared storage", () {
     final firoNetworkType = FiroNetworkType.main;
     final testWalletId = "testWalletID";
@@ -533,7 +500,248 @@ void main() {
       // await secureStore.write(key: "${testWalletId}_mnemonic", value: mnemonic);
     });
 
-    test("initializeWallet", () async {
+    test("get fiatPrice", () async {
+      final priceAPI = MockPriceAPI();
+
+      when(priceAPI.getPrice(ticker: "FIRO", baseCurrency: "USD"))
+          .thenAnswer((realInvocation) async => Decimal.fromInt(10));
+
+      final firo = FiroWallet(
+        walletId: testWalletId + "fiatPrice",
+        walletName: testWalletName,
+        networkType: FiroNetworkType.main,
+        client: MockElectrumX(),
+        cachedClient: MockCachedElectrumX(),
+        secureStore: FakeSecureStorage(),
+        priceAPI: priceAPI,
+      );
+
+      await Hive.openBox(testWalletId + "fiatPrice");
+
+      expect(await firo.fiatPrice, Decimal.fromInt(10));
+    });
+
+    test("get currentNode", () async {
+      final firo = FiroWallet(
+        walletId: testWalletId + "currentNode",
+        walletName: testWalletName + "currentNode",
+        networkType: FiroNetworkType.main,
+        client: MockElectrumX(),
+        cachedClient: MockCachedElectrumX(),
+        secureStore: FakeSecureStorage(),
+        priceAPI: MockPriceAPI(),
+      );
+
+      final currentNode = await firo.currentNode;
+
+      expect(currentNode, isA<ElectrumXNode>());
+      expect(currentNode.toString(),
+          "ElectrumXNode: {address: ${CampfireConstants.defaultIpAddress}, port: ${CampfireConstants.defaultPort}, name: ${CampfireConstants.defaultNodeName}, useSSL: ${CampfireConstants.defaultUseSSL}}");
+    });
+
+    test("initializeWallet new test net wallet", () async {
+      final client = MockElectrumX();
+      final cachedClient = MockCachedElectrumX();
+      final secureStore = FakeSecureStorage();
+      final priceAPI = MockPriceAPI();
+      when(priceAPI.getPrice(ticker: "tFIRO", baseCurrency: "USD"))
+          .thenAnswer((_) async => Decimal.fromInt(-1));
+
+      when(client.getServerFeatures()).thenAnswer((_) async => {
+            "hosts": {},
+            "pruning": null,
+            "server_version": "Unit tests",
+            "protocol_min": "1.4",
+            "protocol_max": "1.4.2",
+            "genesis_hash": CampfireConstants.firoTestGenesisHash,
+            "hash_function": "sha256",
+            "services": []
+          });
+
+      final List<Map<String, dynamic>> emptyList = [];
+
+      when(client.getUTXOs(scripthash: anyNamed("scripthash")))
+          .thenAnswer((_) async => emptyList);
+      when(client.getHistory(scripthash: anyNamed("scripthash")))
+          .thenAnswer((_) async => emptyList);
+
+      final firo = FiroWallet(
+        walletName: testWalletName,
+        walletId: testWalletId + "initializeWallet testnet",
+        networkType: FiroNetworkType.test,
+        client: client,
+        cachedClient: cachedClient,
+        secureStore: secureStore,
+        priceAPI: priceAPI,
+      );
+
+      await firo.initializeWallet();
+
+      final wallet =
+          await Hive.openBox(testWalletId + "initializeWallet testnet");
+
+      expect((await firo.currentNode).name, "Campfire default testnet");
+
+      expect(await wallet.get("addressBookEntries"), {});
+
+      expect(await wallet.get("blocked_tx_hashes"), ["0xdefault"]);
+
+      final result = await wallet.get("changeAddresses");
+      expect(result, isA<List<String>>());
+      expect(result.length, 1);
+
+      expect(await wallet.get("changeIndex"), 0);
+
+      expect(await wallet.get("id"), testWalletId + "initializeWallet testnet");
+
+      expect(await wallet.get("jindex"), []);
+
+      expect(await wallet.get("mintIndex"), 0);
+
+      final nodes = await wallet.get("nodes");
+      expect(nodes.length, 1);
+      expect(nodes[CampfireConstants.defaultNodeNameTestNet]["ipAddress"],
+          "testnet.electrumx-firo.cypherstack.com");
+      expect(nodes[CampfireConstants.defaultNodeNameTestNet]["port"], "50002");
+      expect(nodes[CampfireConstants.defaultNodeNameTestNet]["useSSL"], true);
+
+      expect(firo.fiatCurrency, "USD");
+
+      final currentReceivingAddress = await firo.currentReceivingAddress;
+      expect(currentReceivingAddress, isA<String>());
+
+      expect(await wallet.get("receivingIndex"), 0);
+    });
+
+    test("initializeWallet an already existing test net wallet", () async {
+      final client = MockElectrumX();
+      final cachedClient = MockCachedElectrumX();
+      final secureStore = FakeSecureStorage();
+      final priceAPI = MockPriceAPI();
+      when(priceAPI.getPrice(ticker: "tFIRO", baseCurrency: "USD"))
+          .thenAnswer((_) async => Decimal.fromInt(-1));
+
+      when(client.getServerFeatures()).thenAnswer((_) async => {
+            "hosts": {},
+            "pruning": null,
+            "server_version": "Unit tests",
+            "protocol_min": "1.4",
+            "protocol_max": "1.4.2",
+            "genesis_hash": CampfireConstants.firoTestGenesisHash,
+            "hash_function": "sha256",
+            "services": []
+          });
+
+      final List<Map<String, dynamic>> emptyList = [];
+
+      when(client.getUTXOs(scripthash: anyNamed("scripthash")))
+          .thenAnswer((_) async => emptyList);
+      when(client.getHistory(scripthash: anyNamed("scripthash")))
+          .thenAnswer((_) async => emptyList);
+
+      // var firoToInitNew = FiroWallet(
+      //   walletName: testWalletName,
+      //   walletId: testWalletId + "initializeWallet existing",
+      //   networkType: FiroNetworkType.test,
+      //   client: client,
+      //   cachedClient: cachedClient,
+      //   secureStore: secureStore,
+      //   priceAPI: priceAPI,
+      // );
+      //
+      // await firoToInitNew.initializeWallet();
+      // await firoToInitNew.exit();
+      // firoToInitNew = null;
+
+      final firo = FiroWallet(
+        walletName: testWalletName,
+        walletId: testWalletId + "initializeWallet existing",
+        networkType: FiroNetworkType.test,
+        client: client,
+        cachedClient: cachedClient,
+        secureStore: secureStore,
+        priceAPI: priceAPI,
+      );
+
+      // 1st call to create wallet
+      await firo.initializeWallet();
+
+      final wallet =
+          await Hive.openBox(testWalletId + "initializeWallet existing");
+
+      expect((await firo.currentNode).name, "Campfire default testnet");
+
+      expect(await wallet.get("addressBookEntries"), {});
+
+      expect(await wallet.get("blocked_tx_hashes"), ["0xdefault"]);
+
+      final result = await wallet.get("changeAddresses");
+      expect(result, isA<List<String>>());
+      expect(result.length, 1);
+
+      expect(await wallet.get("changeIndex"), 0);
+
+      expect(
+          await wallet.get("id"), testWalletId + "initializeWallet existing");
+
+      expect(await wallet.get("jindex"), []);
+
+      expect(await wallet.get("mintIndex"), 0);
+
+      final nodes = await wallet.get("nodes");
+      expect(nodes.length, 1);
+      expect(nodes[CampfireConstants.defaultNodeNameTestNet]["ipAddress"],
+          "testnet.electrumx-firo.cypherstack.com");
+      expect(nodes[CampfireConstants.defaultNodeNameTestNet]["port"], "50002");
+      expect(nodes[CampfireConstants.defaultNodeNameTestNet]["useSSL"], true);
+
+      expect(firo.fiatCurrency, "USD");
+
+      final currentReceivingAddress = await firo.currentReceivingAddress;
+      expect(currentReceivingAddress, isA<String>());
+
+      expect(await wallet.get("receivingIndex"), 0);
+
+      // second call to test initialization of existing wallet;
+      await firo.initializeWallet();
+
+      final wallet2 =
+          await Hive.openBox(testWalletId + "initializeWallet existing");
+
+      expect(await wallet2.get("addressBookEntries"), {});
+
+      expect(await wallet2.get("blocked_tx_hashes"), ["0xdefault"]);
+
+      final result2 = await wallet2.get("changeAddresses");
+      expect(result2, isA<List<String>>());
+      expect(result2.length, 1);
+
+      expect(await wallet2.get("changeIndex"), 0);
+
+      expect(
+          await wallet2.get("id"), testWalletId + "initializeWallet existing");
+
+      expect(await wallet2.get("jindex"), []);
+
+      expect(await wallet2.get("mintIndex"), 0);
+
+      final nodes2 = await wallet2.get("nodes");
+      expect(nodes2.length, 1);
+      expect(nodes2[CampfireConstants.defaultNodeNameTestNet]["ipAddress"],
+          "testnet.electrumx-firo.cypherstack.com");
+      expect(nodes2[CampfireConstants.defaultNodeNameTestNet]["port"], "50002");
+      expect(nodes2[CampfireConstants.defaultNodeNameTestNet]["useSSL"], true);
+
+      expect(firo.fiatCurrency, "USD");
+
+      final cra = await wallet2.get("receivingAddresses");
+      expect(cra, isA<List<String>>());
+      expect(cra.length, 1);
+
+      expect(await wallet2.get("receivingIndex"), 0);
+    });
+
+    test("initializeWallet new main net wallet", () async {
       final client = MockElectrumX();
       final cachedClient = MockCachedElectrumX();
       final secureStore = FakeSecureStorage();
@@ -636,6 +844,7 @@ void main() {
 
       expect(firo.unconfirmedTxs, {
         "51576e2230c2911a508aabb85bb50045f04b8dc958790ce2372986c3ebbe7d3e",
+        'FF7e74edecd8c14ff5a8ddeb54e9e5e9c7c301c6f76f0ac1ac8119c6cc15e35',
         "f4217364cbe6a81ef7ecaaeba0a6d6b576a9850b3e891fa7b88ed4927c505218"
       });
     });
@@ -932,6 +1141,25 @@ void main() {
       expect(firo.fetchPreferredCurrency(), "CAD");
     });
 
+    test("get fiatCurrency", () async {
+      final firo = FiroWallet(
+        walletId: testWalletId + "fiatCurrency",
+        walletName: testWalletName,
+        networkType: firoNetworkType,
+        client: MockElectrumX(),
+        cachedClient: MockCachedElectrumX(),
+        secureStore: FakeSecureStorage(),
+        priceAPI: MockPriceAPI(),
+      );
+
+      final wallet = await Hive.openBox(testWalletId + "fiatCurrency");
+      expect(wallet.isEmpty, true);
+      expect(firo.fiatCurrency, "USD");
+
+      expect(() => firo.changeFiatCurrency("CAD"), returnsNormally);
+      expect(firo.fiatCurrency, "CAD");
+    });
+
     test("getLatestSetId", () async {
       final client = MockElectrumX();
 
@@ -1005,6 +1233,206 @@ void main() {
 
     tearDownAll(() async {
       await tearDownTestHive();
+    });
+  });
+
+  group("simple getters", () {
+    group("networkType", () {
+      test("get main net networkType", () {
+        final firo = FiroWallet(
+          walletId: "some id",
+          walletName: "some name",
+          networkType: FiroNetworkType.main,
+          client: MockElectrumX(),
+          cachedClient: MockCachedElectrumX(),
+          secureStore: FakeSecureStorage(),
+          priceAPI: MockPriceAPI(),
+        );
+
+        expect(firo.networkType, FiroNetworkType.main);
+      });
+
+      test("get test net networkType", () {
+        final firo = FiroWallet(
+          walletId: "some id",
+          walletName: "some name",
+          networkType: FiroNetworkType.test,
+          client: MockElectrumX(),
+          cachedClient: MockCachedElectrumX(),
+          secureStore: FakeSecureStorage(),
+          priceAPI: MockPriceAPI(),
+        );
+
+        expect(firo.networkType, FiroNetworkType.test);
+      });
+    });
+
+    group("coinName", () {
+      test("get main net coinName", () {
+        final firo = FiroWallet(
+          walletId: "some id",
+          walletName: "some name",
+          networkType: FiroNetworkType.main,
+          client: MockElectrumX(),
+          cachedClient: MockCachedElectrumX(),
+          secureStore: FakeSecureStorage(),
+          priceAPI: MockPriceAPI(),
+        );
+
+        expect(firo.coinName, "Firo");
+      });
+
+      test("get test net coinName", () {
+        final firo = FiroWallet(
+          walletId: "some id",
+          walletName: "some name",
+          networkType: FiroNetworkType.test,
+          client: MockElectrumX(),
+          cachedClient: MockCachedElectrumX(),
+          secureStore: FakeSecureStorage(),
+          priceAPI: MockPriceAPI(),
+        );
+
+        expect(firo.coinName, "tFiro");
+      });
+
+      test("get coinName when network set to null", () {
+        final firo = FiroWallet(
+          walletId: "some id",
+          walletName: "some name",
+          networkType: null,
+          client: MockElectrumX(),
+          cachedClient: MockCachedElectrumX(),
+          secureStore: FakeSecureStorage(),
+          priceAPI: MockPriceAPI(),
+        );
+
+        expect(firo.coinName, "tFiro");
+      });
+    });
+
+    group("coinTicker", () {
+      test("get main net coinTicker", () {
+        final firo = FiroWallet(
+          walletId: "some id",
+          walletName: "some name",
+          networkType: FiroNetworkType.main,
+          client: MockElectrumX(),
+          cachedClient: MockCachedElectrumX(),
+          secureStore: FakeSecureStorage(),
+          priceAPI: MockPriceAPI(),
+        );
+
+        expect(firo.coinTicker, "FIRO");
+      });
+
+      test("get test net coinTicker", () {
+        final firo = FiroWallet(
+          walletId: "some id",
+          walletName: "some name",
+          networkType: FiroNetworkType.test,
+          client: MockElectrumX(),
+          cachedClient: MockCachedElectrumX(),
+          secureStore: FakeSecureStorage(),
+          priceAPI: MockPriceAPI(),
+        );
+
+        expect(firo.coinTicker, "tFIRO");
+      });
+
+      test("get coinTicker when network set to null", () {
+        final firo = FiroWallet(
+          walletId: "some id",
+          walletName: "some name",
+          networkType: null,
+          client: MockElectrumX(),
+          cachedClient: MockCachedElectrumX(),
+          secureStore: FakeSecureStorage(),
+          priceAPI: MockPriceAPI(),
+        );
+
+        expect(firo.coinTicker, "tFIRO");
+      });
+    });
+
+    group("mnemonic", () {
+      test("fetch and convert properly stored mnemonic to list of words",
+          () async {
+        final store = FakeSecureStorage();
+        store.write(
+            key: "some id_mnemonic",
+            value: "some test mnemonic string of words");
+
+        final firo = FiroWallet(
+          walletName: 'unit test',
+          walletId: 'some id',
+          networkType: FiroNetworkType.test,
+          client: MockElectrumX(),
+          cachedClient: MockCachedElectrumX(),
+          secureStore: store,
+          priceAPI: MockPriceAPI(),
+        );
+        final List<String> result = await firo.mnemonic;
+
+        expect(result, [
+          "some",
+          "test",
+          "mnemonic",
+          "string",
+          "of",
+          "words",
+        ]);
+      });
+
+      test("attempt fetch and convert non existent mnemonic to list of words",
+          () async {
+        final store = FakeSecureStorage();
+        store.write(
+            key: "some id_mnemonic",
+            value: "some test mnemonic string of words");
+
+        final firo = FiroWallet(
+          walletName: 'unit test',
+          walletId: 'some other id',
+          networkType: FiroNetworkType.test,
+          client: MockElectrumX(),
+          cachedClient: MockCachedElectrumX(),
+          secureStore: store,
+          priceAPI: MockPriceAPI(),
+        );
+        expectLater(() => firo.mnemonic, throwsA(isA<NoSuchMethodError>()));
+      });
+    });
+
+    test("walletName", () {
+      final firo = FiroWallet(
+        walletId: "some id",
+        walletName: "some name",
+        networkType: FiroNetworkType.main,
+        client: MockElectrumX(),
+        cachedClient: MockCachedElectrumX(),
+        secureStore: FakeSecureStorage(),
+        priceAPI: MockPriceAPI(),
+      );
+
+      expect(firo.walletName, "some name");
+
+      firo.walletName = "new name";
+      expect(firo.walletName, "new name");
+    });
+
+    test("walletId", () {
+      final firo = FiroWallet(
+        walletId: "some id",
+        walletName: "some name",
+        networkType: FiroNetworkType.main,
+        client: MockElectrumX(),
+        cachedClient: MockCachedElectrumX(),
+        secureStore: FakeSecureStorage(),
+        priceAPI: MockPriceAPI(),
+      );
+
+      expect(firo.walletId, "some id");
     });
   });
 }

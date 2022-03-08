@@ -498,12 +498,30 @@ final t4 = Transaction(
             "9201d7a58185f000c312a8b0c19d8e5c61c1ce1b69201c1a4dc2bce289794280")
   ],
 );
+final t5 = Transaction(
+  txid: "FF7e74edecd8c14ff5a8ddeb54e9e5e9c7c301c6f76f0ac1ac8119c6cc15e35",
+  confirmedStatus: false,
+  txType: "Sent",
+  subType: "mint",
+  amount: 19659,
+  fees: 341,
+  height: 457341,
+  address: "",
+  timestamp: 1646678703,
+  worthNow: "0.00",
+  inputs: [
+    Input(
+        txid:
+            "ac0322cfdd008fa2a79bec525468fd05cf51a5a4e2c2e9c15598b659ec71ac68")
+  ],
+);
 
 final txData = TransactionData.fromMap({
   "51576e2230c2911a508aabb85bb50045f04b8dc958790ce2372986c3ebbe7d3e": t1,
   "e8e4bfc080bd6133d38263d2ac7ef6f60dfd73eb29b464e34766ebb5a0d27dd8": t2,
   "ac0322cfdd008fa2a79bec525468fd05cf51a5a4e2c2e9c15598b659ec71ac68": t3,
   "ea77e74edecd8c14ff5a8ddeb54e9e5e9c7c301c6f76f0ac1ac8119c6cc15e35": t4,
+  "FF7e74edecd8c14ff5a8ddeb54e9e5e9c7c301c6f76f0ac1ac8119c6cc15e35": t5,
 });
 
 final lt1 = Transaction(
@@ -547,7 +565,7 @@ final lt3 = Transaction(
 );
 final lt4 = Transaction(
   txid: "ac0322cfdd008fa2a79bec525468fd05cf51a5a4e2c2e9c15598b659ec71ac68",
-  confirmedStatus: true,
+  confirmedStatus: false,
   txType: "Received",
   subType: "mint",
   amount: 10000,

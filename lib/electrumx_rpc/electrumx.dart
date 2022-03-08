@@ -23,6 +23,11 @@ class ElectrumXNode {
       useSSL: node.useSSL,
     );
   }
+
+  @override
+  String toString() {
+    return "ElectrumXNode: {address: ${this.address}, port: ${this.port}, name: ${this.name}, useSSL: ${this.useSSL}}";
+  }
 }
 
 class ElectrumX {
