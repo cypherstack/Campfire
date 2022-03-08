@@ -647,27 +647,12 @@ Future<List<models.Transaction>> getJMintTransactions(
           callOutSideMainIsolate: outsideMainIsolate,
         );
 
-        // TODO not sure if removing here increases or decreases performance
-        // tx.remove("lelantusData");
-        // tx.remove("hex");
-        // tx.remove("hash");
-        // tx.remove("blockhash");
-        // tx.remove("blocktime");
-        // tx.remove("instantlock");
-        // tx.remove("chainlock");
-        // tx.remove("version");
-
         tx["confirmed_status"] =
             tx["confirmations"] != null && tx["confirmations"] > 0;
-        // tx.remove("confirmations");
-
         tx["timestamp"] = tx["time"];
-        // tx.remove("time");
-
         tx["txType"] = "Sent";
 
         var sendIndex = 1;
-
         if (tx["vout"][0]["value"] != null && tx["vout"][0]["value"] > 0) {
           sendIndex = 0;
         }
@@ -679,12 +664,6 @@ Future<List<models.Transaction>> getJMintTransactions(
         tx["inputSize"] = tx["vin"].length;
         tx["outputSize"] = tx["vout"].length;
 
-        // tx.remove("vin");
-        // tx.remove("vout");
-        // tx.remove("size");
-        // tx.remove("vsize");
-        // tx.remove("type");
-        // tx.remove("locktime");
         final decimalAmount = Decimal.parse(tx["amount"].toString());
 
         tx["worthNow"] = (currentPrice * decimalAmount).toStringAsFixed(2);
@@ -695,6 +674,7 @@ Future<List<models.Transaction>> getJMintTransactions(
       } catch (e, s) {
         Logger.print("Exception caught in getJMintTransactions(): $e");
         Logger.print(s);
+        throw e;
       }
     }
     return txs;

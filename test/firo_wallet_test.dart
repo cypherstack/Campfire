@@ -169,9 +169,110 @@ void main() {
       expect(node.fingerprint.toList(), Bip32TestParams.fingerprintList);
     });
 
-    test("getJMintTransactions", () {
-      // TODO extremely large data set parameters
-      expect(1, 0);
+    group("getJMintTransactions", () {
+      test(
+          "getJMintTransactions throws Error due to some invalid transactions passed to this function",
+          () {
+        final cachedClient = MockCachedElectrumX();
+        final priceAPI = MockPriceAPI();
+
+        // mock price calls
+        when(priceAPI.getPrice(ticker: "FIRO", baseCurrency: "USD"))
+            .thenAnswer((_) async => Decimal.fromInt(10));
+
+        // mock transaction calls
+        when(cachedClient.getTransaction(
+                tx_hash: SampleGetTransactionData.txHash0,
+                coinName: "Firo",
+                callOutSideMainIsolate: false))
+            .thenAnswer((_) async => SampleGetTransactionData.txData0);
+        when(cachedClient.getTransaction(
+                tx_hash: SampleGetTransactionData.txHash1,
+                coinName: "Firo",
+                callOutSideMainIsolate: false))
+            .thenAnswer((_) async => SampleGetTransactionData.txData1);
+        when(cachedClient.getTransaction(
+                tx_hash: SampleGetTransactionData.txHash2,
+                coinName: "Firo",
+                callOutSideMainIsolate: false))
+            .thenAnswer((_) async => SampleGetTransactionData.txData2);
+        when(cachedClient.getTransaction(
+                tx_hash: SampleGetTransactionData.txHash3,
+                coinName: "Firo",
+                callOutSideMainIsolate: false))
+            .thenAnswer((_) async => SampleGetTransactionData.txData3);
+        when(cachedClient.getTransaction(
+                tx_hash: SampleGetTransactionData.txHash4,
+                coinName: "Firo",
+                callOutSideMainIsolate: false))
+            .thenAnswer((_) async => SampleGetTransactionData.txData4);
+        when(cachedClient.getTransaction(
+                tx_hash: SampleGetTransactionData.txHash5,
+                coinName: "Firo",
+                callOutSideMainIsolate: false))
+            .thenAnswer((_) async => SampleGetTransactionData.txData5);
+
+        final transactions = [
+          SampleGetTransactionData.txHash0,
+          SampleGetTransactionData.txHash1,
+          SampleGetTransactionData.txHash2,
+          SampleGetTransactionData.txHash3,
+          SampleGetTransactionData.txHash4,
+          SampleGetTransactionData.txHash5,
+        ];
+
+        expect(
+            () async => await getJMintTransactions(
+                cachedClient, transactions, "USD", "Firo", false, priceAPI),
+            throwsA(isA<Error>()));
+      });
+
+      test("getJMintTransactions success", () async {
+        final cachedClient = MockCachedElectrumX();
+        final priceAPI = MockPriceAPI();
+
+        // mock price calls
+        when(priceAPI.getPrice(ticker: "FIRO", baseCurrency: "USD"))
+            .thenAnswer((_) async => Decimal.fromInt(10));
+
+        // mock transaction calls
+        when(cachedClient.getTransaction(
+                tx_hash: SampleGetTransactionData.txHash0,
+                coinName: "Firo",
+                callOutSideMainIsolate: false))
+            .thenAnswer((_) async => SampleGetTransactionData.txData0);
+
+        when(cachedClient.getTransaction(
+                tx_hash: SampleGetTransactionData.txHash2,
+                coinName: "Firo",
+                callOutSideMainIsolate: false))
+            .thenAnswer((_) async => SampleGetTransactionData.txData2);
+
+        when(cachedClient.getTransaction(
+                tx_hash: SampleGetTransactionData.txHash4,
+                coinName: "Firo",
+                callOutSideMainIsolate: false))
+            .thenAnswer((_) async => SampleGetTransactionData.txData4);
+
+        when(cachedClient.getTransaction(
+                tx_hash: SampleGetTransactionData.txHash6,
+                coinName: "Firo",
+                callOutSideMainIsolate: false))
+            .thenAnswer((_) async => SampleGetTransactionData.txData6);
+
+        final transactions = [
+          SampleGetTransactionData.txHash0,
+          SampleGetTransactionData.txHash2,
+          SampleGetTransactionData.txHash4,
+          SampleGetTransactionData.txHash6,
+        ];
+
+        final result = await getJMintTransactions(
+            cachedClient, transactions, "USD", "Firo", false, priceAPI);
+
+        expect(result, isA<List<Transaction>>());
+        expect(result.length, 4);
+      });
     });
 
     test("getAnonymitySet", () async {
