@@ -1066,7 +1066,7 @@ class FiroWallet extends CoinServiceAPI {
     if (longMutex) return false;
     Logger.print("refreshIfThereIsNewData");
 
-    bool wasRefreshed = false;
+    bool needsRefresh = false;
     Logger.print("unonconfirmeds $unconfirmedTxs");
     for (String txid in unconfirmedTxs) {
       final txn = await electrumXClient.getTransaction(tx_hash: txid);
@@ -1075,12 +1075,11 @@ class FiroWallet extends CoinServiceAPI {
       bool isUnconfirmed = confirmations < 1;
       if (!isUnconfirmed) {
         unconfirmedTxs = {};
-        await refresh();
-        wasRefreshed = true;
+        needsRefresh = true;
         break;
       }
     }
-    if (!wasRefreshed) {
+    if (!needsRefresh) {
       var allOwnAddresses = await this.allOwnAddresses;
       List<Map<String, dynamic>> allTxs = await _fetchHistory(allOwnAddresses);
       models.TransactionData txData = await _txnData;
@@ -1088,19 +1087,20 @@ class FiroWallet extends CoinServiceAPI {
         if (txData.findTransaction(transaction['tx_hash']) == null) {
           Logger.print(
               " txid not found in address history already ${transaction['tx_hash']}");
-          await refresh();
-          wasRefreshed = true;
+          needsRefresh = true;
           break;
         }
       }
     }
-    return wasRefreshed;
+    return needsRefresh;
   }
 
-  Future<void> getAllTxsToWatch() async {
+  Future<void> getAllTxsToWatch(
+    TransactionData txData,
+    TransactionData lTxData,
+  ) async {
     Logger.print("periodic");
-    var txData = (await _txnData);
-    var lTxData = (await lelantusTransactionData);
+
     Logger.print(txData.txChunks);
     Logger.print(lTxData.txChunks);
     Set<String> needRefresh = {};
@@ -1251,7 +1251,10 @@ class FiroWallet extends CoinServiceAPI {
 
       final maxFee = await _fetchMaxFee();
       this._maxFee = Future(() => maxFee);
-      await getAllTxsToWatch();
+
+      var txData = (await _txnData);
+      var lTxData = (await lelantusTransactionData);
+      await getAllTxsToWatch(txData, lTxData);
 
       GlobalEventBus.instance.fire(RefreshPercentChangedEvent(1.0));
 
@@ -1262,6 +1265,7 @@ class FiroWallet extends CoinServiceAPI {
         timer = Timer.periodic(Duration(seconds: 150), (timer) async {
           bool shouldNotify = await refreshIfThereIsNewData();
           if (shouldNotify) {
+            await refresh();
             GlobalEventBus.instance.fire(
                 UpdatedInBackgroundEvent("New data found in background!"));
           }
