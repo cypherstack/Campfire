@@ -2619,14 +2619,13 @@ class FiroWallet extends CoinServiceAPI {
     Logger.print("PROCESSORS ${Platform.numberOfProcessors}");
     try {
       final wallet = await Hive.openBox(this._walletId);
-      final ElectrumXNode node = await currentNode;
       final setDataMap = Map();
       final latestSetId = await getLatestSetId();
       for (var setId = 1; setId <= latestSetId; setId++) {
         final setData = getSetData(setId);
         setDataMap[setId] = setData;
       }
-      final usedSerialNumbers = getUsedCoinSerials(node);
+      final usedSerialNumbers = getUsedCoinSerials();
 
       List<String> receivingAddressArray = [];
       List<String> changeAddressArray = [];
@@ -2855,7 +2854,7 @@ class FiroWallet extends CoinServiceAPI {
     }
   }
 
-  Future<dynamic> getUsedCoinSerials(ElectrumXNode node) async {
+  Future<dynamic> getUsedCoinSerials() async {
     try {
       final response = await electrumXClient.getUsedCoinSerials();
       return response;

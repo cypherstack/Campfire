@@ -17,6 +17,7 @@ import 'package:paymint/utilities/misc_global_constants.dart';
 
 import 'firo_wallet_test.mocks.dart';
 import 'firo_wallet_test_parameters.dart';
+import 'get_used_serials_sample_data.dart';
 import 'getcoinsforrecovery_sample_output.dart';
 import 'gethistory_samples.dart';
 import 'transaction_data_samples.dart';
@@ -1199,9 +1200,24 @@ void main() {
       expect(setData, getCoinsForRecoveryResponse);
     });
 
-    test("getUsedCoinSerials", () {
-      // todo build tests
-      expect(0, 1);
+    test("getUsedCoinSerials", () async {
+      final client = MockElectrumX();
+
+      when(client.getUsedCoinSerials())
+          .thenAnswer((_) async => GetUsedSerialsSampleData.serials);
+
+      final firo = FiroWallet(
+        walletId: testWalletId + "getUsedCoinSerials",
+        walletName: testWalletName,
+        networkType: firoNetworkType,
+        client: client,
+        cachedClient: MockCachedElectrumX(),
+        secureStore: FakeSecureStorage(),
+        priceAPI: MockPriceAPI(),
+      );
+
+      final serials = await firo.getUsedCoinSerials();
+      expect(serials, GetUsedSerialsSampleData.serials);
     });
 
     test("refresh", () {
