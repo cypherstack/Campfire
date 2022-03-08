@@ -35,9 +35,8 @@ void main() {
   });
 
   test("parse an invalid firo uri string", () {
-    final uri = "$firoAddress?amount=50&label";
-    final result = AddressUtils.parseFiroUri(uri);
-    expect(result, {});
+    final uri = ":::  8 \\ %23";
+    expect(AddressUtils.parseFiroUri(uri), {});
   });
 
   test("encode a list of (mnemonic) words/strings as a json object", () {

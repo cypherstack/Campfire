@@ -6,6 +6,8 @@ import 'package:paymint/models/models.dart';
 import 'package:paymint/services/coins/coin_service.dart';
 import 'package:paymint/services/coins/firo/firo_wallet.dart';
 import 'package:paymint/services/coins/manager.dart';
+import 'package:paymint/services/event_bus/events/updated_in_background_event.dart';
+import 'package:paymint/services/event_bus/global_event_bus.dart';
 
 import 'firo_wallet_test.mocks.dart';
 import 'manager_test.mocks.dart';
@@ -418,5 +420,20 @@ void main() {
     manager.currentWallet = wallet;
 
     expect(() => manager.dispose(), returnsNormally);
+  });
+
+  test("act on event", () async {
+    final CoinServiceAPI wallet = MockFiroWallet();
+
+    final manager = Manager();
+    manager.currentWallet = wallet;
+
+    expect(
+        () => GlobalEventBus.instance
+            .fire(UpdatedInBackgroundEvent("test message")),
+        returnsNormally);
+
+    await expectLater(
+        () async => await manager.exitCurrentWallet(), returnsNormally);
   });
 }
