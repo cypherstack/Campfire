@@ -424,16 +424,16 @@ void main() {
 
   test("act on event", () async {
     final CoinServiceAPI wallet = MockFiroWallet();
+    when(wallet.exit()).thenReturn(null);
 
     final manager = Manager();
     manager.currentWallet = wallet;
 
     expect(
         () => GlobalEventBus.instance
-            .fire(UpdatedInBackgroundEvent("test message")),
+            .fire(UpdatedInBackgroundEvent("act on event - test message")),
         returnsNormally);
 
-    await expectLater(
-        () async => await manager.exitCurrentWallet(), returnsNormally);
+    expect(() => manager.dispose(), returnsNormally);
   });
 }
