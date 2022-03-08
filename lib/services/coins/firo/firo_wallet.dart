@@ -849,7 +849,7 @@ class FiroWallet extends CoinServiceAPI {
   /// Holds wallet lelantus transaction data
   Future<TransactionData> _lelantusTransactionData;
   Future<TransactionData> get lelantusTransactionData =>
-      _lelantusTransactionData;
+      _lelantusTransactionData ??= _getLelantusTransactionData();
 
   /// Holds the max fee that can be sent
   Future<LelantusFeeData> _maxFee;
