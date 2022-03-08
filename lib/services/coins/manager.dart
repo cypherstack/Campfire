@@ -14,12 +14,12 @@ class Manager with ChangeNotifier {
   StreamSubscription _backgroundRefreshListener;
 
   set currentWallet(CoinServiceAPI newValue) {
-    if (newValue == _currentWallet) {
-      return;
-    }
     if (newValue == null) {
       throw Exception(
           "Cannot set currentWallet to null. Use Manager.exitCurrentWallet()");
+    }
+    if (newValue == _currentWallet) {
+      return;
     }
     _currentWallet = newValue;
     _backgroundRefreshListener = GlobalEventBus.instance
@@ -30,6 +30,8 @@ class Manager with ChangeNotifier {
           "Event activated notifyListeners() in Manager: ${event.message}");
     });
   }
+
+  bool get hasBackgroundRefreshListener => _backgroundRefreshListener != null;
 
   bool get hasWallet => _currentWallet != null;
 
@@ -94,7 +96,7 @@ class Manager with ChangeNotifier {
   Future<Decimal> get fiatPrice => _currentWallet.fiatPrice;
 
   String get fiatCurrency => _currentWallet.fiatCurrency;
-  void changeFiatCurrency(String currency) async {
+  void changeFiatCurrency(String currency) {
     _currentWallet.changeFiatCurrency(currency);
     notifyListeners();
   }
@@ -121,7 +123,7 @@ class Manager with ChangeNotifier {
   Future<bool> testNetworkConnection(ElectrumX client) =>
       _currentWallet.testNetworkConnection(client);
 
-  dynamic recoverFromMnemonic(String mnemonic) async {
+  Future<void> recoverFromMnemonic(String mnemonic) async {
     try {
       await _currentWallet.recoverFromMnemonic(mnemonic);
     } catch (e) {

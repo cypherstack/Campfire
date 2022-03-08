@@ -54,7 +54,7 @@ abstract class CoinServiceAPI {
 
   Future<bool> testNetworkConnection(ElectrumX client);
 
-  dynamic recoverFromMnemonic(String mnemonic);
+  Future<void> recoverFromMnemonic(String mnemonic);
 
   Future<void> exit();
 }

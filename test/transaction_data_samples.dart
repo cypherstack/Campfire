@@ -584,7 +584,7 @@ final lTxData = TransactionData.fromMap({
   "ac0322cfdd008fa2a79bec525468fd05cf51a5a4e2c2e9c15598b659ec71ac68": lt4,
 });
 
-final dateTimeChunksJson = {
+final Map<String, dynamic> dateTimeChunksJson = {
   "dateTimeChunks": [
     {
       "timestamp": 1646328603,
