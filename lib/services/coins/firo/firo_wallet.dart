@@ -11,6 +11,7 @@ import 'package:firo_flutter/firo_flutter.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 import 'package:hive/hive.dart';
+import 'package:http/http.dart';
 import 'package:lelantus/lelantus.dart';
 import 'package:path_provider/path_provider.dart';
 import 'package:paymint/electrumx_rpc/cached_electrumx.dart';
@@ -993,7 +994,7 @@ class FiroWallet extends CoinServiceAPI {
     this._electrumXClient = client;
     this._cachedElectrumXClient = cachedClient;
 
-    _priceAPI = priceAPI == null ? PriceAPI() : priceAPI;
+    _priceAPI = priceAPI == null ? PriceAPI(Client()) : priceAPI;
     _secureStore = secureStore == null
         ? SecureStorageWrapper(FlutterSecureStorage())
         : secureStore;

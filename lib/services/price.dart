@@ -1,7 +1,7 @@
 import 'dart:convert';
 
 import 'package:decimal/decimal.dart';
-import 'package:http/http.dart' as http;
+import 'package:http/http.dart';
 import 'package:paymint/utilities/logger.dart';
 
 class PriceAPI {
@@ -10,6 +10,11 @@ class PriceAPI {
 
   static const Duration throttle = Duration(seconds: 60);
 
+  final Client client;
+
+  PriceAPI(this.client);
+
+  /// Fetch an alt coin fiat price using a combination of binance and coingecko apis
   Future<Decimal> getPrice({String ticker, String baseCurrency}) async {
     String currency = baseCurrency.toLowerCase();
 
@@ -27,13 +32,13 @@ class PriceAPI {
     }
 
     try {
-      final binanceResponse = await http.get(
+      final binanceResponse = await client.get(
         Uri.parse(
             "https://api.binance.com/api/v3/ticker/price?symbol=${ticker}BTC"),
         headers: {'Content-Type': 'application/json'},
       );
 
-      final coinGeckoResponse = await http.get(
+      final coinGeckoResponse = await client.get(
         Uri.parse(
             "https://api.coingecko.com/api/v3/simple/price?ids=bitcoin&vs_currencies=$currency"),
         headers: {'Content-Type': 'application/json'},
@@ -60,5 +65,11 @@ class PriceAPI {
           "Exception caught in PriceAPI.getPrice($ticker, $currency): $e\nReturning a price of -1.");
       return Decimal.fromInt(-1);
     }
+  }
+
+  /// Clear the shared object cached prices
+  void resetCache() {
+    _lastCalled = {};
+    _price = {};
   }
 }
