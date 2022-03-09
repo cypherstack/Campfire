@@ -146,6 +146,7 @@ flutter:
     - assets/svg/eye.svg
     - assets/svg/wallet-2.svg
     - assets/svg/clipboard.svg
+    - assets/svg/alert-circle.svg
 
   # An image asset can refer to one or more resolution-specific "variants", see
   # https://flutter.dev/assets-and-images/#resolution-aware.

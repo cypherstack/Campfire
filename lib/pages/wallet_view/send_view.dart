@@ -574,14 +574,43 @@ class _SendViewState extends State<SendView> {
         Row(
           mainAxisAlignment: MainAxisAlignment.spaceBetween,
           children: [
-            FittedBox(
-              child: Text(
-                "Maximum Transaction fee",
-                style: GoogleFonts.workSans(
-                  color: CFColors.twilight,
-                  fontWeight: FontWeight.w500,
-                  fontSize: 12,
-                ),
+            GestureDetector(
+              onTapDown: (tapDownDetails) {
+                showDialog(
+                  barrierColor: Colors.transparent,
+                  context: context,
+                  builder: (context) {
+                    return _showMaxFeeToolTip(
+                        context, tapDownDetails.globalPosition);
+                  },
+                );
+              },
+              child: Row(
+                children: [
+                  FittedBox(
+                    child: Text(
+                      "Maximum Transaction fee",
+                      style: GoogleFonts.workSans(
+                        color: CFColors.twilight,
+                        fontWeight: FontWeight.w500,
+                        fontSize: 12,
+                      ),
+                    ),
+                  ),
+                  Column(
+                    children: [
+                      SvgPicture.asset(
+                        "assets/svg/alert-circle.svg",
+                        color: CFColors.twilight,
+                        width: 8,
+                        height: 8,
+                      ),
+                      SizedBox(
+                        height: 4,
+                      ),
+                    ],
+                  ),
+                ],
               ),
             ),
             if (!isTinyScreen) _buildMaxFee(bitcoinService),
@@ -602,14 +631,43 @@ class _SendViewState extends State<SendView> {
         Row(
           mainAxisAlignment: MainAxisAlignment.spaceBetween,
           children: [
-            FittedBox(
-              child: Text(
-                "Total amount to send",
-                style: GoogleFonts.workSans(
-                  color: CFColors.twilight,
-                  fontWeight: FontWeight.w500,
-                  fontSize: 12,
-                ),
+            GestureDetector(
+              onTapDown: (tapDownDetails) {
+                showDialog(
+                  barrierColor: Colors.transparent,
+                  context: context,
+                  builder: (context) {
+                    return _showMaxFeeToolTip(
+                        context, tapDownDetails.globalPosition);
+                  },
+                );
+              },
+              child: Row(
+                children: [
+                  FittedBox(
+                    child: Text(
+                      "Total amount to send",
+                      style: GoogleFonts.workSans(
+                        color: CFColors.twilight,
+                        fontWeight: FontWeight.w500,
+                        fontSize: 12,
+                      ),
+                    ),
+                  ),
+                  Column(
+                    children: [
+                      SvgPicture.asset(
+                        "assets/svg/alert-circle.svg",
+                        color: CFColors.twilight,
+                        width: 8,
+                        height: 8,
+                      ),
+                      SizedBox(
+                        height: 4,
+                      ),
+                    ],
+                  ),
+                ],
               ),
             ),
             if (!isTinyScreen) _buildTotal(),
@@ -623,6 +681,44 @@ class _SendViewState extends State<SendView> {
             ],
           ),
       ],
+    );
+  }
+
+  Widget _showMaxFeeToolTip(BuildContext context, Offset position) {
+    return GestureDetector(
+      onTap: () {
+        Navigator.of(context).pop();
+      },
+      child: Stack(
+        children: [
+          Positioned(
+            top: position.dy - 10,
+            left: 20.0,
+            child: Container(
+              width: MediaQuery.of(context).size.width - 40,
+              decoration: BoxDecoration(
+                color: CFColors.white,
+                borderRadius:
+                    BorderRadius.circular(SizingUtilities.circularBorderRadius),
+                boxShadow: [CFColors.standardBoxShadow],
+              ),
+              child: Padding(
+                padding: const EdgeInsets.all(12),
+                child: Text(
+                  "This is the maximum possible fee. Actual fee is calculated when attempting to send and will generally be less.",
+                  maxLines: 7,
+                  style: GoogleFonts.workSans(
+                    decoration: TextDecoration.none,
+                    color: CFColors.twilight,
+                    fontWeight: FontWeight.w400,
+                    fontSize: 12,
+                  ),
+                ),
+              ),
+            ),
+          )
+        ],
+      ),
     );
   }
 
