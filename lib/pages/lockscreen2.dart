@@ -8,6 +8,7 @@ import 'package:hive/hive.dart';
 import 'package:path_provider/path_provider.dart';
 import 'package:paymint/electrumx_rpc/cached_electrumx.dart';
 import 'package:paymint/electrumx_rpc/electrumx.dart';
+import 'package:paymint/notifications/campfire_alert.dart';
 import 'package:paymint/notifications/overlay_notification.dart';
 import 'package:paymint/services/coins/firo/firo_wallet.dart';
 import 'package:paymint/services/coins/manager.dart';
@@ -120,7 +121,19 @@ class _Lockscreen2ViewState extends State<Lockscreen2View> {
       client: ElectrumX.from(node: node),
       cachedClient: CachedElectrumX.from(node: node, hivePath: appDir.path),
     );
-    await firoWallet.initializeWallet();
+    final success = await firoWallet.initializeWallet();
+    if (!success) {
+      await showDialog(
+        context: context,
+        useSafeArea: false,
+        barrierDismissible: false,
+        builder: (context) {
+          return CampfireAlert(
+              message:
+                  "Failed to connect to network. Check your internet connection and make sure the Electrum X node you are connected to is not having any issues.");
+        },
+      );
+    }
     manager.currentWallet = firoWallet;
   }
 
