@@ -3,7 +3,6 @@ import 'dart:convert';
 import 'package:flutter/cupertino.dart';
 import 'package:paymint/electrumx_rpc/rpc.dart';
 import 'package:paymint/utilities/logger.dart';
-import 'package:paymint/utilities/misc_global_constants.dart';
 import 'package:uuid/uuid.dart';
 
 class ElectrumXNode {
@@ -40,11 +39,18 @@ class ElectrumX {
   bool get useSSL => _useSSL;
   bool _useSSL;
 
+  JsonRPC get rpcClient => _rpcClient;
+  JsonRPC _rpcClient;
+
   ElectrumX(
-      {@required String server, @required int port, @required bool useSSL}) {
+      {@required String server,
+      @required int port,
+      @required bool useSSL,
+      JsonRPC client}) {
     _server = server;
     _port = port;
     _useSSL = useSSL;
+    _rpcClient = client;
   }
 
   factory ElectrumX.from({@required ElectrumXNode node}) =>
@@ -56,29 +62,27 @@ class ElectrumX {
     List<dynamic> args = const [],
     Duration connectionTimeout = const Duration(seconds: 5),
     Duration aliveTimerDuration = const Duration(seconds: 2),
+    String requestID,
   }) async {
-    final address = CampfireConstants.allowTestnets
-        ? CampfireConstants.defaultIpAddressTestNet
-        : CampfireConstants.defaultIpAddress;
-    final port = CampfireConstants.allowTestnets
-        ? CampfireConstants.defaultPortTestNet
-        : CampfireConstants.defaultPort;
-    final client = JsonRPC(
-      address: this.server ?? address,
-      port: this.port ?? port,
-      useSSL: this.useSSL ?? CampfireConstants.defaultUseSSL,
-      connectionTimeout: connectionTimeout,
-      aliveTimerDuration: aliveTimerDuration,
-    );
+    if (_rpcClient == null) {
+      _rpcClient = JsonRPC(
+        address: this.server,
+        port: this.port,
+        useSSL: this.useSSL,
+        connectionTimeout: connectionTimeout,
+        aliveTimerDuration: aliveTimerDuration,
+      );
+    }
+
     try {
-      final requestId = Uuid().v1();
+      final requestId = requestID ?? Uuid().v1();
       final jsonArgs = json.encode(args);
       final jsonRequestString =
           '{"jsonrpc": "2.0", "id": "$requestId","method": "$command","params": $jsonArgs}';
 
-      print("jsonRequestString: $jsonRequestString");
+      Logger.print("ElectrumX jsonRequestString: $jsonRequestString");
 
-      final response = await client.request(jsonRequestString);
+      final response = await _rpcClient.request(jsonRequestString);
 
       if (response["result"] == null) {
         throw Exception("JSONRPC response error: $response");
@@ -99,9 +103,10 @@ class ElectrumX {
   //   "height": 520481,
   //   "hex": "00000020890208a0ae3a3892aa047c5468725846577cfcd9b512b50000000000000000005dc2b02f2d297a9064ee103036c14d678f9afc7e3d9409cf53fd58b82e938e8ecbeca05a2d2103188ce804c4"
   // }
-  Future<Map<String, dynamic>> getBlockHeadTip() async {
+  Future<Map<String, dynamic>> getBlockHeadTip({String requestID}) async {
     try {
       final response = await request(
+        requestID: requestID,
         command: 'blockchain.headers.subscribe',
       );
       return response["result"];
@@ -110,10 +115,9 @@ class ElectrumX {
     }
   }
 
-  /// Get most recent block header.
+  /// Get server info
   ///
-  /// Returns a map with keys 'height' and 'hex' corresponding to the block height
-  /// and the binary header as a hexadecimal string.
+  /// Returns a map with server information
   /// Ex:
   // {
   // "genesis_hash": "000000000933ea01ad0ee984209779baaec3ced90fa3f408719526f8d77f4943",
@@ -124,9 +128,10 @@ class ElectrumX {
   // "server_version": "ElectrumX 1.0.17",
   // "hash_function": "sha256"
   // }
-  Future<Map<String, dynamic>> getServerFeatures() async {
+  Future<Map<String, dynamic>> getServerFeatures({String requestID}) async {
     try {
       final response = await request(
+        requestID: requestID,
         command: 'server.features',
       );
       return response["result"];
@@ -138,9 +143,10 @@ class ElectrumX {
   /// Broadcast a transaction to the network.
   ///
   /// The transaction hash as a hexadecimal string.
-  Future<String> broadcastTransaction({String rawTx}) async {
+  Future<String> broadcastTransaction({String rawTx, String requestID}) async {
     try {
       final response = await request(
+        requestID: requestID,
         command: 'blockchain.transaction.broadcast',
         args: [
           rawTx,
@@ -161,9 +167,11 @@ class ElectrumX {
   ///   "confirmed": 103873966,
   ///   "unconfirmed": 23684400
   /// }
-  Future<Map<String, dynamic>> getBalance({String scripthash}) async {
+  Future<Map<String, dynamic>> getBalance(
+      {String scripthash, String requestID}) async {
     try {
       final response = await request(
+        requestID: requestID,
         command: 'blockchain.scripthash.get_balance',
         args: [
           scripthash,
@@ -189,9 +197,11 @@ class ElectrumX {
   //     "tx_hash": "f3e1bf48975b8d6060a9de8884296abb80be618dc00ae3cb2f6cee3085e09403"
   //   }
   // ]
-  Future<List<Map<String, dynamic>>> getHistory({String scripthash}) async {
+  Future<List<Map<String, dynamic>>> getHistory(
+      {String scripthash, String requestID}) async {
     try {
       final response = await request(
+        requestID: requestID,
         command: 'blockchain.scripthash.get_history',
         args: [
           scripthash,
@@ -221,9 +231,11 @@ class ElectrumX {
   //     "height": 441696
   //   }
   // ]
-  Future<List<Map<String, dynamic>>> getUTXOs({String scripthash}) async {
+  Future<List<Map<String, dynamic>>> getUTXOs(
+      {String scripthash, String requestID}) async {
     try {
       final response = await request(
+        requestID: requestID,
         command: 'blockchain.scripthash.listunspent',
         args: [
           scripthash,
@@ -283,9 +295,10 @@ class ElectrumX {
   ///                                "type": "pubkeyhash"},
   ///              "value": 0.1360904}]}
   Future<Map<String, dynamic>> getTransaction(
-      {String tx_hash, bool verbose = true}) async {
+      {String tx_hash, bool verbose = true, String requestID}) async {
     try {
       final response = await request(
+        requestID: requestID,
         command: 'blockchain.transaction.get',
         args: [
           tx_hash,
@@ -313,9 +326,10 @@ class ElectrumX {
   ///      ]
   ///   }
   Future<Map<String, dynamic>> getAnonymitySet(
-      {String groupId, String blockhash}) async {
+      {String groupId, String blockhash, String requestID}) async {
     try {
       final response = await request(
+        requestID: requestID,
         command: 'sigma.getanonymityset',
         args: [
           groupId ?? "1",
@@ -332,9 +346,10 @@ class ElectrumX {
   ///
   ///
   /// Returns the block height and groupId of pubcoin.
-  Future<dynamic> getMintData({dynamic mints}) async {
+  Future<dynamic> getMintData({dynamic mints, String requestID}) async {
     try {
       final response = await request(
+        requestID: requestID,
         command: 'sigma.getmintmetadata',
         args: [
           mints,
@@ -348,9 +363,10 @@ class ElectrumX {
 
   //TODO add example to docs
   /// Returns the whole set of the used coin serials.
-  Future<dynamic> getUsedCoinSerials() async {
+  Future<dynamic> getUsedCoinSerials({String requestID}) async {
     try {
       final response = await request(
+        requestID: requestID,
         command: 'sigma.getusedcoinserials',
       );
       return response["result"];
@@ -363,9 +379,10 @@ class ElectrumX {
   /// Returns the latest set id
   ///
   /// ex: 1
-  Future<int> getLatestCoinId() async {
+  Future<int> getLatestCoinId({String requestID}) async {
     try {
       final response = await request(
+        requestID: requestID,
         command: 'sigma.getlatestcoinid',
       );
       return response["result"];
@@ -376,9 +393,11 @@ class ElectrumX {
   }
 
   /// Returns about 13 megabytes of json data as of march 2, 2022
-  Future<Map<String, dynamic>> getCoinsForRecovery({dynamic setId}) async {
+  Future<Map<String, dynamic>> getCoinsForRecovery(
+      {dynamic setId, String requestID}) async {
     try {
       final response = await request(
+        requestID: requestID,
         command: 'sigma.getcoinsforrecovery',
         args: [
           setId ?? 1,
@@ -398,9 +417,10 @@ class ElectrumX {
   /// {
   //   "rate": 1000,
   // }
-  Future<Map<String, dynamic>> getFeeRate() async {
+  Future<Map<String, dynamic>> getFeeRate({String requestID}) async {
     try {
       final response = await request(
+        requestID: requestID,
         command: 'blockchain.getfeerate',
       );
       return response["result"];
