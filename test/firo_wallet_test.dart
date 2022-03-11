@@ -18,10 +18,10 @@ import 'package:paymint/utilities/misc_global_constants.dart';
 
 import 'firo_wallet_test.mocks.dart';
 import 'firo_wallet_test_parameters.dart';
-import 'get_used_serials_sample_data.dart';
-import 'getcoinsforrecovery_sample_output.dart';
-import 'gethistory_samples.dart';
-import 'transaction_data_samples.dart';
+import 'sample_data/get_used_serials_sample_data.dart';
+import 'sample_data/getcoinsforrecovery_sample_output.dart';
+import 'sample_data/gethistory_samples.dart';
+import 'sample_data/transaction_data_samples.dart';
 
 @GenerateMocks([ElectrumX, CachedElectrumX, PriceAPI])
 void main() {
@@ -225,7 +225,7 @@ void main() {
 
         expect(
             () async => await getJMintTransactions(
-                cachedClient, transactions, "USD", "Firo", false, priceAPI),
+                cachedClient, transactions, "USD", "Firo", false, Decimal.ten),
             throwsA(isA<Error>()));
       });
 
@@ -270,7 +270,7 @@ void main() {
         ];
 
         final result = await getJMintTransactions(
-            cachedClient, transactions, "USD", "Firo", false, priceAPI);
+            cachedClient, transactions, "USD", "Firo", false, Decimal.ten);
 
         expect(result, isA<List<Transaction>>());
         expect(result.length, 4);
@@ -523,24 +523,6 @@ void main() {
       expect(await firo.fiatPrice, Decimal.fromInt(10));
     });
 
-    test("get currentNode", () async {
-      final firo = FiroWallet(
-        walletId: testWalletId + "currentNode",
-        walletName: testWalletName + "currentNode",
-        networkType: FiroNetworkType.main,
-        client: MockElectrumX(),
-        cachedClient: MockCachedElectrumX(),
-        secureStore: FakeSecureStorage(),
-        priceAPI: MockPriceAPI(),
-      );
-
-      final currentNode = await firo.currentNode;
-
-      expect(currentNode, isA<ElectrumXNode>());
-      expect(currentNode.toString(),
-          "ElectrumXNode: {address: ${CampfireConstants.defaultIpAddress}, port: ${CampfireConstants.defaultPort}, name: ${CampfireConstants.defaultNodeName}, useSSL: ${CampfireConstants.defaultUseSSL}}");
-    });
-
     test("initializeWallet new test net wallet", () async {
       final client = MockElectrumX();
       final cachedClient = MockCachedElectrumX();
@@ -581,8 +563,6 @@ void main() {
 
       final wallet =
           await Hive.openBox(testWalletId + "initializeWallet testnet");
-
-      expect((await firo.currentNode).name, "Campfire default testnet");
 
       expect(await wallet.get("addressBookEntries"), {});
 
@@ -641,20 +621,6 @@ void main() {
       when(client.getHistory(scripthash: anyNamed("scripthash")))
           .thenAnswer((_) async => emptyList);
 
-      // var firoToInitNew = FiroWallet(
-      //   walletName: testWalletName,
-      //   walletId: testWalletId + "initializeWallet existing",
-      //   networkType: FiroNetworkType.test,
-      //   client: client,
-      //   cachedClient: cachedClient,
-      //   secureStore: secureStore,
-      //   priceAPI: priceAPI,
-      // );
-      //
-      // await firoToInitNew.initializeWallet();
-      // await firoToInitNew.exit();
-      // firoToInitNew = null;
-
       final firo = FiroWallet(
         walletName: testWalletName,
         walletId: testWalletId + "initializeWallet existing",
@@ -670,8 +636,6 @@ void main() {
 
       final wallet =
           await Hive.openBox(testWalletId + "initializeWallet existing");
-
-      expect((await firo.currentNode).name, "Campfire default testnet");
 
       expect(await wallet.get("addressBookEntries"), {});
 

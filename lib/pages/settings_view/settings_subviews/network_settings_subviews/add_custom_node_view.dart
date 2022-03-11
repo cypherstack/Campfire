@@ -5,6 +5,7 @@ import 'package:flutter_svg/svg.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:paymint/electrumx_rpc/electrumx.dart';
 import 'package:paymint/notifications/campfire_alert.dart';
+import 'package:paymint/notifications/modal_popup_dialog.dart';
 import 'package:paymint/notifications/overlay_notification.dart';
 import 'package:paymint/services/coins/manager.dart';
 import 'package:paymint/services/node_service.dart';
@@ -54,6 +55,30 @@ class _AddCustomNodeViewState extends State<AddCustomNodeView> {
   bool _checkEnableTestButton() =>
       _portController.text.isNotEmpty && _addressController.text.isNotEmpty;
 
+  Future<void> save(
+      String name, String address, String port, bool useSSL) async {
+    final nodesService = Provider.of<NodeService>(context, listen: false);
+
+    // try to create a new node
+    final success = nodesService.createNode(
+        name: name, ipAddress: name, port: port, useSSL: useSSL);
+
+    // check for duplicate node name
+    if (success) {
+      FocusScope.of(context).unfocus();
+      await Future.delayed(Duration(milliseconds: 200));
+      Navigator.pop(context);
+    } else {
+      showDialog(
+        useSafeArea: false,
+        barrierDismissible: false,
+        context: context,
+        builder: (_) => CampfireAlert(
+            message: "A node with the name \"$name\" already exists!"),
+      );
+    }
+  }
+
   void _onSavePressed() async {
     final name = _nameController.text;
     final url = _addressController.text;
@@ -72,24 +97,24 @@ class _AddCustomNodeViewState extends State<AddCustomNodeView> {
                 "Default node already exists. Please enter a different address."),
       );
     } else if (port != null) {
-      final nodesService = Provider.of<NodeService>(context, listen: false);
-
-      // try to create a new node
-      final success = nodesService.createNode(
-          name: name, ipAddress: url, port: port.toString(), useSSL: _useSSL);
-
-      // check for duplicate node name
-      if (success) {
-        FocusScope.of(context).unfocus();
-        await Future.delayed(Duration(milliseconds: 200));
-        Navigator.pop(context);
+      final manager = Provider.of<Manager>(context, listen: false);
+      final canConnect = await manager.testNetworkConnection(
+        ElectrumX(
+          server: _addressController.text,
+          port: int.parse(_portController.text),
+          useSSL: _useSSL,
+        ),
+      );
+      if (canConnect) {
+        await save(name, url, port.toString(), _useSSL);
       } else {
-        showDialog(
+        await showDialog(
           useSafeArea: false,
           barrierDismissible: false,
           context: context,
-          builder: (_) => CampfireAlert(
-              message: "A node with the name \"$name\" already exists!"),
+          builder: (_) => CouldNotConnectOnSaveDialog(
+            onOK: () async => await save(name, url, port.toString(), _useSSL),
+          ),
         );
       }
     } else {
@@ -326,6 +351,83 @@ class _AddCustomNodeViewState extends State<AddCustomNodeView> {
         onTap: () async {
           _onSavePressed();
         },
+      ),
+    );
+  }
+}
+
+class CouldNotConnectOnSaveDialog extends StatelessWidget {
+  const CouldNotConnectOnSaveDialog({Key key, this.onOK}) : super(key: key);
+
+  final VoidCallback onOK;
+
+  @override
+  Widget build(BuildContext context) {
+    return ModalPopupDialog(
+      child: Column(
+        children: [
+          Padding(
+            padding: const EdgeInsets.only(
+              top: 28,
+              left: 24,
+              right: 24,
+              bottom: 12,
+            ),
+            child: Text(
+              "Failed to connect to the server entered. Would you like to save it anyways?",
+              style: GoogleFonts.workSans(
+                color: CFColors.dusk,
+                fontWeight: FontWeight.w600,
+                fontSize: 18,
+              ),
+            ),
+          ),
+          Padding(
+            padding: const EdgeInsets.all(SizingUtilities.standardPadding),
+            child: Row(
+              children: [
+                Expanded(
+                  child: SizedBox(
+                    height: SizingUtilities.standardButtonHeight,
+                    child: SimpleButton(
+                      child: FittedBox(
+                        child: Text(
+                          "CANCEL",
+                          style: CFTextStyles.button.copyWith(
+                            color: CFColors.dusk,
+                          ),
+                        ),
+                      ),
+                      onTap: () {
+                        Navigator.pop(context);
+                      },
+                    ),
+                  ),
+                ),
+                SizedBox(
+                  width: 16,
+                ),
+                Expanded(
+                  child: SizedBox(
+                    height: SizingUtilities.standardButtonHeight,
+                    child: GradientButton(
+                      child: FittedBox(
+                        child: Text(
+                          "SAVE",
+                          style: CFTextStyles.button,
+                        ),
+                      ),
+                      onTap: () async {
+                        onOK();
+                        Navigator.pop(context);
+                      },
+                    ),
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ],
       ),
     );
   }

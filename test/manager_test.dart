@@ -11,7 +11,7 @@ import 'package:paymint/services/event_bus/global_event_bus.dart';
 
 import 'firo_wallet_test.mocks.dart';
 import 'manager_test.mocks.dart';
-import 'transaction_data_samples.dart';
+import 'sample_data/transaction_data_samples.dart';
 
 @GenerateMocks([FiroWallet])
 void main() {

@@ -7,8 +7,8 @@ import 'package:paymint/electrumx_rpc/cached_electrumx.dart';
 import 'package:paymint/electrumx_rpc/electrumx.dart';
 
 import 'firo_wallet_test.mocks.dart';
-import 'get_anonymity_set_sample_data.dart';
-import 'transaction_data_samples.dart';
+import 'sample_data/get_anonymity_set_sample_data.dart';
+import 'sample_data/transaction_data_samples.dart';
 
 @GenerateMocks([ElectrumX])
 void main() {
