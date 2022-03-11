@@ -9,7 +9,6 @@ class JsonRPC {
     this.port,
     this.useSSL: false,
     this.connectionTimeout: const Duration(seconds: 5),
-    this.aliveTimerDuration: const Duration(seconds: 2),
   });
   bool useSSL;
   String address;
@@ -59,6 +58,7 @@ class JsonRPC {
 
     if (useSSL) {
       await SecureSocket.connect(this.address, this.port,
+          timeout: connectionTimeout,
           onBadCertificate: (_) => true).then((Socket sock) {
         socket = sock;
         socket?.listen(dataHandler,
@@ -69,7 +69,8 @@ class JsonRPC {
         throw e;
       });
     } else {
-      await Socket.connect(this.address, this.port).then((Socket sock) {
+      await Socket.connect(this.address, this.port, timeout: connectionTimeout)
+          .then((Socket sock) {
         socket = sock;
         socket?.listen(dataHandler,
             onError: errorHandler, onDone: doneHandler, cancelOnError: true);

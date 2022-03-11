@@ -34,7 +34,6 @@ import 'package:paymint/utilities/flutter_secure_storage_interface.dart';
 import 'package:paymint/utilities/logger.dart';
 import 'package:paymint/utilities/misc_global_constants.dart';
 import 'package:paymint/utilities/shared_utilities.dart';
-import 'package:uuid/uuid.dart';
 
 import '../../globals.dart';
 
@@ -895,9 +894,6 @@ class FiroWallet extends CoinServiceAPI {
   @override
   String get walletId => _walletId;
 
-  Future<ElectrumXNode> _currentNode;
-  Future<ElectrumXNode> get currentNode => _currentNode ?? _getCurrentNode();
-
   Future<List<String>> _allOwnAddresses;
   @override
   Future<List<String>> get allOwnAddresses =>
@@ -1001,7 +997,6 @@ class FiroWallet extends CoinServiceAPI {
         GlobalEventBus.instance.on<NodesChangedEvent>().listen((event) async {
       final appDir = await getApplicationDocumentsDirectory();
       final newNode = await _getCurrentNode();
-      this._currentNode = Future(() => newNode);
       this._cachedElectrumXClient =
           CachedElectrumX.from(node: newNode, hivePath: appDir.path);
       this._electrumXClient = ElectrumX.from(node: newNode);
@@ -1014,18 +1009,21 @@ class FiroWallet extends CoinServiceAPI {
   Future<void> initializeWallet() async {
     final wallet = await Hive.openBox(this._walletId);
 
+    try {
+      await _electrumXClient.ping();
+    } catch (e, s) {
+      Logger.print("Caught in initializeWallet(): $e\n$s");
+      return false;
+    }
+
     if (wallet.isEmpty) {
       // Triggers for new users automatically. Generates new wallet
       await _generateNewWallet(wallet);
       wallet.put("id", this._walletId);
-      final newNode = await _getCurrentNode();
-      this._currentNode = Future(() => newNode);
       final lelantusTxData = await _getLelantusTransactionData();
       this._lelantusTransactionData = Future(() => lelantusTxData);
     } else {
       // Wallet already exists, triggers for a returning user
-      final newNode = await _getCurrentNode();
-      this._currentNode = Future(() => newNode);
       final lelantusTxData = await _getLelantusTransactionData();
       this._lelantusTransactionData = Future(() => lelantusTxData);
       final currentAddress = await _getCurrentAddressForChain(0);
@@ -1038,6 +1036,7 @@ class FiroWallet extends CoinServiceAPI {
     this._transactionData = _fetchTransactionData();
 
     await _checkReceivingAddressForTransactions();
+    return true;
   }
 
   Future<bool> refreshIfThereIsNewData() async {
@@ -1902,38 +1901,38 @@ class FiroWallet extends CoinServiceAPI {
   Future<ElectrumXNode> _getCurrentNode() async {
     final wallet = await Hive.openBox(this._walletId);
     var nodes = await wallet.get('nodes');
-
-    if (nodes == null || nodes.isEmpty) {
-      // initialize default node
-      nodes = <String, dynamic>{};
-      String ip;
-      String port;
-      bool useSSL;
-      String nodeName;
-      if (networkType == FiroNetworkType.main) {
-        ip = CampfireConstants.defaultIpAddress;
-        port = CampfireConstants.defaultPort.toString();
-        useSSL = CampfireConstants.defaultUseSSL;
-        nodeName = CampfireConstants.defaultNodeName;
-      } else if (networkType == FiroNetworkType.test) {
-        ip = CampfireConstants.defaultIpAddressTestNet;
-        port = CampfireConstants.defaultPortTestNet.toString();
-        useSSL = CampfireConstants.defaultUseSSLTestNet;
-        nodeName = CampfireConstants.defaultNodeNameTestNet;
-      }
-
-      nodes.addAll({
-        nodeName: {
-          "id": Uuid().v1(),
-          "ipAddress": ip,
-          "port": port,
-          "useSSL": useSSL,
-        }
-      });
-
-      await wallet.put('nodes', nodes);
-      await wallet.put('activeNodeName', nodeName);
-    }
+    //
+    // if (nodes == null || nodes.isEmpty) {
+    //   // initialize default node
+    //   nodes = <String, dynamic>{};
+    //   String ip;
+    //   String port;
+    //   bool useSSL;
+    //   String nodeName;
+    //   if (networkType == FiroNetworkType.main) {
+    //     ip = CampfireConstants.defaultIpAddress;
+    //     port = CampfireConstants.defaultPort.toString();
+    //     useSSL = CampfireConstants.defaultUseSSL;
+    //     nodeName = CampfireConstants.defaultNodeName;
+    //   } else if (networkType == FiroNetworkType.test) {
+    //     ip = CampfireConstants.defaultIpAddressTestNet;
+    //     port = CampfireConstants.defaultPortTestNet.toString();
+    //     useSSL = CampfireConstants.defaultUseSSLTestNet;
+    //     nodeName = CampfireConstants.defaultNodeNameTestNet;
+    //   }
+    //
+    //   nodes.addAll({
+    //     nodeName: {
+    //       "id": Uuid().v1(),
+    //       "ipAddress": ip,
+    //       "port": port,
+    //       "useSSL": useSSL,
+    //     }
+    //   });
+    //
+    //   await wallet.put('nodes', nodes);
+    //   await wallet.put('activeNodeName', nodeName);
+    // }
 
     final name = await wallet.get('activeNodeName');
     try {
@@ -2860,7 +2859,7 @@ class FiroWallet extends CoinServiceAPI {
     }
   }
 
-  Future<dynamic> getUsedCoinSerials() async {
+  Future<Map<String, dynamic>> getUsedCoinSerials() async {
     try {
       final response = await electrumXClient.getUsedCoinSerials();
       return response;

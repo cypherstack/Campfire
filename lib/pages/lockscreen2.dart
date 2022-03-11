@@ -11,6 +11,7 @@ import 'package:paymint/electrumx_rpc/electrumx.dart';
 import 'package:paymint/notifications/overlay_notification.dart';
 import 'package:paymint/services/coins/firo/firo_wallet.dart';
 import 'package:paymint/services/coins/manager.dart';
+import 'package:paymint/services/node_service.dart';
 import 'package:paymint/services/wallets_service.dart';
 import 'package:paymint/utilities/biometrics.dart';
 import 'package:paymint/utilities/cfcolors.dart';
@@ -67,44 +68,7 @@ class _Lockscreen2ViewState extends State<Lockscreen2View> {
           final networkName = await walletsService.networkName;
           final walletName = await walletsService.currentWalletName;
           final id = await walletsService.getWalletId(walletName);
-          FiroNetworkType firoNetworkType;
-          ElectrumXNode defaultNode;
-          switch (networkName) {
-            case "main":
-              firoNetworkType = FiroNetworkType.main;
-              defaultNode = ElectrumXNode(
-                address: CampfireConstants.defaultIpAddress,
-                port: CampfireConstants.defaultPort,
-                name: CampfireConstants.defaultNodeName,
-                id: Uuid().v1(),
-                useSSL: CampfireConstants.defaultUseSSL,
-              );
-              break;
-            case "test":
-              firoNetworkType = FiroNetworkType.test;
-              defaultNode = ElectrumXNode(
-                address: CampfireConstants.defaultIpAddressTestNet,
-                port: CampfireConstants.defaultPortTestNet,
-                name: CampfireConstants.defaultNodeNameTestNet,
-                id: Uuid().v1(),
-                useSSL: CampfireConstants.defaultUseSSLTestNet,
-              );
-              break;
-            default:
-              throw Exception("Bad firo network type encountered");
-          }
-          final manager = Provider.of<Manager>(context, listen: false);
-          final appDir = await getApplicationDocumentsDirectory();
-          final firoWallet = FiroWallet(
-            walletId: id,
-            walletName: walletName,
-            networkType: firoNetworkType,
-            client: ElectrumX.from(node: defaultNode),
-            cachedClient:
-                CachedElectrumX.from(node: defaultNode, hivePath: appDir.path),
-          );
-          await firoWallet.initializeWallet();
-          manager.currentWallet = firoWallet;
+          await logIn(networkName, walletName, id);
         }
 
         Navigator.pushReplacementNamed(context, widget.routeOnSuccess);
@@ -114,6 +78,50 @@ class _Lockscreen2ViewState extends State<Lockscreen2View> {
       //   Navigator.pop(context);
       // }
     }
+  }
+
+  Future<void> logIn(
+      String networkName, String walletName, String walletId) async {
+    FiroNetworkType firoNetworkType;
+    final nodeService = Provider.of<NodeService>(context, listen: false);
+    ElectrumXNode node;
+    switch (networkName) {
+      case "main":
+        firoNetworkType = FiroNetworkType.main;
+        node = nodeService.currentNode ??
+            ElectrumXNode(
+              address: CampfireConstants.defaultIpAddress,
+              port: CampfireConstants.defaultPort,
+              name: CampfireConstants.defaultNodeName,
+              id: Uuid().v1(),
+              useSSL: CampfireConstants.defaultUseSSL,
+            );
+        break;
+      case "test":
+        firoNetworkType = FiroNetworkType.test;
+        node = nodeService.currentNode ??
+            ElectrumXNode(
+              address: CampfireConstants.defaultIpAddressTestNet,
+              port: CampfireConstants.defaultPortTestNet,
+              name: CampfireConstants.defaultNodeNameTestNet,
+              id: Uuid().v1(),
+              useSSL: CampfireConstants.defaultUseSSLTestNet,
+            );
+        break;
+      default:
+        throw Exception("Bad firo network type encountered");
+    }
+    final manager = Provider.of<Manager>(context, listen: false);
+    final appDir = await getApplicationDocumentsDirectory();
+    final firoWallet = FiroWallet(
+      walletId: walletId,
+      walletName: walletName,
+      networkType: firoNetworkType,
+      client: ElectrumX.from(node: node),
+      cachedClient: CachedElectrumX.from(node: node, hivePath: appDir.path),
+    );
+    await firoWallet.initializeWallet();
+    manager.currentWallet = firoWallet;
   }
 
   @override
@@ -284,48 +292,10 @@ class _Lockscreen2ViewState extends State<Lockscreen2View> {
                   // check if initial log in
                   if (widget.routeOnSuccess == "/mainview") {
                     final networkName = await walletsService.networkName;
-                    FiroNetworkType firoNetworkType;
-                    ElectrumXNode defaultNode;
-                    switch (networkName) {
-                      case "main":
-                        firoNetworkType = FiroNetworkType.main;
-                        defaultNode = ElectrumXNode(
-                          address: CampfireConstants.defaultIpAddress,
-                          port: CampfireConstants.defaultPort,
-                          name: CampfireConstants.defaultNodeName,
-                          id: Uuid().v1(),
-                          useSSL: CampfireConstants.defaultUseSSL,
-                        );
-                        break;
-                      case "test":
-                        firoNetworkType = FiroNetworkType.test;
-                        defaultNode = ElectrumXNode(
-                          address: CampfireConstants.defaultIpAddressTestNet,
-                          port: CampfireConstants.defaultPortTestNet,
-                          name: CampfireConstants.defaultNodeNameTestNet,
-                          id: Uuid().v1(),
-                          useSSL: CampfireConstants.defaultUseSSLTestNet,
-                        );
-                        break;
-                      default:
-                        throw Exception("Bad firo network type encountered");
-                    }
-                    final manager =
-                        Provider.of<Manager>(context, listen: false);
-                    final appDir = await getApplicationDocumentsDirectory();
-                    final firoWallet = FiroWallet(
-                      walletId: id,
-                      walletName: walletName,
-                      networkType: firoNetworkType,
-                      client: ElectrumX.from(node: defaultNode),
-                      cachedClient: CachedElectrumX.from(
-                          node: defaultNode, hivePath: appDir.path),
-                    );
-                    await firoWallet.initializeWallet();
-                    manager.currentWallet = firoWallet;
+                    await logIn(networkName, walletName, id);
                   }
 
-                  await Future.delayed(Duration(milliseconds: 600));
+                  await Future.delayed(Duration(milliseconds: 100));
 
                   Navigator.pushReplacementNamed(
                       context, widget.routeOnSuccess);

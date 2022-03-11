@@ -61,7 +61,6 @@ class ElectrumX {
     String command,
     List<dynamic> args = const [],
     Duration connectionTimeout = const Duration(seconds: 5),
-    Duration aliveTimerDuration = const Duration(seconds: 2),
     String requestID,
   }) async {
     if (_rpcClient == null) {
@@ -70,7 +69,6 @@ class ElectrumX {
         port: this.port,
         useSSL: this.useSSL,
         connectionTimeout: connectionTimeout,
-        aliveTimerDuration: aliveTimerDuration,
       );
     }
 
@@ -84,11 +82,27 @@ class ElectrumX {
 
       final response = await _rpcClient.request(jsonRequestString);
 
-      if (response["result"] == null) {
+      if (response["error"] != null) {
         throw Exception("JSONRPC response error: $response");
       }
 
       return response;
+    } catch (e) {
+      throw e;
+    }
+  }
+
+  /// Ping the server to ensure it is responding
+  ///
+  /// Returns true if ping succeeded
+  Future<bool> ping({String requestID}) async {
+    try {
+      final Map<String, dynamic> response = await request(
+        requestID: requestID,
+        command: 'server.ping',
+        connectionTimeout: Duration(seconds: 1),
+      );
+      return response.keys.contains("result") && response["result"] == null;
     } catch (e) {
       throw e;
     }
@@ -363,7 +377,7 @@ class ElectrumX {
 
   //TODO add example to docs
   /// Returns the whole set of the used coin serials.
-  Future<dynamic> getUsedCoinSerials({String requestID}) async {
+  Future<Map<String, dynamic>> getUsedCoinSerials({String requestID}) async {
     try {
       final response = await request(
         requestID: requestID,
