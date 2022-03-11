@@ -141,7 +141,7 @@ Future<void> executeNative(arguments) async {
       String coinName = arguments['coinName'];
       dynamic network = arguments['network'];
       CachedElectrumX cachedClient = arguments['cachedElectrumXClient'];
-      PriceAPI priceAPI = arguments['priceAPI'];
+      Decimal currentPrice = arguments['currentPrice'];
       if (!(mnemonic == null ||
           transactionData == null ||
           cachedClient == null ||
@@ -151,7 +151,7 @@ Future<void> executeNative(arguments) async {
           network == null ||
           coinName == null ||
           currency == null ||
-          priceAPI == null)) {
+          currentPrice == null)) {
         var restoreData = await isolateRestore(
             cachedClient,
             mnemonic,
@@ -162,7 +162,7 @@ Future<void> executeNative(arguments) async {
             setDataMap,
             usedSerialNumbers,
             network,
-            priceAPI);
+            currentPrice);
         sendPort.send(restoreData);
         return;
       }
@@ -252,7 +252,7 @@ isolateRestore(
     Map _setDataMap,
     dynamic _usedSerialNumbers,
     dynamic network,
-    PriceAPI priceAPI) async {
+    Decimal currentPrice) async {
   List<int> jindexes = [];
   Map<dynamic, LelantusCoin> _lelantus_coins = Map();
 
@@ -424,7 +424,7 @@ isolateRestore(
 
   // Create the joinsplit transactions.
   final spendTxs = await getJMintTransactions(
-      cachedClient, spendTxIds, currency, coinName, true, priceAPI);
+      cachedClient, spendTxIds, currency, coinName, true, currentPrice);
   print(spendTxs);
   spendTxs.forEach((element) {
     transactionMap[element.txid] = element;
@@ -631,12 +631,9 @@ Future<List<models.Transaction>> getJMintTransactions(
   String currency,
   String coinName,
   bool outsideMainIsolate,
-  PriceAPI priceAPI,
+  Decimal currentPrice,
 ) async {
   try {
-    final currentPrice = await priceAPI.getPrice(
-        ticker: coinName.toUpperCase(), baseCurrency: currency);
-
     List<models.Transaction> txs = [];
 
     for (int i = 0; i < transactions.length; i++) {
@@ -1711,10 +1708,14 @@ class FiroWallet extends CoinServiceAPI {
     }
 
     final String currency = fetchPreferredCurrency();
+    final currentPrice = await this._priceAPI.getPrice(
+          ticker: this.coinTicker,
+          baseCurrency: currency,
+        );
     // Grab the most recent information on all the joinsplits
 
     final updatedJSplit = await getJMintTransactions(cachedElectrumXClient,
-        joinsplits, currency, this.coinName, false, this._priceAPI);
+        joinsplits, currency, this.coinName, false, currentPrice);
 
     // update all of joinsplits that are now confirmed.
     for (final tx in updatedJSplit) {
@@ -2739,6 +2740,10 @@ class FiroWallet extends CoinServiceAPI {
     final mnemonic = await _secureStore.read(key: '${this._walletId}_mnemonic');
     TransactionData data = await _txnData;
     final String currency = fetchPreferredCurrency();
+    final Decimal currentPrice = await this._priceAPI.getPrice(
+          ticker: this.coinTicker,
+          baseCurrency: currency,
+        );
 
     ReceivePort receivePort = await getIsolate({
       "function": "restore",
@@ -2751,7 +2756,7 @@ class FiroWallet extends CoinServiceAPI {
       "usedSerialNumbers": usedSerialNumbers,
       "network": this._network,
       "cachedElectrumXClient": this.cachedElectrumXClient,
-      "priceAPI": this._priceAPI,
+      "currentPrice": currentPrice,
     });
 
     var message = await receivePort.first;
