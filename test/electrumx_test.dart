@@ -5,10 +5,10 @@ import 'package:paymint/electrumx_rpc/electrumx.dart';
 import 'package:paymint/electrumx_rpc/rpc.dart';
 
 import 'electrumx_test.mocks.dart';
-import 'get_anonymity_set_sample_data.dart';
-import 'get_used_serials_sample_data.dart';
-import 'getcoinsforrecovery_sample_output.dart';
-import 'transaction_data_samples.dart';
+import 'sample_data/get_anonymity_set_sample_data.dart';
+import 'sample_data/get_used_serials_sample_data.dart';
+import 'sample_data/getcoinsforrecovery_sample_output.dart';
+import 'sample_data/transaction_data_samples.dart';
 
 @GenerateMocks([JsonRPC])
 void main() {
