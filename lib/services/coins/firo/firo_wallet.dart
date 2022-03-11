@@ -902,9 +902,8 @@ class FiroWallet extends CoinServiceAPI {
   @override
   Future<bool> testNetworkConnection(ElectrumX client) async {
     try {
-      final result = await client.getBlockHeadTip();
-
-      return result["height"] != null && result["height"] is int;
+      final result = await client.ping();
+      return result;
     } catch (_) {
       return false;
     }
