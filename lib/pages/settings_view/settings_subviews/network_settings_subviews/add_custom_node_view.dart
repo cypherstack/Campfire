@@ -3,11 +3,13 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_svg/svg.dart';
 import 'package:google_fonts/google_fonts.dart';
+import 'package:paymint/electrumx_rpc/electrumx.dart';
 import 'package:paymint/notifications/campfire_alert.dart';
 import 'package:paymint/notifications/overlay_notification.dart';
 import 'package:paymint/services/coins/manager.dart';
 import 'package:paymint/services/node_service.dart';
 import 'package:paymint/utilities/cfcolors.dart';
+import 'package:paymint/utilities/misc_global_constants.dart';
 import 'package:paymint/utilities/sizing_utilities.dart';
 import 'package:paymint/utilities/text_styles.dart';
 import 'package:paymint/widgets/custom_buttons/app_bar_icon_button.dart';
@@ -31,6 +33,9 @@ class _AddCustomNodeViewState extends State<AddCustomNodeView> {
 
   bool _useSSL = false;
 
+  bool _saveButtonEnabled = false;
+  bool _testButtonEnabled = false;
+
   final TextStyle _titleStyle = GoogleFonts.workSans(
     color: CFColors.dusk,
     fontSize: 16,
@@ -43,6 +48,12 @@ class _AddCustomNodeViewState extends State<AddCustomNodeView> {
     fontWeight: FontWeight.w400,
   );
 
+  bool _checkEnableSaveButton() =>
+      _nameController.text.isNotEmpty && _checkEnableTestButton();
+
+  bool _checkEnableTestButton() =>
+      _portController.text.isNotEmpty && _addressController.text.isNotEmpty;
+
   void _onSavePressed() async {
     final name = _nameController.text;
     final url = _addressController.text;
@@ -50,7 +61,17 @@ class _AddCustomNodeViewState extends State<AddCustomNodeView> {
 
     final int port = int.tryParse(portString);
 
-    if (port != null) {
+    if (url == CampfireConstants.defaultIpAddress ||
+        url == CampfireConstants.defaultIpAddressTestNet) {
+      showDialog(
+        useSafeArea: false,
+        barrierDismissible: false,
+        context: context,
+        builder: (_) => CampfireAlert(
+            message:
+                "Default node already exists. Please enter a different address."),
+      );
+    } else if (port != null) {
       final nodesService = Provider.of<NodeService>(context, listen: false);
 
       // try to create a new node
@@ -85,7 +106,12 @@ class _AddCustomNodeViewState extends State<AddCustomNodeView> {
     final manager = Provider.of<Manager>(context, listen: false);
 
     final canConnect = await manager.testNetworkConnection(
-        _addressController.text, int.parse(_portController.text), _useSSL);
+      ElectrumX(
+        server: _addressController.text,
+        port: int.parse(_portController.text),
+        useSSL: _useSSL,
+      ),
+    );
 
     if (canConnect) {
       OverlayNotification.showSuccess(
@@ -175,8 +201,16 @@ class _AddCustomNodeViewState extends State<AddCustomNodeView> {
       children: [
         TextField(
           controller: _nameController,
-          decoration:
-              InputDecoration(hintText: "Node name", hintStyle: _hintStyle),
+          decoration: InputDecoration(
+            hintText: "Node name",
+            hintStyle: _hintStyle,
+          ),
+          onChanged: (newValue) {
+            setState(() {
+              _saveButtonEnabled = _checkEnableSaveButton();
+              _testButtonEnabled = _checkEnableTestButton();
+            });
+          },
         ),
         SizedBox(
           height: 12,
@@ -187,7 +221,15 @@ class _AddCustomNodeViewState extends State<AddCustomNodeView> {
               child: TextField(
                 controller: _addressController,
                 decoration: InputDecoration(
-                    hintText: "IP address", hintStyle: _hintStyle),
+                  hintText: "IP address",
+                  hintStyle: _hintStyle,
+                ),
+                onChanged: (newValue) {
+                  setState(() {
+                    _saveButtonEnabled = _checkEnableSaveButton();
+                    _testButtonEnabled = _checkEnableTestButton();
+                  });
+                },
               ),
             ),
             SizedBox(
@@ -198,8 +240,16 @@ class _AddCustomNodeViewState extends State<AddCustomNodeView> {
                 controller: _portController,
                 inputFormatters: [FilteringTextInputFormatter.digitsOnly],
                 keyboardType: TextInputType.number,
-                decoration:
-                    InputDecoration(hintText: "Port", hintStyle: _hintStyle),
+                decoration: InputDecoration(
+                  hintText: "Port",
+                  hintStyle: _hintStyle,
+                ),
+                onChanged: (newValue) {
+                  setState(() {
+                    _saveButtonEnabled = _checkEnableSaveButton();
+                    _testButtonEnabled = _checkEnableTestButton();
+                  });
+                },
               ),
             ),
           ],
@@ -246,11 +296,12 @@ class _AddCustomNodeViewState extends State<AddCustomNodeView> {
       width: MediaQuery.of(context).size.width -
           (SizingUtilities.standardPadding * 2),
       child: SimpleButton(
+        enabled: _testButtonEnabled,
         child: FittedBox(
           child: Text(
             "TEST CONNECTION",
             style: CFTextStyles.button.copyWith(
-              color: CFColors.dusk,
+              color: _testButtonEnabled ? CFColors.dusk : CFColors.smoke,
             ),
           ),
         ),
@@ -267,6 +318,7 @@ class _AddCustomNodeViewState extends State<AddCustomNodeView> {
       width: MediaQuery.of(context).size.width -
           (SizingUtilities.standardPadding * 2),
       child: GradientButton(
+        enabled: _saveButtonEnabled,
         child: Text(
           "SAVE",
           style: CFTextStyles.button,

@@ -4,6 +4,7 @@ import 'package:flutter/services.dart';
 import 'package:flutter_spinkit/flutter_spinkit.dart';
 import 'package:flutter_svg/flutter_svg.dart';
 import 'package:google_fonts/google_fonts.dart';
+import 'package:paymint/services/node_service.dart';
 import 'package:paymint/services/wallets_service.dart';
 import 'package:paymint/utilities/cfcolors.dart';
 import 'package:paymint/utilities/sizing_utilities.dart';
@@ -115,6 +116,9 @@ class _WalletSelectionViewState extends State<WalletSelectionView> {
                   onPressed: () async {
                     final walletName = names[index];
                     await walletsService.setCurrentWalletName(walletName);
+                    final nodeService =
+                        Provider.of<NodeService>(context, listen: false);
+                    nodeService.reInit();
 
                     Navigator.of(context).push(
                       CupertinoPageRoute(
