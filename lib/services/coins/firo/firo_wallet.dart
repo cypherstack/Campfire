@@ -1011,7 +1011,10 @@ class FiroWallet extends CoinServiceAPI {
     final wallet = await Hive.openBox(this._walletId);
 
     try {
-      await _electrumXClient.ping();
+      final hasNetwork = await _electrumXClient.ping();
+      if (!hasNetwork) {
+        return false;
+      }
     } catch (e, s) {
       Logger.print("Caught in initializeWallet(): $e\n$s");
       return false;
