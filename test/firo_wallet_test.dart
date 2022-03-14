@@ -633,6 +633,8 @@ void main() {
       when(priceAPI.getPrice(ticker: "tFIRO", baseCurrency: "USD"))
           .thenAnswer((_) async => Decimal.fromInt(-1));
 
+      when(client.ping()).thenAnswer((_) async => true);
+
       when(client.getServerFeatures()).thenAnswer((_) async => {
             "hosts": {},
             "pruning": null,
@@ -682,13 +684,6 @@ void main() {
 
       expect(await wallet.get("mintIndex"), 0);
 
-      final nodes = await wallet.get("nodes");
-      expect(nodes.length, 1);
-      expect(nodes[CampfireConstants.defaultNodeNameTestNet]["ipAddress"],
-          "testnet.electrumx-firo.cypherstack.com");
-      expect(nodes[CampfireConstants.defaultNodeNameTestNet]["port"], "50002");
-      expect(nodes[CampfireConstants.defaultNodeNameTestNet]["useSSL"], true);
-
       expect(firo.fiatCurrency, "USD");
 
       final currentReceivingAddress = await firo.currentReceivingAddress;
@@ -704,6 +699,8 @@ void main() {
       final priceAPI = MockPriceAPI();
       when(priceAPI.getPrice(ticker: "tFIRO", baseCurrency: "USD"))
           .thenAnswer((_) async => Decimal.fromInt(-1));
+
+      when(client.ping()).thenAnswer((_) async => true);
 
       when(client.getServerFeatures()).thenAnswer((_) async => {
             "hosts": {},
@@ -756,13 +753,6 @@ void main() {
 
       expect(await wallet.get("mintIndex"), 0);
 
-      final nodes = await wallet.get("nodes");
-      expect(nodes.length, 1);
-      expect(nodes[CampfireConstants.defaultNodeNameTestNet]["ipAddress"],
-          "testnet.electrumx-firo.cypherstack.com");
-      expect(nodes[CampfireConstants.defaultNodeNameTestNet]["port"], "50002");
-      expect(nodes[CampfireConstants.defaultNodeNameTestNet]["useSSL"], true);
-
       expect(firo.fiatCurrency, "USD");
 
       final currentReceivingAddress = await firo.currentReceivingAddress;
@@ -793,13 +783,6 @@ void main() {
 
       expect(await wallet2.get("mintIndex"), 0);
 
-      final nodes2 = await wallet2.get("nodes");
-      expect(nodes2.length, 1);
-      expect(nodes2[CampfireConstants.defaultNodeNameTestNet]["ipAddress"],
-          "testnet.electrumx-firo.cypherstack.com");
-      expect(nodes2[CampfireConstants.defaultNodeNameTestNet]["port"], "50002");
-      expect(nodes2[CampfireConstants.defaultNodeNameTestNet]["useSSL"], true);
-
       expect(firo.fiatCurrency, "USD");
 
       final cra = await wallet2.get("receivingAddresses");
@@ -816,6 +799,8 @@ void main() {
       final priceAPI = MockPriceAPI();
       when(priceAPI.getPrice(ticker: "FIRO", baseCurrency: "USD"))
           .thenAnswer((_) async => Decimal.fromInt(10));
+
+      when(client.ping()).thenAnswer((_) async => true);
 
       when(client.getServerFeatures()).thenAnswer((_) async => {
             "hosts": {},
@@ -849,10 +834,7 @@ void main() {
 
       final wallet = await Hive.openBox(testWalletId + "initializeWallet");
 
-      var result = await wallet.get("activeNodeName");
-      expect(result, "Campfire default");
-
-      result = await wallet.get("addressBookEntries");
+      var result = await wallet.get("addressBookEntries");
       expect(result, {});
 
       result = await wallet.get("blocked_tx_hashes");
@@ -873,13 +855,6 @@ void main() {
 
       result = await wallet.get("mintIndex");
       expect(result, 0);
-
-      result = await wallet.get("nodes");
-      expect(result.length, 1);
-      expect(result[CampfireConstants.defaultNodeName]["ipAddress"],
-          "electrumx-firo.cypherstack.com");
-      expect(result[CampfireConstants.defaultNodeName]["port"], "50002");
-      expect(result[CampfireConstants.defaultNodeName]["useSSL"], true);
 
       result = await wallet.get("preferredFiatCurrency");
       expect(result, "USD");
