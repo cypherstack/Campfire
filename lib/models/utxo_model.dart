@@ -32,6 +32,11 @@ class UtxoData {
         bitcoinBalance: totalBtc,
         unspentOutputArray: utxoList);
   }
+
+  @override
+  String toString() {
+    return "{totalUserCurrency: $totalUserCurrency, satoshiBalance: $satoshiBalance, bitcoinBalance: $bitcoinBalance, unspentOutputArray: $unspentOutputArray}";
+  }
 }
 
 // @HiveType(typeId: 7)
@@ -72,7 +77,7 @@ class UtxoObject {
   }
 
   String toString() {
-    String utxo = "txid: $txid, vout: $vout, value: $value, fiat: $fiatWorth";
+    String utxo = "{txid: $txid, vout: $vout, value: $value, fiat: $fiatWorth}";
 
     return utxo;
   }
@@ -97,5 +102,10 @@ class Status {
         blockHash: json['block_hash'],
         blockHeight: json['block_height'],
         blockTime: json['block_time']);
+  }
+
+  @override
+  String toString() {
+    return "{confirmed: $confirmed, blockHash: $blockHash, blockHeight: $blockHeight, blockTime: $blockTime}";
   }
 }
