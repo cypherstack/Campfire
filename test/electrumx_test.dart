@@ -708,4 +708,15 @@ void main() {
           throwsA(isA<Exception>()));
     });
   });
+
+  test("rpcClient is null throws with bad server info", () {
+    final client = ElectrumX(
+      client: null,
+      port: -10,
+      server: "_ :sa  %",
+      useSSL: false,
+    );
+
+    expect(() => client.getFeeRate(), throwsA(isA<Exception>()));
+  });
 }

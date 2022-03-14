@@ -34,23 +34,19 @@ void main() {
     });
 
     test("isolateRestore", () {
-      // TODO extremely large data set parameters
-      expect(1, 0);
+      throw Exception("Incomplete test due to FFI issues");
     });
 
     test("isolateCreateJoinSplitTransaction", () {
-      // TODO extremely large data set parameters
-      expect(1, 0);
+      throw Exception("Incomplete test due to FFI issues");
     });
 
     test("isolateEstimateJoinSplitFee", () {
-      // TODO extremely large data set parameters
-      expect(1, 0);
+      throw Exception("Incomplete test due to FFI issues");
     });
 
     test("isolateCreateJoinSplitTransaction", () {
-      // TODO extremely large data set parameters
-      expect(1, 0);
+      throw Exception("Incomplete test due to FFI issues");
     });
   });
 
@@ -521,6 +517,112 @@ void main() {
       await Hive.openBox(testWalletId + "fiatPrice");
 
       expect(await firo.fiatPrice, Decimal.fromInt(10));
+    });
+
+    test("initializeWallet no network", () async {
+      final client = MockElectrumX();
+      final cachedClient = MockCachedElectrumX();
+      final secureStore = FakeSecureStorage();
+      final priceAPI = MockPriceAPI();
+
+      when(client.ping()).thenAnswer((_) async => false);
+
+      final firo = FiroWallet(
+        walletName: testWalletName,
+        walletId: testWalletId + "initializeWallet no net",
+        networkType: FiroNetworkType.main,
+        client: client,
+        cachedClient: cachedClient,
+        secureStore: secureStore,
+        priceAPI: priceAPI,
+      );
+
+      expect(await firo.initializeWallet(), false);
+    });
+
+    test("initializeWallet no network exception", () async {
+      final client = MockElectrumX();
+      final cachedClient = MockCachedElectrumX();
+      final secureStore = FakeSecureStorage();
+      final priceAPI = MockPriceAPI();
+
+      when(client.ping()).thenThrow(Exception("Network connection failed"));
+
+      final firo = FiroWallet(
+        walletName: testWalletName,
+        walletId: testWalletId + "initializeWallet no net exception",
+        networkType: FiroNetworkType.main,
+        client: client,
+        cachedClient: cachedClient,
+        secureStore: secureStore,
+        priceAPI: priceAPI,
+      );
+
+      expect(await firo.initializeWallet(), false);
+    });
+
+    test("initializeWallet throws bad network on testnet", () async {
+      final client = MockElectrumX();
+      final cachedClient = MockCachedElectrumX();
+      final secureStore = FakeSecureStorage();
+      final priceAPI = MockPriceAPI();
+
+      when(client.ping()).thenAnswer((_) async => true);
+
+      when(client.getServerFeatures()).thenAnswer((_) async => {
+            "hosts": {},
+            "pruning": null,
+            "server_version": "Unit tests",
+            "protocol_min": "1.4",
+            "protocol_max": "1.4.2",
+            "genesis_hash": CampfireConstants.firoGenesisHash,
+            "hash_function": "sha256",
+            "services": []
+          });
+
+      final firo = FiroWallet(
+        walletName: testWalletName,
+        walletId: testWalletId + "initializeWallet bad net testnet",
+        networkType: FiroNetworkType.test,
+        client: client,
+        cachedClient: cachedClient,
+        secureStore: secureStore,
+        priceAPI: priceAPI,
+      );
+
+      expect(() => firo.initializeWallet(), throwsA(isA<Exception>()));
+    });
+
+    test("initializeWallet throws bad network on mainnet", () {
+      final client = MockElectrumX();
+      final cachedClient = MockCachedElectrumX();
+      final secureStore = FakeSecureStorage();
+      final priceAPI = MockPriceAPI();
+
+      when(client.ping()).thenAnswer((_) async => true);
+
+      when(client.getServerFeatures()).thenAnswer((_) async => {
+            "hosts": {},
+            "pruning": null,
+            "server_version": "Unit tests",
+            "protocol_min": "1.4",
+            "protocol_max": "1.4.2",
+            "genesis_hash": CampfireConstants.firoTestGenesisHash,
+            "hash_function": "sha256",
+            "services": []
+          });
+
+      final firo = FiroWallet(
+        walletName: testWalletName,
+        walletId: testWalletId + "initializeWallet bad net mainnet",
+        networkType: FiroNetworkType.main,
+        client: client,
+        cachedClient: cachedClient,
+        secureStore: secureStore,
+        priceAPI: priceAPI,
+      );
+
+      expect(() => firo.initializeWallet(), throwsA(isA<Exception>()));
     });
 
     test("initializeWallet new test net wallet", () async {
@@ -1347,9 +1449,66 @@ void main() {
       await firo.exit();
     });
 
-    test("send", () {
-      // todo build send tests
-      expect(0, 1);
+    test("send", () async {
+      final client = MockElectrumX();
+      final cachedClient = MockCachedElectrumX();
+      final secureStore = FakeSecureStorage();
+      final priceAPI = MockPriceAPI();
+
+      // mock electrumx client calls
+      when(client.getServerFeatures()).thenAnswer((_) async => {
+            "hosts": {},
+            "pruning": null,
+            "server_version": "Unit tests",
+            "protocol_min": "1.4",
+            "protocol_max": "1.4.2",
+            "genesis_hash": CampfireConstants.firoGenesisHash,
+            "hash_function": "sha256",
+            "services": []
+          });
+
+      when(client.getLatestCoinId()).thenAnswer((_) async => 1);
+      when(client.getCoinsForRecovery(setId: 1))
+          .thenAnswer((_) async => getCoinsForRecoveryResponse);
+      when(client.getUsedCoinSerials())
+          .thenAnswer((_) async => GetUsedSerialsSampleData.serials);
+
+      // mock price calls
+      when(priceAPI.getPrice(ticker: "FIRO", baseCurrency: "USD"))
+          .thenAnswer((_) async => Decimal.fromInt(10));
+
+      final firo = FiroWallet(
+        walletId: testWalletId + "send",
+        walletName: testWalletName,
+        networkType: FiroNetworkType.main,
+        client: client,
+        cachedClient: cachedClient,
+        secureStore: secureStore,
+        priceAPI: priceAPI,
+      );
+
+      // build sending wallet
+      await firo.fillAddresses(TEST_MNEMONIC);
+      final wallet = await Hive.openBox(testWalletId + "send");
+      final receiveDerivations = await wallet.get('receiveDerivations');
+      final changeDerivations = await wallet.get('changeDerivations');
+      for (int i = 0; i < receiveDerivations.length; i++) {
+        when(client.getHistory(
+                scripthash: AddressUtils.convertToScriptHash(
+                    receiveDerivations[i]["address"], firoNetwork)))
+            .thenAnswer((realInvocation) async => []);
+        when(client.getHistory(
+                scripthash: AddressUtils.convertToScriptHash(
+                    changeDerivations[i]["address"], firoNetwork)))
+            .thenAnswer((realInvocation) async => []);
+      }
+      await firo.recoverFromMnemonic(TEST_MNEMONIC);
+
+      final result = await firo.send(
+          toAddress: "aHZJsucDrhr4Uzzx6XXrKnaTgLxsEAokvV", amount: 10000);
+
+      print("result: $result");
+      throw Exception("Incomplete test due to FFI issues");
     });
 
     test("exit", () {
