@@ -83,7 +83,8 @@ class _Lockscreen2ViewState extends State<Lockscreen2View> {
 
   Future<void> logIn(
       String networkName, String walletName, String walletId) async {
-    FiroNetworkType firoNetworkType;
+    FiroNetworkType firoNetworkType =
+        FiroNetworkType.values.byName(networkName);
     final nodeService = Provider.of<NodeService>(context, listen: false);
     await nodeService.reInit();
     ElectrumXNode node = nodeService.currentNode;
