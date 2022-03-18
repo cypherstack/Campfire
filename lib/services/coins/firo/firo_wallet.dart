@@ -2879,5 +2879,6 @@ class FiroWallet extends CoinServiceAPI {
     _nodesChangedListener = null;
     timer?.cancel();
     timer = null;
+    isolates.clear();
   }
 }
