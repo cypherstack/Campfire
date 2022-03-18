@@ -80,11 +80,13 @@ void main() {
 
   group("extractDateFrom", () {
     test("1614578400", () {
-      expect(Utilities.extractDateFrom(1614578400), "1 Mar 2021, 0:00");
+      expect(Utilities.extractDateFrom(1614578400, localized: false),
+          "1 Mar 2021, 6:00");
     });
 
     test("1641589563", () {
-      expect(Utilities.extractDateFrom(1641589563), "7 Jan 2022, 15:06");
+      expect(Utilities.extractDateFrom(1641589563, localized: false),
+          "7 Jan 2022, 21:06");
     });
   });
 

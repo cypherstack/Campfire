@@ -12,6 +12,7 @@ import 'package:paymint/pages/onboarding_view/helpers/builders.dart';
 import 'package:paymint/pages/onboarding_view/restore_wallet_view.dart';
 import 'package:paymint/services/coins/firo/firo_wallet.dart';
 import 'package:paymint/services/coins/manager.dart';
+import 'package:paymint/services/node_service.dart';
 import 'package:paymint/services/wallets_service.dart';
 import 'package:paymint/utilities/biometrics.dart';
 import 'package:paymint/utilities/cfcolors.dart';
@@ -222,6 +223,9 @@ class _CreatePinViewState extends State<CreatePinView> {
                             },
                           );
 
+                          final nodeService =
+                              Provider.of<NodeService>(context, listen: false);
+                          await nodeService.reInit();
                           ElectrumXNode defaultNode;
                           switch (firoNetworkType) {
                             case FiroNetworkType.main:
@@ -247,6 +251,13 @@ class _CreatePinViewState extends State<CreatePinView> {
                               throw Exception(
                                   "Bad firo network type encountered");
                           }
+
+                          nodeService.createNode(
+                            name: defaultNode.name,
+                            ipAddress: defaultNode.address,
+                            port: defaultNode.port.toString(),
+                            useSSL: defaultNode.useSSL,
+                          );
 
                           final appDir =
                               await getApplicationDocumentsDirectory();

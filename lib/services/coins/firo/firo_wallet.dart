@@ -1020,7 +1020,7 @@ class FiroWallet extends CoinServiceAPI {
       return false;
     }
 
-    if (wallet.isEmpty) {
+    if (wallet.isEmpty || (await wallet.get("id")) == null) {
       // Triggers for new users automatically. Generates new wallet
       await _generateNewWallet(wallet);
       wallet.put("id", this._walletId);
@@ -2879,5 +2879,6 @@ class FiroWallet extends CoinServiceAPI {
     _nodesChangedListener = null;
     timer?.cancel();
     timer = null;
+    isolates.clear();
   }
 }

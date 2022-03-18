@@ -83,34 +83,43 @@ class _Lockscreen2ViewState extends State<Lockscreen2View> {
 
   Future<void> logIn(
       String networkName, String walletName, String walletId) async {
-    FiroNetworkType firoNetworkType;
+    FiroNetworkType firoNetworkType =
+        FiroNetworkType.values.byName(networkName);
     final nodeService = Provider.of<NodeService>(context, listen: false);
-    ElectrumXNode node;
-    switch (networkName) {
-      case "main":
-        firoNetworkType = FiroNetworkType.main;
-        node = nodeService.currentNode ??
-            ElectrumXNode(
-              address: CampfireConstants.defaultIpAddress,
-              port: CampfireConstants.defaultPort,
-              name: CampfireConstants.defaultNodeName,
-              id: Uuid().v1(),
-              useSSL: CampfireConstants.defaultUseSSL,
-            );
-        break;
-      case "test":
-        firoNetworkType = FiroNetworkType.test;
-        node = nodeService.currentNode ??
-            ElectrumXNode(
-              address: CampfireConstants.defaultIpAddressTestNet,
-              port: CampfireConstants.defaultPortTestNet,
-              name: CampfireConstants.defaultNodeNameTestNet,
-              id: Uuid().v1(),
-              useSSL: CampfireConstants.defaultUseSSLTestNet,
-            );
-        break;
-      default:
-        throw Exception("Bad firo network type encountered");
+    await nodeService.reInit();
+    ElectrumXNode node = nodeService.currentNode;
+    if (node == null) {
+      switch (networkName) {
+        case "main":
+          firoNetworkType = FiroNetworkType.main;
+          node = ElectrumXNode(
+            address: CampfireConstants.defaultIpAddress,
+            port: CampfireConstants.defaultPort,
+            name: CampfireConstants.defaultNodeName,
+            id: Uuid().v1(),
+            useSSL: CampfireConstants.defaultUseSSL,
+          );
+          break;
+        case "test":
+          firoNetworkType = FiroNetworkType.test;
+          node = ElectrumXNode(
+            address: CampfireConstants.defaultIpAddressTestNet,
+            port: CampfireConstants.defaultPortTestNet,
+            name: CampfireConstants.defaultNodeNameTestNet,
+            id: Uuid().v1(),
+            useSSL: CampfireConstants.defaultUseSSLTestNet,
+          );
+          break;
+        default:
+          throw Exception("Bad firo network type encountered");
+      }
+
+      nodeService.createNode(
+        name: node.name,
+        ipAddress: node.address,
+        port: node.port.toString(),
+        useSSL: node.useSSL,
+      );
     }
     final manager = Provider.of<Manager>(context, listen: false);
     final appDir = await getApplicationDocumentsDirectory();
