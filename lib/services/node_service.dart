@@ -146,8 +146,7 @@ class NodeService extends ChangeNotifier {
     String updatedPort,
     bool useSSL,
   }) {
-    final id = _walletId;
-    final wallet = Hive.box(id);
+    final wallet = Hive.box(_walletId);
     final nodes = wallet.get('nodes');
 
     if (nodes.keys.contains(updatedName) && nodes[updatedName]['id'] != id) {

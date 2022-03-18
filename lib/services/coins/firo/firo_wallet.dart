@@ -2679,9 +2679,10 @@ class FiroWallet extends CoinServiceAPI {
               receivingGapCounter += 1;
             }
           }
-        } catch (e) {
+        } catch (e, s) {
           Logger.print(
               "Exception rethrown from recoverWalletFromBIP32SeedPhrase(): $e");
+          Logger.print(s.toString());
           throw e;
         }
 
@@ -2695,9 +2696,10 @@ class FiroWallet extends CoinServiceAPI {
               changeGapCounter += 1;
             }
           }
-        } catch (e) {
+        } catch (e, s) {
           Logger.print(
               "Exception rethrown from recoverWalletFromBIP32SeedPhrase(): $e");
+          Logger.print(s.toString());
           throw e;
         }
       }
@@ -2730,10 +2732,11 @@ class FiroWallet extends CoinServiceAPI {
       }
       await _restore(latestSetId, setDataMap, await usedSerialNumbers);
       longMutex = false;
-    } catch (e) {
+    } catch (e, s) {
       longMutex = false;
       Logger.print(
           "Exception rethrown from recoverWalletFromBIP32SeedPhrase(): $e");
+      Logger.print(s.toString());
       throw e;
     }
   }

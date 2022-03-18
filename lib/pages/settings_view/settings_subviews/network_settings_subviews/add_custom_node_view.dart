@@ -61,7 +61,7 @@ class _AddCustomNodeViewState extends State<AddCustomNodeView> {
 
     // try to create a new node
     final success = nodesService.createNode(
-        name: name, ipAddress: name, port: port, useSSL: useSSL);
+        name: name, ipAddress: address, port: port, useSSL: useSSL);
 
     // check for duplicate node name
     if (success) {
