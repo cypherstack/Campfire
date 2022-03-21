@@ -38,3 +38,4 @@ test/firo_wallet_test_parameters.dart
 
 # Exceptions to above rules.
 !/packages/flutter_tools/test/data/dart_dependencies_test/**/.packages
+coverage
