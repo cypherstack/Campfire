@@ -1177,7 +1177,7 @@ void main() {
       }
 
       await firo.recoverFromMnemonic(TEST_MNEMONIC);
-    });
+    }, timeout: Timeout(Duration(minutes: 3)));
 
     test("updateBiometricsUsage", () async {
       final firo = FiroWallet(
@@ -1484,7 +1484,7 @@ void main() {
 
       print("result: $result");
       throw Exception("Incomplete test due to FFI issues");
-    });
+    }, timeout: Timeout(Duration(minutes: 3)));
 
     test("exit", () {
       final firo = FiroWallet(
