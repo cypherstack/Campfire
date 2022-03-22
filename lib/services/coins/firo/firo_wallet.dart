@@ -507,12 +507,6 @@ isolateCreateJoinSplitTransaction(
 
   final aesKeyPair = getBip32Node(JMINT_INDEX, keyPath, mnemonic, _network);
   final aesPrivateKey = uint8listToString(aesKeyPair.privateKey);
-  if (aesPrivateKey == null) {
-    print(
-      'firo_walvar:createLelantusSpendTx key pair is undefined',
-    );
-    return 3;
-  }
 
   final jmintData = createJMintScript(
     changeToMint,
