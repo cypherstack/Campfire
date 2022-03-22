@@ -17,7 +17,7 @@ void main() {
       await setUpTestHive();
     });
     group("getAnonymitySet", () {
-      test("empty cache call", () async {
+      test("empty set cache call", () async {
         final client = MockElectrumX();
         when(
           client.getAnonymitySet(
@@ -146,7 +146,7 @@ void main() {
         expect(cachedTx, null);
       });
 
-      test("use cached value", () async {
+      test("use cached tx value", () async {
         final txCache = await Hive.openBox('Some coin name_txCache');
         await txCache.put(
             SampleGetTransactionData.txHash0, SampleGetTransactionData.txData0);
@@ -165,7 +165,7 @@ void main() {
         final result = await cachedClient.getTransaction(
           tx_hash: SampleGetTransactionData.txHash0,
           coinName: "Some coin name",
-          callOutSideMainIsolate: false,
+          callOutSideMainIsolate: true,
         );
 
         expect(result, SampleGetTransactionData.txData0);
