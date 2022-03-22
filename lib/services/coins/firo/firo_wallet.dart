@@ -1018,7 +1018,7 @@ class FiroWallet extends CoinServiceAPI {
     if (wallet.isEmpty || (await wallet.get("id")) == null) {
       // Triggers for new users automatically. Generates new wallet
       await _generateNewWallet(wallet);
-      wallet.put("id", this._walletId);
+      await wallet.put("id", this._walletId);
       final lelantusTxData = await _getLelantusTransactionData();
       this._lelantusTransactionData = Future(() => lelantusTxData);
     } else {
@@ -2719,6 +2719,7 @@ class FiroWallet extends CoinServiceAPI {
       await wallet.put('changeAddresses', changeAddressArray);
       await wallet.put('receivingIndex', receivingIndex);
       await wallet.put('changeIndex', changeIndex);
+      await wallet.put("id", this._walletId);
 
       await _secureStore.write(
           key: '${this._walletId}_mnemonic', value: suppliedMnemonic.trim());
