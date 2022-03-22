@@ -3,6 +3,8 @@ import 'dart:convert';
 import 'package:crypto/crypto.dart';
 import 'package:firo_flutter/firo_flutter.dart';
 
+import 'logger.dart';
+
 class AddressUtils {
   static String condenseAddress(String address) {
     return address.substring(0, 5) +
@@ -44,7 +46,7 @@ class AddressUtils {
         result.addAll(u.queryParameters);
       }
     } catch (e) {
-      print(e);
+      Logger.print("Exception caught in parseFiroUri($uri): $e");
     }
     return result;
   }
@@ -55,19 +57,13 @@ class AddressUtils {
     try {
       result = jsonDecode(data);
     } catch (e) {
-      print("Exception caught in parseQRSeedData($data): $e");
+      Logger.print("Exception caught in parseQRSeedData($data): $e");
     }
     return result;
   }
 
   /// encode mnemonic words to qrcode formatted string
   static String encodeQRSeedData(List<String> words) {
-    String result = "";
-    try {
-      result = jsonEncode({"mnemonic": words});
-    } catch (e) {
-      print("Exception caught in encodeQRSeedData: $e");
-    }
-    return result;
+    return jsonEncode({"mnemonic": words});
   }
 }

@@ -320,14 +320,15 @@ class _MainViewState extends State<MainView> {
         timer?.cancel();
         timer = null;
       });
-    } else {
-      final manager = Provider.of<Manager>(context);
-      final walletsService = Provider.of<WalletsService>(context);
-      await manager.currentWallet.exit();
-      manager.currentWallet = null;
-      await walletsService.refreshWallets();
     }
+
     if (_exitOnBackButton) {
+      final manager = Provider.of<Manager>(context, listen: false);
+      final walletsService =
+          Provider.of<WalletsService>(context, listen: false);
+      await manager.exitCurrentWallet();
+      await walletsService.setCurrentWalletName("");
+      await walletsService.refreshWallets();
       // Navigator.of(context).popUntil((route) => route.settings.name == '/');
       Navigator.pushAndRemoveUntil(
         context,

@@ -22,11 +22,16 @@ class NodeService extends ChangeNotifier {
     _walletId = _getWalletId();
   }
 
+  reInit() async {
+    await Hive.openBox(_getWalletId());
+    refresh();
+  }
+
   refresh() {
     _walletId = _getWalletId();
+    _activeNodeName = _fetchActiveNodeName();
     _currentNode = _getCurrentNode();
     _nodes = _fetchNodes();
-    _activeNodeName = _fetchActiveNodeName();
     notifyListeners();
   }
 
@@ -43,6 +48,10 @@ class NodeService extends ChangeNotifier {
     final nodes = wallet.get('nodes');
 
     final name = activeNodeName;
+
+    if (name == null || name.isEmpty) {
+      return null;
+    }
 
     return ElectrumXNode(
       address: nodes[name]["ipAddress"],
@@ -82,7 +91,16 @@ class NodeService extends ChangeNotifier {
   }
 
   /// returns false if node with same name exists, true on success
-  bool createNode({String name, String ipAddress, String port, bool useSSL}) {
+  bool createNode({
+    @required String name,
+    @required String ipAddress,
+    @required String port,
+    @required bool useSSL,
+  }) {
+    if (name == null || name.isEmpty) {
+      throw Exception("node name must not be empty");
+    }
+
     final id = _walletId;
     final wallet = Hive.box(id);
     var nodes = wallet.get('nodes');

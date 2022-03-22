@@ -10,6 +10,7 @@ import 'package:paymint/services/coins/manager.dart';
 import 'package:paymint/services/wallets_service.dart';
 import 'package:paymint/utilities/biometrics.dart';
 import 'package:paymint/utilities/cfcolors.dart';
+import 'package:paymint/utilities/logger.dart';
 import 'package:paymint/utilities/sizing_utilities.dart';
 import 'package:paymint/utilities/text_styles.dart';
 import 'package:paymint/widgets/custom_buttons/gradient_button.dart';
@@ -451,13 +452,14 @@ class ClearSharedCacheConfirmDialog extends StatelessWidget {
                         final client = CachedElectrumX();
                         final manager =
                             Provider.of<Manager>(context, listen: false);
-                        final success =
-                            await client.clearSharedTransactionCache(
-                                coinName: manager.coinName);
                         String message = "";
-                        if (success) {
+                        try {
+                          await client.clearSharedTransactionCache(
+                              coinName: manager.coinName);
                           message = "Transaction cache cleared!";
-                        } else {
+                        } catch (e, s) {
+                          Logger.print(
+                              "clearSharedTransactionCache failed: $e\n$s");
                           message = "Failed to clear transaction cache.";
                         }
                         Navigator.of(context).pop();

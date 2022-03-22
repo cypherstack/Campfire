@@ -9,9 +9,16 @@ class CachedElectrumX {
   String _hivePath;
   static const minCacheConfirms = 30;
 
-  CachedElectrumX({String server, int port, bool useSSL, String hivePath}) {
+  CachedElectrumX(
+      {String server,
+      int port,
+      bool useSSL,
+      String hivePath,
+      ElectrumX electrumXClient}) {
     _hivePath = hivePath;
-    _client = ElectrumX(server: server, port: port, useSSL: useSSL);
+    _client = electrumXClient == null
+        ? ElectrumX(server: server, port: port, useSSL: useSSL)
+        : electrumXClient;
   }
 
   factory CachedElectrumX.from(
@@ -26,6 +33,10 @@ class CachedElectrumX {
       {@required String groupId,
       @required String coinName,
       @required bool callOutSideMainIsolate}) async {
+    if (coinName == null || coinName.isEmpty) {
+      throw Exception("Invalid argument: coinName cannot be empty!");
+    }
+
     try {
       // hive must be initialized when this function is called outside of flutter main
       // such as within an isolate
@@ -68,8 +79,9 @@ class CachedElectrumX {
       }
 
       return set;
-    } catch (e) {
-      Logger.print("Failed to process CachedElectrumX.getAnonymitySet(): $e");
+    } catch (e, s) {
+      Logger.print(
+          "Failed to process CachedElectrumX.getAnonymitySet(): $e\n$s");
       throw e;
     }
   }
@@ -112,21 +124,16 @@ class CachedElectrumX {
         Logger.print("using cached result");
         return Map<String, dynamic>.from(cachedTx);
       }
-    } catch (e) {
-      Logger.print("Failed to process CachedElectrumX.getTransaction(): $e");
+    } catch (e, s) {
+      Logger.print(
+          "Failed to process CachedElectrumX.getTransaction(): $e\n$s");
       throw e;
     }
   }
 
   /// Clear all cached transactions for the specified coin
-  Future<bool> clearSharedTransactionCache({String coinName}) async {
-    try {
-      await Hive.deleteBoxFromDisk('${coinName}_txCache');
-      await Hive.deleteBoxFromDisk('${coinName}_anonymitySetCache');
-      return true;
-    } catch (e) {
-      print("Clear transaction cache for coin $coinName failed.");
-      return false;
-    }
+  Future<void> clearSharedTransactionCache({String coinName}) async {
+    await Hive.deleteBoxFromDisk('${coinName}_txCache');
+    await Hive.deleteBoxFromDisk('${coinName}_anonymitySetCache');
   }
 }
