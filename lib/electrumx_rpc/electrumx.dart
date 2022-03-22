@@ -60,7 +60,7 @@ class ElectrumX {
   Future<dynamic> request({
     String command,
     List<dynamic> args = const [],
-    Duration connectionTimeout = const Duration(seconds: 5),
+    Duration connectionTimeout = const Duration(seconds: 30),
     String requestID,
   }) async {
     if (_rpcClient == null) {

@@ -593,6 +593,7 @@ isolateCreateJoinSplitTransaction(
     4294967295,
     stringToUint8List("c9"),
   );
+  Logger.print("spendScript: $spendScript");
   extTx.setPayload(stringToUint8List(spendScript));
 
   final txHex = extTx.toHex();
@@ -946,8 +947,8 @@ class FiroWallet extends CoinServiceAPI {
           throw Exception("Transaction failed.");
         }
       }
-    } catch (e) {
-      Logger.print("Exception rethrown in firo send(): $e");
+    } catch (e, s) {
+      Logger.print("Exception rethrown in firo send(): $e\n$s");
       throw e;
     }
   }
@@ -1446,8 +1447,8 @@ class FiroWallet extends CoinServiceAPI {
       }
       print("balances $balances");
       return balances;
-    } catch (e) {
-      Logger.print("Exception rethrown in getFullBalance(): $e");
+    } catch (e, s) {
+      Logger.print("Exception rethrown in getFullBalance(): $e\n$s");
       throw e;
     }
   }
