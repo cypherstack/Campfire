@@ -1,6 +1,7 @@
 import 'package:flutter/cupertino.dart';
 import 'package:hive/hive.dart';
 import 'package:paymint/services/wallets_service.dart';
+import 'package:paymint/utilities/logger.dart';
 
 class AddressBookService extends ChangeNotifier {
   Future<String> _currentWalletName;
@@ -19,7 +20,7 @@ class AddressBookService extends ChangeNotifier {
     final _currentWallet = await currentWalletName;
     final wallet = await Hive.openBox(_currentWallet);
     final entries = await wallet.get('addressBookEntries');
-    print("Address book entries fetched: $entries");
+    Logger.print("Address book entries fetched: $entries");
     return entries == null
         ? <String, String>{}
         : Map<String, String>.from(entries);
@@ -58,7 +59,7 @@ class AddressBookService extends ChangeNotifier {
 
     entries[address] = name;
     await wallet.put('addressBookEntries', entries);
-    print("address book entry saved");
+    Logger.print("address book entry saved");
     await _refreshAddressBookEntries();
     // GlobalEventBus.instance.fire(AddressBookChangedEvent("entry added"));
   }
@@ -70,7 +71,7 @@ class AddressBookService extends ChangeNotifier {
     final entries = await wallet.get('addressBookEntries');
     entries.remove(address);
     await wallet.put('addressBookEntries', entries);
-    print("address book entry removed");
+    Logger.print("address book entry removed");
     await _refreshAddressBookEntries();
     // GlobalEventBus.instance.fire(AddressBookChangedEvent("entry removed"));
   }

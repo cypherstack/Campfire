@@ -10,6 +10,7 @@ import 'package:paymint/pages/wallet_view/confirm_send_view.dart';
 import 'package:paymint/services/coins/manager.dart';
 import 'package:paymint/utilities/address_utils.dart';
 import 'package:paymint/utilities/cfcolors.dart';
+import 'package:paymint/utilities/logger.dart';
 import 'package:paymint/utilities/misc_global_constants.dart';
 import 'package:paymint/utilities/sizing_utilities.dart';
 import 'package:paymint/widgets/custom_buttons/gradient_button.dart';
@@ -84,7 +85,7 @@ class _SendViewState extends State<SendView> {
     _autofill = true;
     setState(() {
       _recipientAddressTextController.text = _contactName;
-      print("setState called with address = $_address");
+      Logger.print("setState called with address = $_address");
     });
 
     final cryptoAmount = Decimal.tryParse(args["cryptoAmount"].toString());
@@ -110,7 +111,7 @@ class _SendViewState extends State<SendView> {
 
   @override
   initState() {
-    print("SendView args: $autofillArgs");
+    Logger.print("SendView args: $autofillArgs");
     if (autofillArgs != null) {
       _parseArgs(autofillArgs);
     }
@@ -235,7 +236,7 @@ class _SendViewState extends State<SendView> {
                           if (price.connectionState == ConnectionState.done) {
                             if (price.hasError || price.data == null) {
                               // TODO: show proper connection error
-                              print(
+                              Logger.print(
                                   "Couldn't fetch price, please check connection");
                               return _buildAmountInputBox(
                                   Decimal.fromInt(-1), manager);
@@ -243,7 +244,7 @@ class _SendViewState extends State<SendView> {
                             return _buildAmountInputBox(price.data, manager);
                           }
 
-                          print("Fetching price... please wait...");
+                          Logger.print("Fetching price... please wait...");
                           return _buildAmountInputBox(
                               Decimal.fromInt(-1), manager);
                         },
@@ -317,7 +318,7 @@ class _SendViewState extends State<SendView> {
                       );
                     }
                     _balanceMinusMaxFee = balanceMinusMaxFee.data;
-                    print("_balanceMinusMaxFee $_balanceMinusMaxFee");
+                    Logger.print("_balanceMinusMaxFee $_balanceMinusMaxFee");
 
                     return FittedBox(
                       child: Text(
@@ -408,7 +409,7 @@ class _SendViewState extends State<SendView> {
                                 manager.validateAddress(content);
                             if (isValidAddress) {
                               final myAddresses = await manager.allOwnAddresses;
-                              print(myAddresses);
+                              Logger.print(myAddresses);
                               if (myAddresses.contains(content)) {
                                 showDialog(
                                   context: context,
@@ -461,7 +462,7 @@ class _SendViewState extends State<SendView> {
                         }
                       },
                     );
-                    print("open addressbook icon clicked");
+                    Logger.print("open addressbook icon clicked");
                   },
                   child: SvgPicture.asset(
                     "assets/svg/book-open.svg",
@@ -770,7 +771,7 @@ class _SendViewState extends State<SendView> {
                           : oldValue),
                 ],
                 onChanged: (String firoAmount) {
-                  print(firoAmount);
+                  Logger.print(firoAmount);
                   if (firoAmount.isNotEmpty && firoAmount != ".") {
                     _firoAmount = Decimal.parse(firoAmount);
                     setState(() {
@@ -930,7 +931,7 @@ class _SendViewState extends State<SendView> {
       child: GradientButton(
         enabled: _sendButtonEnabled,
         onTap: () {
-          print("SEND pressed");
+          Logger.print("SEND pressed");
 
           final Decimal availableBalance = _balanceMinusMaxFee < Decimal.zero
               ? Decimal.zero

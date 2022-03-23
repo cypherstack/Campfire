@@ -50,7 +50,7 @@ class JsonRPC {
 
     //TODO handle error better
     void errorHandler(error, StackTrace trace) {
-      print(error);
+      Logger.print(error);
     }
 
     void doneHandler() {

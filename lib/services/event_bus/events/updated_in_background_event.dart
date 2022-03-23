@@ -1,7 +1,9 @@
+import 'package:paymint/utilities/logger.dart';
+
 class UpdatedInBackgroundEvent {
   String message;
 
   UpdatedInBackgroundEvent(this.message) {
-    print("UpdatedInBackgroundEvent fired with message: $message");
+    Logger.print("UpdatedInBackgroundEvent fired with message: $message");
   }
 }

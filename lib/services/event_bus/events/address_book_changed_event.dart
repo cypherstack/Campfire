@@ -1,7 +1,9 @@
+import 'package:paymint/utilities/logger.dart';
+
 class AddressBookChangedEvent {
   String message;
 
   AddressBookChangedEvent(this.message) {
-    print("AddressBookChangedEvent fired with message: $message");
+    Logger.print("AddressBookChangedEvent fired with message: $message");
   }
 }

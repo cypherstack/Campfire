@@ -9,6 +9,7 @@ import 'package:paymint/services/event_bus/events/node_connection_status_changed
 import 'package:paymint/services/event_bus/global_event_bus.dart';
 import 'package:paymint/services/node_service.dart';
 import 'package:paymint/utilities/cfcolors.dart';
+import 'package:paymint/utilities/logger.dart';
 import 'package:paymint/utilities/sizing_utilities.dart';
 import 'package:paymint/widgets/custom_buttons/app_bar_icon_button.dart';
 import 'package:provider/provider.dart';
@@ -45,7 +46,7 @@ class _NetworkSettingsViewState extends State<NetworkSettingsView> {
     _nodeConnectionStatusChangedEventListener = GlobalEventBus.instance
         .on<NodeConnectionStatusChangedEvent>()
         .listen((event) {
-      print("event caught");
+      Logger.print("event caught");
       String newLabel;
       switch (event.newStatus) {
         case NodeConnectionStatus.synced:

@@ -3,6 +3,8 @@ import 'dart:io';
 import 'package:local_auth/auth_strings.dart';
 import 'package:local_auth/local_auth.dart';
 
+import 'logger.dart';
+
 class Biometrics {
   static Future<bool> authenticate(
       {String cancelButtonText, String localizedReason, String title}) async {
@@ -33,7 +35,7 @@ class Biometrics {
               return true;
             }
           } catch (e) {
-            print(
+            Logger.print(
                 "local_auth exception caught in Biometrics.authenticate(), e: $e");
           }
         }
@@ -55,7 +57,7 @@ class Biometrics {
               return true;
             }
           } catch (e) {
-            print(
+            Logger.print(
                 "local_auth exception caught in Biometrics.authenticate(), e: $e");
           }
         }
