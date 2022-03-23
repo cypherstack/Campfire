@@ -93,14 +93,6 @@ Future<void> executeNative(arguments) async {
       dynamic network = arguments['network'];
       int locktime = arguments['locktime'];
       dynamic anonymitySet = arguments['anonymitySet'];
-
-      final args = Map<String, dynamic>.from(arguments);
-      for (final arg in args.entries) {
-        if (arg.value == null) {
-          print(arg.key + " is null!");
-        }
-      }
-
       if (!(spendAmount == null ||
           address == null ||
           subtractFeeFromAmount == null ||
@@ -189,11 +181,10 @@ Future<void> executeNative(arguments) async {
         return;
       }
     }
-    print("Error Arguments for $function not formatted correctly");
+    Logger.print("Error Arguments for $function not formatted correctly");
     sendPort.send("Error");
-  } catch (e) {
-    print("An error was thrown in this isolate $function");
-    print(e);
+  } catch (e, s) {
+    Logger.print("An error was thrown in this isolate $function: $e\n$s");
     sendPort.send("Error");
   }
 }
@@ -201,7 +192,7 @@ Future<void> executeNative(arguments) async {
 void stop(ReceivePort port) {
   Isolate isolate = isolates[port];
   if (isolate != null) {
-    print('Stopping Isolate...');
+    Logger.print('Stopping Isolate...');
     isolate.kill(priority: Isolate.immediate);
     isolate = null;
   }
@@ -319,7 +310,7 @@ isolateRestore(
             setId,
             usedSerialNumbersSet.contains(serialNumber),
           );
-          print(
+          Logger.print(
               "amount ${_lelantus_coins[foundMint[3]].value} used ${_lelantus_coins[foundMint[3]].isUsed}");
         } else {
           var foundJmint = dataJMintMaps[setId][mintTag];
@@ -365,8 +356,8 @@ isolateRestore(
   }
 
   Map<String, dynamic> result = Map();
-  print("mints $_lelantus_coins");
-  print("jmints $spendTxIds");
+  Logger.print("mints $_lelantus_coins");
+  Logger.print("jmints $spendTxIds");
 
   result['_lelantus_coins'] = _lelantus_coins;
   result['mintIndex'] = lastFoundIndex + 1;
@@ -416,10 +407,10 @@ isolateRestore(
           subType: "mint");
     });
   });
-  print(editedTransactions);
+  Logger.print(editedTransactions);
 
   Map<String, models.Transaction> transactionMap = data.getAllTransactions();
-  print(transactionMap);
+  Logger.print(transactionMap);
 
   editedTransactions.forEach((key, value) {
     transactionMap.update(key, (_value) => value);
@@ -427,14 +418,11 @@ isolateRestore(
   transactionMap.removeWhere((key, value) =>
       _lelantus_coins.containsKey(key) ||
       (value.height == -1 && !value.confirmedStatus));
-  transactionMap.forEach((key, value) {
-    print(value);
-  });
 
   // Create the joinsplit transactions.
   final spendTxs = await getJMintTransactions(
       cachedClient, spendTxIds, currency, coinName, true, currentPrice);
-  print(spendTxs);
+  Logger.print(spendTxs);
   spendTxs.forEach((element) {
     transactionMap[element.txid] = element;
   });
@@ -454,7 +442,7 @@ Future<LelantusFeeData> isolateEstimateJoinSplitFee(int spendAmount,
 
   List<int> changeToMint = List.empty(growable: true);
   List<int> spendCoinIndexes = List.empty(growable: true);
-  print(lelantusEntries);
+  Logger.print(lelantusEntries);
   final fee = estimateFee(
     spendAmount,
     subtractFeeFromAmount,
@@ -488,9 +476,9 @@ isolateCreateJoinSplitTransaction(
   var changeToMint = estimateJoinSplitFee.changeToMint;
   var fee = estimateJoinSplitFee.fee;
   var spendCoinIndexes = estimateJoinSplitFee.spendCoinIndexes;
-  print("$changeToMint $fee $spendCoinIndexes");
+  Logger.print("$changeToMint $fee $spendCoinIndexes");
   if (spendCoinIndexes.isEmpty) {
-    print("Error, Not enough funds.");
+    Logger.print("Error, Not enough funds.");
     return 1;
   }
 
@@ -598,8 +586,8 @@ isolateCreateJoinSplitTransaction(
 
   final txHex = extTx.toHex();
   final txId = extTx.getId();
-  print("txid  $txId");
-  Logger.print("$txHex");
+  Logger.print("txid  $txId");
+  Logger.print("txHex: $txHex");
   return {
     "txid": txId,
     "txHex": txHex,
@@ -1092,14 +1080,14 @@ class FiroWallet extends CoinServiceAPI {
         if (!tx.confirmedStatus) {
           // Get all normal txs that are at 0 confirmations
           needRefresh.add(tx.txid);
-          print("1 ${tx.txid}");
+          Logger.print("1 ${tx.txid}");
         } else if (lTx != null &&
             (lTx.inputs.isEmpty || lTx.inputs[0].txid == null) &&
             lTx.confirmedStatus == false &&
             tx.txType == "Received") {
           // If this is a received that is past 1 or more confirmations and has not been minted,
           needRefresh.add(tx.txid);
-          print("2 ${tx.txid}");
+          Logger.print("2 ${tx.txid}");
         }
       }
     }
@@ -1118,7 +1106,7 @@ class FiroWallet extends CoinServiceAPI {
         if (!lTX.confirmedStatus && tx == null) {
           // if this is a ltx transaction that is unconfirmed and not represented in the normal transaction set.
           needRefresh.add(lTX.txid);
-          print("3 ${lTX.txid}");
+          Logger.print("3 ${lTX.txid}");
         }
       }
     }
@@ -1129,7 +1117,7 @@ class FiroWallet extends CoinServiceAPI {
   /// Generates initial wallet values such as mnemonic, chain (receive/change) arrays and indexes.
   Future<void> _generateNewWallet(Box<dynamic> wallet) async {
     final features = await electrumXClient.getServerFeatures();
-    print("features: $features");
+    Logger.print("features: $features");
     if (_networkType == FiroNetworkType.main) {
       if (features['genesis_hash'] != CampfireConstants.firoGenesisHash) {
         throw Exception("genesis hash does not match!");
@@ -1169,7 +1157,7 @@ class FiroWallet extends CoinServiceAPI {
   @override
   Future<void> refresh() async {
     if (refreshMutex) {
-      print("denied");
+      Logger.print("refreshMutex denied");
       return;
     } else {
       refreshMutex = true;
@@ -1328,7 +1316,7 @@ class FiroWallet extends CoinServiceAPI {
 
     final lelantusCoinsList = _lelantus_coins.values.toList(growable: false);
     for (int i = 0; i < lelantusCoinsList.length; i++) {
-      print("hi ${lelantusCoinsList[i]}");
+      Logger.print("lelantusCoinsList[$i]: ${lelantusCoinsList[i]}");
       final txn = await cachedElectrumXClient.getTransaction(
         tx_hash: lelantusCoinsList[i].txId,
         verbose: true,
@@ -1444,7 +1432,7 @@ class FiroWallet extends CoinServiceAPI {
             (lelantusBalance + utxosValue + _unconfirmedLelantusBalance) *
                 price);
       }
-      print("balances $balances");
+      Logger.print("balances $balances");
       return balances;
     } catch (e, s) {
       Logger.print("Exception rethrown in getFullBalance(): $e\n$s");
@@ -1456,13 +1444,12 @@ class FiroWallet extends CoinServiceAPI {
     try {
       var mintResult = await _mintSelection();
       if (mintResult == null || mintResult.isEmpty) {
-        print("nothing to mint");
+        Logger.print("nothing to mint");
         return;
       }
       await _submitLelantusToNetwork(mintResult);
-    } catch (e, st) {
-      Logger.print("Exception caught in _autoMint(): $e");
-      Logger.print(st);
+    } catch (e, s) {
+      Logger.print("Exception caught in _autoMint(): $e\n$s");
     }
   }
 
@@ -1849,7 +1836,7 @@ class FiroWallet extends CoinServiceAPI {
         await wallet.put('_lelantus_coins', coins);
 
         // add the send transaction
-        TransactionData data = await _lelantusTransactionData;
+        TransactionData data = await lelantusTransactionData;
         Map transactions = data.getAllTransactions();
         transactions[transactionInfo['txid']] =
             models.Transaction.fromLelantusJson(transactionInfo);
@@ -2049,8 +2036,8 @@ class FiroWallet extends CoinServiceAPI {
       allAddresses.add(changeAddresses[i]);
     }
 
-    print("receiving addresses: $receivingAddresses");
-    print("change addresses: $changeAddresses");
+    Logger.print("receiving addresses: $receivingAddresses");
+    Logger.print("change addresses: $changeAddresses");
 
     List<Map<String, dynamic>> allTxHashes = [];
 
@@ -2189,7 +2176,7 @@ class FiroWallet extends CoinServiceAPI {
           if (addresses != null) {
             final address = addresses[0];
             final value = output["value"];
-            print(address + value.toString());
+            Logger.print(address + value.toString());
             if (address != null) {
               if (allAddresses.contains(address)) {
                 outputAmtAddressedToWallet += (Decimal.parse(value.toString()) *
@@ -2597,7 +2584,7 @@ class FiroWallet extends CoinServiceAPI {
   Future<void> recoverFromMnemonic(String mnemonic) async {
     try {
       final features = await electrumXClient.getServerFeatures();
-      print("features: $features");
+      Logger.print("features: $features");
       if (_networkType == FiroNetworkType.main) {
         if (features['genesis_hash'] != CampfireConstants.firoGenesisHash) {
           throw Exception("genesis hash does not match!");
@@ -2609,8 +2596,7 @@ class FiroWallet extends CoinServiceAPI {
       }
       await _recoverWalletFromBIP32SeedPhrase(mnemonic);
     } catch (e, s) {
-      Logger.print("Exception rethrown from recoverFromMnemonic(): $e");
-      Logger.print(s);
+      Logger.print("Exception rethrown from recoverFromMnemonic(): $e\n$s");
       throw e;
     }
   }

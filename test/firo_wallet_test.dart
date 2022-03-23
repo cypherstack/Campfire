@@ -1,6 +1,7 @@
 import 'dart:async';
 import 'dart:typed_data';
 
+import 'package:crypto/crypto.dart';
 import 'package:decimal/decimal.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:hive/hive.dart';
@@ -1544,15 +1545,25 @@ void main() {
       final secureStore = FakeSecureStorage();
       final priceAPI = MockPriceAPI();
 
+      String expectedTxid;
+
       when(client.getBlockHeadTip()).thenAnswer(
           (_) async => {"height": 459185, "hex": "... some block hex ..."});
 
       when(client.broadcastTransaction(rawTx: anyNamed("rawTx")))
           .thenAnswer((realInvocation) async {
-        print(
-            "realInvocation.namedArguments: ${realInvocation.namedArguments}");
-        //TODO: extract txid from rawtx and return it here
-        return "";
+        final rawTx = realInvocation.namedArguments[Symbol("rawTx")];
+        final rawTxData = stringToUint8List(rawTx);
+
+        final hash = sha256
+            .convert(sha256.convert(rawTxData.toList(growable: false)).bytes);
+
+        final reversedBytes =
+            Uint8List.fromList(hash.bytes.reversed.toList(growable: false));
+
+        final txid = uint8listToString(reversedBytes);
+        expectedTxid = txid;
+        return txid;
       });
 
       when(cachedClient.getAnonymitySet(
@@ -1706,8 +1717,9 @@ void main() {
       final result = await firo.send(
           toAddress: "aHZJsucDrhr4Uzzx6XXrKnaTgLxsEAokvV", amount: 100);
 
-      print("result: $result");
       expect(result, isA<String>());
+      expect(result, expectedTxid);
+      expect(result.length, 64);
     }, timeout: Timeout(Duration(minutes: 3)));
 
     test("wallet balances", () async {
