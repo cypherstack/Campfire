@@ -21,6 +21,7 @@ import 'firo_wallet_test.mocks.dart';
 import 'firo_wallet_test_parameters.dart';
 import 'sample_data/get_anonymity_set_sample_data.dart';
 import 'sample_data/get_used_serials_sample_data.dart';
+import 'sample_data/get_utxos_sample_data.dart';
 import 'sample_data/getcoinsforrecovery_sample_output.dart';
 import 'sample_data/gethistory_samples.dart';
 import 'sample_data/transaction_data_samples.dart';
@@ -103,9 +104,9 @@ void main() {
 
     test("isolateCreateJoinSplitTransaction success", () async {
       final result = await isolateCreateJoinSplitTransaction(
-        100,
+        9000,
         "aNmsUtzPzQ3SKWNjEH48GacMQJXWN5Rotm",
-        false,
+        true,
         TEST_MNEMONIC,
         2,
         Decimal.ten,
@@ -127,6 +128,24 @@ void main() {
       );
 
       expect(result, isA<LelantusFeeData>());
+    });
+
+    test("call getIsolate with missing args", () async {
+      final receivePort = await getIsolate({
+        "function": "estimateJoinSplit",
+        "subtractFeeFromAmount": true,
+      });
+      expect(await receivePort.first, "Error");
+    });
+
+    test("call getIsolate with bad args", () async {
+      final receivePort = await getIsolate({
+        "function": "estimateJoinSplit",
+        "spendAmount": "spendAmount",
+        "subtractFeeFromAmount": true,
+        "lelantusEntries": MockCachedElectrumX(),
+      });
+      expect(await receivePort.first, "Error");
     });
   });
 
@@ -1539,7 +1558,7 @@ void main() {
       await firo.exit();
     }, timeout: Timeout(Duration(minutes: 3)));
 
-    test("send", () async {
+    test("send succeeds", () async {
       final client = MockElectrumX();
       final cachedClient = MockCachedElectrumX();
       final secureStore = FakeSecureStorage();
@@ -1701,7 +1720,6 @@ void main() {
         when(client.getHistory(scripthash: changeHash))
             .thenAnswer((_) async => data);
       }
-      // await firo.recoverFromMnemonic(TEST_MNEMONIC);
 
       await wallet.put('_lelantus_coins', SampleLelantus.lelantusCoins);
       await wallet.put('jindex', [2, 4, 6]);
@@ -1720,6 +1738,355 @@ void main() {
       expect(result, isA<String>());
       expect(result, expectedTxid);
       expect(result.length, 64);
+    }, timeout: Timeout(Duration(minutes: 3)));
+
+    test("send fails due to insufficient balance", () async {
+      final client = MockElectrumX();
+      final cachedClient = MockCachedElectrumX();
+      final secureStore = FakeSecureStorage();
+      final priceAPI = MockPriceAPI();
+
+      String expectedTxid;
+
+      when(client.getBlockHeadTip()).thenAnswer(
+          (_) async => {"height": 459185, "hex": "... some block hex ..."});
+
+      when(client.broadcastTransaction(rawTx: anyNamed("rawTx")))
+          .thenAnswer((realInvocation) async {
+        final rawTx = realInvocation.namedArguments[Symbol("rawTx")];
+        final rawTxData = stringToUint8List(rawTx);
+
+        final hash = sha256
+            .convert(sha256.convert(rawTxData.toList(growable: false)).bytes);
+
+        final reversedBytes =
+            Uint8List.fromList(hash.bytes.reversed.toList(growable: false));
+
+        final txid = uint8listToString(reversedBytes);
+        expectedTxid = txid;
+        return txid;
+      });
+
+      when(cachedClient.getAnonymitySet(
+        groupId: "1",
+        coinName: "Firo",
+        callOutSideMainIsolate: false,
+      )).thenAnswer((_) async => GetAnonymitySetSampleData.finalData);
+
+      // mock price calls
+      when(priceAPI.getPrice(ticker: "FIRO", baseCurrency: "USD"))
+          .thenAnswer((_) async => Decimal.fromInt(10));
+
+      // mock transaction calls
+      when(cachedClient.getTransaction(
+              tx_hash: SampleGetTransactionData.txHash0,
+              coinName: "Firo",
+              callOutSideMainIsolate: false))
+          .thenAnswer((_) async => SampleGetTransactionData.txData0);
+      when(cachedClient.getTransaction(
+              tx_hash: SampleGetTransactionData.txHash1,
+              coinName: "Firo",
+              callOutSideMainIsolate: false))
+          .thenAnswer((_) async => SampleGetTransactionData.txData1);
+      when(cachedClient.getTransaction(
+              tx_hash: SampleGetTransactionData.txHash2,
+              coinName: "Firo",
+              callOutSideMainIsolate: false))
+          .thenAnswer((_) async => SampleGetTransactionData.txData2);
+      when(cachedClient.getTransaction(
+              tx_hash: SampleGetTransactionData.txHash3,
+              coinName: "Firo",
+              callOutSideMainIsolate: false))
+          .thenAnswer((_) async => SampleGetTransactionData.txData3);
+      when(cachedClient.getTransaction(
+              tx_hash: SampleGetTransactionData.txHash4,
+              coinName: "Firo",
+              callOutSideMainIsolate: false))
+          .thenAnswer((_) async => SampleGetTransactionData.txData4);
+      when(cachedClient.getTransaction(
+              tx_hash: SampleGetTransactionData.txHash5,
+              coinName: "Firo",
+              callOutSideMainIsolate: false))
+          .thenAnswer((_) async => SampleGetTransactionData.txData5);
+      when(cachedClient.getTransaction(
+              tx_hash: SampleGetTransactionData.txHash6,
+              coinName: "Firo",
+              callOutSideMainIsolate: false))
+          .thenAnswer((_) async => SampleGetTransactionData.txData6);
+      when(cachedClient.getTransaction(
+              tx_hash: SampleGetTransactionData.txHash7,
+              coinName: "Firo",
+              callOutSideMainIsolate: false))
+          .thenAnswer((_) async => SampleGetTransactionData.txData7);
+      when(cachedClient.getTransaction(
+              tx_hash: SampleGetTransactionData.txHash8,
+              coinName: "Firo",
+              callOutSideMainIsolate: false))
+          .thenAnswer((_) async => SampleGetTransactionData.txData8);
+      when(cachedClient.getTransaction(
+              tx_hash: SampleGetTransactionData.txHash9,
+              coinName: "Firo",
+              callOutSideMainIsolate: false))
+          .thenAnswer((_) async => SampleGetTransactionData.txData9);
+      when(cachedClient.getTransaction(
+              tx_hash: SampleGetTransactionData.txHash10,
+              coinName: "Firo",
+              callOutSideMainIsolate: false))
+          .thenAnswer((_) async => SampleGetTransactionData.txData10);
+
+      final firo = FiroWallet(
+        walletId: testWalletId + "send",
+        walletName: testWalletName,
+        networkType: FiroNetworkType.main,
+        client: client,
+        cachedClient: cachedClient,
+        secureStore: secureStore,
+        priceAPI: priceAPI,
+      );
+
+      // set mnemonic
+      await secureStore.write(
+          key: "${testWalletId}send_mnemonic", value: TEST_MNEMONIC);
+
+      // set timer to non null so a periodic timer isn't created
+      firo.timer = Timer(Duration(), () {});
+
+      // build sending wallet
+      await firo.fillAddresses(TEST_MNEMONIC);
+      final wallet = await Hive.openBox(testWalletId + "send");
+      final receiveDerivations = await wallet.get('receiveDerivations');
+      final changeDerivations = await wallet.get('changeDerivations');
+
+      for (int i = 0; i < receiveDerivations.length; i++) {
+        final receiveHash = AddressUtils.convertToScriptHash(
+            receiveDerivations[i]["address"], firoNetwork);
+        final changeHash = AddressUtils.convertToScriptHash(
+            changeDerivations[i]["address"], firoNetwork);
+        List<Map<String, dynamic>> data;
+        switch (receiveHash) {
+          case SampleGetHistoryData.scripthash0:
+            data = SampleGetHistoryData.data0;
+            break;
+          case SampleGetHistoryData.scripthash1:
+            data = SampleGetHistoryData.data1;
+            break;
+          case SampleGetHistoryData.scripthash2:
+            data = SampleGetHistoryData.data2;
+            break;
+          case SampleGetHistoryData.scripthash3:
+            data = SampleGetHistoryData.data3;
+            break;
+          default:
+            data = [];
+        }
+        when(client.getHistory(scripthash: receiveHash))
+            .thenAnswer((_) async => data);
+
+        switch (changeHash) {
+          case SampleGetHistoryData.scripthash0:
+            data = SampleGetHistoryData.data0;
+            break;
+          case SampleGetHistoryData.scripthash1:
+            data = SampleGetHistoryData.data1;
+            break;
+          case SampleGetHistoryData.scripthash2:
+            data = SampleGetHistoryData.data2;
+            break;
+          case SampleGetHistoryData.scripthash3:
+            data = SampleGetHistoryData.data3;
+            break;
+          default:
+            data = [];
+        }
+
+        when(client.getHistory(scripthash: changeHash))
+            .thenAnswer((_) async => data);
+      }
+
+      await wallet.put('_lelantus_coins', {});
+      await wallet.put('jindex', []);
+      await wallet.put('mintIndex', 0);
+      await wallet.put('receivingAddresses', [
+        "a8VV7vMzJdTQj1eLEJNskhLEBUxfNWhpAg",
+        "aPjLWDTPQsoPHUTxKBNRzoebDALj3eTcfh",
+        "aKmXfS7nEZdqWBGRdAXcyMoEoKhZQDPBoq"
+      ]);
+      await wallet
+          .put('changeAddresses', ["a5V5r6We6mNZzWJwGwEeRML3mEYLjvK39w"]);
+
+      expect(
+          () async => await firo.send(
+              toAddress: "aHZJsucDrhr4Uzzx6XXrKnaTgLxsEAokvV", amount: 100),
+          throwsA(isA<Exception>()));
+    }, timeout: Timeout(Duration(minutes: 3)));
+
+    test("send fails due to bad transaction created", () async {
+      final client = MockElectrumX();
+      final cachedClient = MockCachedElectrumX();
+      final secureStore = FakeSecureStorage();
+      final priceAPI = MockPriceAPI();
+
+      String expectedTxid;
+
+      when(client.getBlockHeadTip()).thenAnswer(
+          (_) async => {"height": 459185, "hex": "... some block hex ..."});
+
+      when(client.broadcastTransaction(rawTx: anyNamed("rawTx")))
+          .thenAnswer((_) async {
+        return "some bad txid";
+      });
+
+      when(cachedClient.getAnonymitySet(
+        groupId: "1",
+        coinName: "Firo",
+        callOutSideMainIsolate: false,
+      )).thenAnswer((_) async => GetAnonymitySetSampleData.finalData);
+
+      // mock price calls
+      when(priceAPI.getPrice(ticker: "FIRO", baseCurrency: "USD"))
+          .thenAnswer((_) async => Decimal.fromInt(10));
+
+      // mock transaction calls
+      when(cachedClient.getTransaction(
+              tx_hash: SampleGetTransactionData.txHash0,
+              coinName: "Firo",
+              callOutSideMainIsolate: false))
+          .thenAnswer((_) async => SampleGetTransactionData.txData0);
+      when(cachedClient.getTransaction(
+              tx_hash: SampleGetTransactionData.txHash1,
+              coinName: "Firo",
+              callOutSideMainIsolate: false))
+          .thenAnswer((_) async => SampleGetTransactionData.txData1);
+      when(cachedClient.getTransaction(
+              tx_hash: SampleGetTransactionData.txHash2,
+              coinName: "Firo",
+              callOutSideMainIsolate: false))
+          .thenAnswer((_) async => SampleGetTransactionData.txData2);
+      when(cachedClient.getTransaction(
+              tx_hash: SampleGetTransactionData.txHash3,
+              coinName: "Firo",
+              callOutSideMainIsolate: false))
+          .thenAnswer((_) async => SampleGetTransactionData.txData3);
+      when(cachedClient.getTransaction(
+              tx_hash: SampleGetTransactionData.txHash4,
+              coinName: "Firo",
+              callOutSideMainIsolate: false))
+          .thenAnswer((_) async => SampleGetTransactionData.txData4);
+      when(cachedClient.getTransaction(
+              tx_hash: SampleGetTransactionData.txHash5,
+              coinName: "Firo",
+              callOutSideMainIsolate: false))
+          .thenAnswer((_) async => SampleGetTransactionData.txData5);
+      when(cachedClient.getTransaction(
+              tx_hash: SampleGetTransactionData.txHash6,
+              coinName: "Firo",
+              callOutSideMainIsolate: false))
+          .thenAnswer((_) async => SampleGetTransactionData.txData6);
+      when(cachedClient.getTransaction(
+              tx_hash: SampleGetTransactionData.txHash7,
+              coinName: "Firo",
+              callOutSideMainIsolate: false))
+          .thenAnswer((_) async => SampleGetTransactionData.txData7);
+      when(cachedClient.getTransaction(
+              tx_hash: SampleGetTransactionData.txHash8,
+              coinName: "Firo",
+              callOutSideMainIsolate: false))
+          .thenAnswer((_) async => SampleGetTransactionData.txData8);
+      when(cachedClient.getTransaction(
+              tx_hash: SampleGetTransactionData.txHash9,
+              coinName: "Firo",
+              callOutSideMainIsolate: false))
+          .thenAnswer((_) async => SampleGetTransactionData.txData9);
+      when(cachedClient.getTransaction(
+              tx_hash: SampleGetTransactionData.txHash10,
+              coinName: "Firo",
+              callOutSideMainIsolate: false))
+          .thenAnswer((_) async => SampleGetTransactionData.txData10);
+
+      final firo = FiroWallet(
+        walletId: testWalletId + "send",
+        walletName: testWalletName,
+        networkType: FiroNetworkType.main,
+        client: client,
+        cachedClient: cachedClient,
+        secureStore: secureStore,
+        priceAPI: priceAPI,
+      );
+
+      // set mnemonic
+      await secureStore.write(
+          key: "${testWalletId}send_mnemonic", value: TEST_MNEMONIC);
+
+      // set timer to non null so a periodic timer isn't created
+      firo.timer = Timer(Duration(), () {});
+
+      // build sending wallet
+      await firo.fillAddresses(TEST_MNEMONIC);
+      final wallet = await Hive.openBox(testWalletId + "send");
+      final receiveDerivations = await wallet.get('receiveDerivations');
+      final changeDerivations = await wallet.get('changeDerivations');
+
+      for (int i = 0; i < receiveDerivations.length; i++) {
+        final receiveHash = AddressUtils.convertToScriptHash(
+            receiveDerivations[i]["address"], firoNetwork);
+        final changeHash = AddressUtils.convertToScriptHash(
+            changeDerivations[i]["address"], firoNetwork);
+        List<Map<String, dynamic>> data;
+        switch (receiveHash) {
+          case SampleGetHistoryData.scripthash0:
+            data = SampleGetHistoryData.data0;
+            break;
+          case SampleGetHistoryData.scripthash1:
+            data = SampleGetHistoryData.data1;
+            break;
+          case SampleGetHistoryData.scripthash2:
+            data = SampleGetHistoryData.data2;
+            break;
+          case SampleGetHistoryData.scripthash3:
+            data = SampleGetHistoryData.data3;
+            break;
+          default:
+            data = [];
+        }
+        when(client.getHistory(scripthash: receiveHash))
+            .thenAnswer((_) async => data);
+
+        switch (changeHash) {
+          case SampleGetHistoryData.scripthash0:
+            data = SampleGetHistoryData.data0;
+            break;
+          case SampleGetHistoryData.scripthash1:
+            data = SampleGetHistoryData.data1;
+            break;
+          case SampleGetHistoryData.scripthash2:
+            data = SampleGetHistoryData.data2;
+            break;
+          case SampleGetHistoryData.scripthash3:
+            data = SampleGetHistoryData.data3;
+            break;
+          default:
+            data = [];
+        }
+
+        when(client.getHistory(scripthash: changeHash))
+            .thenAnswer((_) async => data);
+      }
+
+      await wallet.put('_lelantus_coins', SampleLelantus.lelantusCoins);
+      await wallet.put('jindex', [2, 4, 6]);
+      await wallet.put('mintIndex', 8);
+      await wallet.put('receivingAddresses', [
+        "a8VV7vMzJdTQj1eLEJNskhLEBUxfNWhpAg",
+        "aPjLWDTPQsoPHUTxKBNRzoebDALj3eTcfh",
+        "aKmXfS7nEZdqWBGRdAXcyMoEoKhZQDPBoq"
+      ]);
+      await wallet
+          .put('changeAddresses', ["a5V5r6We6mNZzWJwGwEeRML3mEYLjvK39w"]);
+
+      expect(
+          () async => await firo.send(
+              toAddress: "aHZJsucDrhr4Uzzx6XXrKnaTgLxsEAokvV", amount: 100),
+          throwsA(isA<Exception>()));
     }, timeout: Timeout(Duration(minutes: 3)));
 
     test("wallet balances", () async {
@@ -1788,6 +2155,9 @@ void main() {
       );
 
       final wallet = await Hive.openBox(testWalletId + "wallet balances");
+      await wallet.put('_lelantus_coins', SampleLelantus.lelantusCoins);
+      await wallet.put('jindex', [2, 4, 6]);
+      await wallet.put('mintIndex', 8);
       await wallet.put('receivingAddresses', [
         "a8VV7vMzJdTQj1eLEJNskhLEBUxfNWhpAg",
         "aPjLWDTPQsoPHUTxKBNRzoebDALj3eTcfh",
@@ -1799,11 +2169,11 @@ void main() {
       ]);
 
       expect(await firo.pendingBalance, Decimal.zero);
-      expect(await firo.balance, Decimal.zero);
-      expect(await firo.totalBalance, Decimal.zero);
+      expect(await firo.balance, Decimal.parse("0.00021594"));
+      expect(await firo.totalBalance, Decimal.parse("0.00021594"));
     });
 
-    test("wallet balance minus maxfee", () async {
+    test("wallet balance minus maxfee - wallet balance is zero", () async {
       final client = MockElectrumX();
       final cachedClient = MockCachedElectrumX();
       final priceAPI = MockPriceAPI();
@@ -1889,6 +2259,117 @@ void main() {
       expect(await firo.maxFee, isA<LelantusFeeData>());
 
       expect(await firo.balanceMinusMaxFee, Decimal.zero);
+    });
+
+    test("wallet balance minus maxfee - wallet balance is not zero", () async {
+      final client = MockElectrumX();
+      final cachedClient = MockCachedElectrumX();
+      final priceAPI = MockPriceAPI();
+      final secureStore = FakeSecureStorage();
+
+      // mock price calls
+      when(priceAPI.getPrice(ticker: "FIRO", baseCurrency: "USD"))
+          .thenAnswer((_) async => Decimal.fromInt(10));
+
+      // mock history calls
+      when(client.getHistory(scripthash: SampleGetHistoryData.scripthash0))
+          .thenAnswer((_) async => SampleGetHistoryData.data0);
+      when(client.getHistory(scripthash: SampleGetHistoryData.scripthash1))
+          .thenAnswer((_) async => SampleGetHistoryData.data1);
+      when(client.getHistory(scripthash: SampleGetHistoryData.scripthash2))
+          .thenAnswer((_) async => SampleGetHistoryData.data2);
+      when(client.getHistory(scripthash: SampleGetHistoryData.scripthash3))
+          .thenAnswer((_) async => SampleGetHistoryData.data3);
+
+      // mock transaction calls
+      when(cachedClient.getTransaction(
+              tx_hash: SampleGetTransactionData.txHash0,
+              coinName: "Firo",
+              callOutSideMainIsolate: false))
+          .thenAnswer((_) async => SampleGetTransactionData.txData0);
+      when(cachedClient.getTransaction(
+              tx_hash: SampleGetTransactionData.txHash1,
+              coinName: "Firo",
+              callOutSideMainIsolate: false))
+          .thenAnswer((_) async => SampleGetTransactionData.txData1);
+      when(cachedClient.getTransaction(
+              tx_hash: SampleGetTransactionData.txHash2,
+              coinName: "Firo",
+              callOutSideMainIsolate: false))
+          .thenAnswer((_) async => SampleGetTransactionData.txData2);
+      when(cachedClient.getTransaction(
+              tx_hash: SampleGetTransactionData.txHash3,
+              coinName: "Firo",
+              callOutSideMainIsolate: false))
+          .thenAnswer((_) async => SampleGetTransactionData.txData3);
+      when(cachedClient.getTransaction(
+              tx_hash: SampleGetTransactionData.txHash4,
+              coinName: "Firo",
+              callOutSideMainIsolate: false))
+          .thenAnswer((_) async => SampleGetTransactionData.txData4);
+      when(cachedClient.getTransaction(
+              tx_hash: SampleGetTransactionData.txHash5,
+              coinName: "Firo",
+              callOutSideMainIsolate: false))
+          .thenAnswer((_) async => SampleGetTransactionData.txData5);
+      when(cachedClient.getTransaction(
+              tx_hash: SampleGetTransactionData.txHash6,
+              coinName: "Firo",
+              callOutSideMainIsolate: false))
+          .thenAnswer((_) async => SampleGetTransactionData.txData6);
+      when(cachedClient.getTransaction(
+              tx_hash: SampleGetTransactionData.txHash7,
+              coinName: "Firo",
+              callOutSideMainIsolate: false))
+          .thenAnswer((_) async => SampleGetTransactionData.txData7);
+      when(cachedClient.getTransaction(
+              tx_hash: SampleGetTransactionData.txHash8,
+              coinName: "Firo",
+              callOutSideMainIsolate: false))
+          .thenAnswer((_) async => SampleGetTransactionData.txData8);
+      when(cachedClient.getTransaction(
+              tx_hash: SampleGetTransactionData.txHash9,
+              coinName: "Firo",
+              callOutSideMainIsolate: false))
+          .thenAnswer((_) async => SampleGetTransactionData.txData9);
+      when(cachedClient.getTransaction(
+              tx_hash: SampleGetTransactionData.txHash10,
+              coinName: "Firo",
+              callOutSideMainIsolate: false))
+          .thenAnswer((_) async => SampleGetTransactionData.txData10);
+
+      final firo = FiroWallet(
+        walletId: testWalletId + "wallet balance minus maxfee",
+        walletName: "pendingBalance wallet name",
+        networkType: FiroNetworkType.main,
+        client: client,
+        cachedClient: cachedClient,
+        secureStore: secureStore,
+        priceAPI: priceAPI,
+      );
+
+      await secureStore.write(
+          key: testWalletId + "wallet balance minus maxfee_mnemonic",
+          value: TEST_MNEMONIC);
+
+      final wallet =
+          await Hive.openBox(testWalletId + "wallet balance minus maxfee");
+      await wallet.put('_lelantus_coins', SampleLelantus.lelantusCoins);
+      await wallet.put('jindex', [2, 4, 6]);
+      await wallet.put('mintIndex', 8);
+      await wallet.put('receivingAddresses', [
+        "a8VV7vMzJdTQj1eLEJNskhLEBUxfNWhpAg",
+        "aPjLWDTPQsoPHUTxKBNRzoebDALj3eTcfh",
+        "aKmXfS7nEZdqWBGRdAXcyMoEoKhZQDPBoq",
+      ]);
+
+      await wallet.put('changeAddresses', [
+        "a5V5r6We6mNZzWJwGwEeRML3mEYLjvK39w",
+      ]);
+
+      expect(await firo.maxFee, isA<LelantusFeeData>());
+
+      expect(await firo.balanceMinusMaxFee, Decimal.parse("0.0001268"));
     });
 
     test("get transactionData", () async {
@@ -2000,6 +2481,189 @@ void main() {
       await firo.exit();
     });
 
+    test("autoMint", () async {
+      final client = MockElectrumX();
+      final cachedClient = MockCachedElectrumX();
+      final secureStore = FakeSecureStorage();
+      final priceAPI = MockPriceAPI();
+
+      // mock electrumx client calls
+      when(client.getServerFeatures()).thenAnswer((_) async => {
+            "hosts": {},
+            "pruning": null,
+            "server_version": "Unit tests",
+            "protocol_min": "1.4",
+            "protocol_max": "1.4.2",
+            "genesis_hash": CampfireConstants.firoGenesisHash,
+            "hash_function": "sha256",
+            "services": []
+          });
+
+      when(client.getBlockHeadTip()).thenAnswer(
+          (_) async => {"height": 465873, "hex": "this value not used here"});
+
+      when(client.broadcastTransaction(rawTx: anyNamed("rawTx")))
+          .thenAnswer((realInvocation) async {
+        final rawTx = realInvocation.namedArguments[Symbol("rawTx")];
+        final rawTxData = stringToUint8List(rawTx);
+
+        final hash = sha256
+            .convert(sha256.convert(rawTxData.toList(growable: false)).bytes);
+
+        final reversedBytes =
+            Uint8List.fromList(hash.bytes.reversed.toList(growable: false));
+
+        final txid = uint8listToString(reversedBytes);
+
+        return txid;
+      });
+
+      when(client.getFeeRate()).thenAnswer((_) async => {"rate": 1000});
+
+      when(client.getLatestCoinId()).thenAnswer((_) async => 1);
+      when(client.getCoinsForRecovery(setId: 1))
+          .thenAnswer((_) async => getCoinsForRecoveryResponse);
+      when(client.getUsedCoinSerials())
+          .thenAnswer((_) async => GetUsedSerialsSampleData.serials);
+
+      // mock price calls
+      when(priceAPI.getPrice(ticker: "FIRO", baseCurrency: "USD"))
+          .thenAnswer((_) async => Decimal.fromInt(10));
+
+      // mock transaction calls
+      when(cachedClient.getTransaction(
+              tx_hash: SampleGetTransactionData.txHash0,
+              coinName: "Firo",
+              callOutSideMainIsolate: false))
+          .thenAnswer((_) async => SampleGetTransactionData.txData0);
+      when(cachedClient.getTransaction(
+              tx_hash: SampleGetTransactionData.txHash1,
+              coinName: "Firo",
+              callOutSideMainIsolate: false))
+          .thenAnswer((_) async => SampleGetTransactionData.txData1);
+      when(cachedClient.getTransaction(
+              tx_hash: SampleGetTransactionData.txHash2,
+              coinName: "Firo",
+              callOutSideMainIsolate: false))
+          .thenAnswer((_) async => SampleGetTransactionData.txData2);
+      when(cachedClient.getTransaction(
+              tx_hash: SampleGetTransactionData.txHash3,
+              coinName: "Firo",
+              callOutSideMainIsolate: false))
+          .thenAnswer((_) async => SampleGetTransactionData.txData3);
+      when(cachedClient.getTransaction(
+              tx_hash: SampleGetTransactionData.txHash4,
+              coinName: "Firo",
+              callOutSideMainIsolate: false))
+          .thenAnswer((_) async => SampleGetTransactionData.txData4);
+      when(cachedClient.getTransaction(
+              tx_hash: SampleGetTransactionData.txHash5,
+              coinName: "Firo",
+              callOutSideMainIsolate: false))
+          .thenAnswer((_) async => SampleGetTransactionData.txData5);
+      when(cachedClient.getTransaction(
+              tx_hash: SampleGetTransactionData.txHash6,
+              coinName: "Firo",
+              callOutSideMainIsolate: false))
+          .thenAnswer((_) async => SampleGetTransactionData.txData6);
+      when(cachedClient.getTransaction(
+              tx_hash: SampleGetTransactionData.txHash11,
+              coinName: "Firo",
+              callOutSideMainIsolate: false))
+          .thenAnswer((_) async => SampleGetTransactionData.txData11);
+      when(cachedClient.getTransaction(
+              tx_hash: SampleGetTransactionData.txHash12,
+              coinName: "Firo",
+              callOutSideMainIsolate: false))
+          .thenAnswer((_) async => SampleGetTransactionData.txData12);
+
+      final firo = FiroWallet(
+        walletName: testWalletName,
+        walletId: testWalletId + "autoMint",
+        networkType: FiroNetworkType.main,
+        client: client,
+        cachedClient: cachedClient,
+        secureStore: secureStore,
+        priceAPI: priceAPI,
+      );
+
+      // pre grab derivations in order to set up mock calls needed later on
+      await firo.fillAddresses(TEST_MNEMONIC);
+      final wallet = await Hive.openBox(testWalletId + "autoMint");
+      await wallet.put(
+          'receivingAddresses', RefreshTestParams.receivingAddresses);
+      await wallet.put('changeAddresses', RefreshTestParams.changeAddresses);
+      final receiveDerivations = await wallet.get('receiveDerivations');
+      final changeDerivations = await wallet.get('changeDerivations');
+      for (int i = 0; i < receiveDerivations.length; i++) {
+        final receiveHash = AddressUtils.convertToScriptHash(
+            receiveDerivations[i]["address"], firoNetwork);
+        final changeHash = AddressUtils.convertToScriptHash(
+            changeDerivations[i]["address"], firoNetwork);
+        List<Map<String, dynamic>> data;
+        switch (receiveHash) {
+          case SampleGetHistoryData.scripthash0:
+            data = SampleGetHistoryData.data0;
+            break;
+          case SampleGetHistoryData.scripthash1:
+            data = SampleGetHistoryData.data1;
+            break;
+          case SampleGetHistoryData.scripthash2:
+            data = SampleGetHistoryData.data2;
+            break;
+          case SampleGetHistoryData.scripthash3:
+            data = SampleGetHistoryData.data3;
+            break;
+          default:
+            data = [];
+        }
+        when(client.getHistory(scripthash: receiveHash))
+            .thenAnswer((_) async => data);
+
+        switch (changeHash) {
+          case SampleGetHistoryData.scripthash0:
+            data = SampleGetHistoryData.data0;
+            break;
+          case SampleGetHistoryData.scripthash1:
+            data = SampleGetHistoryData.data1;
+            break;
+          case SampleGetHistoryData.scripthash2:
+            data = SampleGetHistoryData.data2;
+            break;
+          case SampleGetHistoryData.scripthash3:
+            data = SampleGetHistoryData.data3;
+            break;
+          default:
+            data = [];
+        }
+
+        when(client.getHistory(scripthash: changeHash))
+            .thenAnswer((_) async => data);
+      }
+
+      when(client.getUTXOs(scripthash: GetUtxoSampleData.scriptHash0))
+          .thenAnswer((_) async => GetUtxoSampleData.utxos0);
+      when(client.getUTXOs(scripthash: GetUtxoSampleData.scriptHash1))
+          .thenAnswer((_) async => GetUtxoSampleData.utxos1);
+
+      await firo.recoverFromMnemonic(TEST_MNEMONIC);
+
+      firo.timer = Timer(Duration(minutes: 3), () {});
+
+      final adrs = await firo.allOwnAddresses;
+
+      print("adrs.length: ${adrs.length}");
+      for (final adr in adrs) {
+        print(AddressUtils.convertToScriptHash(adr, firoNetwork));
+      }
+
+      await firo.refresh();
+
+      await expectLater(() async => await firo.autoMint(), returnsNormally);
+
+      await firo.exit();
+    }, timeout: Timeout(Duration(minutes: 3)));
+
     test("exit", () {
       final firo = FiroWallet(
         walletId: testWalletId + "exit",
@@ -2050,6 +2714,46 @@ void main() {
         );
 
         expect(firo.networkType, FiroNetworkType.test);
+      });
+    });
+
+    group("fees", () {
+      test("get fees succeeds", () async {
+        final client = MockElectrumX();
+
+        when(client.getFeeRate()).thenAnswer((_) async => {"rate": 1000});
+
+        final firo = FiroWallet(
+          walletId: "some id",
+          walletName: "some name",
+          networkType: FiroNetworkType.main,
+          client: client,
+          cachedClient: MockCachedElectrumX(),
+          secureStore: FakeSecureStorage(),
+          priceAPI: MockPriceAPI(),
+        );
+
+        expect((await firo.fees).fast, "0.00001000");
+        expect((await firo.fees).medium, "0.00001000");
+        expect((await firo.fees).slow, "0.00001000");
+      });
+
+      test("get fees throws", () {
+        final client = MockElectrumX();
+
+        when(client.getFeeRate()).thenThrow(Exception("Some exception"));
+
+        final firo = FiroWallet(
+          walletId: "some id",
+          walletName: "some name",
+          networkType: FiroNetworkType.main,
+          client: client,
+          cachedClient: MockCachedElectrumX(),
+          secureStore: FakeSecureStorage(),
+          priceAPI: MockPriceAPI(),
+        );
+
+        expect(firo.fees, throwsA(isA<Exception>()));
       });
     });
 

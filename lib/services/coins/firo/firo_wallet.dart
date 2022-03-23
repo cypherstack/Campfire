@@ -855,7 +855,7 @@ class FiroWallet extends CoinServiceAPI {
   // currently isn't used but required due to abstract parent class
   Future<FeeObject> _feeObject;
   @override
-  Future<FeeObject> get fees => _feeObject;
+  Future<FeeObject> get fees => _feeObject ??= _getFees();
 
   /// Holds preferred fiat currency
   String _currency;
@@ -912,8 +912,6 @@ class FiroWallet extends CoinServiceAPI {
         switch (txHexOrError) {
           case 1:
             throw Exception("Insufficient balance!");
-          case 2:
-            throw Exception("Insufficient funds to pay for tx fee");
           default:
             throw Exception("Error Creating Transaction!");
         }
@@ -1207,7 +1205,7 @@ class FiroWallet extends CoinServiceAPI {
       await _refreshLelantusData();
       GlobalEventBus.instance.fire(RefreshPercentChangedEvent(0.80));
 
-      await _autoMint();
+      await autoMint();
       GlobalEventBus.instance.fire(RefreshPercentChangedEvent(0.90));
 
       var balance = await _getFullBalance();
@@ -1414,24 +1412,16 @@ class FiroWallet extends CoinServiceAPI {
 
       balances.add(lelantusBalance);
 
-      if (price == null) {
-        balances.add(Decimal.fromInt(-1));
-      } else {
-        balances.add(lelantusBalance * price);
-      }
+      balances.add(lelantusBalance * price);
 
       Decimal _unconfirmedLelantusBalance =
           Utilities.satoshisToAmount(unconfirmedLelantusBalance);
 
       balances.add(lelantusBalance + utxosValue + _unconfirmedLelantusBalance);
 
-      if (price == null) {
-        balances.add(Decimal.fromInt(-1));
-      } else {
-        balances.add(
-            (lelantusBalance + utxosValue + _unconfirmedLelantusBalance) *
-                price);
-      }
+      balances.add(
+          (lelantusBalance + utxosValue + _unconfirmedLelantusBalance) * price);
+
       Logger.print("balances $balances");
       return balances;
     } catch (e, s) {
@@ -1440,7 +1430,7 @@ class FiroWallet extends CoinServiceAPI {
     }
   }
 
-  Future<void> _autoMint() async {
+  Future<void> autoMint() async {
     try {
       var mintResult = await _mintSelection();
       if (mintResult == null || mintResult.isEmpty) {
@@ -1669,7 +1659,7 @@ class FiroWallet extends CoinServiceAPI {
     };
   }
 
-  Future<TransactionData> _refreshLelantusData() async {
+  Future<void> _refreshLelantusData() async {
     final wallet = await Hive.openBox(this._walletId);
     final Map _lelantus_coins = await wallet.get('_lelantus_coins');
     List jindexes = await wallet.get('jindex');
@@ -1677,7 +1667,7 @@ class FiroWallet extends CoinServiceAPI {
     // Get all joinsplit transaction ids
     final lelantusTxData = await lelantusTransactionData;
     if (lelantusTxData == null) {
-      return null;
+      return;
     }
     final listLelantusTxData = lelantusTxData.getAllTransactions();
     List<String> joinsplits = [];
@@ -1722,7 +1712,7 @@ class FiroWallet extends CoinServiceAPI {
 
     final txData = await _txnData;
     if (txData == null) {
-      return null;
+      return;
     }
     Logger.print(txData.txChunks);
     final listTxData = txData.getAllTransactions();

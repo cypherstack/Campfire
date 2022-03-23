@@ -602,6 +602,121 @@ abstract class SampleGetTransactionData {
     "instantlock": false,
     "chainlock": true
   };
+
+  static const txHash11 =
+      "9f2c45a12db0144909b5db269415f7319179105982ac70ed80d76ea79d923ebf";
+  static Map<String, dynamic> txData11 = {
+    "txid": "9f2c45a12db0144909b5db269415f7319179105982ac70ed80d76ea79d923ebf",
+    "hash": "9f2c45a12db0144909b5db269415f7319179105982ac70ed80d76ea79d923ebf",
+    "size": 3794,
+    "vsize": 3794,
+    "version": 3,
+    "locktime": 457377,
+    "type": 8,
+    "vin": [
+      {
+        "scriptSig": {"asm": "OP_LELANTUSJOINSPLITPAYLOAD", "hex": "c9"},
+        "nFees": 0.00003794,
+        "serials": [
+          "15b8dca4cf62952779a4a14b49162b57c6f9cdee46cace129579289138356930"
+        ],
+        "sequence": 4294967295
+      }
+    ],
+    "vout": [
+      {
+        "value": 0,
+        "n": 0,
+        "scriptPubKey": {
+          "asm": "OP_LELANTUSJMINT",
+          "hex":
+              "c60b3e3285297c4a34d1a4568c862bff06131412def1cb6ccc27fb797f90d9892601006bf15e5306d708eb977479c0707011af38a9e631a249a2deac3e68c7d7c7f905d05ca3708b2f4582e91a3062c869726b",
+          "type": "lelantusmint"
+        }
+      },
+      {
+        "value": 0.0002,
+        "n": 1,
+        "scriptPubKey": {
+          "asm":
+              "OP_DUP OP_HASH160 fc7544c6de770f98566e5dec658739ea75b6f5c0 OP_EQUALVERIFY OP_CHECKSIG",
+          "hex": "76a914fc7544c6de770f98566e5dec658739ea75b6f5c088ac",
+          "reqSigs": 1,
+          "type": "pubkeyhash",
+          "addresses": ["aPjLWDTPQsoPHUTxKBNRzoebDALj3eTcfh"]
+        },
+        "spentTxId":
+            "fbc640a3bf96af11c0e656ab0974659a31be3cdb7b4379f0ed689ddac9018859",
+        "spentIndex": 0,
+        "spentHeight": -1
+      }
+    ],
+    "blockhash":
+        "548c1a5ef3d3e11d393e6cd78a5dc75648ce2b577d16dec658862e3c17f74e89",
+    "height": 457379,
+    "time": 1646688709,
+    "blocktime": 1646688709,
+    "instantlock": false,
+    "chainlock": true,
+  };
+
+  static const txHash12 =
+      "3d2290c93436a3e964cfc2f0950174d8847b1fbe3946432c4784e168da0f019f";
+  static Map<String, dynamic> txData12 = {
+    "txid": "3d2290c93436a3e964cfc2f0950174d8847b1fbe3946432c4784e168da0f019f",
+    "hash": "3d2290c93436a3e964cfc2f0950174d8847b1fbe3946432c4784e168da0f019f",
+    "size": 3794,
+    "vsize": 3794,
+    "version": 3,
+    "locktime": 457377,
+    "type": 8,
+    "vin": [
+      {
+        "scriptSig": {"asm": "OP_LELANTUSJOINSPLITPAYLOAD", "hex": "c9"},
+        "nFees": 0.00003794,
+        "serials": [
+          "15b8dca4cf62952779a4a14b49162b57c6f9cdee46cace129579289138356930"
+        ],
+        "sequence": 4294967295
+      }
+    ],
+    "vout": [
+      // {
+      //   "value": 0,
+      //   "n": 0,
+      //   "scriptPubKey": {
+      //     "asm": "OP_LELANTUSJMINT",
+      //     "hex":
+      //         "c60b3e3285297c4a34d1a4568c862bff06131412def1cb6ccc27fb797f90d9892601006bf15e5306d708eb977479c0707011af38a9e631a249a2deac3e68c7d7c7f905d05ca3708b2f4582e91a3062c869726b",
+      //     "type": "lelantusmint"
+      //   }
+      // },
+      {
+        "value": 0.0002,
+        "n": 1,
+        "scriptPubKey": {
+          "asm":
+              "OP_DUP OP_HASH160 fc7544c6de770f98566e5dec658739ea75b6f5c0 OP_EQUALVERIFY OP_CHECKSIG",
+          "hex": "76a914fc7544c6de770f98566e5dec658739ea75b6f5c088ac",
+          "reqSigs": 1,
+          "type": "pubkeyhash",
+          "addresses": ["aPjLWDTPQsoPHUTxKBNRzoebDALj3eTcfh"]
+        },
+        "spentTxId":
+            "fbc640a3bf96af11c0e656ab0974659a31be3cdb7b4379f0ed689ddac9018859",
+        "spentIndex": 0,
+        "spentHeight": -1
+      }
+    ],
+    "blockhash":
+        "548c1a5ef3d3e11d393e6cd78a5dc75648ce2b577d16dec658862e3c17f74e89",
+    "height": 457379,
+    "confirmations": 10,
+    "time": 1646688709,
+    "blocktime": 1646688709,
+    "instantlock": false,
+    "chainlock": true,
+  };
 }
 
 final t1 = Transaction(
