@@ -83,15 +83,6 @@ void main() {
     });
 
     test("isolateCreateJoinSplitTransaction not enough funds", () async {
-      final client = MockElectrumX();
-      final cachedClient = MockCachedElectrumX();
-
-      when(cachedClient.getAnonymitySet(
-        groupId: "1",
-        coinName: "Firo",
-        callOutSideMainIsolate: true,
-      )).thenAnswer((_) async => GetAnonymitySetSampleData.initialData);
-
       final result = await isolateCreateJoinSplitTransaction(
         100,
         "aNmsUtzPzQ3SKWNjEH48GacMQJXWN5Rotm",
@@ -100,28 +91,16 @@ void main() {
         2,
         Decimal.ten,
         [],
-        client,
-        cachedClient,
+        459185,
         "Firo",
         firoNetwork,
+        GetAnonymitySetSampleData.initialData,
       );
 
       expect(result, 1);
     });
 
     test("isolateCreateJoinSplitTransaction success", () async {
-      final client = MockElectrumX();
-      final cachedClient = MockCachedElectrumX();
-
-      when(client.getBlockHeadTip())
-          .thenAnswer((_) async => {"height": 458185, "hex": "some block hex"});
-
-      when(cachedClient.getAnonymitySet(
-        groupId: "1",
-        coinName: "Firo",
-        callOutSideMainIsolate: true,
-      )).thenAnswer((_) async => GetAnonymitySetSampleData.finalData);
-
       final result = await isolateCreateJoinSplitTransaction(
         100,
         "aNmsUtzPzQ3SKWNjEH48GacMQJXWN5Rotm",
@@ -130,10 +109,10 @@ void main() {
         2,
         Decimal.ten,
         SampleLelantus.lelantusEntries,
-        client,
-        cachedClient,
+        459185,
         "Firo",
         firoNetwork,
+        GetAnonymitySetSampleData.finalData,
       );
 
       expect(result, isA<Map<String, dynamic>>());
@@ -1234,7 +1213,7 @@ void main() {
             "server_version": "Unit tests",
             "protocol_min": "1.4",
             "protocol_max": "1.4.2",
-            "genesis_hash": CampfireConstants.firoTestGenesisHash,
+            "genesis_hash": CampfireConstants.firoGenesisHash,
             "hash_function": "sha256",
             "services": []
           });
@@ -1246,13 +1225,13 @@ void main() {
           .thenAnswer((_) async => GetUsedSerialsSampleData.serials);
 
       // mock price calls
-      when(priceAPI.getPrice(ticker: "tFIRO", baseCurrency: "USD"))
+      when(priceAPI.getPrice(ticker: "FIRO", baseCurrency: "USD"))
           .thenAnswer((_) async => Decimal.fromInt(10));
 
       final firo = FiroWallet(
         walletName: testWalletName,
         walletId: testWalletId + "recoverFromMnemonic",
-        networkType: FiroNetworkType.test,
+        networkType: FiroNetworkType.main,
         client: client,
         cachedClient: cachedClient,
         secureStore: secureStore,
@@ -1265,17 +1244,53 @@ void main() {
       final receiveDerivations = await wallet.get('receiveDerivations');
       final changeDerivations = await wallet.get('changeDerivations');
       for (int i = 0; i < receiveDerivations.length; i++) {
-        when(client.getHistory(
-                scripthash: AddressUtils.convertToScriptHash(
-                    receiveDerivations[i]["address"], firoTestNetwork)))
-            .thenAnswer((realInvocation) async => []);
-        when(client.getHistory(
-                scripthash: AddressUtils.convertToScriptHash(
-                    changeDerivations[i]["address"], firoTestNetwork)))
-            .thenAnswer((realInvocation) async => []);
+        final receiveHash = AddressUtils.convertToScriptHash(
+            receiveDerivations[i]["address"], firoNetwork);
+        final changeHash = AddressUtils.convertToScriptHash(
+            changeDerivations[i]["address"], firoNetwork);
+        List<Map<String, dynamic>> data;
+        switch (receiveHash) {
+          case SampleGetHistoryData.scripthash0:
+            data = SampleGetHistoryData.data0;
+            break;
+          case SampleGetHistoryData.scripthash1:
+            data = SampleGetHistoryData.data1;
+            break;
+          case SampleGetHistoryData.scripthash2:
+            data = SampleGetHistoryData.data2;
+            break;
+          case SampleGetHistoryData.scripthash3:
+            data = SampleGetHistoryData.data3;
+            break;
+          default:
+            data = [];
+        }
+        when(client.getHistory(scripthash: receiveHash))
+            .thenAnswer((_) async => data);
+
+        switch (changeHash) {
+          case SampleGetHistoryData.scripthash0:
+            data = SampleGetHistoryData.data0;
+            break;
+          case SampleGetHistoryData.scripthash1:
+            data = SampleGetHistoryData.data1;
+            break;
+          case SampleGetHistoryData.scripthash2:
+            data = SampleGetHistoryData.data2;
+            break;
+          case SampleGetHistoryData.scripthash3:
+            data = SampleGetHistoryData.data3;
+            break;
+          default:
+            data = [];
+        }
+
+        when(client.getHistory(scripthash: changeHash))
+            .thenAnswer((_) async => data);
       }
 
-      await firo.recoverFromMnemonic(TEST_MNEMONIC);
+      expect(() async => await firo.recoverFromMnemonic(TEST_MNEMONIC),
+          returnsNormally);
     }, timeout: Timeout(Duration(minutes: 3)));
 
     test("updateBiometricsUsage", () async {
@@ -1521,7 +1536,7 @@ void main() {
 
       // kill timer and listener
       await firo.exit();
-    });
+    }, timeout: Timeout(Duration(minutes: 3)));
 
     test("send", () async {
       final client = MockElectrumX();
@@ -1529,82 +1544,83 @@ void main() {
       final secureStore = FakeSecureStorage();
       final priceAPI = MockPriceAPI();
 
-      // mock electrumx client calls
-      when(client.getServerFeatures()).thenAnswer((_) async => {
-            "hosts": {},
-            "pruning": null,
-            "server_version": "Unit tests",
-            "protocol_min": "1.4",
-            "protocol_max": "1.4.2",
-            "genesis_hash": CampfireConstants.firoGenesisHash,
-            "hash_function": "sha256",
-            "services": []
-          });
+      when(client.getBlockHeadTip()).thenAnswer(
+          (_) async => {"height": 459185, "hex": "... some block hex ..."});
 
-      when(client.getLatestCoinId()).thenAnswer((_) async => 1);
-      when(client.getCoinsForRecovery(setId: 1))
-          .thenAnswer((_) async => getCoinsForRecoveryResponse);
-      when(client.getUsedCoinSerials())
-          .thenAnswer((_) async => GetUsedSerialsSampleData.serials);
-
-      when(cachedClient.getTransaction(
-        tx_hash: SampleGetTransactionData.txHash1,
-        coinName: "Firo",
-        callOutSideMainIsolate: false,
-      )).thenAnswer((_) async => SampleGetTransactionData.txData1);
+      when(client.broadcastTransaction(rawTx: anyNamed("rawTx")))
+          .thenAnswer((realInvocation) async {
+        print(
+            "realInvocation.namedArguments: ${realInvocation.namedArguments}");
+        //TODO: extract txid from rawtx and return it here
+        return "";
+      });
 
       when(cachedClient.getAnonymitySet(
         groupId: "1",
         coinName: "Firo",
-        callOutSideMainIsolate: true,
-      )).thenAnswer((_) async => GetAnonymitySetSampleData.initialData);
+        callOutSideMainIsolate: false,
+      )).thenAnswer((_) async => GetAnonymitySetSampleData.finalData);
 
       // mock price calls
       when(priceAPI.getPrice(ticker: "FIRO", baseCurrency: "USD"))
           .thenAnswer((_) async => Decimal.fromInt(10));
 
-      when(client.getFeeRate()).thenAnswer((_) async => {"rate": 1000});
-
       // mock transaction calls
-      // when(cachedClient.getTransaction(
-      //         tx_hash: SampleGetTransactionData.txHash0,
-      //         coinName: "Firo",
-      //         callOutSideMainIsolate: false))
-      //     .thenAnswer((_) async => SampleGetTransactionData.txData0);
+      when(cachedClient.getTransaction(
+              tx_hash: SampleGetTransactionData.txHash0,
+              coinName: "Firo",
+              callOutSideMainIsolate: false))
+          .thenAnswer((_) async => SampleGetTransactionData.txData0);
       when(cachedClient.getTransaction(
               tx_hash: SampleGetTransactionData.txHash1,
               coinName: "Firo",
               callOutSideMainIsolate: false))
           .thenAnswer((_) async => SampleGetTransactionData.txData1);
-      // when(cachedClient.getTransaction(
-      //         tx_hash: SampleGetTransactionData.txHash2,
-      //         coinName: "Firo",
-      //         callOutSideMainIsolate: false))
-      //     .thenAnswer((_) async => SampleGetTransactionData.txData2);
-      // when(cachedClient.getTransaction(
-      //         tx_hash: SampleGetTransactionData.txHash3,
-      //         coinName: "Firo",
-      //         callOutSideMainIsolate: false))
-      //     .thenAnswer((_) async => SampleGetTransactionData.txData3);
-      // when(cachedClient.getTransaction(
-      //         tx_hash: SampleGetTransactionData.txHash4,
-      //         coinName: "Firo",
-      //         callOutSideMainIsolate: false))
-      //     .thenAnswer((_) async => SampleGetTransactionData.txData4);
-      // when(cachedClient.getTransaction(
-      //         tx_hash: SampleGetTransactionData.txHash5,
-      //         coinName: "Firo",
-      //         callOutSideMainIsolate: false))
-      //     .thenAnswer((_) async => SampleGetTransactionData.txData5);
-      // when(cachedClient.getTransaction(
-      //         tx_hash: SampleGetTransactionData.txHash6,
-      //         coinName: "Firo",
-      //         callOutSideMainIsolate: false))
-      //     .thenAnswer((_) async => SampleGetTransactionData.txData6);
-
-      // mock utxo calls
-      when(client.getUTXOs(scripthash: anyNamed("scripthash")))
-          .thenAnswer((_) async => []);
+      when(cachedClient.getTransaction(
+              tx_hash: SampleGetTransactionData.txHash2,
+              coinName: "Firo",
+              callOutSideMainIsolate: false))
+          .thenAnswer((_) async => SampleGetTransactionData.txData2);
+      when(cachedClient.getTransaction(
+              tx_hash: SampleGetTransactionData.txHash3,
+              coinName: "Firo",
+              callOutSideMainIsolate: false))
+          .thenAnswer((_) async => SampleGetTransactionData.txData3);
+      when(cachedClient.getTransaction(
+              tx_hash: SampleGetTransactionData.txHash4,
+              coinName: "Firo",
+              callOutSideMainIsolate: false))
+          .thenAnswer((_) async => SampleGetTransactionData.txData4);
+      when(cachedClient.getTransaction(
+              tx_hash: SampleGetTransactionData.txHash5,
+              coinName: "Firo",
+              callOutSideMainIsolate: false))
+          .thenAnswer((_) async => SampleGetTransactionData.txData5);
+      when(cachedClient.getTransaction(
+              tx_hash: SampleGetTransactionData.txHash6,
+              coinName: "Firo",
+              callOutSideMainIsolate: false))
+          .thenAnswer((_) async => SampleGetTransactionData.txData6);
+      when(cachedClient.getTransaction(
+              tx_hash: SampleGetTransactionData.txHash7,
+              coinName: "Firo",
+              callOutSideMainIsolate: false))
+          .thenAnswer((_) async => SampleGetTransactionData.txData7);
+      when(cachedClient.getTransaction(
+              tx_hash: SampleGetTransactionData.txHash8,
+              coinName: "Firo",
+              callOutSideMainIsolate: false))
+          .thenAnswer((_) async => SampleGetTransactionData.txData8);
+      when(cachedClient.getTransaction(
+              tx_hash: SampleGetTransactionData.txHash9,
+              coinName: "Firo",
+              callOutSideMainIsolate: false))
+          .thenAnswer((_) async => SampleGetTransactionData.txData9);
+      when(cachedClient.getTransaction(
+              tx_hash: SampleGetTransactionData.txHash10,
+              coinName: "Firo",
+              callOutSideMainIsolate: false))
+          .thenAnswer((_) async => SampleGetTransactionData.txData10);
 
       final firo = FiroWallet(
         walletId: testWalletId + "send",
@@ -1615,6 +1631,10 @@ void main() {
         secureStore: secureStore,
         priceAPI: priceAPI,
       );
+
+      // set mnemonic
+      await secureStore.write(
+          key: "${testWalletId}send_mnemonic", value: TEST_MNEMONIC);
 
       // set timer to non null so a periodic timer isn't created
       firo.timer = Timer(Duration(), () {});
@@ -1670,13 +1690,18 @@ void main() {
         when(client.getHistory(scripthash: changeHash))
             .thenAnswer((_) async => data);
       }
-      await firo.recoverFromMnemonic(TEST_MNEMONIC);
+      // await firo.recoverFromMnemonic(TEST_MNEMONIC);
 
-      print((await firo.lelantusTransactionData).toString());
-      // await firo.refresh();
-      // print(
-      //     "lelantudata: ${(await firo.lelantusTransactionData).getAllTransactions()}");
-      // print("balances: ${await firo.balances}");
+      await wallet.put('_lelantus_coins', SampleLelantus.lelantusCoins);
+      await wallet.put('jindex', [2, 4, 6]);
+      await wallet.put('mintIndex', 8);
+      await wallet.put('receivingAddresses', [
+        "a8VV7vMzJdTQj1eLEJNskhLEBUxfNWhpAg",
+        "aPjLWDTPQsoPHUTxKBNRzoebDALj3eTcfh",
+        "aKmXfS7nEZdqWBGRdAXcyMoEoKhZQDPBoq"
+      ]);
+      await wallet
+          .put('changeAddresses', ["a5V5r6We6mNZzWJwGwEeRML3mEYLjvK39w"]);
 
       final result = await firo.send(
           toAddress: "aHZJsucDrhr4Uzzx6XXrKnaTgLxsEAokvV", amount: 100);

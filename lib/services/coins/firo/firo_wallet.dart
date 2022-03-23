@@ -68,14 +68,16 @@ Future<ReceivePort> getIsolate(Map<String, dynamic> arguments) async {
   ReceivePort receivePort =
       ReceivePort(); //port for isolate to receive messages.
   arguments['sendPort'] = receivePort.sendPort;
-  print("starting isolate ${arguments['function']}");
+  Logger.print("starting isolate ${arguments['function']}");
+  Logger.print("arguments.length: ${arguments.length}");
   Isolate isolate = await Isolate.spawn(executeNative, arguments);
+  Logger.print("isolate spawned!");
   isolates[receivePort] = isolate;
   return receivePort;
 }
 
 Future<void> executeNative(arguments) async {
-  print(arguments);
+  Logger.print(arguments);
   SendPort sendPort = arguments['sendPort'];
   String function = arguments['function'];
   try {
@@ -89,8 +91,16 @@ Future<void> executeNative(arguments) async {
       List<DartLelantusEntry> lelantusEntries = arguments['lelantusEntries'];
       String coinName = arguments['coinName'];
       dynamic network = arguments['network'];
-      ElectrumX client = arguments['electrumXClient'];
-      CachedElectrumX cachedClient = arguments['cachedElectrumXClient'];
+      int locktime = arguments['locktime'];
+      dynamic anonymitySet = arguments['anonymitySet'];
+
+      final args = Map<String, dynamic>.from(arguments);
+      for (final arg in args.entries) {
+        if (arg.value == null) {
+          print(arg.key + " is null!");
+        }
+      }
+
       if (!(spendAmount == null ||
           address == null ||
           subtractFeeFromAmount == null ||
@@ -98,10 +108,10 @@ Future<void> executeNative(arguments) async {
           index == null ||
           price == null ||
           lelantusEntries == null ||
-          client == null ||
-          cachedClient == null ||
+          locktime == null ||
           coinName == null ||
-          network == null)) {
+          network == null ||
+          anonymitySet == null)) {
         var joinSplit = await isolateCreateJoinSplitTransaction(
             spendAmount,
             address,
@@ -110,10 +120,10 @@ Future<void> executeNative(arguments) async {
             index,
             price,
             lelantusEntries,
-            client,
-            cachedClient,
+            locktime,
             coinName,
-            network);
+            network,
+            anonymitySet);
         sendPort.send(joinSplit);
         return;
       }
@@ -468,13 +478,11 @@ isolateCreateJoinSplitTransaction(
   int index,
   dynamic price,
   List<DartLelantusEntry> lelantusEntries,
-  ElectrumX client,
-  CachedElectrumX cachedClient,
+  int locktime,
   String coinName,
   dynamic _network,
+  dynamic anonymitySet,
 ) async {
-  final getanonymityset = await getAnonymitySet(cachedClient, true, coinName);
-
   final estimateJoinSplitFee = await isolateEstimateJoinSplitFee(
       spendAmount, subtractFeeFromAmount, lelantusEntries);
   var changeToMint = estimateJoinSplitFee.changeToMint;
@@ -487,7 +495,6 @@ isolateCreateJoinSplitTransaction(
   }
 
   final tx = new TransactionBuilder(network: _network);
-  int locktime = await getBlockHead(client);
   tx.setLockTime(locktime);
 
   tx.setVersion(3 | (TRANSACTION_LELANTUS << 16));
@@ -542,7 +549,7 @@ isolateCreateJoinSplitTransaction(
     final anonymitySetId = lelantusEntries[i].anonymitySetId;
     if (!setIds.contains(anonymitySetId)) {
       setIds.add(anonymitySetId);
-      List<Map> _anonymity_sets = [null, getanonymityset];
+      List<Map> _anonymity_sets = [null, anonymitySet];
       if (_anonymity_sets[anonymitySetId] != null) {
         final anonymitySet = _anonymity_sets[anonymitySetId];
         anonymitySetHashes.add(anonymitySet['setHash']);
@@ -587,7 +594,6 @@ isolateCreateJoinSplitTransaction(
     4294967295,
     stringToUint8List("c9"),
   );
-  Logger.print("spendScript: $spendScript");
   extTx.setPayload(stringToUint8List(spendScript));
 
   final txHex = extTx.toHex();
@@ -618,7 +624,6 @@ isolateCreateJoinSplitTransaction(
   };
 }
 
-/// set hivePath to null unless calling this function in an isolate
 Future<List<models.Transaction>> getJMintTransactions(
   CachedElectrumX cachedClient,
   List transactions,
@@ -2811,7 +2816,13 @@ class FiroWallet extends CoinServiceAPI {
     final wallet = await Hive.openBox(this._walletId);
     final mnemonic = await _secureStore.read(key: '${this._walletId}_mnemonic');
     final index = await wallet.get('mintIndex');
-    var lelantusEntry = await _getLelantusEntry();
+    final lelantusEntry = await _getLelantusEntry();
+    final setData = await getAnonymitySet(
+      cachedElectrumXClient,
+      false,
+      coinName,
+    );
+    final locktime = await getBlockHead(electrumXClient);
 
     ReceivePort receivePort = await getIsolate({
       "function": "createJoinSplit",
@@ -2822,10 +2833,10 @@ class FiroWallet extends CoinServiceAPI {
       "index": index,
       "price": price,
       "lelantusEntries": lelantusEntry,
-      "electrumXClient": this.electrumXClient,
-      "cachedElectrumXClient": this.cachedElectrumXClient,
+      "locktime": locktime,
       "coinName": coinName,
       "network": _network,
+      "anonymitySet": setData,
     });
     var message = await receivePort.first;
     if (message is String) {

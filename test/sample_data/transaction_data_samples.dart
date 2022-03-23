@@ -436,6 +436,172 @@ abstract class SampleGetTransactionData {
     "instantlock": false,
     "chainlock": true,
   };
+
+  static const txHash8 =
+      "4696601e014a5eeeca2de2d48a83329d67727cd1831181ee394101cf0477b340";
+  static Map<String, dynamic> txData8 = {
+    "txid": "4696601e014a5eeeca2de2d48a83329d67727cd1831181ee394101cf0477b340",
+    "hash": "4696601e014a5eeeca2de2d48a83329d67727cd1831181ee394101cf0477b340",
+    "size": 3794,
+    "vsize": 3794,
+    "version": 3,
+    "locktime": 457337,
+    "type": 8,
+    "vin": [
+      {
+        "scriptSig": {"asm": "OP_LELANTUSJOINSPLITPAYLOAD", "hex": "c9"},
+        "nFees": 3.794e-05,
+        "serials": [
+          "09e25fdcdef39b3ddfd55f5340ad04965155cc4818d3902adc06b52b60a58cf6"
+        ],
+        "sequence": 4294967295
+      }
+    ],
+    "vout": [
+      {
+        "value": 0,
+        "n": 0,
+        "scriptPubKey": {
+          "asm": "OP_LELANTUSJMINT",
+          "hex":
+              "c698615d340b681333f6e76149d7dc0e9abdc9f6e6b5969fec0926bd60d9b614f201004a7a2b654e5d4afdca2af01ce0412a5ac1190002d5684885383f8594deddbab558b91b6d302b5a378ec772c325e85c61",
+          "type": "lelantusmint"
+        }
+      },
+      {
+        "value": 1e-05,
+        "n": 1,
+        "scriptPubKey": {
+          "asm":
+              "OP_DUP OP_HASH160 4ab9e83d579bbd2dc626ddd95c7f5abc6ee286ee OP_EQUALVERIFY OP_CHECKSIG",
+          "hex": "76a9144ab9e83d579bbd2dc626ddd95c7f5abc6ee286ee88ac",
+          "reqSigs": 1,
+          "type": "pubkeyhash",
+          "addresses": ["a7XaTA8LsY1gQyAv4KhKaQQq71hoDZqUgt"]
+        },
+        "spentTxId":
+            "2cb5eaa8531aed288d15c14d43f973c510cc6c6c02f3a7aca7fe365af2d9a244",
+        "spentIndex": 0,
+        "spentHeight": -1
+      }
+    ],
+    "blockhash":
+        "d36748c3e3abb2687a3c1c9a2b84dd02582cd95a73bc7d3ecdcb40837411ba07",
+    "height": 457339,
+    "confirmations": 4334,
+    "time": 1646678459,
+    "blocktime": 1646678459,
+    "instantlock": false,
+    "chainlock": true,
+  };
+
+  static const txHash9 =
+      "395f382ed5a595e116d5226e3cb5b664388363b6c171118a26ca729bf314c9fc";
+  static Map<String, dynamic> txData9 = {
+    "txid": "395f382ed5a595e116d5226e3cb5b664388363b6c171118a26ca729bf314c9fc",
+    "hash": "395f382ed5a595e116d5226e3cb5b664388363b6c171118a26ca729bf314c9fc",
+    "size": 3794,
+    "vsize": 3794,
+    "version": 3,
+    "locktime": 457372,
+    "type": 8,
+    "vin": [
+      {
+        "scriptSig": {"asm": "OP_LELANTUSJOINSPLITPAYLOAD", "hex": "c9"},
+        "nFees": 3.794e-05,
+        "serials": [
+          "b37d0d036685f314a8e2ef319b220cc7ccf4d1f57792b4819c0fee965eb0a1a6"
+        ],
+        "sequence": 4294967295
+      }
+    ],
+    "vout": [
+      {
+        "value": 0,
+        "n": 0,
+        "scriptPubKey": {
+          "asm": "OP_LELANTUSJMINT",
+          "hex":
+              "c6af37689a5442226998006d8addb16a77033e79a5b59bd3bdcad1d802c31bfa7f010017a00ff9dedd752e223e0c075d72aae2a326a7047bda8ad412ff6cd4a2ac7bd05013b8333c67092e6df2d2de326ee39f",
+          "type": "lelantusmint"
+        }
+      },
+      {
+        "value": 3e-05,
+        "n": 1,
+        "scriptPubKey": {
+          "asm":
+              "OP_DUP OP_HASH160 4ab9e83d579bbd2dc626ddd95c7f5abc6ee286ee OP_EQUALVERIFY OP_CHECKSIG",
+          "hex": "76a9144ab9e83d579bbd2dc626ddd95c7f5abc6ee286ee88ac",
+          "reqSigs": 1,
+          "type": "pubkeyhash",
+          "addresses": ["a7XaTA8LsY1gQyAv4KhKaQQq71hoDZqUgt"]
+        },
+        "spentTxId":
+            "2065f48e64672c3a97a6bd1707efa14b0d65f88850b084bce694a25f4e73fe61",
+        "spentIndex": 0,
+        "spentHeight": -1
+      }
+    ],
+    "blockhash":
+        "ad24378caac72c41ad3f327847fbe2f134f7ae74fae5fd33443322279cc4d694",
+    "height": 457374,
+    "confirmations": 4301,
+    "time": 1646687820,
+    "blocktime": 1646687820,
+    "instantlock": false,
+    "chainlock": true,
+  };
+
+  static const txHash10 =
+      "fbc640a3bf96af11c0e656ab0974659a31be3cdb7b4379f0ed689ddac9018859";
+  static Map<String, dynamic> txData10 = {
+    "txid": "fbc640a3bf96af11c0e656ab0974659a31be3cdb7b4379f0ed689ddac9018859",
+    "hash": "fbc640a3bf96af11c0e656ab0974659a31be3cdb7b4379f0ed689ddac9018859",
+    "size": 331,
+    "vsize": 331,
+    "version": 2,
+    "locktime": 457390,
+    "type": 0,
+    "vin": [
+      {
+        "txid":
+            "51576e2230c2911a508aabb85bb50045f04b8dc958790ce2372986c3ebbe7d3e",
+        "vout": 1,
+        "scriptSig": {
+          "asm":
+              "304402203040910ac690f1d9ec3069c6f2da30207459ef5ffb109495321b34b766269dfa022017d2c3fed82acd3f687d534c3b3cbcd10e1a2645b9f48de1856d11926ee287a2[ALL] 03bd5fa496a7d0f6a03226c8a1b409a8cf8592c80a5fdd6be3898be252198b1a1b",
+          "hex":
+              "47304402203040910ac690f1d9ec3069c6f2da30207459ef5ffb109495321b34b766269dfa022017d2c3fed82acd3f687d534c3b3cbcd10e1a2645b9f48de1856d11926ee287a2012103bd5fa496a7d0f6a03226c8a1b409a8cf8592c80a5fdd6be3898be252198b1a1b"
+        },
+        "value": 0.0002,
+        "valueSat": 20000,
+        "address": "aPjLWDTPQsoPHUTxKBNRzoebDALj3eTcfh",
+        "sequence": 4294967295
+      }
+    ],
+    "vout": [
+      {
+        "value": 0.00019658,
+        "n": 0,
+        "scriptPubKey": {
+          "asm":
+              "OP_LELANTUSMINT c2c6f79198888493fca79f70cfdd4ad68734d07b0ea7cbc105bd55b33d5ef4d401001346cb18ae198d4b72c026e1a816d5d2e7b577f06fc87c6f55c4675c582f669d0100276da868885684d07cf4b824e4ed46675a60d5763c3bf0c18d8d59ffd147d0ffc8b001938f829cb8d2fd480ce5aeee7c3b24e15ed6780a2bcc53543fbae05f308635892bbf40f74bd81288beb3e1ca249b4d7edba2df76314ed91f44a3c5d904",
+          "hex":
+              "c5c2c6f79198888493fca79f70cfdd4ad68734d07b0ea7cbc105bd55b33d5ef4d401001346cb18ae198d4b72c026e1a816d5d2e7b577f06fc87c6f55c4675c582f669d0100276da868885684d07cf4b824e4ed46675a60d5763c3bf0c18d8d59ffd147d0ffc8b001938f829cb8d2fd480ce5aeee7c3b24e15ed6780a2bcc53543fbae05f308635892bbf40f74bd81288beb3e1ca249b4d7edba2df76314ed91f44a3c5d904",
+          "type": "lelantusmint"
+        }
+      }
+    ],
+    "blockhash":
+        "acec74119f7d96f0ee8713e1672dac72efe2b2adb9096b9cc3c84eae118ce7fd",
+    "height": 457392,
+    "confirmations": 4283,
+    "time": 1646694255,
+    "blocktime": 1646694255,
+    "instantlock": false,
+    "chainlock": true
+  };
 }
 
 final t1 = Transaction(
