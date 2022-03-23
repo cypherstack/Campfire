@@ -1,7 +1,12 @@
 import 'dart:core' as core;
 
+import 'misc_global_constants.dart';
+
 abstract class Logger {
   static void print(core.Object object) async {
+    if (CampfireConstants.disableLogger) {
+      return;
+    }
     final utcTime = core.DateTime.now().toUtc().toString() + ": ";
     core.int defaultPrintLength = 1020 - utcTime.length;
     if (object == null || object.toString().length <= defaultPrintLength) {

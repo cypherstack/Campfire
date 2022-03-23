@@ -28,4 +28,7 @@ abstract class CampfireConstants {
 
   // enable testnet
   static const bool allowTestnets = false;
+
+  // Enable Logger.print statements
+  static const bool disableLogger = true;
 }

@@ -6,6 +6,7 @@ import 'package:paymint/services/coins/manager.dart';
 import 'package:paymint/services/wallets_service.dart';
 import 'package:paymint/utilities/backup_key_warning.dart';
 import 'package:paymint/utilities/cfcolors.dart';
+import 'package:paymint/utilities/logger.dart';
 import 'package:paymint/utilities/sizing_utilities.dart';
 import 'package:paymint/utilities/text_styles.dart';
 import 'package:paymint/widgets/custom_buttons/gradient_button.dart';
@@ -96,7 +97,7 @@ class _BackupKeyWarningViewState extends State<BackupKeyWarningView> {
                 setState(() {
                   _checkboxIsChecked = newValue;
                 });
-                print("checkbox clicked. New value = $newValue");
+                Logger.print("checkbox clicked. New value = $newValue");
               },
             ),
           ),
@@ -196,7 +197,7 @@ class _BackupKeyWarningViewState extends State<BackupKeyWarningView> {
     // set manager wallet to null if it isn't already
     Provider.of<Manager>(context, listen: false).exitCurrentWallet();
 
-    print("delete result: $result");
+    Logger.print("delete result: $result");
     // check if last wallet was deleted
     if (result == 2) {
       Navigator.pushAndRemoveUntil(

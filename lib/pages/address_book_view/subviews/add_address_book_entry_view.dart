@@ -7,6 +7,7 @@ import 'package:paymint/services/address_book_service.dart';
 import 'package:paymint/services/coins/manager.dart';
 import 'package:paymint/utilities/address_utils.dart';
 import 'package:paymint/utilities/cfcolors.dart';
+import 'package:paymint/utilities/logger.dart';
 import 'package:paymint/utilities/sizing_utilities.dart';
 import 'package:paymint/utilities/text_styles.dart';
 import 'package:paymint/widgets/custom_buttons/app_bar_icon_button.dart';
@@ -277,7 +278,7 @@ class _AddAddressBookEntryViewState extends State<AddAddressBookEntryView> {
                         2, // 20+20 padding, 16 spacing
                     child: SimpleButton(
                       onTap: () {
-                        print("cancel add new address entry pressed");
+                        Logger.print("cancel add new address entry pressed");
                         Navigator.pop(context);
                       },
                       child: Text(

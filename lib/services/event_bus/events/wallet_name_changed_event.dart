@@ -1,8 +1,10 @@
+import 'package:paymint/utilities/logger.dart';
+
 class ActiveWalletNameChangedEvent {
   String currentWallet;
 
   ActiveWalletNameChangedEvent(this.currentWallet) {
-    print(
+    Logger.print(
         "ActiveWalletNameChangedEvent fired with arg currentWallet = $currentWallet");
   }
 }

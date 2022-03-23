@@ -6,6 +6,7 @@ import 'package:google_fonts/google_fonts.dart';
 import 'package:paymint/notifications/overlay_notification.dart';
 import 'package:paymint/pages/address_book_view/subviews/address_book_entry_details_view.dart';
 import 'package:paymint/pages/main_view.dart';
+import 'package:paymint/utilities/logger.dart';
 import 'package:paymint/utilities/sizing_utilities.dart';
 
 import '../utilities/cfcolors.dart';
@@ -149,7 +150,7 @@ class _AddressBookCardState extends State<AddressBookCard> {
                     "assets/svg/upload-2.svg",
                     "SEND FIRO",
                     () {
-                      print("send firo");
+                      Logger.print("send firo");
                       Navigator.pushAndRemoveUntil(
                         context,
                         CupertinoPageRoute(
@@ -192,7 +193,7 @@ class _AddressBookCardState extends State<AddressBookCard> {
                     "assets/svg/eye.svg",
                     "DETAILS",
                     () {
-                      print("details");
+                      Logger.print("details");
                       Navigator.of(context).push(
                         CupertinoPageRoute(
                           builder: (context) {
