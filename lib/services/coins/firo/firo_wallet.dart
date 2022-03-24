@@ -1126,9 +1126,13 @@ class FiroWallet extends CoinServiceAPI {
       }
     }
 
+    // this should never fail as overwriting a mnemonic is big bad
+    assert(
+        (await _secureStore.read(key: '${this._walletId}_mnemonic')) == null);
     await _secureStore.write(
         key: '${this._walletId}_mnemonic',
         value: bip39.generateMnemonic(strength: 256));
+
     // Set relevant indexes
     await wallet.put('receivingIndex', 0);
     await wallet.put('changeIndex', 0);
@@ -2599,6 +2603,12 @@ class FiroWallet extends CoinServiceAPI {
     longMutex = true;
     Logger.print("PROCESSORS ${Platform.numberOfProcessors}");
     try {
+      // this should never fail as overwriting a mnemonic is big bad
+      assert(
+          (await _secureStore.read(key: '${this._walletId}_mnemonic')) == null);
+      await _secureStore.write(
+          key: '${this._walletId}_mnemonic', value: suppliedMnemonic.trim());
+
       final wallet = await Hive.openBox(this._walletId);
       final setDataMap = Map();
       final latestSetId = await getLatestSetId();
@@ -2702,8 +2712,6 @@ class FiroWallet extends CoinServiceAPI {
       await wallet.put('changeIndex', changeIndex);
       await wallet.put("id", this._walletId);
 
-      await _secureStore.write(
-          key: '${this._walletId}_mnemonic', value: suppliedMnemonic.trim());
       for (int setId = 1; setId <= latestSetId; setId++) {
         setDataMap[setId] = await setDataMap[setId];
       }

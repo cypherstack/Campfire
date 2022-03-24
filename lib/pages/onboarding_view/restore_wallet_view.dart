@@ -8,7 +8,6 @@ import 'package:bip39/src/wordlists/english.dart' as bip39wordlist;
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
-import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 import 'package:flutter_svg/flutter_svg.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:path_provider/path_provider.dart';
@@ -522,9 +521,6 @@ class _RestoreWalletFormViewState extends State<RestoreWalletFormView> {
                 manager.currentWallet = firoWallet;
 
                 try {
-                  final secureStore = new FlutterSecureStorage();
-                  await secureStore.write(
-                      key: '${walletId}_mnemonic', value: mnemonic.trim());
                   await manager.recoverFromMnemonic(mnemonic);
                   Navigator.pushReplacementNamed(context, "/mainview");
 
