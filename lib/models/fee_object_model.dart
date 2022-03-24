@@ -9,4 +9,9 @@ class FeeObject {
     return FeeObject(
         fast: json['fast'], medium: json['average'], slow: json['slow']);
   }
+
+  @override
+  String toString() {
+    return "{fast: $fast, medium: $medium, slow: $slow}";
+  }
 }

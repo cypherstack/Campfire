@@ -46,6 +46,15 @@ cd crypto_plugins/flutter_liblelantus/scripts/ios/
 cd ../../../..
 ```
 
+Building plugins for testing on Linux
+
+```
+cd crypto_plugins/flutter_liblelantus/scripts/linux/
+./build_all.sh
+// when finished go back to the root directory
+cd ../../../..
+```
+
 Finally, plug in your android device or use the emulator available via Android Studio and then run the following commands:
 ```
 flutter pub get

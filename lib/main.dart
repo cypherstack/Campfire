@@ -14,6 +14,7 @@ import 'package:paymint/services/node_service.dart';
 import 'package:paymint/services/notes_service.dart';
 import 'package:paymint/services/wallets_service.dart';
 import 'package:paymint/utilities/cfcolors.dart';
+import 'package:paymint/utilities/logger.dart';
 import 'package:paymint/utilities/sizing_utilities.dart';
 import 'package:provider/provider.dart';
 
@@ -97,7 +98,7 @@ class _MaterialAppWithThemeState extends State<MaterialAppWithTheme> {
   /// Returns true if the user has never set up any wallets before
   Future<bool> _checkForWallets() async {
     final wallets = await Hive.openBox('wallets');
-    print("wallets: ${wallets.toMap()}");
+    Logger.print("wallets: ${wallets.toMap()}");
     if (wallets.isEmpty || wallets.length == 1) {
       return true;
     } else {

@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:paymint/pages/settings_view/helpers/builders.dart';
 import 'package:paymint/services/wallets_service.dart';
 import 'package:paymint/utilities/cfcolors.dart';
+import 'package:paymint/utilities/logger.dart';
 import 'package:paymint/utilities/sizing_utilities.dart';
 import 'package:paymint/utilities/text_styles.dart';
 import 'package:paymint/widgets/custom_buttons/gradient_button.dart';
@@ -51,7 +52,7 @@ class _RenameWalletViewState extends State<RenameWalletView> {
                   ),
                 ),
                 onTap: () async {
-                  print("SAVE");
+                  Logger.print("SAVE");
                   await walletsService.renameWallet(toName: _controller.text);
                   Navigator.pop(context);
                 },

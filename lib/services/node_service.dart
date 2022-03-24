@@ -27,12 +27,14 @@ class NodeService extends ChangeNotifier {
     refresh();
   }
 
-  refresh() {
+  void refresh({bool shouldNotifyListeners = true}) {
     _walletId = _getWalletId();
     _activeNodeName = _fetchActiveNodeName();
     _currentNode = _getCurrentNode();
     _nodes = _fetchNodes();
-    notifyListeners();
+    if (shouldNotifyListeners) {
+      notifyListeners();
+    }
   }
 
   String _fetchActiveNodeName() {
@@ -96,6 +98,7 @@ class NodeService extends ChangeNotifier {
     @required String ipAddress,
     @required String port,
     @required bool useSSL,
+    bool shouldNotifyListeners = true,
   }) {
     if (name == null || name.isEmpty) {
       throw Exception("node name must not be empty");
@@ -120,7 +123,16 @@ class NodeService extends ChangeNotifier {
       "useSSL": useSSL,
     };
 
-    wallet.put('nodes', nodes);
+    wallet.put('nodes', nodes).then((_) {
+      if (nodes.length == 1) {
+        wallet
+            .put('activeNodeName', name)
+            .then((_) => refresh(shouldNotifyListeners: shouldNotifyListeners));
+      } else {
+        refresh(shouldNotifyListeners: shouldNotifyListeners);
+      }
+    });
+
     refresh();
     return true;
   }
@@ -134,8 +146,7 @@ class NodeService extends ChangeNotifier {
     String updatedPort,
     bool useSSL,
   }) {
-    final id = _walletId;
-    final wallet = Hive.box(id);
+    final wallet = Hive.box(_walletId);
     final nodes = wallet.get('nodes');
 
     if (nodes.keys.contains(updatedName) && nodes[updatedName]['id'] != id) {

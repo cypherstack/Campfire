@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:hive/hive.dart';
 import 'package:paymint/services/wallets_service.dart';
+import 'package:paymint/utilities/logger.dart';
 
 class NotesService extends ChangeNotifier {
   // current wallet name
@@ -20,7 +21,7 @@ class NotesService extends ChangeNotifier {
     final _currentWallet = await currentWalletName;
     final wallet = await Hive.openBox(_currentWallet);
     final notes = await wallet.get('notes');
-    print("Transaction notes fetched: $notes");
+    Logger.print("Transaction notes fetched: $notes");
     return notes == null ? <String, String>{} : Map<String, String>.from(notes);
   }
 
@@ -54,7 +55,7 @@ class NotesService extends ChangeNotifier {
 
     notes[txid] = note;
     await wallet.put('notes', notes);
-    print("addNote: tx note saved");
+    Logger.print("addNote: tx note saved");
     await _refreshNotes();
   }
 
@@ -67,7 +68,7 @@ class NotesService extends ChangeNotifier {
 
     notes[txid] = note;
     await wallet.put('notes', notes);
-    print("editOrAddNote: tx note saved");
+    Logger.print("editOrAddNote: tx note saved");
     await _refreshNotes();
   }
 
@@ -78,7 +79,7 @@ class NotesService extends ChangeNotifier {
     final entries = await wallet.get('notes');
     entries.remove(txid);
     await wallet.put('notes', entries);
-    print("tx note removed");
+    Logger.print("tx note removed");
     await _refreshNotes();
     // GlobalEventBus.instance.fire(AddressBookChangedEvent("entry removed"));
   }

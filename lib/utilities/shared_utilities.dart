@@ -17,8 +17,12 @@ class Utilities {
   }
 
   // format date string from unix timestamp
-  static String extractDateFrom(int timestamp) {
-    final date = DateTime.fromMillisecondsSinceEpoch(timestamp * 1000);
+  static String extractDateFrom(int timestamp, {bool localized = true}) {
+    var date = DateTime.fromMillisecondsSinceEpoch(timestamp * 1000);
+
+    if (!localized) {
+      date = date.toUtc();
+    }
 
     final minutes =
         date.minute < 10 ? "0${date.minute}" : date.minute.toString();

@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:paymint/services/coins/manager.dart';
 import 'package:paymint/utilities/cfcolors.dart';
+import 'package:paymint/utilities/logger.dart';
 import 'package:paymint/utilities/sizing_utilities.dart';
 import 'package:provider/provider.dart';
 
@@ -91,7 +92,7 @@ class _CurrencyListState extends State<CurrencyList> {
       itemBuilder: (BuildContext context, int index) {
         return GestureDetector(
           onTap: () async {
-            print("tapped index: $index");
+            Logger.print("tapped index: $index");
             if (index == 0 || current.isEmpty) {
               // ignore if already selected currency
               return;

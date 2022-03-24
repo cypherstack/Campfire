@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_svg/svg.dart';
 import 'package:paymint/utilities/cfcolors.dart';
+import 'package:paymint/utilities/logger.dart';
 import 'package:paymint/utilities/sizing_utilities.dart';
 import 'package:paymint/widgets/custom_buttons/app_bar_icon_button.dart';
 
@@ -30,7 +31,7 @@ buildOnboardingAppBar(BuildContext context,
           size: 36,
           onPressed: backButtonPressed == null
               ? () {
-                  print("leading appbar button pressed");
+                  Logger.print("leading appbar button pressed");
                   Navigator.pop(context);
                 }
               : backButtonPressed,

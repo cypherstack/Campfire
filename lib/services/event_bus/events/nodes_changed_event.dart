@@ -1,3 +1,5 @@
+import 'package:paymint/utilities/logger.dart';
+
 enum NodesChangedEventType {
   delete,
   edit,
@@ -9,6 +11,6 @@ class NodesChangedEvent {
   NodesChangedEventType type;
 
   NodesChangedEvent(this.type) {
-    print("NodesChangedEvent fired with type: $type");
+    Logger.print("NodesChangedEvent fired with type: $type");
   }
 }

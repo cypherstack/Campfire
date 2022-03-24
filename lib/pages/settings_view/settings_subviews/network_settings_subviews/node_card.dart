@@ -6,6 +6,7 @@ import 'package:paymint/notifications/campfire_alert.dart';
 import 'package:paymint/notifications/modal_popup_dialog.dart';
 import 'package:paymint/services/node_service.dart';
 import 'package:paymint/utilities/cfcolors.dart';
+import 'package:paymint/utilities/logger.dart';
 import 'package:paymint/utilities/misc_global_constants.dart';
 import 'package:paymint/utilities/sizing_utilities.dart';
 import 'package:paymint/utilities/text_styles.dart';
@@ -41,7 +42,7 @@ class _NodeCardState extends State<NodeCard> {
     final nodeService = Provider.of<NodeService>(context);
     return GestureDetector(
       onTapDown: (tapDownDetails) {
-        print(tapDownDetails.globalPosition);
+        Logger.print(tapDownDetails.globalPosition);
         showDialog(
           barrierColor: Colors.transparent,
           context: context,

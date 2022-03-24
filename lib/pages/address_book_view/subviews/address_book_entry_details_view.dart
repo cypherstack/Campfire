@@ -10,6 +10,7 @@ import 'package:paymint/notifications/overlay_notification.dart';
 import 'package:paymint/services/address_book_service.dart';
 import 'package:paymint/services/coins/manager.dart';
 import 'package:paymint/utilities/cfcolors.dart';
+import 'package:paymint/utilities/logger.dart';
 import 'package:paymint/utilities/sizing_utilities.dart';
 import 'package:paymint/utilities/text_styles.dart';
 import 'package:paymint/widgets/custom_buttons/app_bar_icon_button.dart';
@@ -123,7 +124,7 @@ class _AddressBookEntryDetailsViewState
                             width: 20,
                           ),
                           onTap: () {
-                            print("edit address tapped");
+                            Logger.print("edit address tapped");
                           },
                         )
                       ],
@@ -379,7 +380,7 @@ class _AddressBookEntryDetailsViewState
           ),
         ),
         onTap: () {
-          print("SEND button pressed");
+          Logger.print("SEND button pressed");
           Navigator.pushAndRemoveUntil(
             context,
             CupertinoPageRoute(

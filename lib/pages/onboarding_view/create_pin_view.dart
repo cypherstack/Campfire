@@ -5,12 +5,14 @@ import 'package:google_fonts/google_fonts.dart';
 import 'package:path_provider/path_provider.dart';
 import 'package:paymint/electrumx_rpc/cached_electrumx.dart';
 import 'package:paymint/electrumx_rpc/electrumx.dart';
+import 'package:paymint/notifications/campfire_alert.dart';
 import 'package:paymint/notifications/modal_popup_dialog.dart';
 import 'package:paymint/notifications/overlay_notification.dart';
 import 'package:paymint/pages/onboarding_view/helpers/builders.dart';
 import 'package:paymint/pages/onboarding_view/restore_wallet_view.dart';
 import 'package:paymint/services/coins/firo/firo_wallet.dart';
 import 'package:paymint/services/coins/manager.dart';
+import 'package:paymint/services/node_service.dart';
 import 'package:paymint/services/wallets_service.dart';
 import 'package:paymint/utilities/biometrics.dart';
 import 'package:paymint/utilities/cfcolors.dart';
@@ -221,6 +223,9 @@ class _CreatePinViewState extends State<CreatePinView> {
                             },
                           );
 
+                          final nodeService =
+                              Provider.of<NodeService>(context, listen: false);
+                          await nodeService.reInit();
                           ElectrumXNode defaultNode;
                           switch (firoNetworkType) {
                             case FiroNetworkType.main:
@@ -247,6 +252,13 @@ class _CreatePinViewState extends State<CreatePinView> {
                                   "Bad firo network type encountered");
                           }
 
+                          nodeService.createNode(
+                            name: defaultNode.name,
+                            ipAddress: defaultNode.address,
+                            port: defaultNode.port.toString(),
+                            useSSL: defaultNode.useSSL,
+                          );
+
                           final appDir =
                               await getApplicationDocumentsDirectory();
                           final firoWallet = FiroWallet(
@@ -257,7 +269,27 @@ class _CreatePinViewState extends State<CreatePinView> {
                             cachedClient: CachedElectrumX.from(
                                 node: defaultNode, hivePath: appDir.path),
                           );
-                          await firoWallet.initializeWallet();
+                          final success = await firoWallet.initializeWallet();
+                          if (!success) {
+                            await firoWallet.exit();
+                            await walletService.deleteWallet(widget.walletName);
+                            await showDialog(
+                              context: context,
+                              useSafeArea: false,
+                              barrierDismissible: false,
+                              builder: (context) {
+                                return CampfireAlert(
+                                    message:
+                                        "Failed to connect to network. Check your internet connection.");
+                              },
+                            );
+                            final nav = Navigator.of(context);
+                            nav.pop();
+                            nav.pop();
+                            nav.pop();
+                            nav.pop();
+                            return;
+                          }
                           manager.currentWallet = firoWallet;
                           await manager.updateBiometricsUsage(useBiometrics);
                           await Future.delayed(Duration(seconds: 3));

@@ -112,6 +112,43 @@ void main() {
     });
   });
 
+  group("ping", () {
+    test("ping success", () async {
+      final mockClient = MockJsonRPC();
+      final command = "server.ping";
+      final jsonArgs = '[]';
+      when(
+        mockClient.request(
+            '{"jsonrpc": "2.0", "id": "some requestId","method": "$command","params": $jsonArgs}'),
+      ).thenAnswer(
+        (_) async => {"jsonrpc": "2.0", "result": null, "id": "some requestId"},
+      );
+
+      final client = ElectrumX(
+          server: "some server", port: 0, useSSL: true, client: mockClient);
+
+      final result = await client.ping(requestID: "some requestId");
+
+      expect(result, true);
+    });
+
+    test("ping throws/fails", () {
+      final mockClient = MockJsonRPC();
+      final command = "server.ping";
+      final jsonArgs = '[]';
+      when(
+        mockClient.request(
+            '{"jsonrpc": "2.0", "id": "some requestId","method": "$command","params": $jsonArgs}'),
+      ).thenThrow(Exception());
+
+      final client = ElectrumX(
+          server: "some server", port: 0, useSSL: true, client: mockClient);
+
+      expect(() => client.ping(requestID: "some requestId"),
+          throwsA(isA<Exception>()));
+    });
+  });
+
   group("getServerFeatures", () {
     test("getServerFeatures success", () async {
       final mockClient = MockJsonRPC();
@@ -707,5 +744,16 @@ void main() {
       expect(() => client.getFeeRate(requestID: "some requestId"),
           throwsA(isA<Exception>()));
     });
+  });
+
+  test("rpcClient is null throws with bad server info", () {
+    final client = ElectrumX(
+      client: null,
+      port: -10,
+      server: "_ :sa  %",
+      useSSL: false,
+    );
+
+    expect(() => client.getFeeRate(), throwsA(isA<Exception>()));
   });
 }

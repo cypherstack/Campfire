@@ -4,6 +4,7 @@ import 'package:hive/hive.dart';
 import 'package:paymint/services/coins/firo/firo_wallet.dart';
 import 'package:paymint/services/event_bus/events/wallet_name_changed_event.dart';
 import 'package:paymint/services/event_bus/global_event_bus.dart';
+import 'package:paymint/utilities/logger.dart';
 import 'package:uuid/uuid.dart';
 
 class WalletsService extends ChangeNotifier {
@@ -63,7 +64,7 @@ class WalletsService extends ChangeNotifier {
 
     if (fromName != toName && names.keys.contains(toName)) {
       // name already exists
-      print("wallet with name \"$toName\" already exists!");
+      Logger.print("wallet with name \"$toName\" already exists!");
       return false;
     }
 
@@ -79,7 +80,7 @@ class WalletsService extends ChangeNotifier {
   Future<String> _fetchCurrentWalletName() async {
     final wallets = await Hive.openBox('wallets');
     final currentName = await wallets.get('currentWalletName');
-    print("Fetched current name: $currentName");
+    Logger.print("Fetched current name: $currentName");
     if (currentName != null && _currentWalletName != currentName) {
       GlobalEventBus.instance.fire(ActiveWalletNameChangedEvent(currentName));
     }
@@ -90,13 +91,13 @@ class WalletsService extends ChangeNotifier {
     final wallets = await Hive.openBox('wallets');
     final names = await wallets.get('names');
     if (names == null) {
-      print(
+      Logger.print(
           "Fetched wallet 'names' returned null. Setting initializing 'names'");
       final newNames = Map<String, String>();
       await wallets.put('names', newNames);
       return newNames;
     }
-    print("Fetched wallet names: ${names.keys}");
+    Logger.print("Fetched wallet names: ${names.keys}");
     return Map<String, String>.from(names);
   }
 

@@ -13,6 +13,7 @@ import 'package:paymint/services/coins/manager.dart';
 import 'package:paymint/services/event_bus/events/node_connection_status_changed_event.dart';
 import 'package:paymint/services/event_bus/global_event_bus.dart';
 import 'package:paymint/utilities/cfcolors.dart';
+import 'package:paymint/utilities/logger.dart';
 import 'package:paymint/utilities/sizing_utilities.dart';
 import 'package:paymint/widgets/custom_buttons/draggable_switch_button.dart';
 import 'package:paymint/widgets/gradient_card.dart';
@@ -100,7 +101,7 @@ class _WalletViewState extends State<WalletView> {
                 onValueChanged: (newValue) {
                   setState(() {
                     _balanceToggleEnabled = newValue;
-                    print(
+                    Logger.print(
                         "balance switch button changed to: $_balanceToggleEnabled");
                   });
                 },
