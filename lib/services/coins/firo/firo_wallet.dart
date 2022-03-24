@@ -1025,7 +1025,7 @@ class FiroWallet extends CoinServiceAPI {
     this._utxoData = _fetchUtxoData();
     this._transactionData = _fetchTransactionData();
 
-    await _checkReceivingAddressForTransactions();
+    await checkReceivingAddressForTransactions();
     return true;
   }
 
@@ -1147,8 +1147,8 @@ class FiroWallet extends CoinServiceAPI {
     // Generate and add addresses to relevant arrays
     final initialReceivingAddress = await _generateAddressForChain(0, 0);
     final initialChangeAddress = await _generateAddressForChain(1, 0);
-    await _addToAddressesArrayForChain(initialReceivingAddress, 0);
-    await _addToAddressesArrayForChain(initialChangeAddress, 1);
+    await addToAddressesArrayForChain(initialReceivingAddress, 0);
+    await addToAddressesArrayForChain(initialChangeAddress, 1);
     this._currentReceivingAddress = Future(() => initialReceivingAddress);
     this._useBiometrics = _fetchUseBiometrics();
   }
@@ -1192,7 +1192,7 @@ class FiroWallet extends CoinServiceAPI {
       final FeeObject feeObj = await _getFees();
       GlobalEventBus.instance.fire(RefreshPercentChangedEvent(0.35));
 
-      await _checkReceivingAddressForTransactions();
+      await checkReceivingAddressForTransactions();
       final useBiometrics = await _fetchUseBiometrics();
       GlobalEventBus.instance.fire(RefreshPercentChangedEvent(0.50));
 
@@ -1951,25 +1951,26 @@ class FiroWallet extends CoinServiceAPI {
     }
   }
 
-  Future<void> _checkReceivingAddressForTransactions() async {
+  Future<void> checkReceivingAddressForTransactions() async {
     try {
       final String currentExternalAddr =
           await this._getCurrentAddressForChain(0);
       final int numtxs =
           await _getReceivedTxCount(address: currentExternalAddr);
       Logger.print(
-          'Number of txs for current receiving addr: ' + numtxs.toString());
+          'Number of txs for current receiving: $currentExternalAddr: ' +
+              numtxs.toString());
 
       if (numtxs >= 1) {
         final wallet = await Hive.openBox(this._walletId);
 
-        await _incrementAddressIndexForChain(
+        await incrementAddressIndexForChain(
             0); // First increment the receiving index
         final newReceivingIndex =
             await wallet.get('receivingIndex'); // Check the new receiving index
         final newReceivingAddress = await _generateAddressForChain(0,
             newReceivingIndex); // Use new index to derive a new receiving address
-        await _addToAddressesArrayForChain(newReceivingAddress,
+        await addToAddressesArrayForChain(newReceivingAddress,
             0); // Add that new receiving address to the array of receiving addresses
         this._currentReceivingAddress = Future(() =>
             newReceivingAddress); // Set the new receiving address that the service
@@ -2501,7 +2502,7 @@ class FiroWallet extends CoinServiceAPI {
 
   /// Increases the index for either the internal or external chain, depending on [chain].
   /// [chain] - Use 0 for receiving (external), 1 for change (internal). Should not be any other value!
-  Future<void> _incrementAddressIndexForChain(int chain) async {
+  Future<void> incrementAddressIndexForChain(int chain) async {
     final wallet = await Hive.openBox(this._walletId);
     if (chain == 0) {
       final newIndex = wallet.get('receivingIndex') + 1;
@@ -2516,7 +2517,7 @@ class FiroWallet extends CoinServiceAPI {
   /// Adds [address] to the relevant chain's address array, which is determined by [chain].
   /// [address] - Expects a standard native segwit address
   /// [chain] - Use 0 for receiving (external), 1 for change (internal). Should not be any other value!
-  Future<void> _addToAddressesArrayForChain(String address, int chain) async {
+  Future<void> addToAddressesArrayForChain(String address, int chain) async {
     final wallet = await Hive.openBox(this._walletId);
     String chainArray = '';
     if (chain == 0) {
@@ -2581,11 +2582,11 @@ class FiroWallet extends CoinServiceAPI {
       Logger.print("features: $features");
       if (_networkType == FiroNetworkType.main) {
         if (features['genesis_hash'] != CampfireConstants.firoGenesisHash) {
-          throw Exception("genesis hash does not match!");
+          throw Exception("genesis hash does not match main net!");
         }
       } else if (_networkType == FiroNetworkType.test) {
         if (features['genesis_hash'] != CampfireConstants.firoTestGenesisHash) {
-          throw Exception("genesis hash does not match!");
+          throw Exception("genesis hash does not match test net!");
         }
       }
       await _recoverWalletFromBIP32SeedPhrase(mnemonic);
