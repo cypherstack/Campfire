@@ -208,6 +208,9 @@ class _CreatePinViewState extends State<CreatePinView> {
                         );
                         final id =
                             await walletService.getWalletId(widget.walletName);
+
+                        // This should never fail as we are writing a new pin for a new wallet
+                        assert((await store.read(key: "${id}_pin")) == null);
                         await store.write(key: "${id}_pin", value: pin);
 
                         if (widget.type == CreateWalletType.NEW) {

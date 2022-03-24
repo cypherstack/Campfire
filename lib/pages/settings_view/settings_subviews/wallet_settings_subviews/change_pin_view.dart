@@ -202,6 +202,9 @@ class _ChangePinViewState extends State<ChangePinView> {
                     final store = new FlutterSecureStorage();
                     final walletName = await walletService.currentWalletName;
                     final id = await walletService.getWalletId(walletName);
+
+                    // This should never fail as we are overwriting the existing pin
+                    assert((await store.read(key: "${id}_pin")) != null);
                     await store.write(key: "${id}_pin", value: pin);
 
                     OverlayNotification.showSuccess(
