@@ -1220,7 +1220,7 @@ void main() {
       expect(result["txHex"], isA<String>());
     });
 
-    test("recoverFromMnemonic", () async {
+    test("recoverFromMnemonic succeeds", () async {
       final client = MockElectrumX();
       final cachedClient = MockCachedElectrumX();
       final secureStore = FakeSecureStorage();
@@ -1311,7 +1311,210 @@ void main() {
 
       expect(() async => await firo.recoverFromMnemonic(TEST_MNEMONIC),
           returnsNormally);
+    });
+
+    test("recoverFromMnemonic fails testnet", () async {
+      final client = MockElectrumX();
+      final cachedClient = MockCachedElectrumX();
+      final secureStore = FakeSecureStorage();
+      final priceAPI = MockPriceAPI();
+
+      // mock electrumx client calls
+      when(client.getServerFeatures()).thenAnswer((_) async => {
+            "hosts": {},
+            "pruning": null,
+            "server_version": "Unit tests",
+            "protocol_min": "1.4",
+            "protocol_max": "1.4.2",
+            "genesis_hash": CampfireConstants.firoGenesisHash,
+            "hash_function": "sha256",
+            "services": []
+          });
+
+      final firo = FiroWallet(
+        walletName: testWalletName,
+        walletId: testWalletId + "recoverFromMnemonic fails testnet",
+        networkType: FiroNetworkType.test,
+        client: client,
+        cachedClient: cachedClient,
+        secureStore: secureStore,
+        priceAPI: priceAPI,
+      );
+
+      expect(() async => await firo.recoverFromMnemonic(TEST_MNEMONIC),
+          throwsA(isA<Exception>()));
     }, timeout: Timeout(Duration(minutes: 3)));
+
+    test("recoverFromMnemonic fails mainnet", () async {
+      final client = MockElectrumX();
+      final cachedClient = MockCachedElectrumX();
+      final secureStore = FakeSecureStorage();
+      final priceAPI = MockPriceAPI();
+
+      // mock electrumx client calls
+      when(client.getServerFeatures()).thenAnswer((_) async => {
+            "hosts": {},
+            "pruning": null,
+            "server_version": "Unit tests",
+            "protocol_min": "1.4",
+            "protocol_max": "1.4.2",
+            "genesis_hash": CampfireConstants.firoTestGenesisHash,
+            "hash_function": "sha256",
+            "services": []
+          });
+
+      final firo = FiroWallet(
+        walletName: testWalletName,
+        walletId: testWalletId + "recoverFromMnemonic fails mainnet",
+        networkType: FiroNetworkType.main,
+        client: client,
+        cachedClient: cachedClient,
+        secureStore: secureStore,
+        priceAPI: priceAPI,
+      );
+
+      expect(() async => await firo.recoverFromMnemonic(TEST_MNEMONIC),
+          throwsA(isA<Exception>()));
+    });
+
+    test("incrementAddressIndexForChain receiving", () async {
+      final firo = FiroWallet(
+        walletId: testWalletId + "incrementAddressIndexForChain receiving",
+        walletName: testWalletName,
+        networkType: firoNetworkType,
+        client: MockElectrumX(),
+        cachedClient: MockCachedElectrumX(),
+        secureStore: FakeSecureStorage(),
+        priceAPI: MockPriceAPI(),
+      );
+
+      final wallet = await Hive.openBox(
+          testWalletId + "incrementAddressIndexForChain receiving");
+      await wallet.put("receivingIndex", 1);
+
+      await expectLater(() async => await firo.incrementAddressIndexForChain(0),
+          returnsNormally);
+
+      expect(wallet.get("receivingIndex"), 2);
+    });
+
+    test("incrementAddressIndexForChain change", () async {
+      final firo = FiroWallet(
+        walletId: testWalletId + "incrementAddressIndexForChain change",
+        walletName: testWalletName,
+        networkType: firoNetworkType,
+        client: MockElectrumX(),
+        cachedClient: MockCachedElectrumX(),
+        secureStore: FakeSecureStorage(),
+        priceAPI: MockPriceAPI(),
+      );
+
+      final wallet = await Hive.openBox(
+          testWalletId + "incrementAddressIndexForChain change");
+      await wallet.put("changeIndex", 1);
+
+      await expectLater(() async => await firo.incrementAddressIndexForChain(1),
+          returnsNormally);
+
+      expect(wallet.get("changeIndex"), 2);
+    });
+
+    test("addToAddressesArrayForChain receiving", () async {
+      final firo = FiroWallet(
+        walletId: testWalletId + "addToAddressesArrayForChain receiving",
+        walletName: testWalletName,
+        networkType: firoNetworkType,
+        client: MockElectrumX(),
+        cachedClient: MockCachedElectrumX(),
+        secureStore: FakeSecureStorage(),
+        priceAPI: MockPriceAPI(),
+      );
+
+      final wallet = await Hive.openBox(
+          testWalletId + "addToAddressesArrayForChain receiving");
+
+      await expectLater(
+          () async =>
+              await firo.addToAddressesArrayForChain("Some Address String", 0),
+          returnsNormally);
+
+      expect(wallet.get("receivingAddresses"), ["Some Address String"]);
+    });
+
+    test("addToAddressesArrayForChain change", () async {
+      final firo = FiroWallet(
+        walletId: testWalletId + "addToAddressesArrayForChain change",
+        walletName: testWalletName,
+        networkType: firoNetworkType,
+        client: MockElectrumX(),
+        cachedClient: MockCachedElectrumX(),
+        secureStore: FakeSecureStorage(),
+        priceAPI: MockPriceAPI(),
+      );
+
+      final wallet = await Hive.openBox(
+          testWalletId + "addToAddressesArrayForChain change");
+      await wallet.put("changeAddresses", ["some address A"]);
+
+      await expectLater(
+          () async =>
+              await firo.addToAddressesArrayForChain("Some Address B", 1),
+          returnsNormally);
+
+      expect(
+          wallet.get("changeAddresses"), ["some address A", "Some Address B"]);
+    });
+
+    test("checkReceivingAddressForTransactions fails", () async {
+      final firo = FiroWallet(
+        walletId: testWalletId + "checkReceivingAddressForTransactions fails",
+        walletName: testWalletName,
+        networkType: firoNetworkType,
+        client: MockElectrumX(),
+        cachedClient: MockCachedElectrumX(),
+        secureStore: FakeSecureStorage(),
+        priceAPI: MockPriceAPI(),
+      );
+
+      await expectLater(
+          () async => await firo.checkReceivingAddressForTransactions(),
+          throwsA(isA<NoSuchMethodError>()));
+    });
+
+    test("checkReceivingAddressForTransactions numtxs >= 1", () async {
+      final client = MockElectrumX();
+      final secureStore = FakeSecureStorage();
+
+      when(client.getHistory(scripthash: SampleGetHistoryData.scripthash1))
+          .thenAnswer((_) async => SampleGetHistoryData.data1);
+
+      final firo = FiroWallet(
+        walletId:
+            testWalletId + "checkReceivingAddressForTransactions numtxs >= 1",
+        walletName: testWalletName,
+        networkType: firoNetworkType,
+        client: client,
+        cachedClient: MockCachedElectrumX(),
+        secureStore: secureStore,
+        priceAPI: MockPriceAPI(),
+      );
+
+      final wallet = await Hive.openBox(
+          testWalletId + "checkReceivingAddressForTransactions numtxs >= 1");
+      await secureStore.write(
+          key: testWalletId +
+              "checkReceivingAddressForTransactions numtxs >= 1_mnemonic",
+          value: TEST_MNEMONIC);
+      await wallet
+          .put("receivingAddresses", ["aPjLWDTPQsoPHUTxKBNRzoebDALj3eTcfh"]);
+
+      await wallet.put("receivingIndex", 1);
+
+      await firo.checkReceivingAddressForTransactions();
+
+      expect(await wallet.get("receivingIndex"), 2);
+      expect((await wallet.get("receivingAddresses")).length, 2);
+    });
 
     test("updateBiometricsUsage", () async {
       final firo = FiroWallet(
