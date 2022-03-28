@@ -1,8 +1,8 @@
 import 'package:barcode_scan2/platform_wrapper.dart';
 import 'package:decimal/decimal.dart';
+import 'package:devicelocale/devicelocale.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
-import 'package:flutter_spinkit/flutter_spinkit.dart';
 import 'package:flutter_svg/svg.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:paymint/notifications/campfire_alert.dart';
@@ -12,6 +12,7 @@ import 'package:paymint/utilities/address_utils.dart';
 import 'package:paymint/utilities/cfcolors.dart';
 import 'package:paymint/utilities/logger.dart';
 import 'package:paymint/utilities/misc_global_constants.dart';
+import 'package:paymint/utilities/shared_utilities.dart';
 import 'package:paymint/utilities/sizing_utilities.dart';
 import 'package:paymint/widgets/custom_buttons/gradient_button.dart';
 import 'package:paymint/widgets/gradient_card.dart';
@@ -53,9 +54,18 @@ class _SendViewState extends State<SendView> {
   bool _cryptoAmountHasFocus = false;
   bool _fiatAmountHasFocus = false;
 
+  final _cryptoAmountKey = Key("_cryptoAmountKey");
+  final _fiatAmountKey = Key("_fiatAmountKey");
+
+  String _locale = "en_US"; // default
+
   _SendViewState(this.autofillArgs);
 
   bool get _amountHasFocus => _cryptoAmountHasFocus || _fiatAmountHasFocus;
+
+  Future<void> _fetchLocale() async {
+    _locale = await Devicelocale.currentLocale;
+  }
 
   void _clearForm() {
     _recipientAddressTextController.text = "";
@@ -95,7 +105,11 @@ class _SendViewState extends State<SendView> {
 
     _firoAmount = cryptoAmount;
     setState(() {
-      _firoAmountController.text = cryptoAmount.toStringAsFixed(8);
+      _firoAmountController.text = Utilities.localizedStringAsFixed(
+        value: cryptoAmount,
+        locale: _locale,
+        decimalPlaces: CampfireConstants.decimalPlaces,
+      );
     });
   }
 
@@ -111,6 +125,7 @@ class _SendViewState extends State<SendView> {
 
   @override
   initState() {
+    _fetchLocale();
     Logger.print("SendView args: $autofillArgs");
     if (autofillArgs != null) {
       _parseArgs(autofillArgs);
@@ -320,28 +335,23 @@ class _SendViewState extends State<SendView> {
                     }
                     _balanceMinusMaxFee = balanceMinusMaxFee.data;
                     Logger.print("_balanceMinusMaxFee $_balanceMinusMaxFee");
-
-                    return FittedBox(
-                      child: Text(
-                        "${_balanceMinusMaxFee <= Decimal.zero ? "0.00000000" : _balanceMinusMaxFee.toStringAsFixed(8)} ${manager.coinTicker}",
-                        style: GoogleFonts.workSans(
-                          color: CFColors.white,
-                          fontSize: 16,
-                          fontWeight: FontWeight.w600,
-                        ),
-                      ),
-                    );
-                  } else {
-                    //TODO: wallet balance loading progress
-                    // currently hidden by synchronizing overlay
-                    return SizedBox(
-                      height: 20,
-                      width: 100,
-                      child: SpinKitThreeBounce(
-                        color: CFColors.white,
-                      ),
-                    );
                   }
+                  return FittedBox(
+                    child: Text(
+                      "${Utilities.localizedStringAsFixed(
+                        value: _balanceMinusMaxFee <= Decimal.zero
+                            ? Decimal.zero
+                            : _balanceMinusMaxFee,
+                        locale: _locale,
+                        decimalPlaces: CampfireConstants.decimalPlaces,
+                      )} ${manager.coinTicker}",
+                      style: GoogleFonts.workSans(
+                        color: CFColors.white,
+                        fontSize: 16,
+                        fontWeight: FontWeight.w600,
+                      ),
+                    ),
+                  );
                 },
               ),
             ],
@@ -551,7 +561,11 @@ class _SendViewState extends State<SendView> {
                   scaleOnInfinitePrecision: CampfireConstants.decimalPlaces);
           return FittedBox(
             child: Text(
-              "${_maxFee.toStringAsFixed(8)} ${manager.coinTicker}",
+              "${Utilities.localizedStringAsFixed(
+                value: _maxFee,
+                locale: _locale,
+                decimalPlaces: CampfireConstants.decimalPlaces,
+              )} ${manager.coinTicker}",
               style: GoogleFonts.workSans(
                 color: CFColors.twilight,
                 fontWeight: FontWeight.w600,
@@ -562,7 +576,11 @@ class _SendViewState extends State<SendView> {
         } else {
           return FittedBox(
             child: Text(
-              "${_maxFee.toStringAsFixed(8)} ${manager.coinTicker}",
+              "${Utilities.localizedStringAsFixed(
+                value: _maxFee,
+                locale: _locale,
+                decimalPlaces: CampfireConstants.decimalPlaces,
+              )} ${manager.coinTicker}",
               style: GoogleFonts.workSans(
                 color: CFColors.twilight,
                 fontWeight: FontWeight.w600,
@@ -578,7 +596,11 @@ class _SendViewState extends State<SendView> {
   _buildTotal() {
     return FittedBox(
       child: Text(
-        "${_totalAmount.toStringAsFixed(8)} ${Provider.of<Manager>(context, listen: false).coinTicker}",
+        "${Utilities.localizedStringAsFixed(
+          value: _totalAmount,
+          locale: _locale,
+          decimalPlaces: CampfireConstants.decimalPlaces,
+        )} ${Provider.of<Manager>(context, listen: false).coinTicker}",
         style: GoogleFonts.workSans(
           color: CFColors.twilight,
           fontWeight: FontWeight.w600,
@@ -761,11 +783,13 @@ class _SendViewState extends State<SendView> {
           children: [
             Focus(
               onFocusChange: (hasFocus) {
+                print("_cryptoAmountHasFocus set to $hasFocus");
                 setState(() {
                   _cryptoAmountHasFocus = hasFocus;
                 });
               },
               child: TextField(
+                key: _cryptoAmountKey,
                 style: GoogleFonts.workSans(
                   color: CFColors.dusk,
                 ),
@@ -775,15 +799,22 @@ class _SendViewState extends State<SendView> {
                 inputFormatters: [
                   // regex to validate a crypto amount with 8 decimal places
                   TextInputFormatter.withFunction((oldValue, newValue) =>
-                      RegExp(r'^([0-9]*\.?[0-9]{0,8}|\.[0-9]{0,8})$')
+                      RegExp(r'^([0-9]*[,.]?[0-9]{0,8}|[,.][0-9]{0,8})$')
                               .hasMatch(newValue.text)
                           ? newValue
                           : oldValue),
                 ],
                 onChanged: (String firoAmount) {
                   Logger.print(firoAmount);
-                  if (firoAmount.isNotEmpty && firoAmount != ".") {
-                    _firoAmount = Decimal.parse(firoAmount);
+                  if (firoAmount.isNotEmpty &&
+                      firoAmount != "." &&
+                      firoAmount != ",") {
+                    if (firoAmount.contains(",")) {
+                      _firoAmount =
+                          Decimal.parse(firoAmount.replaceFirst(",", "."));
+                    } else {
+                      _firoAmount = Decimal.parse(firoAmount);
+                    }
                     setState(() {
                       _totalAmount = _firoAmount + _maxFee;
                       _sendButtonEnabled = (manager.validateAddress(_address) &&
@@ -792,7 +823,11 @@ class _SendViewState extends State<SendView> {
 
                     if (firoPrice > Decimal.zero) {
                       final String fiatAmountString =
-                          (_firoAmount * firoPrice).toStringAsFixed(2);
+                          Utilities.localizedStringAsFixed(
+                        value: _firoAmount * firoPrice,
+                        locale: _locale,
+                        decimalPlaces: 2,
+                      );
 
                       _fiatAmountController.text = fiatAmountString;
                     }
@@ -830,7 +865,11 @@ class _SendViewState extends State<SendView> {
                       ),
                     ),
                   ),
-                  hintText: "0.00",
+                  hintText: Utilities.localizedStringAsFixed(
+                    value: Decimal.zero,
+                    locale: _locale,
+                    decimalPlaces: 2,
+                  ),
                   hintStyle: GoogleFonts.workSans(
                     color: CFColors.twilight,
                     fontWeight: FontWeight.w400,
@@ -846,11 +885,13 @@ class _SendViewState extends State<SendView> {
             ),
             Focus(
               onFocusChange: (hasFocus) {
+                print("_fiatAmountHasFocus set to $hasFocus");
                 setState(() {
                   _fiatAmountHasFocus = hasFocus;
                 });
               },
               child: TextField(
+                key: _fiatAmountKey,
                 style: GoogleFonts.workSans(
                   color: CFColors.dusk,
                 ),
@@ -861,7 +902,7 @@ class _SendViewState extends State<SendView> {
                 inputFormatters: [
                   // regex to validate a fiat amount with 2 decimal places
                   TextInputFormatter.withFunction((oldValue, newValue) =>
-                      RegExp(r'^([0-9]*\.?[0-9]{0,2}|\.[0-9]{0,2})$')
+                      RegExp(r'^([0-9]*[,.]?[0-9]{0,2}|[,.][0-9]{0,2})$')
                               .hasMatch(newValue.text)
                           ? newValue
                           : oldValue),
@@ -873,7 +914,11 @@ class _SendViewState extends State<SendView> {
                         scaleOnInfinitePrecision:
                             CampfireConstants.decimalPlaces);
 
-                    final amountString = _firoAmount.toStringAsFixed(8);
+                    final amountString = Utilities.localizedStringAsFixed(
+                      value: _firoAmount,
+                      locale: _locale,
+                      decimalPlaces: 2,
+                    );
 
                     setState(() {
                       _totalAmount = Decimal.parse(amountString) + _maxFee;
@@ -919,7 +964,13 @@ class _SendViewState extends State<SendView> {
                       ),
                     ),
                   ),
-                  hintText: firoPrice < Decimal.zero ? "..." : "0.00",
+                  hintText: firoPrice < Decimal.zero
+                      ? "..."
+                      : Utilities.localizedStringAsFixed(
+                          value: Decimal.zero,
+                          locale: _locale,
+                          decimalPlaces: 2,
+                        ),
                   hintStyle: GoogleFonts.workSans(
                     color: CFColors.twilight,
                     fontWeight: FontWeight.w400,

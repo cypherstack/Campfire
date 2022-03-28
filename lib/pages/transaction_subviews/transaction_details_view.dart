@@ -14,10 +14,12 @@ class TransactionDetailsView extends StatefulWidget {
     Key key,
     @required this.transaction,
     @required this.note,
+    @required this.locale,
   }) : super(key: key);
 
   final Transaction transaction;
   final note;
+  final String locale;
 
   @override
   _TransactionDetailsViewState createState() => _TransactionDetailsViewState();
@@ -245,7 +247,7 @@ class _TransactionDetailsViewState extends State<TransactionDetailsView> {
                         // _transaction.confirmedStatus
                         // ?
                         Utilities.satoshiAmountToPrettyString(
-                            _transaction.amount),
+                            _transaction.amount, widget.locale),
                         // : "Pending",
                         1,
                       ),
@@ -254,7 +256,7 @@ class _TransactionDetailsViewState extends State<TransactionDetailsView> {
                           "Fee:",
                           _transaction.confirmedStatus
                               ? Utilities.satoshiAmountToPrettyString(
-                                  _transaction.fees)
+                                  _transaction.fees, widget.locale)
                               : "Pending",
                           1),
                       _buildSeparator(),

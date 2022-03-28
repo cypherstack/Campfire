@@ -22,59 +22,35 @@ void main() {
     });
   });
 
-  group("amountToPrettyString", () {
-    test("12345.0", () {
-      expect(Utilities.amountToPrettyString(12345.0), "12345");
-    });
-
-    test("12.345", () {
-      expect(Utilities.amountToPrettyString(12.345), "12.345");
-    });
-
-    test("0.00012345", () {
-      expect(Utilities.amountToPrettyString(0.00012345), "0.00012345");
-    });
-
-    test("10.00012345", () {
-      expect(Utilities.amountToPrettyString(10.00012345), "10.00012345");
-    });
-
-    test("12.34500", () {
-      expect(Utilities.amountToPrettyString(12.34500), "12.345");
-    });
-
-    test("0.0", () {
-      expect(Utilities.amountToPrettyString(0.0), "0");
-    });
-
-    test("0", () {
-      expect(Utilities.amountToPrettyString(0), "0");
-    });
-  });
-
   group("satoshiAmountToPrettyString", () {
+    final locale = "en_US";
     test("12345", () {
-      expect(Utilities.satoshiAmountToPrettyString(12345), "0.00012345");
+      expect(
+          Utilities.satoshiAmountToPrettyString(12345, locale), "0.00012345");
     });
 
     test("100012345", () {
-      expect(Utilities.satoshiAmountToPrettyString(100012345), "1.00012345");
+      expect(Utilities.satoshiAmountToPrettyString(100012345, locale),
+          "1.00012345");
     });
 
     test("123450000", () {
-      expect(Utilities.satoshiAmountToPrettyString(123450000), "1.23450000");
+      expect(Utilities.satoshiAmountToPrettyString(123450000, locale),
+          "1.23450000");
     });
 
     test("1230045000", () {
-      expect(Utilities.satoshiAmountToPrettyString(1230045000), "12.30045000");
+      expect(Utilities.satoshiAmountToPrettyString(1230045000, locale),
+          "12.30045000");
     });
 
     test("1000000000", () {
-      expect(Utilities.satoshiAmountToPrettyString(1000000000), "10.00000000");
+      expect(Utilities.satoshiAmountToPrettyString(1000000000, locale),
+          "10.00000000");
     });
 
     test("0", () {
-      expect(Utilities.satoshiAmountToPrettyString(0), "0.00000000");
+      expect(Utilities.satoshiAmountToPrettyString(0, locale), "0.00000000");
     });
   });
 

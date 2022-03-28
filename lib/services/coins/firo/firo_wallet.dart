@@ -7,6 +7,7 @@ import 'package:bip32/bip32.dart' as bip32;
 import 'package:bip32/src/utils/wif.dart' as wif;
 import 'package:bip39/bip39.dart' as bip39;
 import 'package:decimal/decimal.dart';
+import 'package:devicelocale/devicelocale.dart';
 import 'package:firo_flutter/firo_flutter.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
@@ -588,6 +589,7 @@ isolateCreateJoinSplitTransaction(
   final txId = extTx.getId();
   Logger.print("txid  $txId");
   Logger.print("txHex: $txHex");
+  final locale = await Devicelocale.currentLocale;
   return {
     "txid": txId,
     "txHex": txHex,
@@ -602,10 +604,12 @@ isolateCreateJoinSplitTransaction(
     "confirmed_status": false,
     // TODO: check if cast toDouble is required
     "amount": Utilities.satoshisToAmount(amount).toDouble(),
-    "worthNow": ((Decimal.fromInt(amount) * price) /
-            Decimal.fromInt(CampfireConstants.satsPerCoin))
-        .toDecimal(scaleOnInfinitePrecision: 2)
-        .toStringAsFixed(2),
+    "worthNow": Utilities.localizedStringAsFixed(
+        value: ((Decimal.fromInt(amount) * price) /
+                Decimal.fromInt(CampfireConstants.satsPerCoin))
+            .toDecimal(scaleOnInfinitePrecision: 2),
+        decimalPlaces: 2,
+        locale: locale),
     "address": address,
     "timestamp": DateTime.now().millisecondsSinceEpoch ~/ 1000,
     "subType": "join",
@@ -622,6 +626,7 @@ Future<List<models.Transaction>> getJMintTransactions(
 ) async {
   try {
     List<models.Transaction> txs = [];
+    final locale = await Devicelocale.currentLocale;
 
     for (int i = 0; i < transactions.length; i++) {
       try {
@@ -651,7 +656,11 @@ Future<List<models.Transaction>> getJMintTransactions(
 
         final decimalAmount = Decimal.parse(tx["amount"].toString());
 
-        tx["worthNow"] = (currentPrice * decimalAmount).toStringAsFixed(2);
+        tx["worthNow"] = Utilities.localizedStringAsFixed(
+          value: currentPrice * decimalAmount,
+          locale: locale,
+          decimalPlaces: 2,
+        );
         tx["worthAtBlockTimestamp"] = tx["worthNow"];
 
         tx["subType"] = "join";
@@ -1643,6 +1652,7 @@ class FiroWallet extends CoinServiceAPI {
     var price = await firoPrice;
     var builtHex = txb.build();
     // return builtHex;
+    final locale = await Devicelocale.currentLocale;
     return {
       "transaction": builtHex,
       "txid": txId,
@@ -1654,10 +1664,12 @@ class FiroWallet extends CoinServiceAPI {
       "txType": "Sent",
       "confirmed_status": false,
       "amount": Utilities.satoshisToAmount(amount).toDouble(),
-      "worthNow": ((Decimal.fromInt(amount) * price) /
-              Decimal.fromInt(CampfireConstants.satsPerCoin))
-          .toDecimal(scaleOnInfinitePrecision: 2)
-          .toStringAsFixed(2),
+      "worthNow": Utilities.localizedStringAsFixed(
+          value: ((Decimal.fromInt(amount) * price) /
+                  Decimal.fromInt(CampfireConstants.satsPerCoin))
+              .toDecimal(scaleOnInfinitePrecision: 2),
+          decimalPlaces: 2,
+          locale: locale),
       "timestamp": DateTime.now().millisecondsSinceEpoch ~/ 1000,
       "subType": "mint",
     };
@@ -1868,7 +1880,9 @@ class FiroWallet extends CoinServiceAPI {
     try {
       final result = await electrumXClient.getFeeRate();
 
-      final String fee = Utilities.satoshiAmountToPrettyString(result["rate"]);
+      final locale = await Devicelocale.currentLocale;
+      final String fee =
+          Utilities.satoshiAmountToPrettyString(result["rate"], locale);
 
       final fees = {
         "fast": fee,
@@ -2062,6 +2076,8 @@ class FiroWallet extends CoinServiceAPI {
         .getPrice(ticker: coinTicker, baseCurrency: currency);
     final List<Map<String, dynamic>> midSortedArray = [];
 
+    final locale = await Devicelocale.currentLocale;
+
     Logger.print("refresh the txs");
     for (final txObject in allTransactions) {
       Logger.print(txObject);
@@ -2194,11 +2210,12 @@ class FiroWallet extends CoinServiceAPI {
       if (foundInSenders) {
         midSortedTx["txType"] = "Sent";
         midSortedTx["amount"] = inputAmtSentFromWallet;
-        final worthNow =
-            ((currentPrice * Decimal.fromInt(inputAmtSentFromWallet)) /
+        final worthNow = Utilities.localizedStringAsFixed(
+            value: ((currentPrice * Decimal.fromInt(inputAmtSentFromWallet)) /
                     Decimal.fromInt(CampfireConstants.satsPerCoin))
-                .toDecimal(scaleOnInfinitePrecision: 2)
-                .toStringAsFixed(2);
+                .toDecimal(scaleOnInfinitePrecision: 2),
+            decimalPlaces: 2,
+            locale: locale);
         midSortedTx["worthNow"] = worthNow;
         midSortedTx["worthAtBlockTimestamp"] = worthNow;
         if (txObject["vout"][0]["scriptPubKey"]["type"] == "lelantusmint") {
@@ -2207,11 +2224,13 @@ class FiroWallet extends CoinServiceAPI {
       } else {
         midSortedTx["txType"] = "Received";
         midSortedTx["amount"] = outputAmtAddressedToWallet;
-        final worthNow =
-            ((currentPrice * Decimal.fromInt(outputAmtAddressedToWallet)) /
-                    Decimal.fromInt(CampfireConstants.satsPerCoin))
-                .toDecimal(scaleOnInfinitePrecision: 2)
-                .toStringAsFixed(2);
+        final worthNow = Utilities.localizedStringAsFixed(
+            value:
+                ((currentPrice * Decimal.fromInt(outputAmtAddressedToWallet)) /
+                        Decimal.fromInt(CampfireConstants.satsPerCoin))
+                    .toDecimal(scaleOnInfinitePrecision: 2),
+            decimalPlaces: 2,
+            locale: locale);
         midSortedTx["worthNow"] = worthNow;
       }
       midSortedTx["aliens"] = aliens;

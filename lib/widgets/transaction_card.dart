@@ -1,4 +1,5 @@
 import 'package:decimal/decimal.dart';
+import 'package:devicelocale/devicelocale.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_feather_icons/flutter_feather_icons.dart';
@@ -25,9 +26,15 @@ class TransactionCard extends StatefulWidget {
 
 class _TransactionCardState extends State<TransactionCard> {
   Transaction _transaction;
+  String _locale = "en_US";
+
+  Future<void> _fetchLocale() async {
+    _locale = await Devicelocale.currentLocale;
+  }
 
   @override
   void initState() {
+    _fetchLocale();
     _transaction = widget.transaction;
     super.initState();
   }
@@ -104,6 +111,7 @@ class _TransactionCardState extends State<TransactionCard> {
                 return TransactionDetailsView(
                   transaction: _transaction,
                   note: note,
+                  locale: _locale,
                 );
               },
             ),
@@ -163,7 +171,7 @@ class _TransactionCardState extends State<TransactionCard> {
                             child: FittedBox(
                               fit: BoxFit.scaleDown,
                               child: Text(
-                                "${Utilities.satoshiAmountToPrettyString(_transaction.amount)} ${Provider.of<Manager>(context, listen: false).coinTicker}",
+                                "${Utilities.satoshiAmountToPrettyString(_transaction.amount, _locale)} ${Provider.of<Manager>(context, listen: false).coinTicker}",
                                 style: GoogleFonts.workSans(
                                   color: CFColors.starryNight,
                                   fontSize: 16,
@@ -214,15 +222,19 @@ class _TransactionCardState extends State<TransactionCard> {
                                       builder: (context,
                                           AsyncSnapshot<Decimal> snapshot) {
                                         String symbol = "";
-                                        String _fiatValue = "...";
+                                        String _fiatValue = "0.00";
                                         if (snapshot.connectionState ==
                                             ConnectionState.done) {
                                           final value = snapshot.data *
                                               Utilities.satoshisToAmount(
                                                   _transaction.amount);
                                           _fiatValue = value < Decimal.zero
-                                              ? "..."
-                                              : value.toStringAsFixed(2);
+                                              ? "0.00"
+                                              : Utilities
+                                                  .localizedStringAsFixed(
+                                                      value: value,
+                                                      locale: _locale,
+                                                      decimalPlaces: 2);
 
                                           symbol =
                                               currencyMap[manager.fiatCurrency];
