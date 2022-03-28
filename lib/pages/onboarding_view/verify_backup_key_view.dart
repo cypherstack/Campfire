@@ -1,6 +1,7 @@
 import 'dart:math';
 
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:paymint/notifications/overlay_notification.dart';
 import 'package:paymint/pages/onboarding_view/helpers/builders.dart';
@@ -90,6 +91,15 @@ class _VerifyBackupKeyViewState extends State<VerifyBackupKeyView> {
                   Padding(
                     padding: const EdgeInsets.symmetric(horizontal: 20),
                     child: TextField(
+                      inputFormatters: <TextInputFormatter>[
+                        FilteringTextInputFormatter.allow(RegExp("[a-z]")),
+                      ],
+                      toolbarOptions: ToolbarOptions(
+                        copy: false,
+                        cut: false,
+                        paste: false,
+                        selectAll: false,
+                      ),
                       controller: _textEditController,
                       decoration: InputDecoration(hintText: "Type here..."),
                     ),
