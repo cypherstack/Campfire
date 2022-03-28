@@ -118,6 +118,7 @@ class _SendViewState extends State<SendView> {
     setState(() {
       _addressToggleFlag = _recipientAddressTextController.text.isNotEmpty;
     });
+    Logger.print("object: initmystate");
     super.initState();
   }
 
@@ -355,7 +356,16 @@ class _SendViewState extends State<SendView> {
       style: GoogleFonts.workSans(
         color: CFColors.dusk,
       ),
-      readOnly: true,
+      readOnly: false,
+      inputFormatters: <TextInputFormatter>[
+        FilteringTextInputFormatter.allow(RegExp("[a-zA-Z0-9]{34}")),
+      ],
+      toolbarOptions: ToolbarOptions(
+        copy: false,
+        cut: false,
+        paste: true,
+        selectAll: false,
+      ),
       controller: _recipientAddressTextController,
       decoration: InputDecoration(
         errorText: _updateInvalidAddressText(_address, manager),
