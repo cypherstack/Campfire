@@ -22,6 +22,7 @@ import 'package:paymint/utilities/text_styles.dart';
 import 'package:paymint/widgets/custom_pin_put/custom_pin_put.dart';
 import 'package:provider/provider.dart';
 import 'package:uuid/uuid.dart';
+import 'package:wakelock/wakelock.dart';
 
 import 'backup_key_warning_view.dart';
 import 'helpers/create_wallet_type.dart';
@@ -272,7 +273,9 @@ class _CreatePinViewState extends State<CreatePinView> {
                             cachedClient: CachedElectrumX.from(
                                 node: defaultNode, hivePath: appDir.path),
                           );
+                          Wakelock.enable();
                           final success = await firoWallet.initializeWallet();
+                          Wakelock.disable();
                           if (!success) {
                             await firoWallet.exit();
                             await walletService.deleteWallet(widget.walletName);
