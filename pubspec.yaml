@@ -63,6 +63,7 @@ dependencies:
   crypto: ^3.0.1
   jsonrpc2: ^3.0.1
   barcode_scan2: ^4.2.0
+  app_settings: ^4.1.1
 
 dev_dependencies:
   flutter_test:
