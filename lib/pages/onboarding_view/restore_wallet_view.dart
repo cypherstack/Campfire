@@ -368,6 +368,12 @@ class _RestoreWalletFormViewState extends State<RestoreWalletFormView> {
           ),
           child: TextFormField(
             decoration: _getInputDecorationFor(_inputStatuses[i - 1]),
+            toolbarOptions: ToolbarOptions(
+              copy: true,
+              cut: true,
+              paste: false,
+              selectAll: true,
+            ),
             autovalidateMode: AutovalidateMode.onUserInteraction,
             onChanged: (value) {
               if (value == null || value.isEmpty) {
