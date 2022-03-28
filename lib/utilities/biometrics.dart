@@ -20,15 +20,28 @@ class Biometrics {
       //TODO properly handle caught exceptions
       if (Platform.isIOS) {
         if (availableSystems.contains(BiometricType.face)) {
-          //TODO implement iOS face id
+          try {
+            bool didAuthenticate = await localAuth.authenticate(
+              biometricOnly: true,
+              localizedReason: localizedReason,
+              stickyAuth: true,
+              iOSAuthStrings: IOSAuthMessages(),
+            );
+
+            if (didAuthenticate) {
+              return true;
+            }
+          } catch (e) {
+            Logger.print(
+                "local_auth exception caught in Biometrics.authenticate(), e: $e");
+          }
         } else if (availableSystems.contains(BiometricType.fingerprint)) {
           try {
             bool didAuthenticate = await localAuth.authenticate(
               biometricOnly: true,
               localizedReason: localizedReason,
               stickyAuth: true,
-              //TODO use ios auth strings?
-              // iOSAuthStrings: IOSAuthMessages(),
+              iOSAuthStrings: IOSAuthMessages(),
             );
 
             if (didAuthenticate) {
