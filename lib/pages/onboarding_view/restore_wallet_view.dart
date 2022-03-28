@@ -367,6 +367,15 @@ class _RestoreWalletFormViewState extends State<RestoreWalletFormView> {
             SizingUtilities.listItemSpacing / 2,
           ),
           child: TextFormField(
+            inputFormatters: <TextInputFormatter>[
+              FilteringTextInputFormatter.allow(RegExp("[a-z]")),
+            ],
+            toolbarOptions: ToolbarOptions(
+              copy: false,
+              cut: false,
+              paste: false,
+              selectAll: false,
+            ),
             decoration: _getInputDecorationFor(_inputStatuses[i - 1]),
             autovalidateMode: AutovalidateMode.onUserInteraction,
             onChanged: (value) {
