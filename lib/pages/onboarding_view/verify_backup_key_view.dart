@@ -34,7 +34,7 @@ class _VerifyBackupKeyViewState extends State<VerifyBackupKeyView> {
     return list[position] == word;
   }
 
-  final int _randomPosition = Random().nextInt(12);
+  final int _randomPosition = Random().nextInt(24);
 
   final _positionStrings = [
     "1st",
@@ -48,7 +48,19 @@ class _VerifyBackupKeyViewState extends State<VerifyBackupKeyView> {
     "9th",
     "10th",
     "11th",
-    "12th"
+    "12th",
+    "13th",
+    "14th",
+    "15th",
+    "16th",
+    "17th",
+    "18th",
+    "19th",
+    "20th",
+    "21st",
+    "22nd",
+    "23rd",
+    "24th"
   ];
 
   @override
