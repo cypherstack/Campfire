@@ -1,6 +1,4 @@
 import 'package:decimal/decimal.dart';
-import 'package:decimal/intl.dart';
-import 'package:intl/intl.dart';
 import 'package:intl/number_symbols_data.dart' show numberFormatSymbols;
 import 'package:paymint/services/globals.dart';
 import 'package:paymint/utilities/misc_global_constants.dart';
@@ -39,47 +37,15 @@ class Utilities {
   }) {
     assert(decimalPlaces >= 0);
 
-    final format = NumberFormat.decimalPattern(locale);
-    var result = format.format(DecimalIntl(value));
+    final separator = numberFormatSymbols[locale]?.DECIMAL_SEP ??
+        numberFormatSymbols[locale.substring(0, 2)].DECIMAL_SEP;
 
     final intValue = value.truncate();
     final fraction = value - intValue;
 
-    if (fraction == Decimal.zero) {
-      final separator = numberFormatSymbols[locale]?.DECIMAL_SEP ??
-          numberFormatSymbols[locale.substring(0, 2)].DECIMAL_SEP;
-
-      return result +
-          separator +
-          fraction.toStringAsFixed(decimalPlaces).substring(2);
-    } else if (intValue == Decimal.zero) {
-      final separator = numberFormatSymbols[locale]?.DECIMAL_SEP ??
-          numberFormatSymbols[locale.substring(0, 2)].DECIMAL_SEP;
-      return "0" +
-          separator +
-          fraction.toStringAsFixed(decimalPlaces).substring(2);
-    } else {
-      final regex = RegExp("[0-9]");
-      var lastIndex = result.length - 1;
-      while (lastIndex > 0) {
-        final char = result[lastIndex];
-        if (regex.hasMatch(char)) {
-          lastIndex--;
-          result = result.substring(0, lastIndex + 1);
-        } else {
-          break;
-        }
-      }
-
-      if (decimalPlaces == 0) {
-        lastIndex--;
-        result = result.substring(0, lastIndex);
-      } else {
-        result = result + fraction.toStringAsFixed(decimalPlaces).substring(2);
-      }
-
-      return result;
-    }
+    return intValue.toStringAsFixed(0) +
+        separator +
+        fraction.toStringAsFixed(decimalPlaces).substring(2);
   }
 
   // format date string as dd/mm/yy from DateTime object
