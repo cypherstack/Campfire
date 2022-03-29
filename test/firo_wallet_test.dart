@@ -54,6 +54,7 @@ void main() {
         usedSerials,
         firoNetwork,
         Decimal.ten,
+        "en_US",
       );
 
       expect(result, isA<Map<String, dynamic>>());
@@ -80,6 +81,7 @@ void main() {
                 usedSerials,
                 firoNetwork,
                 Decimal.ten,
+                "en_US",
               ),
           throwsA(isA<Error>()));
     });
@@ -320,7 +322,14 @@ void main() {
 
         expect(
             () async => await getJMintTransactions(
-                cachedClient, transactions, "USD", "Firo", false, Decimal.ten),
+                  cachedClient,
+                  transactions,
+                  "USD",
+                  "Firo",
+                  false,
+                  Decimal.ten,
+                  "en_US",
+                ),
             throwsA(isA<Error>()));
       });
 
@@ -365,7 +374,14 @@ void main() {
         ];
 
         final result = await getJMintTransactions(
-            cachedClient, transactions, "USD", "Firo", false, Decimal.ten);
+          cachedClient,
+          transactions,
+          "USD",
+          "Firo",
+          false,
+          Decimal.ten,
+          "en_US",
+        );
 
         expect(result, isA<List<Transaction>>());
         expect(result.length, 4);
