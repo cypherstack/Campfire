@@ -10,7 +10,7 @@ class JsonRPC {
     this.address,
     this.port,
     this.useSSL: false,
-    this.connectionTimeout: const Duration(seconds: 5),
+    this.connectionTimeout: const Duration(seconds: 60),
   });
   bool useSSL;
   String address;
