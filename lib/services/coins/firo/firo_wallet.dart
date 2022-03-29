@@ -144,6 +144,7 @@ Future<void> executeNative(arguments) async {
       dynamic network = arguments['network'];
       CachedElectrumX cachedClient = arguments['cachedElectrumXClient'];
       Decimal currentPrice = arguments['currentPrice'];
+      String locale = arguments['locale'];
       if (!(mnemonic == null ||
           transactionData == null ||
           cachedClient == null ||
@@ -153,7 +154,8 @@ Future<void> executeNative(arguments) async {
           network == null ||
           coinName == null ||
           currency == null ||
-          currentPrice == null)) {
+          currentPrice == null ||
+          locale == null)) {
         var restoreData = await isolateRestore(
             cachedClient,
             mnemonic,
@@ -164,7 +166,8 @@ Future<void> executeNative(arguments) async {
             setDataMap,
             usedSerialNumbers,
             network,
-            currentPrice);
+            currentPrice,
+            locale);
         sendPort.send(restoreData);
         return;
       }
@@ -244,16 +247,18 @@ isolateDerive(String mnemonic, int from, int to, dynamic _network) async {
 }
 
 isolateRestore(
-    CachedElectrumX cachedClient,
-    String mnemonic,
-    TransactionData data,
-    String currency,
-    String coinName,
-    int _latestSetId,
-    Map _setDataMap,
-    dynamic _usedSerialNumbers,
-    dynamic network,
-    Decimal currentPrice) async {
+  CachedElectrumX cachedClient,
+  String mnemonic,
+  TransactionData data,
+  String currency,
+  String coinName,
+  int _latestSetId,
+  Map _setDataMap,
+  dynamic _usedSerialNumbers,
+  dynamic network,
+  Decimal currentPrice,
+  String locale,
+) async {
   List<int> jindexes = [];
   Map<dynamic, LelantusCoin> _lelantus_coins = Map();
 
@@ -422,7 +427,7 @@ isolateRestore(
 
   // Create the joinsplit transactions.
   final spendTxs = await getJMintTransactions(
-      cachedClient, spendTxIds, currency, coinName, true, currentPrice);
+      cachedClient, spendTxIds, currency, coinName, true, currentPrice, locale);
   Logger.print(spendTxs);
   spendTxs.forEach((element) {
     transactionMap[element.txid] = element;
@@ -623,10 +628,10 @@ Future<List<models.Transaction>> getJMintTransactions(
   String coinName,
   bool outsideMainIsolate,
   Decimal currentPrice,
+  String locale,
 ) async {
   try {
     List<models.Transaction> txs = [];
-    final locale = await Devicelocale.currentLocale;
 
     for (int i = 0; i < transactions.length; i++) {
       try {
@@ -672,8 +677,9 @@ Future<List<models.Transaction>> getJMintTransactions(
       }
     }
     return txs;
-  } catch (e) {
+  } catch (e, s) {
     Logger.print("Exception rethrown in getJMintTransactions(): $e");
+    Logger.print(s);
     throw e;
   }
 }
@@ -1710,8 +1716,9 @@ class FiroWallet extends CoinServiceAPI {
         );
     // Grab the most recent information on all the joinsplits
 
+    final locale = await Devicelocale.currentLocale;
     final updatedJSplit = await getJMintTransactions(cachedElectrumXClient,
-        joinsplits, currency, this.coinName, false, currentPrice);
+        joinsplits, currency, this.coinName, false, currentPrice, locale);
 
     // update all of joinsplits that are now confirmed.
     for (final tx in updatedJSplit) {
@@ -2755,6 +2762,7 @@ class FiroWallet extends CoinServiceAPI {
           ticker: this.coinTicker,
           baseCurrency: currency,
         );
+    final locale = await Devicelocale.currentLocale;
 
     ReceivePort receivePort = await getIsolate({
       "function": "restore",
@@ -2768,6 +2776,7 @@ class FiroWallet extends CoinServiceAPI {
       "network": this._network,
       "cachedElectrumXClient": this.cachedElectrumXClient,
       "currentPrice": currentPrice,
+      "locale": locale,
     });
 
     var message = await receivePort.first;
