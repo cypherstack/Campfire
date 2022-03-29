@@ -895,7 +895,6 @@ class _SendViewState extends State<SendView> {
                 style: GoogleFonts.workSans(
                   color: CFColors.dusk,
                 ),
-                enabled: firoPrice > Decimal.zero,
                 controller: _fiatAmountController,
                 keyboardType: TextInputType.numberWithOptions(
                     signed: false, decimal: true),

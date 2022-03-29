@@ -67,6 +67,7 @@ dependencies:
   wakelock: ^0.6.1+2
   intl: ^0.17.0
   devicelocale: ^0.5.0
+  keyboard_dismisser: ^2.0.1
 
 dev_dependencies:
   flutter_test:

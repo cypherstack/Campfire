@@ -17,6 +17,7 @@ import 'package:paymint/utilities/cfcolors.dart';
 import 'package:paymint/utilities/logger.dart';
 import 'package:paymint/utilities/sizing_utilities.dart';
 import 'package:provider/provider.dart';
+import 'package:keyboard_dismisser/keyboard_dismisser.dart';
 
 import 'route_generator.dart';
 
@@ -55,25 +56,27 @@ void main() async {
 class MyApp extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
-    return MultiProvider(
-      providers: [
-        ChangeNotifierProvider(
-          create: (_) => Manager(),
-        ),
-        ChangeNotifierProvider(
-          create: (_) => WalletsService(),
-        ),
-        ChangeNotifierProvider(
-          create: (_) => AddressBookService(),
-        ),
-        ChangeNotifierProvider(
-          create: (_) => NodeService(),
-        ),
-        ChangeNotifierProvider(
-          create: (_) => NotesService(),
-        ),
-      ],
-      child: MaterialAppWithTheme(),
+    return KeyboardDismisser(
+      child: MultiProvider(
+        providers: [
+          ChangeNotifierProvider(
+            create: (_) => Manager(),
+          ),
+          ChangeNotifierProvider(
+            create: (_) => WalletsService(),
+          ),
+          ChangeNotifierProvider(
+            create: (_) => AddressBookService(),
+          ),
+          ChangeNotifierProvider(
+            create: (_) => NodeService(),
+          ),
+          ChangeNotifierProvider(
+            create: (_) => NotesService(),
+          ),
+        ],
+        child: MaterialAppWithTheme(),
+      ),
     );
   }
 }
