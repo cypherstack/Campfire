@@ -7,6 +7,7 @@ import 'package:google_fonts/google_fonts.dart';
 import 'package:paymint/models/transactions_model.dart';
 import 'package:paymint/notifications/modal_popup_dialog.dart';
 import 'package:paymint/notifications/overlay_notification.dart';
+import 'package:paymint/pages/address_book_view/subviews/edit_address_book_entry_view.dart';
 import 'package:paymint/services/address_book_service.dart';
 import 'package:paymint/services/coins/manager.dart';
 import 'package:paymint/utilities/cfcolors.dart';
@@ -87,7 +88,6 @@ class _AddressBookEntryDetailsViewState
                 height: 8,
               ),
               TextField(
-                // TODO implement edit address
                 readOnly: true,
                 controller: _addressTextEditingController,
                 decoration: InputDecoration(
@@ -125,6 +125,15 @@ class _AddressBookEntryDetailsViewState
                           ),
                           onTap: () {
                             Logger.print("edit address tapped");
+                            showDialog(
+                              context: context,
+                              useSafeArea: false,
+                              barrierDismissible: false,
+                              builder: (context) {
+                                return EditAddressBookEntryView(
+                                    name: _name, address: _address);
+                              },
+                            );
                           },
                         )
                       ],

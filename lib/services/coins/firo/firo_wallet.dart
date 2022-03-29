@@ -7,6 +7,7 @@ import 'package:bip32/bip32.dart' as bip32;
 import 'package:bip32/src/utils/wif.dart' as wif;
 import 'package:bip39/bip39.dart' as bip39;
 import 'package:decimal/decimal.dart';
+import 'package:devicelocale/devicelocale.dart';
 import 'package:firo_flutter/firo_flutter.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
@@ -93,6 +94,7 @@ Future<void> executeNative(arguments) async {
       dynamic network = arguments['network'];
       int locktime = arguments['locktime'];
       dynamic anonymitySet = arguments['anonymitySet'];
+      String locale = arguments["locale"];
       if (!(spendAmount == null ||
           address == null ||
           subtractFeeFromAmount == null ||
@@ -103,6 +105,7 @@ Future<void> executeNative(arguments) async {
           locktime == null ||
           coinName == null ||
           network == null ||
+          locale == null ||
           anonymitySet == null)) {
         var joinSplit = await isolateCreateJoinSplitTransaction(
             spendAmount,
@@ -115,7 +118,8 @@ Future<void> executeNative(arguments) async {
             locktime,
             coinName,
             network,
-            anonymitySet);
+            anonymitySet,
+            locale);
         sendPort.send(joinSplit);
         return;
       }
@@ -143,6 +147,7 @@ Future<void> executeNative(arguments) async {
       dynamic network = arguments['network'];
       CachedElectrumX cachedClient = arguments['cachedElectrumXClient'];
       Decimal currentPrice = arguments['currentPrice'];
+      String locale = arguments['locale'];
       if (!(mnemonic == null ||
           transactionData == null ||
           cachedClient == null ||
@@ -152,7 +157,8 @@ Future<void> executeNative(arguments) async {
           network == null ||
           coinName == null ||
           currency == null ||
-          currentPrice == null)) {
+          currentPrice == null ||
+          locale == null)) {
         var restoreData = await isolateRestore(
             cachedClient,
             mnemonic,
@@ -163,7 +169,8 @@ Future<void> executeNative(arguments) async {
             setDataMap,
             usedSerialNumbers,
             network,
-            currentPrice);
+            currentPrice,
+            locale);
         sendPort.send(restoreData);
         return;
       }
@@ -243,16 +250,18 @@ isolateDerive(String mnemonic, int from, int to, dynamic _network) async {
 }
 
 isolateRestore(
-    CachedElectrumX cachedClient,
-    String mnemonic,
-    TransactionData data,
-    String currency,
-    String coinName,
-    int _latestSetId,
-    Map _setDataMap,
-    dynamic _usedSerialNumbers,
-    dynamic network,
-    Decimal currentPrice) async {
+  CachedElectrumX cachedClient,
+  String mnemonic,
+  TransactionData data,
+  String currency,
+  String coinName,
+  int _latestSetId,
+  Map _setDataMap,
+  dynamic _usedSerialNumbers,
+  dynamic network,
+  Decimal currentPrice,
+  String locale,
+) async {
   List<int> jindexes = [];
   Map<dynamic, LelantusCoin> _lelantus_coins = Map();
 
@@ -421,7 +430,7 @@ isolateRestore(
 
   // Create the joinsplit transactions.
   final spendTxs = await getJMintTransactions(
-      cachedClient, spendTxIds, currency, coinName, true, currentPrice);
+      cachedClient, spendTxIds, currency, coinName, true, currentPrice, locale);
   Logger.print(spendTxs);
   spendTxs.forEach((element) {
     transactionMap[element.txid] = element;
@@ -470,6 +479,7 @@ isolateCreateJoinSplitTransaction(
   String coinName,
   dynamic _network,
   dynamic anonymitySet,
+  String locale,
 ) async {
   final estimateJoinSplitFee = await isolateEstimateJoinSplitFee(
       spendAmount, subtractFeeFromAmount, lelantusEntries);
@@ -602,10 +612,12 @@ isolateCreateJoinSplitTransaction(
     "confirmed_status": false,
     // TODO: check if cast toDouble is required
     "amount": Utilities.satoshisToAmount(amount).toDouble(),
-    "worthNow": ((Decimal.fromInt(amount) * price) /
-            Decimal.fromInt(CampfireConstants.satsPerCoin))
-        .toDecimal(scaleOnInfinitePrecision: 2)
-        .toStringAsFixed(2),
+    "worthNow": Utilities.localizedStringAsFixed(
+        value: ((Decimal.fromInt(amount) * price) /
+                Decimal.fromInt(CampfireConstants.satsPerCoin))
+            .toDecimal(scaleOnInfinitePrecision: 2),
+        decimalPlaces: 2,
+        locale: locale),
     "address": address,
     "timestamp": DateTime.now().millisecondsSinceEpoch ~/ 1000,
     "subType": "join",
@@ -619,6 +631,7 @@ Future<List<models.Transaction>> getJMintTransactions(
   String coinName,
   bool outsideMainIsolate,
   Decimal currentPrice,
+  String locale,
 ) async {
   try {
     List<models.Transaction> txs = [];
@@ -651,7 +664,11 @@ Future<List<models.Transaction>> getJMintTransactions(
 
         final decimalAmount = Decimal.parse(tx["amount"].toString());
 
-        tx["worthNow"] = (currentPrice * decimalAmount).toStringAsFixed(2);
+        tx["worthNow"] = Utilities.localizedStringAsFixed(
+          value: currentPrice * decimalAmount,
+          locale: locale,
+          decimalPlaces: 2,
+        );
         tx["worthAtBlockTimestamp"] = tx["worthNow"];
 
         tx["subType"] = "join";
@@ -663,8 +680,9 @@ Future<List<models.Transaction>> getJMintTransactions(
       }
     }
     return txs;
-  } catch (e) {
+  } catch (e, s) {
     Logger.print("Exception rethrown in getJMintTransactions(): $e");
+    Logger.print(s);
     throw e;
   }
 }
@@ -1033,33 +1051,39 @@ class FiroWallet extends CoinServiceAPI {
     if (longMutex) return false;
     Logger.print("refreshIfThereIsNewData");
 
-    bool needsRefresh = false;
-    Logger.print("unonconfirmeds $unconfirmedTxs");
-    for (String txid in unconfirmedTxs) {
-      final txn = await electrumXClient.getTransaction(tx_hash: txid);
-      var confirmations = txn["confirmations"];
-      if (!(confirmations is int)) continue;
-      bool isUnconfirmed = confirmations < 1;
-      if (!isUnconfirmed) {
-        unconfirmedTxs = {};
-        needsRefresh = true;
-        break;
-      }
-    }
-    if (!needsRefresh) {
-      var allOwnAddresses = await this.allOwnAddresses;
-      List<Map<String, dynamic>> allTxs = await _fetchHistory(allOwnAddresses);
-      models.TransactionData txData = await _txnData;
-      for (Map transaction in allTxs) {
-        if (txData.findTransaction(transaction['tx_hash']) == null) {
-          Logger.print(
-              " txid not found in address history already ${transaction['tx_hash']}");
+    try {
+      bool needsRefresh = false;
+      Logger.print("unonconfirmeds $unconfirmedTxs");
+      for (String txid in unconfirmedTxs) {
+        final txn = await electrumXClient.getTransaction(tx_hash: txid);
+        var confirmations = txn["confirmations"];
+        if (!(confirmations is int)) continue;
+        bool isUnconfirmed = confirmations < 1;
+        if (!isUnconfirmed) {
+          unconfirmedTxs = {};
           needsRefresh = true;
           break;
         }
       }
+      if (!needsRefresh) {
+        var allOwnAddresses = await this.allOwnAddresses;
+        List<Map<String, dynamic>> allTxs =
+            await _fetchHistory(allOwnAddresses);
+        models.TransactionData txData = await _txnData;
+        for (Map transaction in allTxs) {
+          if (txData.findTransaction(transaction['tx_hash']) == null) {
+            Logger.print(
+                " txid not found in address history already ${transaction['tx_hash']}");
+            needsRefresh = true;
+            break;
+          }
+        }
+      }
+      return needsRefresh;
+    } catch (e, s) {
+      Logger.print("Exception caught in refreshIfThereIsNewData: $e\n$s");
     }
-    return needsRefresh;
+    return false;
   }
 
   Future<void> getAllTxsToWatch(
@@ -1503,7 +1527,13 @@ class FiroWallet extends CoinServiceAPI {
 
     int vsize = tmpTx['transaction'].virtualSize();
     final Decimal dvsize = Decimal.fromInt(vsize);
-    final Decimal fastFee = Decimal.parse(feesObject.fast);
+
+    // Decimal can't parse decimal separators other than "." so we need to check
+    String fast = feesObject.fast;
+    if (fast.contains(",")) {
+      fast = fast.replaceFirst(",", ".");
+    }
+    final Decimal fastFee = Decimal.parse(fast);
     int firoFee =
         (dvsize * fastFee * Decimal.fromInt(100000)).toDouble().ceil();
     // int firoFee = (vsize * feesObject.fast * (1 / 1000.0) * 100000000).ceil();
@@ -1643,6 +1673,7 @@ class FiroWallet extends CoinServiceAPI {
     var price = await firoPrice;
     var builtHex = txb.build();
     // return builtHex;
+    final locale = await Devicelocale.currentLocale;
     return {
       "transaction": builtHex,
       "txid": txId,
@@ -1654,10 +1685,12 @@ class FiroWallet extends CoinServiceAPI {
       "txType": "Sent",
       "confirmed_status": false,
       "amount": Utilities.satoshisToAmount(amount).toDouble(),
-      "worthNow": ((Decimal.fromInt(amount) * price) /
-              Decimal.fromInt(CampfireConstants.satsPerCoin))
-          .toDecimal(scaleOnInfinitePrecision: 2)
-          .toStringAsFixed(2),
+      "worthNow": Utilities.localizedStringAsFixed(
+          value: ((Decimal.fromInt(amount) * price) /
+                  Decimal.fromInt(CampfireConstants.satsPerCoin))
+              .toDecimal(scaleOnInfinitePrecision: 2),
+          decimalPlaces: 2,
+          locale: locale),
       "timestamp": DateTime.now().millisecondsSinceEpoch ~/ 1000,
       "subType": "mint",
     };
@@ -1698,8 +1731,9 @@ class FiroWallet extends CoinServiceAPI {
         );
     // Grab the most recent information on all the joinsplits
 
+    final locale = await Devicelocale.currentLocale;
     final updatedJSplit = await getJMintTransactions(cachedElectrumXClient,
-        joinsplits, currency, this.coinName, false, currentPrice);
+        joinsplits, currency, this.coinName, false, currentPrice, locale);
 
     // update all of joinsplits that are now confirmed.
     for (final tx in updatedJSplit) {
@@ -1868,7 +1902,9 @@ class FiroWallet extends CoinServiceAPI {
     try {
       final result = await electrumXClient.getFeeRate();
 
-      final String fee = Utilities.satoshiAmountToPrettyString(result["rate"]);
+      final locale = await Devicelocale.currentLocale;
+      final String fee =
+          Utilities.satoshiAmountToPrettyString(result["rate"], locale);
 
       final fees = {
         "fast": fee,
@@ -2062,6 +2098,8 @@ class FiroWallet extends CoinServiceAPI {
         .getPrice(ticker: coinTicker, baseCurrency: currency);
     final List<Map<String, dynamic>> midSortedArray = [];
 
+    final locale = await Devicelocale.currentLocale;
+
     Logger.print("refresh the txs");
     for (final txObject in allTransactions) {
       Logger.print(txObject);
@@ -2194,11 +2232,12 @@ class FiroWallet extends CoinServiceAPI {
       if (foundInSenders) {
         midSortedTx["txType"] = "Sent";
         midSortedTx["amount"] = inputAmtSentFromWallet;
-        final worthNow =
-            ((currentPrice * Decimal.fromInt(inputAmtSentFromWallet)) /
+        final worthNow = Utilities.localizedStringAsFixed(
+            value: ((currentPrice * Decimal.fromInt(inputAmtSentFromWallet)) /
                     Decimal.fromInt(CampfireConstants.satsPerCoin))
-                .toDecimal(scaleOnInfinitePrecision: 2)
-                .toStringAsFixed(2);
+                .toDecimal(scaleOnInfinitePrecision: 2),
+            decimalPlaces: 2,
+            locale: locale);
         midSortedTx["worthNow"] = worthNow;
         midSortedTx["worthAtBlockTimestamp"] = worthNow;
         if (txObject["vout"][0]["scriptPubKey"]["type"] == "lelantusmint") {
@@ -2207,11 +2246,13 @@ class FiroWallet extends CoinServiceAPI {
       } else {
         midSortedTx["txType"] = "Received";
         midSortedTx["amount"] = outputAmtAddressedToWallet;
-        final worthNow =
-            ((currentPrice * Decimal.fromInt(outputAmtAddressedToWallet)) /
-                    Decimal.fromInt(CampfireConstants.satsPerCoin))
-                .toDecimal(scaleOnInfinitePrecision: 2)
-                .toStringAsFixed(2);
+        final worthNow = Utilities.localizedStringAsFixed(
+            value:
+                ((currentPrice * Decimal.fromInt(outputAmtAddressedToWallet)) /
+                        Decimal.fromInt(CampfireConstants.satsPerCoin))
+                    .toDecimal(scaleOnInfinitePrecision: 2),
+            decimalPlaces: 2,
+            locale: locale);
         midSortedTx["worthNow"] = worthNow;
       }
       midSortedTx["aliens"] = aliens;
@@ -2736,6 +2777,7 @@ class FiroWallet extends CoinServiceAPI {
           ticker: this.coinTicker,
           baseCurrency: currency,
         );
+    final locale = await Devicelocale.currentLocale;
 
     ReceivePort receivePort = await getIsolate({
       "function": "restore",
@@ -2749,6 +2791,7 @@ class FiroWallet extends CoinServiceAPI {
       "network": this._network,
       "cachedElectrumXClient": this.cachedElectrumXClient,
       "currentPrice": currentPrice,
+      "locale": locale,
     });
 
     var message = await receivePort.first;
@@ -2808,6 +2851,7 @@ class FiroWallet extends CoinServiceAPI {
       coinName,
     );
     final locktime = await getBlockHead(electrumXClient);
+    final locale = await Devicelocale.currentLocale;
 
     ReceivePort receivePort = await getIsolate({
       "function": "createJoinSplit",
@@ -2822,6 +2866,7 @@ class FiroWallet extends CoinServiceAPI {
       "coinName": coinName,
       "network": _network,
       "anonymitySet": setData,
+      "locale": locale,
     });
     var message = await receivePort.first;
     if (message is String) {
@@ -2870,7 +2915,7 @@ class FiroWallet extends CoinServiceAPI {
 
   @override
   Future<void> exit() async {
-    _nodesChangedListener?.cancel();
+    await _nodesChangedListener?.cancel();
     _nodesChangedListener = null;
     timer?.cancel();
     timer = null;

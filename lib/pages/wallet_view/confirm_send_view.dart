@@ -21,7 +21,7 @@ class ConfirmSendView extends StatefulWidget {
     @required this.address,
     @required this.note,
     @required this.amount,
-    @required this.fee,
+    this.fee,
   }) : super(key: key);
 
   final String address;

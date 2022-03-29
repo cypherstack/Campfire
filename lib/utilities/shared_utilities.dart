@@ -1,4 +1,5 @@
 import 'package:decimal/decimal.dart';
+import 'package:intl/number_symbols_data.dart' show numberFormatSymbols;
 import 'package:paymint/services/globals.dart';
 import 'package:paymint/utilities/misc_global_constants.dart';
 
@@ -7,13 +8,13 @@ class Utilities {
       (Decimal.fromInt(sats) / Decimal.fromInt(CampfireConstants.satsPerCoin))
           .toDecimal(scaleOnInfinitePrecision: CampfireConstants.decimalPlaces);
 
-  static String amountToPrettyString(double amount) =>
-      "${Decimal.parse(amount.toString())}";
-
   ///
-  static String satoshiAmountToPrettyString(int sats) {
+  static String satoshiAmountToPrettyString(int sats, String locale) {
     final amount = satoshisToAmount(sats);
-    return amount.toStringAsFixed(CampfireConstants.decimalPlaces);
+    return localizedStringAsFixed(
+        value: amount,
+        locale: locale,
+        decimalPlaces: CampfireConstants.decimalPlaces);
   }
 
   // format date string from unix timestamp
@@ -27,6 +28,24 @@ class Utilities {
     final minutes =
         date.minute < 10 ? "0${date.minute}" : date.minute.toString();
     return "${date.day} ${monthMapShort[date.month]} ${date.year}, ${date.hour}:$minutes";
+  }
+
+  static String localizedStringAsFixed({
+    Decimal value,
+    String locale,
+    int decimalPlaces = 0,
+  }) {
+    assert(decimalPlaces >= 0);
+
+    final separator = numberFormatSymbols[locale]?.DECIMAL_SEP ??
+        numberFormatSymbols[locale.substring(0, 2)].DECIMAL_SEP;
+
+    final intValue = value.truncate();
+    final fraction = value - intValue;
+
+    return intValue.toStringAsFixed(0) +
+        separator +
+        fraction.toStringAsFixed(decimalPlaces).substring(2);
   }
 
   // format date string as dd/mm/yy from DateTime object

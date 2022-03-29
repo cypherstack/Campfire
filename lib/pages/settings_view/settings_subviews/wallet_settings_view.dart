@@ -1,6 +1,8 @@
+import 'package:app_settings/app_settings.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
+import 'package:local_auth/local_auth.dart';
 import 'package:paymint/electrumx_rpc/cached_electrumx.dart';
 import 'package:paymint/notifications/campfire_alert.dart';
 import 'package:paymint/notifications/modal_popup_dialog.dart';
@@ -101,6 +103,104 @@ class _WalletSettingsListState extends State<WalletSettingsList> {
             if (_useBiometrics) {
               await manager.updateBiometricsUsage(false);
             } else {
+              final localAuth = LocalAuthentication();
+              final canCheckBiometrics = await localAuth.canCheckBiometrics;
+              final isDeviceSupported = await localAuth.isDeviceSupported();
+              final listOfauthentifications =
+                  await localAuth.getAvailableBiometrics();
+
+              if (canCheckBiometrics &&
+                  isDeviceSupported &&
+                  listOfauthentifications.isEmpty) {
+                await showDialog(
+                  useSafeArea: false,
+                  barrierColor: Colors.transparent,
+                  barrierDismissible: false,
+                  context: context,
+                  builder: (context) => ModalPopupDialog(
+                    child: Column(
+                      children: [
+                        Padding(
+                          padding: const EdgeInsets.only(
+                            top: 28,
+                            left: 24,
+                            right: 24,
+                            bottom: 12,
+                          ),
+                          child: Text(
+                            "Biometric security features not enabled on current device. Go to system settings?",
+                            style: GoogleFonts.workSans(
+                              color: CFColors.dusk,
+                              fontWeight: FontWeight.w600,
+                              fontSize: 18,
+                            ),
+                          ),
+                        ),
+                        Padding(
+                          padding: const EdgeInsets.all(
+                              SizingUtilities.standardPadding),
+                          child: Row(
+                            children: [
+                              Expanded(
+                                child: SizedBox(
+                                  height: SizingUtilities.standardButtonHeight,
+                                  child: SimpleButton(
+                                    child: FittedBox(
+                                      child: Text(
+                                        "CANCEL",
+                                        style: CFTextStyles.button.copyWith(
+                                          color: CFColors.dusk,
+                                        ),
+                                      ),
+                                    ),
+                                    onTap: () {
+                                      final navigator = Navigator.of(context);
+                                      navigator.pop();
+                                    },
+                                  ),
+                                ),
+                              ),
+                              SizedBox(
+                                width: 16,
+                              ),
+                              Expanded(
+                                child: SizedBox(
+                                  height: SizingUtilities.standardButtonHeight,
+                                  child: GradientButton(
+                                    child: FittedBox(
+                                      child: Text(
+                                        "SETTINGS",
+                                        style: CFTextStyles.button,
+                                      ),
+                                    ),
+                                    onTap: () async {
+                                      await AppSettings.openSecuritySettings();
+                                      final navigator = Navigator.of(context);
+                                      navigator.pop();
+                                    },
+                                  ),
+                                ),
+                              )
+                            ],
+                          ),
+                        )
+                      ],
+                    ),
+                  ),
+                );
+              } else if (!canCheckBiometrics) {
+                await showDialog(
+                  useSafeArea: false,
+                  barrierColor: Colors.transparent,
+                  barrierDismissible: false,
+                  context: context,
+                  builder: (context) => CampfireAlert(
+                      message:
+                          "Biometric security features not available on current device."),
+                );
+                return;
+              }
+
               if (await Biometrics.authenticate(
                 cancelButtonText: "CANCEL",
                 localizedReason:

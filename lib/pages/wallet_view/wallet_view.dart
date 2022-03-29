@@ -1,6 +1,7 @@
 import 'dart:async';
 
 import 'package:decimal/decimal.dart';
+import 'package:devicelocale/devicelocale.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_feather_icons/flutter_feather_icons.dart';
@@ -14,6 +15,8 @@ import 'package:paymint/services/event_bus/events/node_connection_status_changed
 import 'package:paymint/services/event_bus/global_event_bus.dart';
 import 'package:paymint/utilities/cfcolors.dart';
 import 'package:paymint/utilities/logger.dart';
+import 'package:paymint/utilities/misc_global_constants.dart';
+import 'package:paymint/utilities/shared_utilities.dart';
 import 'package:paymint/utilities/sizing_utilities.dart';
 import 'package:paymint/widgets/custom_buttons/draggable_switch_button.dart';
 import 'package:paymint/widgets/gradient_card.dart';
@@ -35,9 +38,15 @@ class _WalletViewState extends State<WalletView> {
   List<Transaction> _cachedTransactions = [];
 
   bool _balanceToggleEnabled = true;
+  String _locale = "en_US"; // default
+
+  Future<void> _fetchLocale() async {
+    _locale = await Devicelocale.currentLocale;
+  }
 
   @override
   void initState() {
+    _fetchLocale();
     // add listener
     _nodeConnectionStatusChangedEventListener = GlobalEventBus.instance
         .on<NodeConnectionStatusChangedEvent>()
@@ -119,7 +128,10 @@ class _WalletViewState extends State<WalletView> {
                   String balance = "...";
                   if (snapshot.connectionState == ConnectionState.done &&
                       snapshot.data != null) {
-                    balance = snapshot.data.toStringAsFixed(8);
+                    balance = Utilities.localizedStringAsFixed(
+                        value: snapshot.data,
+                        locale: _locale,
+                        decimalPlaces: CampfireConstants.decimalPlaces);
                   }
                   return Text(
                     "$balance ${Provider.of<Manager>(context, listen: false).coinTicker}",
@@ -150,7 +162,15 @@ class _WalletViewState extends State<WalletView> {
                       if (snapshot.connectionState == ConnectionState.done &&
                           snapshot.data != null) {
                         if (snapshot.data > Decimal.zero) {
-                          balance = snapshot.data.toStringAsFixed(8);
+                          balance = Utilities.localizedStringAsFixed(
+                              value: snapshot.data,
+                              locale: _locale,
+                              decimalPlaces: CampfireConstants.decimalPlaces);
+                        } else {
+                          balance = Utilities.localizedStringAsFixed(
+                              value: Decimal.zero,
+                              locale: _locale,
+                              decimalPlaces: CampfireConstants.decimalPlaces);
                         }
                       }
                       return Text(

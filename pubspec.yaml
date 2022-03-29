@@ -63,6 +63,11 @@ dependencies:
   crypto: ^3.0.1
   jsonrpc2: ^3.0.1
   barcode_scan2: ^4.2.0
+  app_settings: ^4.1.1
+  wakelock: ^0.6.1+2
+  intl: ^0.17.0
+  devicelocale: ^0.5.0
+  keyboard_dismisser: ^2.0.1
 
 dev_dependencies:
   flutter_test:

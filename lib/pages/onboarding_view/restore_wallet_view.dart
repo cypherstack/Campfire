@@ -29,6 +29,7 @@ import 'package:paymint/widgets/custom_buttons/gradient_button.dart';
 import 'package:paymint/widgets/custom_buttons/simple_button.dart';
 import 'package:provider/provider.dart';
 import 'package:uuid/uuid.dart';
+import 'package:wakelock/wakelock.dart';
 
 import 'helpers/builders.dart';
 
@@ -466,6 +467,7 @@ class _RestoreWalletFormViewState extends State<RestoreWalletFormView> {
                   useSafeArea: false,
                   barrierDismissible: false,
                   builder: (context) {
+                    Wakelock.enable();
                     return _buildWaitDialog();
                   },
                 );
@@ -546,6 +548,7 @@ class _RestoreWalletFormViewState extends State<RestoreWalletFormView> {
                     },
                   ).then(
                     (_) {
+                      Wakelock.disable();
                       timer.cancel();
                       timer = null;
                     },
@@ -553,6 +556,8 @@ class _RestoreWalletFormViewState extends State<RestoreWalletFormView> {
                 } catch (e) {
                   // pop waiting dialog
                   Navigator.pop(context);
+
+                  Wakelock.disable();
 
                   // show restoring wallet failed dialog
                   showDialog(
@@ -582,6 +587,7 @@ class _RestoreWalletFormViewState extends State<RestoreWalletFormView> {
   }
 
   _buildWaitDialog() {
+    Wakelock.enable();
     return WillPopScope(
       onWillPop: () async {
         return false;
@@ -648,29 +654,7 @@ class _RestoreWalletFormViewState extends State<RestoreWalletFormView> {
                   child: TextButton(
                     onPressed: () async {
                       await _onBackPressed(5);
-                      // final walletsService =
-                      //     Provider.of<WalletsService>(context, listen: false);
-                      // final name = await walletsService.currentWalletName;
-                      // int result = await walletsService.deleteWallet(name);
-                      //
-                      // // check if last wallet was deleted
-                      // if (result == 2) {
-                      //   Navigator.pushAndRemoveUntil(
-                      //     context,
-                      //     CupertinoPageRoute(
-                      //       maintainState: false,
-                      //       builder: (_) => OnboardingView(),
-                      //     ),
-                      //     (_) => false,
-                      //   );
-                      // } else {
-                      //   final navigator = Navigator.of(context);
-                      //   navigator.pop();
-                      //   navigator.pop();
-                      //   navigator.pop();
-                      //   navigator.pop();
-                      //   navigator.pop();
-                      // }
+                      Wakelock.disable();
                     },
                     child: FittedBox(
                       child: Text(
