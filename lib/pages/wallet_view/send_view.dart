@@ -14,6 +14,7 @@ import 'package:paymint/utilities/logger.dart';
 import 'package:paymint/utilities/misc_global_constants.dart';
 import 'package:paymint/utilities/shared_utilities.dart';
 import 'package:paymint/utilities/sizing_utilities.dart';
+import 'package:paymint/widgets/amount_input_field.dart';
 import 'package:paymint/widgets/custom_buttons/gradient_button.dart';
 import 'package:paymint/widgets/gradient_card.dart';
 import 'package:provider/provider.dart';
@@ -40,28 +41,24 @@ class _SendViewState extends State<SendView> {
   TextEditingController _firoAmountController = TextEditingController();
   TextEditingController _fiatAmountController = TextEditingController();
 
-  Decimal _firoAmount = Decimal.zero;
-  Decimal _fee = Decimal.zero;
-  Decimal _totalAmount = Decimal.zero;
+  AmountInputFieldController amountController;
+  void amountChanged() {
+    final manager = Provider.of<Manager>(context, listen: false);
+    setState(() {
+      _sendButtonEnabled = amountController.cryptoAmount > Decimal.zero &&
+          manager.validateAddress(_address);
+    });
+  }
+
   Decimal _maxFee = Decimal.zero;
   Decimal _balanceMinusMaxFee = Decimal.zero;
-  String _currency = "";
-
   bool _autofill = false;
   String _address = "";
   String _contactName;
 
-  bool _cryptoAmountHasFocus = false;
-  bool _fiatAmountHasFocus = false;
-
-  final _cryptoAmountKey = Key("_cryptoAmountKey");
-  final _fiatAmountKey = Key("_fiatAmountKey");
-
   String _locale = "en_US"; // default
 
   _SendViewState(this.autofillArgs);
-
-  bool get _amountHasFocus => _cryptoAmountHasFocus || _fiatAmountHasFocus;
 
   Future<void> _fetchLocale() async {
     _locale = await Devicelocale.currentLocale;
@@ -72,9 +69,7 @@ class _SendViewState extends State<SendView> {
     _fiatAmountController.text = "";
     _firoAmountController.text = "";
     _noteTextController.text = "";
-    _firoAmount = Decimal.zero;
-    _fee = Decimal.zero;
-    _totalAmount = Decimal.zero;
+    amountController.clearAmounts();
     _address = "";
     _contactName = null;
     FocusManager.instance.primaryFocus?.unfocus();
@@ -103,7 +98,7 @@ class _SendViewState extends State<SendView> {
       return;
     }
 
-    _firoAmount = cryptoAmount;
+    amountController.cryptoAmount = cryptoAmount;
     setState(() {
       _firoAmountController.text = Utilities.localizedStringAsFixed(
         value: cryptoAmount,
@@ -126,6 +121,7 @@ class _SendViewState extends State<SendView> {
   @override
   initState() {
     _fetchLocale();
+    amountController = AmountInputFieldController(amountChanged: amountChanged);
     Logger.print("SendView args: $autofillArgs");
     if (autofillArgs != null) {
       _parseArgs(autofillArgs);
@@ -139,7 +135,6 @@ class _SendViewState extends State<SendView> {
 
   @override
   Widget build(BuildContext context) {
-    final manager = Provider.of<Manager>(context);
     return SafeArea(
       child: Scaffold(
         key: _scaffoldKey,
@@ -162,7 +157,11 @@ class _SendViewState extends State<SendView> {
                   child: Column(
                     mainAxisAlignment: MainAxisAlignment.start,
                     children: [
-                      _buildSpendableBalanceCard(manager),
+                      SpendableBalanceWidget(
+                        locale: _locale,
+                        onBalanceMinusMaxFeeChanged: (newValue) =>
+                            _balanceMinusMaxFee = newValue,
+                      ),
                       SizedBox(
                         height: 17,
                       ),
@@ -185,7 +184,7 @@ class _SendViewState extends State<SendView> {
                       SizedBox(
                         height: 8,
                       ),
-                      _buildAddressTextField(manager),
+                      _buildAddressTextField(),
                       SizedBox(
                         height: 16,
                       ),
@@ -246,30 +245,24 @@ class _SendViewState extends State<SendView> {
                       SizedBox(
                         height: 8,
                       ),
-                      FutureBuilder(
-                        future: manager.fiatPrice,
-                        builder: (context, price) {
-                          if (price.connectionState == ConnectionState.done) {
-                            if (price.hasError || price.data == null) {
-                              // TODO: show proper connection error
-                              Logger.print(
-                                  "Couldn't fetch price, please check connection");
-                              return _buildAmountInputBox(
-                                  Decimal.fromInt(-1), manager);
-                            }
-                            return _buildAmountInputBox(price.data, manager);
-                          }
-
-                          Logger.print("Fetching price... please wait...");
-                          return _buildAmountInputBox(
-                              Decimal.fromInt(-1), manager);
-                        },
+                      AmountInputField(
+                        cryptoAmountController: _firoAmountController,
+                        fiatAmountController: _fiatAmountController,
+                        controller: amountController,
+                        locale: _locale,
+                        maxFee: _maxFee,
                       ),
+
                       SizedBox(
                         height: 16,
                       ),
 
-                      _buildTxFeeInfo(),
+                      TransactionFeeInfoWidget(
+                        amountController: amountController,
+                        locale: _locale,
+                        isTinyScreen: SizingUtilities.isTinyWidth(context),
+                        onMaxFeeChanged: (newValue) => _maxFee = newValue,
+                      ),
 
                       SizedBox(
                         height: 16,
@@ -277,7 +270,96 @@ class _SendViewState extends State<SendView> {
 
                       Spacer(),
                       // Send Button
-                      _buildSendButton(manager),
+                      SizedBox(
+                        height: 48,
+                        width: MediaQuery.of(context).size.width - 40,
+                        child: GradientButton(
+                          enabled: _sendButtonEnabled,
+                          onTap: () {
+                            Logger.print("SEND pressed");
+
+                            final Decimal availableBalance =
+                                _balanceMinusMaxFee < Decimal.zero
+                                    ? Decimal.zero
+                                    : _balanceMinusMaxFee;
+
+                            if (amountController.cryptoAmount >
+                                availableBalance) {
+                              showDialog(
+                                useSafeArea: false,
+                                barrierDismissible: false,
+                                context: context,
+                                builder: (_) => CampfireAlert(
+                                    message: "Insufficient balance!"),
+                              );
+                            } else {
+                              // set address to textfield value if it was not auto filled from address book
+                              // OR if it was but the textfield value does not match anymore
+                              if (!_autofill ||
+                                  _recipientAddressTextController.text !=
+                                      _contactName) {
+                                _address = _recipientAddressTextController.text;
+                              }
+
+                              final manager =
+                                  Provider.of<Manager>(context, listen: false);
+                              if (manager.validateAddress(_address)) {
+                                Navigator.of(context)
+                                    .push(
+                                  PageRouteBuilder(
+                                    opaque: false,
+                                    pageBuilder: (
+                                      context,
+                                      widget,
+                                      animation,
+                                    ) {
+                                      return ConfirmSendView(
+                                        amount: amountController.cryptoAmount,
+                                        note: _noteTextController.text,
+                                        address: _address,
+                                      );
+                                    },
+                                    transitionsBuilder: (context, animation,
+                                        secondaryAnimation, child) {
+                                      return FadeTransition(
+                                        opacity: animation,
+                                        child: child,
+                                      );
+                                    },
+                                  ),
+                                )
+                                    .then(
+                                  (value) {
+                                    if (value != null &&
+                                        value is bool &&
+                                        value) {
+                                      _clearForm();
+                                    }
+                                  },
+                                );
+                              } else {
+                                showDialog(
+                                  useSafeArea: false,
+                                  barrierDismissible: false,
+                                  context: context,
+                                  builder: (_) => CampfireAlert(
+                                    message: "Invalid address entered",
+                                  ),
+                                );
+                              }
+                            }
+                          },
+                          child: Text(
+                            "SEND",
+                            style: GoogleFonts.workSans(
+                              color: CFColors.white,
+                              fontSize: 16,
+                              fontWeight: FontWeight.w600,
+                              letterSpacing: 0.5,
+                            ),
+                          ),
+                        ),
+                      ),
                     ],
                   ),
                 ),
@@ -289,79 +371,8 @@ class _SendViewState extends State<SendView> {
     );
   }
 
-  _buildSpendableBalanceCard(Manager manager) {
-    return GradientCard(
-      gradient: CFColors.fireGradientVerticalLight,
-      circularBorderRadius: SizingUtilities.circularBorderRadius,
-      child: Padding(
-        padding: EdgeInsets.symmetric(
-          vertical: 11,
-          horizontal: 16,
-        ),
-        child: Container(
-          height: 20,
-          child: Row(
-            mainAxisAlignment: MainAxisAlignment.spaceBetween,
-            children: [
-              FittedBox(
-                child: Text(
-                  "You can spend: ",
-                  style: GoogleFonts.workSans(
-                    color: CFColors.white,
-                    fontSize: 12,
-                    fontWeight: FontWeight.w600,
-                  ),
-                ),
-              ),
-              FutureBuilder(
-                future: manager.balanceMinusMaxFee,
-                builder: (
-                  BuildContext context,
-                  AsyncSnapshot<Decimal> balanceMinusMaxFee,
-                ) {
-                  if (balanceMinusMaxFee.connectionState ==
-                      ConnectionState.done) {
-                    if (balanceMinusMaxFee == null ||
-                        balanceMinusMaxFee.hasError ||
-                        balanceMinusMaxFee.data == null) {
-                      return Text(
-                        "... ${manager.coinTicker}",
-                        style: GoogleFonts.workSans(
-                          color: CFColors.white,
-                          fontSize: 16,
-                          fontWeight: FontWeight.w600,
-                        ),
-                      );
-                    }
-                    _balanceMinusMaxFee = balanceMinusMaxFee.data;
-                    Logger.print("_balanceMinusMaxFee $_balanceMinusMaxFee");
-                  }
-                  return FittedBox(
-                    child: Text(
-                      "${Utilities.localizedStringAsFixed(
-                        value: _balanceMinusMaxFee <= Decimal.zero
-                            ? Decimal.zero
-                            : _balanceMinusMaxFee,
-                        locale: _locale,
-                        decimalPlaces: CampfireConstants.decimalPlaces,
-                      )} ${manager.coinTicker}",
-                      style: GoogleFonts.workSans(
-                        color: CFColors.white,
-                        fontSize: 16,
-                        fontWeight: FontWeight.w600,
-                      ),
-                    ),
-                  );
-                },
-              ),
-            ],
-          ),
-        ),
-      ),
-    );
-  }
-
-  _buildAddressTextField(Manager manager) {
+  _buildAddressTextField() {
+    final manager = Provider.of<Manager>(context, listen: false);
     return TextField(
       style: GoogleFonts.workSans(
         color: CFColors.dusk,
@@ -371,11 +382,19 @@ class _SendViewState extends State<SendView> {
         FilteringTextInputFormatter.allow(RegExp("[a-zA-Z0-9]{34}")),
       ],
       toolbarOptions: ToolbarOptions(
-        copy: false,
+        copy: true,
         cut: false,
         paste: true,
         selectAll: false,
       ),
+      onChanged: (newValue) {
+        _address = newValue;
+        setState(() {
+          _addressToggleFlag = newValue.isNotEmpty;
+          _sendButtonEnabled = (manager.validateAddress(_address) &&
+              amountController.cryptoAmount > Decimal.zero);
+        });
+      },
       controller: _recipientAddressTextController,
       decoration: InputDecoration(
         errorText: _updateInvalidAddressText(_address, manager),
@@ -406,9 +425,9 @@ class _SendViewState extends State<SendView> {
                           _address = "";
                           setState(() {
                             _addressToggleFlag = false;
-                            _sendButtonEnabled =
-                                (manager.validateAddress(_address) &&
-                                    _totalAmount > Decimal.zero);
+                            _sendButtonEnabled = (manager
+                                    .validateAddress(_address) &&
+                                amountController.cryptoAmount > Decimal.zero);
                           });
                         },
                         child: SvgPicture.asset(
@@ -453,7 +472,7 @@ class _SendViewState extends State<SendView> {
                                   _recipientAddressTextController
                                       .text.isNotEmpty;
                               _sendButtonEnabled = (isValidAddress &&
-                                  _totalAmount > Decimal.zero);
+                                  amountController.cryptoAmount > Decimal.zero);
                             });
                           }
                         },
@@ -495,7 +514,7 @@ class _SendViewState extends State<SendView> {
                   onTap: () async {
                     final qrResult = await BarcodeScanner.scan();
                     final results =
-                        AddressUtils.parseFiroUri(qrResult.rawContent);
+                        AddressUtils.parseFiroUri(qrResult?.rawContent);
                     if (results.isNotEmpty) {
                       // auto fill address
                       _address = results["address"];
@@ -512,16 +531,14 @@ class _SendViewState extends State<SendView> {
                       if (results["amount"] != null) {
                         final amount = Decimal.parse(results["amount"]);
                         _firoAmountController.text = amount.toString();
-                        setState(() {
-                          _firoAmount = amount;
-                        });
+                        amountController.cryptoAmount = amount;
                       }
                       setState(() {
                         _addressToggleFlag =
                             _recipientAddressTextController.text.isNotEmpty;
                         _sendButtonEnabled =
                             (manager.validateAddress(_address) &&
-                                _totalAmount > Decimal.zero);
+                                amountController.cryptoAmount > Decimal.zero);
                       });
 
                       // now check for non standard encoded basic address
@@ -533,7 +550,7 @@ class _SendViewState extends State<SendView> {
                             _recipientAddressTextController.text.isNotEmpty;
                         _sendButtonEnabled =
                             (manager.validateAddress(_address) &&
-                                _totalAmount > Decimal.zero);
+                                amountController.cryptoAmount > Decimal.zero);
                       });
                     }
                   },
@@ -548,71 +565,118 @@ class _SendViewState extends State<SendView> {
       ),
     );
   }
+}
 
-  _buildMaxFee(Manager manager) {
-    return FutureBuilder(
-      future: manager.maxFee,
-      builder: (context, futureData) {
-        if (futureData.connectionState == ConnectionState.done &&
-            futureData.data != null) {
-          _maxFee = (Decimal.fromInt(futureData.data.fee) /
-                  Decimal.fromInt(CampfireConstants.satsPerCoin))
-              .toDecimal(
-                  scaleOnInfinitePrecision: CampfireConstants.decimalPlaces);
-          return FittedBox(
-            child: Text(
-              "${Utilities.localizedStringAsFixed(
-                value: _maxFee,
-                locale: _locale,
-                decimalPlaces: CampfireConstants.decimalPlaces,
-              )} ${manager.coinTicker}",
-              style: GoogleFonts.workSans(
-                color: CFColors.twilight,
-                fontWeight: FontWeight.w600,
-                fontSize: 16,
-              ),
-            ),
-          );
-        } else {
-          return FittedBox(
-            child: Text(
-              "${Utilities.localizedStringAsFixed(
-                value: _maxFee,
-                locale: _locale,
-                decimalPlaces: CampfireConstants.decimalPlaces,
-              )} ${manager.coinTicker}",
-              style: GoogleFonts.workSans(
-                color: CFColors.twilight,
-                fontWeight: FontWeight.w600,
-                fontSize: 16,
-              ),
-            ),
-          );
-        }
-      },
-    );
-  }
+class SpendableBalanceWidget extends StatefulWidget {
+  const SpendableBalanceWidget({
+    Key key,
+    this.onBalanceMinusMaxFeeChanged,
+    this.locale,
+  }) : super(key: key);
 
-  _buildTotal() {
-    return FittedBox(
-      child: Text(
-        "${Utilities.localizedStringAsFixed(
-          value: _totalAmount,
-          locale: _locale,
-          decimalPlaces: CampfireConstants.decimalPlaces,
-        )} ${Provider.of<Manager>(context, listen: false).coinTicker}",
-        style: GoogleFonts.workSans(
-          color: CFColors.twilight,
-          fontWeight: FontWeight.w600,
-          fontSize: 16,
+  final void Function(Decimal) onBalanceMinusMaxFeeChanged;
+  final String locale;
+
+  @override
+  _SpendableBalanceWidgetState createState() => _SpendableBalanceWidgetState();
+}
+
+class _SpendableBalanceWidgetState extends State<SpendableBalanceWidget> {
+  Decimal tempBalanceMinusMaxFee = Decimal.zero;
+  @override
+  Widget build(BuildContext context) {
+    final manager = Provider.of<Manager>(context);
+    return GradientCard(
+      gradient: CFColors.fireGradientVerticalLight,
+      circularBorderRadius: SizingUtilities.circularBorderRadius,
+      child: Padding(
+        padding: EdgeInsets.symmetric(
+          vertical: 11,
+          horizontal: 16,
+        ),
+        child: Container(
+          height: 20,
+          child: Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: [
+              FittedBox(
+                child: Text(
+                  "You can spend: ",
+                  style: GoogleFonts.workSans(
+                    color: CFColors.white,
+                    fontSize: 12,
+                    fontWeight: FontWeight.w600,
+                  ),
+                ),
+              ),
+              FutureBuilder(
+                future: manager.balanceMinusMaxFee,
+                builder: (
+                  BuildContext context,
+                  AsyncSnapshot<Decimal> balanceMinusMaxFee,
+                ) {
+                  if (balanceMinusMaxFee.connectionState ==
+                      ConnectionState.done) {
+                    if (balanceMinusMaxFee == null ||
+                        balanceMinusMaxFee.hasError ||
+                        balanceMinusMaxFee.data == null) {
+                      return Text(
+                        "... ${manager.coinTicker}",
+                        style: GoogleFonts.workSans(
+                          color: CFColors.white,
+                          fontSize: 16,
+                          fontWeight: FontWeight.w600,
+                        ),
+                      );
+                    }
+                    if (tempBalanceMinusMaxFee != balanceMinusMaxFee.data) {
+                      tempBalanceMinusMaxFee = balanceMinusMaxFee.data;
+                      widget
+                          .onBalanceMinusMaxFeeChanged(tempBalanceMinusMaxFee);
+                    }
+                  }
+                  return FittedBox(
+                    child: Text(
+                      "${Utilities.localizedStringAsFixed(
+                        value: tempBalanceMinusMaxFee <= Decimal.zero
+                            ? Decimal.zero
+                            : tempBalanceMinusMaxFee,
+                        locale: widget.locale,
+                        decimalPlaces: CampfireConstants.decimalPlaces,
+                      )} ${manager.coinTicker}",
+                      style: GoogleFonts.workSans(
+                        color: CFColors.white,
+                        fontSize: 16,
+                        fontWeight: FontWeight.w600,
+                      ),
+                    ),
+                  );
+                },
+              ),
+            ],
+          ),
         ),
       ),
     );
   }
+}
 
-  Widget _buildTxFeeInfo() {
-    final bitcoinService = Provider.of<Manager>(context);
-    final isTinyScreen = SizingUtilities.isTinyWidth(context);
+class TransactionFeeInfoWidget extends StatelessWidget {
+  const TransactionFeeInfoWidget({
+    Key key,
+    this.locale,
+    this.amountController,
+    this.isTinyScreen,
+    this.onMaxFeeChanged,
+  }) : super(key: key);
+
+  final String locale;
+  final AmountInputFieldController amountController;
+  final bool isTinyScreen;
+  final void Function(Decimal) onMaxFeeChanged;
+
+  @override
+  Widget build(BuildContext context) {
     return Column(
       children: [
         // Transaction fee
@@ -624,10 +688,9 @@ class _SendViewState extends State<SendView> {
                 showDialog(
                   barrierColor: Colors.transparent,
                   context: context,
-                  builder: (context) {
-                    return _showMaxFeeToolTip(
-                        context, tapDownDetails.globalPosition);
-                  },
+                  builder: (context) => MaxFeeTooltipWidget(
+                    position: tapDownDetails.globalPosition,
+                  ),
                 );
               },
               child: Row(
@@ -658,14 +721,21 @@ class _SendViewState extends State<SendView> {
                 ],
               ),
             ),
-            if (!isTinyScreen) _buildMaxFee(bitcoinService),
+            if (!isTinyScreen)
+              MaxFeeWidget(
+                locale: locale,
+                onMaxFeeChanged: (newValue) => onMaxFeeChanged(newValue),
+              ),
           ],
         ),
         if (isTinyScreen)
           Row(
             mainAxisAlignment: MainAxisAlignment.end,
             children: [
-              _buildMaxFee(bitcoinService),
+              MaxFeeWidget(
+                locale: locale,
+                onMaxFeeChanged: (newValue) => onMaxFeeChanged(newValue),
+              ),
             ],
           ),
         SizedBox(
@@ -681,10 +751,9 @@ class _SendViewState extends State<SendView> {
                 showDialog(
                   barrierColor: Colors.transparent,
                   context: context,
-                  builder: (context) {
-                    return _showMaxFeeToolTip(
-                        context, tapDownDetails.globalPosition);
-                  },
+                  builder: (context) => MaxFeeTooltipWidget(
+                    position: tapDownDetails.globalPosition,
+                  ),
                 );
               },
               child: Row(
@@ -715,21 +784,38 @@ class _SendViewState extends State<SendView> {
                 ],
               ),
             ),
-            if (!isTinyScreen) _buildTotal(),
+            if (!isTinyScreen)
+              TotalAmountWidget(
+                total: amountController.cryptoTotal,
+                locale: locale,
+              ),
           ],
         ),
         if (isTinyScreen)
           Row(
             mainAxisAlignment: MainAxisAlignment.end,
             children: [
-              _buildTotal(),
+              TotalAmountWidget(
+                total: amountController.cryptoTotal,
+                locale: locale,
+              ),
             ],
           ),
       ],
     );
   }
+}
 
-  Widget _showMaxFeeToolTip(BuildContext context, Offset position) {
+class MaxFeeTooltipWidget extends StatelessWidget {
+  const MaxFeeTooltipWidget({
+    Key key,
+    @required this.position,
+  }) : super(key: key);
+
+  final Offset position;
+
+  @override
+  Widget build(BuildContext context) {
     return GestureDetector(
       onTap: () {
         Navigator.of(context).pop();
@@ -766,305 +852,78 @@ class _SendViewState extends State<SendView> {
       ),
     );
   }
+}
 
-  Widget _buildAmountInputBox(Decimal firoPrice, Manager manager) {
-    return Container(
-      decoration: BoxDecoration(
-        color: CFColors.fog,
-        borderRadius:
-            BorderRadius.circular(SizingUtilities.circularBorderRadius),
-        border: Border.all(
-          width: 1,
-          color: _amountHasFocus ? CFColors.focusedBorder : CFColors.twilight,
-        ),
-      ),
-      child: Center(
-        child: Column(
-          children: [
-            Focus(
-              onFocusChange: (hasFocus) {
-                print("_cryptoAmountHasFocus set to $hasFocus");
-                setState(() {
-                  _cryptoAmountHasFocus = hasFocus;
-                });
-              },
-              child: TextField(
-                key: _cryptoAmountKey,
-                style: GoogleFonts.workSans(
-                  color: CFColors.dusk,
-                ),
-                controller: _firoAmountController,
-                keyboardType: TextInputType.numberWithOptions(
-                    signed: false, decimal: true),
-                inputFormatters: [
-                  // regex to validate a crypto amount with 8 decimal places
-                  TextInputFormatter.withFunction((oldValue, newValue) =>
-                      RegExp(r'^([0-9]*[,.]?[0-9]{0,8}|[,.][0-9]{0,8})$')
-                              .hasMatch(newValue.text)
-                          ? newValue
-                          : oldValue),
-                ],
-                onChanged: (String firoAmount) {
-                  Logger.print(firoAmount);
-                  if (firoAmount.isNotEmpty &&
-                      firoAmount != "." &&
-                      firoAmount != ",") {
-                    if (firoAmount.contains(",")) {
-                      _firoAmount =
-                          Decimal.parse(firoAmount.replaceFirst(",", "."));
-                    } else {
-                      _firoAmount = Decimal.parse(firoAmount);
-                    }
-                    setState(() {
-                      _totalAmount = _firoAmount + _maxFee;
-                      _sendButtonEnabled = (manager.validateAddress(_address) &&
-                          _firoAmount > Decimal.zero);
-                    });
+class MaxFeeWidget extends StatelessWidget {
+  const MaxFeeWidget({
+    Key key,
+    this.onMaxFeeChanged,
+    this.locale,
+  }) : super(key: key);
 
-                    if (firoPrice > Decimal.zero) {
-                      final String fiatAmountString =
-                          Utilities.localizedStringAsFixed(
-                        value: _firoAmount * firoPrice,
-                        locale: _locale,
-                        decimalPlaces: 2,
-                      );
+  final void Function(Decimal) onMaxFeeChanged;
+  final String locale;
 
-                      _fiatAmountController.text = fiatAmountString;
-                    }
-                  } else {
-                    setState(() {
-                      _totalAmount = Decimal.zero;
-                      _sendButtonEnabled = false;
-                    });
-                    _fiatAmountController.text = "";
-                  }
-                },
-                decoration: InputDecoration(
-                  filled: false,
-                  border: InputBorder.none,
-                  enabledBorder: InputBorder.none,
-                  focusedBorder: InputBorder.none,
-                  errorBorder: InputBorder.none,
-                  contentPadding: EdgeInsets.only(
-                    left: 16,
-                    top: 14,
-                    bottom: 12,
-                    right: 16,
-                  ),
-                  // ticker suffix
-                  suffixIcon: UnconstrainedBox(
-                    child: Padding(
-                      padding: const EdgeInsets.only(right: 16),
-                      child: Text(
-                        Provider.of<Manager>(context, listen: false).coinTicker,
-                        style: TextStyle(
-                          color: CFColors.twilight,
-                          fontWeight: FontWeight.w600,
-                          fontSize: 16,
-                        ),
-                      ),
-                    ),
-                  ),
-                  hintText: Utilities.localizedStringAsFixed(
-                    value: Decimal.zero,
-                    locale: _locale,
-                    decimalPlaces: 2,
-                  ),
-                  hintStyle: GoogleFonts.workSans(
-                    color: CFColors.twilight,
-                    fontWeight: FontWeight.w400,
-                    fontSize: 16,
-                  ),
-                ),
-              ),
+  @override
+  Widget build(BuildContext context) {
+    final manager = Provider.of<Manager>(context);
+    return FutureBuilder(
+      future: manager.maxFee,
+      builder: (context, futureData) {
+        Decimal maxFee = Decimal.zero;
+        if (futureData.connectionState == ConnectionState.done &&
+            futureData.data != null) {
+          var prev = maxFee;
+          maxFee = (Decimal.fromInt(futureData.data.fee) /
+                  Decimal.fromInt(CampfireConstants.satsPerCoin))
+              .toDecimal(
+                  scaleOnInfinitePrecision: CampfireConstants.decimalPlaces);
+          if (prev != maxFee) {
+            onMaxFeeChanged(maxFee);
+          }
+        }
+        return FittedBox(
+          child: Text(
+            "${Utilities.localizedStringAsFixed(
+              value: maxFee,
+              locale: locale,
+              decimalPlaces: CampfireConstants.decimalPlaces,
+            )} ${manager.coinTicker}",
+            style: GoogleFonts.workSans(
+              color: CFColors.twilight,
+              fontWeight: FontWeight.w600,
+              fontSize: 16,
             ),
-            Container(
-              height: 1,
-              color:
-                  _amountHasFocus ? CFColors.focusedBorder : CFColors.twilight,
-            ),
-            Focus(
-              onFocusChange: (hasFocus) {
-                print("_fiatAmountHasFocus set to $hasFocus");
-                setState(() {
-                  _fiatAmountHasFocus = hasFocus;
-                });
-              },
-              child: TextField(
-                key: _fiatAmountKey,
-                style: GoogleFonts.workSans(
-                  color: CFColors.dusk,
-                ),
-                controller: _fiatAmountController,
-                keyboardType: TextInputType.numberWithOptions(
-                    signed: false, decimal: true),
-                inputFormatters: [
-                  // regex to validate a fiat amount with 2 decimal places
-                  TextInputFormatter.withFunction((oldValue, newValue) =>
-                      RegExp(r'^([0-9]*[,.]?[0-9]{0,2}|[,.][0-9]{0,2})$')
-                              .hasMatch(newValue.text)
-                          ? newValue
-                          : oldValue),
-                ],
-                onChanged: (String fiatAmount) {
-                  if (fiatAmount.isNotEmpty && fiatAmount != ".") {
-                    final fiatValue = Decimal.parse(fiatAmount);
-                    _firoAmount = (fiatValue / firoPrice).toDecimal(
-                        scaleOnInfinitePrecision:
-                            CampfireConstants.decimalPlaces);
-
-                    final amountString = Utilities.localizedStringAsFixed(
-                      value: _firoAmount,
-                      locale: _locale,
-                      decimalPlaces: 2,
-                    );
-
-                    setState(() {
-                      _totalAmount = Decimal.parse(amountString) + _maxFee;
-                    });
-
-                    _firoAmountController.text = amountString;
-                  } else {
-                    setState(() {
-                      _totalAmount = Decimal.zero;
-                    });
-                    _firoAmountController.text = "";
-                  }
-                },
-                decoration: InputDecoration(
-                  filled: false,
-                  border: InputBorder.none,
-                  enabledBorder: InputBorder.none,
-                  disabledBorder: InputBorder.none,
-                  focusedBorder: InputBorder.none,
-                  errorBorder: InputBorder.none,
-                  contentPadding: EdgeInsets.only(
-                    left: 16,
-                    top: 14,
-                    bottom: 12,
-                    right: 16,
-                  ),
-                  suffixIcon: UnconstrainedBox(
-                    child: Padding(
-                      padding: const EdgeInsets.only(right: 16),
-                      child: Provider<String>.value(
-                        value: Provider.of<Manager>(context).fiatCurrency,
-                        builder: (context, child) {
-                          _currency = context.watch<String>();
-                          return Text(
-                            _currency,
-                            style: TextStyle(
-                              color: CFColors.twilight,
-                              fontWeight: FontWeight.w600,
-                              fontSize: 16,
-                            ),
-                          );
-                        },
-                      ),
-                    ),
-                  ),
-                  hintText: firoPrice < Decimal.zero
-                      ? "..."
-                      : Utilities.localizedStringAsFixed(
-                          value: Decimal.zero,
-                          locale: _locale,
-                          decimalPlaces: 2,
-                        ),
-                  hintStyle: GoogleFonts.workSans(
-                    color: CFColors.twilight,
-                    fontWeight: FontWeight.w400,
-                    fontSize: 16, // ScalingUtils.fontScaled(context, 16),
-                  ),
-                ),
-              ),
-            ),
-          ],
-        ),
-      ),
+          ),
+        );
+      },
     );
   }
+}
 
-  _buildSendButton(Manager manager) {
-    return SizedBox(
-      height: 48,
-      width: MediaQuery.of(context).size.width - 40,
-      child: GradientButton(
-        enabled: _sendButtonEnabled,
-        onTap: () {
-          Logger.print("SEND pressed");
+class TotalAmountWidget extends StatelessWidget {
+  const TotalAmountWidget({
+    Key key,
+    this.total,
+    this.locale,
+  }) : super(key: key);
 
-          final Decimal availableBalance = _balanceMinusMaxFee < Decimal.zero
-              ? Decimal.zero
-              : _balanceMinusMaxFee;
+  final Decimal total;
+  final String locale;
 
-          if (_firoAmount > availableBalance) {
-            showDialog(
-              useSafeArea: false,
-              barrierDismissible: false,
-              context: context,
-              builder: (_) => CampfireAlert(message: "Insufficient balance!"),
-            );
-          } else {
-            // set address to textfield value if it was not auto filled from address book
-            // OR if it was but the textfield value does not match anymore
-            if (!_autofill ||
-                _recipientAddressTextController.text != _contactName) {
-              _address = _recipientAddressTextController.text;
-            }
-
-            if (manager.validateAddress(_address)) {
-              Navigator.of(context)
-                  .push(
-                PageRouteBuilder(
-                  opaque: false,
-                  pageBuilder: (
-                    context,
-                    widget,
-                    animation,
-                  ) {
-                    return ConfirmSendView(
-                      amount: _firoAmount,
-                      note: _noteTextController.text,
-                      address: _address,
-                      fee: _fee,
-                    );
-                  },
-                  transitionsBuilder:
-                      (context, animation, secondaryAnimation, child) {
-                    return FadeTransition(
-                      opacity: animation,
-                      child: child,
-                    );
-                  },
-                ),
-              )
-                  .then(
-                (value) {
-                  if (value != null && value is bool && value) {
-                    _clearForm();
-                  }
-                },
-              );
-            } else {
-              showDialog(
-                useSafeArea: false,
-                barrierDismissible: false,
-                context: context,
-                builder: (_) => CampfireAlert(
-                  message: "Invalid address entered",
-                ),
-              );
-            }
-          }
-        },
-        child: Text(
-          "SEND",
-          style: GoogleFonts.workSans(
-            color: CFColors.white,
-            fontSize: 16,
-            fontWeight: FontWeight.w600,
-            letterSpacing: 0.5,
-          ),
+  @override
+  Widget build(BuildContext context) {
+    return FittedBox(
+      child: Text(
+        "${Utilities.localizedStringAsFixed(
+          value: total,
+          locale: locale,
+          decimalPlaces: CampfireConstants.decimalPlaces,
+        )} ${Provider.of<Manager>(context, listen: false).coinTicker}",
+        style: GoogleFonts.workSans(
+          color: CFColors.twilight,
+          fontWeight: FontWeight.w600,
+          fontSize: 16,
         ),
       ),
     );

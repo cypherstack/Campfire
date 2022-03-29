@@ -136,5 +136,6 @@ class Manager with ChangeNotifier {
     _backgroundRefreshListener = null;
     await _currentWallet?.exit();
     _currentWallet = null;
+    Logger.print("manager.exitCurrentWallet completed");
   }
 }

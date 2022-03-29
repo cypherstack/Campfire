@@ -3,6 +3,7 @@ import 'dart:typed_data';
 
 import 'package:crypto/crypto.dart';
 import 'package:decimal/decimal.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:hive/hive.dart';
 import 'package:hive_test/hive_test.dart';
@@ -99,6 +100,7 @@ void main() {
         "Firo",
         firoNetwork,
         GetAnonymitySetSampleData.initialData,
+        "en_US",
       );
 
       expect(result, 1);
@@ -117,6 +119,7 @@ void main() {
         "Firo",
         firoNetwork,
         GetAnonymitySetSampleData.finalData,
+        "en_US",
       );
 
       expect(result, isA<Map<String, dynamic>>());
@@ -740,6 +743,10 @@ void main() {
     });
 
     test("initializeWallet new test net wallet", () async {
+      TestWidgetsFlutterBinding.ensureInitialized();
+      const MethodChannel('uk.spiralarm.flutter/devicelocale')
+          .setMockMethodCallHandler((methodCall) async => 'en_US');
+
       final client = MockElectrumX();
       final cachedClient = MockCachedElectrumX();
       final secureStore = FakeSecureStorage();
@@ -807,6 +814,10 @@ void main() {
     });
 
     test("initializeWallet an already existing test net wallet", () async {
+      TestWidgetsFlutterBinding.ensureInitialized();
+      const MethodChannel('uk.spiralarm.flutter/devicelocale')
+          .setMockMethodCallHandler((methodCall) async => 'en_US');
+
       final client = MockElectrumX();
       final cachedClient = MockCachedElectrumX();
       final secureStore = FakeSecureStorage();
@@ -907,6 +918,10 @@ void main() {
     });
 
     test("initializeWallet new main net wallet", () async {
+      TestWidgetsFlutterBinding.ensureInitialized();
+      const MethodChannel('uk.spiralarm.flutter/devicelocale')
+          .setMockMethodCallHandler((methodCall) async => 'en_US');
+
       final client = MockElectrumX();
       final cachedClient = MockCachedElectrumX();
       final secureStore = FakeSecureStorage();
@@ -1009,6 +1024,10 @@ void main() {
     group("refreshIfThereIsNewData", () {
       test("refreshIfThereIsNewData with no unconfirmed transactions",
           () async {
+        TestWidgetsFlutterBinding.ensureInitialized();
+        const MethodChannel('uk.spiralarm.flutter/devicelocale')
+            .setMockMethodCallHandler((methodCall) async => 'en_US');
+
         final client = MockElectrumX();
         final cachedClient = MockCachedElectrumX();
         final secureStore = FakeSecureStorage();
@@ -1185,6 +1204,10 @@ void main() {
 
     // the above test needs to pass in order for this test to pass
     test("buildMintTransaction", () async {
+      TestWidgetsFlutterBinding.ensureInitialized();
+      const MethodChannel('uk.spiralarm.flutter/devicelocale')
+          .setMockMethodCallHandler((methodCall) async => 'en_US');
+
       List<UtxoObject> utxos = [
         UtxoObject(
             txid: BuildMintTxTestParams.utxoInfo["txid"],

@@ -94,6 +94,7 @@ Future<void> executeNative(arguments) async {
       dynamic network = arguments['network'];
       int locktime = arguments['locktime'];
       dynamic anonymitySet = arguments['anonymitySet'];
+      String locale = arguments["locale"];
       if (!(spendAmount == null ||
           address == null ||
           subtractFeeFromAmount == null ||
@@ -104,6 +105,7 @@ Future<void> executeNative(arguments) async {
           locktime == null ||
           coinName == null ||
           network == null ||
+          locale == null ||
           anonymitySet == null)) {
         var joinSplit = await isolateCreateJoinSplitTransaction(
             spendAmount,
@@ -116,7 +118,8 @@ Future<void> executeNative(arguments) async {
             locktime,
             coinName,
             network,
-            anonymitySet);
+            anonymitySet,
+            locale);
         sendPort.send(joinSplit);
         return;
       }
@@ -476,6 +479,7 @@ isolateCreateJoinSplitTransaction(
   String coinName,
   dynamic _network,
   dynamic anonymitySet,
+  String locale,
 ) async {
   final estimateJoinSplitFee = await isolateEstimateJoinSplitFee(
       spendAmount, subtractFeeFromAmount, lelantusEntries);
@@ -594,7 +598,6 @@ isolateCreateJoinSplitTransaction(
   final txId = extTx.getId();
   Logger.print("txid  $txId");
   Logger.print("txHex: $txHex");
-  final locale = await Devicelocale.currentLocale;
   return {
     "txid": txId,
     "txHex": txHex,
@@ -1048,33 +1051,39 @@ class FiroWallet extends CoinServiceAPI {
     if (longMutex) return false;
     Logger.print("refreshIfThereIsNewData");
 
-    bool needsRefresh = false;
-    Logger.print("unonconfirmeds $unconfirmedTxs");
-    for (String txid in unconfirmedTxs) {
-      final txn = await electrumXClient.getTransaction(tx_hash: txid);
-      var confirmations = txn["confirmations"];
-      if (!(confirmations is int)) continue;
-      bool isUnconfirmed = confirmations < 1;
-      if (!isUnconfirmed) {
-        unconfirmedTxs = {};
-        needsRefresh = true;
-        break;
-      }
-    }
-    if (!needsRefresh) {
-      var allOwnAddresses = await this.allOwnAddresses;
-      List<Map<String, dynamic>> allTxs = await _fetchHistory(allOwnAddresses);
-      models.TransactionData txData = await _txnData;
-      for (Map transaction in allTxs) {
-        if (txData.findTransaction(transaction['tx_hash']) == null) {
-          Logger.print(
-              " txid not found in address history already ${transaction['tx_hash']}");
+    try {
+      bool needsRefresh = false;
+      Logger.print("unonconfirmeds $unconfirmedTxs");
+      for (String txid in unconfirmedTxs) {
+        final txn = await electrumXClient.getTransaction(tx_hash: txid);
+        var confirmations = txn["confirmations"];
+        if (!(confirmations is int)) continue;
+        bool isUnconfirmed = confirmations < 1;
+        if (!isUnconfirmed) {
+          unconfirmedTxs = {};
           needsRefresh = true;
           break;
         }
       }
+      if (!needsRefresh) {
+        var allOwnAddresses = await this.allOwnAddresses;
+        List<Map<String, dynamic>> allTxs =
+            await _fetchHistory(allOwnAddresses);
+        models.TransactionData txData = await _txnData;
+        for (Map transaction in allTxs) {
+          if (txData.findTransaction(transaction['tx_hash']) == null) {
+            Logger.print(
+                " txid not found in address history already ${transaction['tx_hash']}");
+            needsRefresh = true;
+            break;
+          }
+        }
+      }
+      return needsRefresh;
+    } catch (e, s) {
+      Logger.print("Exception caught in refreshIfThereIsNewData: $e\n$s");
     }
-    return needsRefresh;
+    return false;
   }
 
   Future<void> getAllTxsToWatch(
@@ -1518,7 +1527,13 @@ class FiroWallet extends CoinServiceAPI {
 
     int vsize = tmpTx['transaction'].virtualSize();
     final Decimal dvsize = Decimal.fromInt(vsize);
-    final Decimal fastFee = Decimal.parse(feesObject.fast);
+
+    // Decimal can't parse decimal separators other than "." so we need to check
+    String fast = feesObject.fast;
+    if (fast.contains(",")) {
+      fast = fast.replaceFirst(",", ".");
+    }
+    final Decimal fastFee = Decimal.parse(fast);
     int firoFee =
         (dvsize * fastFee * Decimal.fromInt(100000)).toDouble().ceil();
     // int firoFee = (vsize * feesObject.fast * (1 / 1000.0) * 100000000).ceil();
@@ -2836,6 +2851,7 @@ class FiroWallet extends CoinServiceAPI {
       coinName,
     );
     final locktime = await getBlockHead(electrumXClient);
+    final locale = await Devicelocale.currentLocale;
 
     ReceivePort receivePort = await getIsolate({
       "function": "createJoinSplit",
@@ -2850,6 +2866,7 @@ class FiroWallet extends CoinServiceAPI {
       "coinName": coinName,
       "network": _network,
       "anonymitySet": setData,
+      "locale": locale,
     });
     var message = await receivePort.first;
     if (message is String) {
@@ -2898,7 +2915,7 @@ class FiroWallet extends CoinServiceAPI {
 
   @override
   Future<void> exit() async {
-    _nodesChangedListener?.cancel();
+    await _nodesChangedListener?.cancel();
     _nodesChangedListener = null;
     timer?.cancel();
     timer = null;

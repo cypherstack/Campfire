@@ -60,7 +60,7 @@ class ElectrumX {
   Future<dynamic> request({
     String command,
     List<dynamic> args = const [],
-    Duration connectionTimeout = const Duration(seconds: 60),
+    Duration connectionTimeout,
     String requestID,
   }) async {
     if (_rpcClient == null) {
@@ -68,7 +68,7 @@ class ElectrumX {
         address: this.server,
         port: this.port,
         useSSL: this.useSSL,
-        connectionTimeout: connectionTimeout,
+        connectionTimeout: connectionTimeout ?? const Duration(seconds: 60),
       );
     }
 
@@ -217,6 +217,7 @@ class ElectrumX {
       final response = await request(
         requestID: requestID,
         command: 'blockchain.scripthash.get_history',
+        connectionTimeout: Duration(minutes: 5),
         args: [
           scripthash,
         ],
