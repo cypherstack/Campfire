@@ -13,6 +13,7 @@ import 'package:paymint/widgets/custom_buttons/gradient_button.dart';
 import 'package:paymint/widgets/custom_buttons/simple_button.dart';
 import 'package:provider/provider.dart';
 
+import '../services/notifications_api.dart';
 import 'lockscreen2.dart';
 import 'onboarding_view/helpers/builders.dart';
 import 'onboarding_view/helpers/create_wallet_type.dart';
@@ -233,6 +234,27 @@ class _WalletSelectionViewState extends State<WalletSelectionView> {
                     ),
                     SizedBox(
                       height: 10,
+                    ),
+                    Padding(
+                      padding: const EdgeInsets.symmetric(horizontal: 20),
+                      child: SizedBox(
+                        height: 48,
+                        child: GradientButton(
+                          onTap: () {
+                            NotificationApi.showNotification(
+                                title: "Coins Received!",
+                                body: "",
+                                payload: "");
+                          },
+                          child: Text(
+                            "Notifications",
+                            style: CFTextStyles.button,
+                          ),
+                        ),
+                      ),
+                    ),
+                    SizedBox(
+                      height: 12,
                     ),
                     Padding(
                       padding: const EdgeInsets.symmetric(horizontal: 20),
