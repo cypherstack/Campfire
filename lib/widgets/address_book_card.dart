@@ -24,62 +24,14 @@ class AddressBookCard extends StatefulWidget {
 class _AddressBookCardState extends State<AddressBookCard> {
   bool _isExpanded = false;
 
-  TextStyle _getSubButtonTextStyle() {
-    return GoogleFonts.workSans(
-      color: CFColors.dusk,
-      fontSize: 12,
-      fontWeight: FontWeight.w600,
-      letterSpacing: 0.25,
-    );
-  }
-
-  ShapeBorder _getMaterialShape() {
-    if (_isExpanded) {
-      return RoundedRectangleBorder(
-        borderRadius: BorderRadius.vertical(
-          top: Radius.circular(SizingUtilities.circularBorderRadius),
-        ),
-      );
-    } else {
-      return RoundedRectangleBorder(
-        borderRadius:
-            BorderRadius.circular(SizingUtilities.circularBorderRadius),
-      );
-    }
-  }
-
-  Widget _buildSubButton(String svgAsset, String label, VoidCallback onTap) {
-    return MaterialButton(
-      materialTapTargetSize: MaterialTapTargetSize.shrinkWrap,
-      padding: EdgeInsets.all(8),
-      onPressed: onTap,
-      child: Row(
-        children: [
-          SvgPicture.asset(
-            svgAsset,
-            color: CFColors.dusk,
-            width: 16,
-            height: 16,
-          ),
-          SizedBox(
-            width: 6,
-          ),
-          Text(
-            label,
-            style: _getSubButtonTextStyle(),
-          )
-        ],
-      ),
-    );
-  }
-
   @override
   Widget build(BuildContext context) {
     return Container(
       decoration: BoxDecoration(
         color: CFColors.white,
-        borderRadius:
-            BorderRadius.circular(SizingUtilities.circularBorderRadius),
+        borderRadius: BorderRadius.circular(
+          SizingUtilities.circularBorderRadius,
+        ),
         boxShadow: [
           CFColors.standardBoxShadow,
         ],
@@ -88,7 +40,19 @@ class _AddressBookCardState extends State<AddressBookCard> {
         children: [
           MaterialButton(
             padding: EdgeInsets.zero,
-            shape: _getMaterialShape(),
+            shape: _isExpanded
+                ? RoundedRectangleBorder(
+                    borderRadius: BorderRadius.vertical(
+                      top: Radius.circular(
+                        SizingUtilities.circularBorderRadius,
+                      ),
+                    ),
+                  )
+                : RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(
+                      SizingUtilities.circularBorderRadius,
+                    ),
+                  ),
             onPressed: () {
               setState(() {
                 _isExpanded = !_isExpanded;
@@ -112,7 +76,6 @@ class _AddressBookCardState extends State<AddressBookCard> {
                         child: SvgPicture.asset(
                           "assets/svg/address-contact.svg",
                           color: CFColors.white,
-                          // size: 20,
                         ),
                       ),
                     ),
@@ -146,26 +109,24 @@ class _AddressBookCardState extends State<AddressBookCard> {
                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
                 children: [
                   // send
-                  _buildSubButton(
-                    "assets/svg/upload-2.svg",
-                    "SEND FIRO",
-                    () {
+                  SubButton(
+                    svgAsset: "assets/svg/upload-2.svg",
+                    label: "SEND FIRO",
+                    onTap: () {
                       Logger.print("send firo");
                       Navigator.pushAndRemoveUntil(
                         context,
                         CupertinoPageRoute(
-                          builder: (context) {
-                            return MainView(
-                              pageIndex: 0, // 0 for send page index
-                              args: {
-                                "addressBookEntry": {
-                                  "name": widget.name,
-                                  "address": widget.address,
-                                },
+                          builder: (_) => MainView(
+                            pageIndex: 0, // 0 for send page index
+                            args: {
+                              "addressBookEntry": {
+                                "name": widget.name,
+                                "address": widget.address,
                               },
-                              disableRefreshOnInit: true,
-                            );
-                          },
+                            },
+                            disableRefreshOnInit: true,
+                          ),
                           settings: RouteSettings(name: "/mainview"),
                         ),
                         ModalRoute.withName("/"),
@@ -174,12 +135,15 @@ class _AddressBookCardState extends State<AddressBookCard> {
                   ),
 
                   // copy
-                  _buildSubButton(
-                    "assets/svg/copy-2.svg",
-                    "COPY",
-                    () {
+                  SubButton(
+                    svgAsset: "assets/svg/copy-2.svg",
+                    label: "COPY",
+                    onTap: () {
                       Clipboard.setData(
-                          new ClipboardData(text: widget.address));
+                        new ClipboardData(
+                          text: widget.address,
+                        ),
+                      );
                       OverlayNotification.showInfo(
                         context,
                         "Address copied to clipboard",
@@ -189,17 +153,15 @@ class _AddressBookCardState extends State<AddressBookCard> {
                   ),
 
                   // details
-                  _buildSubButton(
-                    "assets/svg/eye.svg",
-                    "DETAILS",
-                    () {
+                  SubButton(
+                    svgAsset: "assets/svg/eye.svg",
+                    label: "DETAILS",
+                    onTap: () {
                       Logger.print("details");
                       Navigator.of(context).push(
                         CupertinoPageRoute(
-                          builder: (context) {
-                            return AddressBookEntryDetailsView(
-                                name: widget.name, address: widget.address);
-                          },
+                          builder: (_) => AddressBookEntryDetailsView(
+                              name: widget.name, address: widget.address),
                         ),
                       );
                     },
@@ -207,6 +169,50 @@ class _AddressBookCardState extends State<AddressBookCard> {
                 ],
               ),
             ),
+        ],
+      ),
+    );
+  }
+}
+
+class SubButton extends StatelessWidget {
+  const SubButton({
+    Key key,
+    this.svgAsset,
+    this.label,
+    this.onTap,
+  }) : super(key: key);
+
+  final String svgAsset;
+  final String label;
+  final VoidCallback onTap;
+
+  @override
+  Widget build(BuildContext context) {
+    return MaterialButton(
+      materialTapTargetSize: MaterialTapTargetSize.shrinkWrap,
+      padding: EdgeInsets.all(8),
+      onPressed: onTap,
+      child: Row(
+        children: [
+          SvgPicture.asset(
+            svgAsset,
+            color: CFColors.dusk,
+            width: 16,
+            height: 16,
+          ),
+          SizedBox(
+            width: 6,
+          ),
+          Text(
+            label,
+            style: GoogleFonts.workSans(
+              color: CFColors.dusk,
+              fontSize: 12,
+              fontWeight: FontWeight.w600,
+              letterSpacing: 0.25,
+            ),
+          )
         ],
       ),
     );
