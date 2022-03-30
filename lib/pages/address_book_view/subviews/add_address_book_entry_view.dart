@@ -141,7 +141,25 @@ class _AddAddressBookEntryViewState extends State<AddAddressBookEntryView> {
                     bottom: 12,
                   ),
                   child: TextField(
-                    readOnly: true,
+                    readOnly: false,
+                    inputFormatters: <TextInputFormatter>[
+                      FilteringTextInputFormatter.allow(
+                          RegExp("[a-zA-Z0-9]{34}")),
+                    ],
+                    toolbarOptions: ToolbarOptions(
+                      copy: true,
+                      cut: false,
+                      paste: true,
+                      selectAll: false,
+                    ),
+                    onChanged: (newValue) {
+                      final content = newValue;
+                      setState(() {
+                        _enabledSave = manager.validateAddress(content) &&
+                            nameTextController.text.isNotEmpty;
+                        _isEmptyAddress = content.isEmpty;
+                      });
+                    },
                     controller: addressTextController,
                     decoration: InputDecoration(
                       errorText: _updateInvalidAddressText(
