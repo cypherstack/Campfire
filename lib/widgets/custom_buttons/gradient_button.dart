@@ -2,9 +2,13 @@ import 'package:flutter/material.dart';
 import 'package:paymint/utilities/cfcolors.dart';
 
 class GradientButton extends StatelessWidget {
-  const GradientButton(
-      {Key key, @required this.onTap, this.child, this.shadows, this.enabled})
-      : super(key: key);
+  const GradientButton({
+    Key key,
+    @required this.onTap,
+    this.child,
+    this.shadows,
+    this.enabled,
+  }) : super(key: key);
 
   final VoidCallback onTap;
   final Widget child;
@@ -16,29 +20,12 @@ class GradientButton extends StatelessWidget {
   List<BoxShadow> get _shadows => shadows == null
       ? [
           BoxShadow(
-              color: CFColors.shadowColor, spreadRadius: 0.1, blurRadius: 1.5)
+            color: CFColors.shadowColor,
+            spreadRadius: 0.1,
+            blurRadius: 1.5,
+          )
         ]
       : shadows;
-
-  _buildEnabled() {
-    if (enabled == null || enabled) {
-      return MaterialButton(
-        materialTapTargetSize: MaterialTapTargetSize.shrinkWrap,
-        shape: _shape,
-        child: child,
-        onPressed: onTap,
-      );
-    } else {
-      return Container(
-        decoration: ShapeDecoration(
-          shape: _shape,
-        ),
-        child: Center(
-          child: child,
-        ),
-      );
-    }
-  }
 
   @override
   Widget build(BuildContext context) {
@@ -56,7 +43,21 @@ class GradientButton extends StatelessWidget {
               ? CFColors.fireGradientHorizontal
               : CFColors.fireGradientHorizontalDisabled,
         ),
-        child: _buildEnabled(),
+        child: (enabled == null || enabled)
+            ? MaterialButton(
+                materialTapTargetSize: MaterialTapTargetSize.shrinkWrap,
+                shape: _shape,
+                child: child,
+                onPressed: onTap,
+              )
+            : Container(
+                decoration: ShapeDecoration(
+                  shape: _shape,
+                ),
+                child: Center(
+                  child: child,
+                ),
+              ),
       ),
     );
   }

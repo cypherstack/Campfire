@@ -22,7 +22,10 @@ class SimpleButton extends StatelessWidget {
   List<BoxShadow> get _shadows => shadows == null
       ? [
           BoxShadow(
-              color: CFColors.shadowColor, spreadRadius: 0.1, blurRadius: 1.5)
+            color: CFColors.shadowColor,
+            spreadRadius: 0.1,
+            blurRadius: 1.5,
+          )
         ]
       : shadows;
 
