@@ -243,8 +243,8 @@ class _WalletSelectionViewState extends State<WalletSelectionView> {
                           onTap: () {
                             NotificationApi.showNotification(
                                 title: "Coins Received!",
-                                body: "",
-                                payload: "");
+                                body: null,
+                                payload: null);
                           },
                           child: Text(
                             "Notifications",
