@@ -13,12 +13,8 @@ class CustomPinPut extends StatefulWidget {
       this.onSubmit,
       this.onSaved,
       this.onChanged,
-      this.onTap,
-      this.onClipboardFound,
       this.controller,
       this.focusNode,
-      this.preFilledWidget,
-      this.separatorPositions = const [],
       this.separator = const SizedBox(width: 15.0),
       this.textStyle,
       this.submittedFieldDecoration,
@@ -43,12 +39,9 @@ class CustomPinPut extends StatefulWidget {
       this.pinAnimationType = PinAnimationType.slide,
       this.slideTransitionBeginOffset,
       this.enabled = true,
-      this.checkClipboard = false,
       this.useNativeKeyboard = true,
       this.autofocus = false,
       this.autovalidateMode = AutovalidateMode.disabled,
-      this.withCursor = false,
-      this.cursor,
       this.keyboardAppearance,
       this.inputFormatters,
       this.validator,
@@ -77,12 +70,6 @@ class CustomPinPut extends StatefulWidget {
   /// Called every time input value changes.
   final ValueChanged<String> onChanged;
 
-  /// Called when user clicks on PinPut
-  final VoidCallback onTap;
-
-  /// Called when Clipboard has value of length fieldsCount.
-  final ValueChanged<String> onClipboardFound;
-
   /// Used to get, modify PinPut value and more.
   final TextEditingController controller;
 
@@ -90,12 +77,6 @@ class CustomPinPut extends StatefulWidget {
   /// To give the keyboard focus to this widget, provide a [focusNode] and then
   /// use the current [FocusScope] to request the focus:
   final FocusNode focusNode;
-
-  /// Widget that is displayed before field submitted.
-  final Widget preFilledWidget;
-
-  /// Sets the positions where the separator should be shown
-  final List<int> separatorPositions;
 
   /// Builds a PinPut separator
   final Widget separator;
@@ -186,9 +167,6 @@ class CustomPinPut extends StatefulWidget {
   /// {@macro flutter.widgets.editableText.autofocus}
   final bool autofocus;
 
-  /// Whether we should check [Clipboard] data
-  final bool checkClipboard;
-
   /// Whether we use Native keyboard or custom `Numpad`
   /// when flag is set to false [CustomPinPut] wont be focusable anymore
   /// so you should set value of [CustomPinPut]'s [TextEditingController] programmatically
@@ -201,12 +179,6 @@ class CustomPinPut extends StatefulWidget {
   ///   _formKey.currentState.validate()
   /// ```
   final AutovalidateMode autovalidateMode;
-
-  /// If true the focused field includes fake cursor
-  final bool withCursor;
-
-  /// If [withCursor] true the focused field includes cursor widget or '|'
-  final Widget cursor;
 
   /// The appearance of the keyboard.
   /// This setting is only honored on iOS devices.
