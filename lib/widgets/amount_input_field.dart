@@ -39,6 +39,7 @@ class AmountInputFieldController {
 
   AmountInputFieldController({
     this.amountChanged,
+    this.totalChanged,
   });
 
   void clearAmounts() {
@@ -134,17 +135,14 @@ class _AmountInputFieldState extends State<AmountInputField> {
                               ? newValue
                               : oldValue),
                     ],
-                    onChanged: (String firoAmount) {
-                      print("cryptoAmountChanged to \"$firoAmount\"");
-                      if (firoAmount.isNotEmpty &&
-                          firoAmount != "." &&
-                          firoAmount != ",") {
-                        if (firoAmount.contains(",")) {
-                          controller.cryptoAmount =
-                              Decimal.parse(firoAmount.replaceFirst(",", "."));
-                        } else {
-                          controller.cryptoAmount = Decimal.parse(firoAmount);
-                        }
+                    onChanged: (String cryptoAmount) {
+                      if (cryptoAmount.isNotEmpty &&
+                          cryptoAmount != "." &&
+                          cryptoAmount != ",") {
+                        controller.cryptoAmount = cryptoAmount.contains(",")
+                            ? Decimal.parse(cryptoAmount.replaceFirst(",", "."))
+                            : Decimal.parse(cryptoAmount);
+
                         setState(() {
                           controller.cryptoTotal =
                               controller.cryptoAmount + widget.maxFee;
@@ -244,22 +242,16 @@ class _AmountInputFieldState extends State<AmountInputField> {
                       if (fiatAmount.isNotEmpty &&
                           fiatAmount != "." &&
                           fiatAmount != ",") {
-                        Decimal fiatValue;
-                        if (fiatAmount.contains(",")) {
-                          fiatValue =
-                              Decimal.parse(fiatAmount.replaceFirst(",", "."));
-                        } else {
-                          fiatValue = Decimal.parse(fiatAmount);
-                        }
+                        final fiatValue = fiatAmount.contains(",")
+                            ? Decimal.parse(fiatAmount.replaceFirst(",", "."))
+                            : Decimal.parse(fiatAmount);
 
-                        if (_tempPrice > Decimal.zero) {
-                          controller.cryptoAmount = (fiatValue / _tempPrice)
-                              .toDecimal(
-                                  scaleOnInfinitePrecision:
-                                      CampfireConstants.decimalPlaces);
-                        } else {
-                          controller.cryptoAmount = Decimal.zero;
-                        }
+                        controller.cryptoAmount = _tempPrice <= Decimal.zero
+                            ? Decimal.zero
+                            : controller.cryptoAmount = (fiatValue / _tempPrice)
+                                .toDecimal(
+                                    scaleOnInfinitePrecision:
+                                        CampfireConstants.decimalPlaces);
 
                         final amountString = Utilities.localizedStringAsFixed(
                           value: controller.cryptoAmount,

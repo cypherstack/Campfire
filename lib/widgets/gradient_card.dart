@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:paymint/utilities/cfcolors.dart';
 
-class GradientCard extends StatefulWidget {
+class GradientCard extends StatelessWidget {
   const GradientCard(
       {Key key,
       this.child,
@@ -16,25 +16,20 @@ class GradientCard extends StatefulWidget {
   final double circularBorderRadius;
 
   @override
-  _GradientCardState createState() => _GradientCardState();
-}
-
-class _GradientCardState extends State<GradientCard> {
-  @override
   Widget build(BuildContext context) {
     return Material(
-      color: widget.backgroundColorForTransparentGradient,
-      borderRadius: BorderRadius.circular(widget.circularBorderRadius),
+      color: backgroundColorForTransparentGradient,
+      borderRadius: BorderRadius.circular(circularBorderRadius),
       elevation: 0,
       child: Container(
         decoration: BoxDecoration(
-          gradient: widget.gradient,
-          borderRadius: BorderRadius.circular(widget.circularBorderRadius),
+          gradient: gradient,
+          borderRadius: BorderRadius.circular(circularBorderRadius),
           boxShadow: [
             CFColors.standardBoxShadow,
           ],
         ),
-        child: widget.child,
+        child: child,
       ),
     );
   }

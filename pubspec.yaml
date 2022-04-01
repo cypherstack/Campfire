@@ -79,6 +79,7 @@ dev_dependencies:
   dependency_validator: ^3.1.2
   hive_test: ^1.0.1
   mockito: ^5.1.0
+  mockingjay: ^0.2.0
 
 flutter_icons:
   android: true

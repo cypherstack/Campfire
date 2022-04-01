@@ -32,9 +32,32 @@ class _TransactionCardState extends State<TransactionCard> {
     _locale = await Devicelocale.currentLocale;
   }
 
+  NotesService notesService;
+
+  String whatIsIt(String type) {
+    if (type == "Received") {
+      if (_transaction.isMinting) {
+        return "Minting";
+      } else if (_transaction.confirmedStatus) {
+        return "Received";
+      } else {
+        return "Receiving";
+      }
+    } else if (type == "Sent") {
+      if (_transaction.confirmedStatus) {
+        return "Sent";
+      } else {
+        return "Sending";
+      }
+    } else {
+      return type;
+    }
+  }
+
   @override
   void initState() {
     _fetchLocale();
+    notesService = Provider.of<NotesService>(context, listen: false);
     _transaction = widget.transaction;
     super.initState();
   }
@@ -73,26 +96,6 @@ class _TransactionCardState extends State<TransactionCard> {
         size: 20,
       );
     }
-
-    String whatIsIt() {
-      if (type == "Received") {
-        if (_transaction.isMinting) {
-          return "Minting";
-        } else if (_transaction.confirmedStatus) {
-          return "Received";
-        } else {
-          return "Receiving";
-        }
-      } else {
-        if (_transaction.confirmedStatus) {
-          return "Sent";
-        } else {
-          return "Sending";
-        }
-      }
-    }
-
-    final notesService = Provider.of<NotesService>(context, listen: false);
 
     return Material(
       color: CFColors.white,
@@ -154,7 +157,7 @@ class _TransactionCardState extends State<TransactionCard> {
                             child: FittedBox(
                               fit: BoxFit.scaleDown,
                               child: Text(
-                                whatIsIt(),
+                                whatIsIt(type),
                                 style: GoogleFonts.workSans(
                                   color: color,
                                   fontSize: 16,
@@ -209,48 +212,46 @@ class _TransactionCardState extends State<TransactionCard> {
                           ),
                           Flexible(
                             child: FittedBox(
-                                fit: BoxFit.scaleDown,
-                                child: Provider<Future<Decimal>>.value(
-                                  value:
-                                      Provider.of<Manager>(context).fiatPrice,
-                                  builder: (context, child) {
-                                    final manager = Provider.of<Manager>(
-                                        context,
-                                        listen: false);
-                                    return FutureBuilder(
-                                      future: context.watch<Future<Decimal>>(),
-                                      builder: (context,
-                                          AsyncSnapshot<Decimal> snapshot) {
-                                        String symbol = "";
-                                        String _fiatValue = "0.00";
-                                        if (snapshot.connectionState ==
-                                            ConnectionState.done) {
-                                          final value = snapshot.data *
-                                              Utilities.satoshisToAmount(
-                                                  _transaction.amount);
-                                          _fiatValue = value < Decimal.zero
-                                              ? "0.00"
-                                              : Utilities
-                                                  .localizedStringAsFixed(
-                                                      value: value,
-                                                      locale: _locale,
-                                                      decimalPlaces: 2);
+                              fit: BoxFit.scaleDown,
+                              child: Provider<Future<Decimal>>.value(
+                                value: Provider.of<Manager>(context).fiatPrice,
+                                builder: (context, child) {
+                                  final manager = Provider.of<Manager>(context,
+                                      listen: false);
+                                  return FutureBuilder(
+                                    future: context.watch<Future<Decimal>>(),
+                                    builder: (context,
+                                        AsyncSnapshot<Decimal> snapshot) {
+                                      String symbol = "";
+                                      String _fiatValue = "0.00";
+                                      if (snapshot.connectionState ==
+                                          ConnectionState.done) {
+                                        final value = snapshot.data *
+                                            Utilities.satoshisToAmount(
+                                                _transaction.amount);
+                                        _fiatValue = value < Decimal.zero
+                                            ? "0.00"
+                                            : Utilities.localizedStringAsFixed(
+                                                value: value,
+                                                locale: _locale,
+                                                decimalPlaces: 2);
 
-                                          symbol =
-                                              currencyMap[manager.fiatCurrency];
-                                        }
-                                        return Text(
-                                          symbol + _fiatValue,
-                                          style: GoogleFonts.workSans(
-                                            color: CFColors.twilight,
-                                            fontSize: 16,
-                                            fontWeight: FontWeight.w500,
-                                          ),
-                                        );
-                                      },
-                                    );
-                                  },
-                                )),
+                                        symbol =
+                                            currencyMap[manager.fiatCurrency];
+                                      }
+                                      return Text(
+                                        symbol + _fiatValue,
+                                        style: GoogleFonts.workSans(
+                                          color: CFColors.twilight,
+                                          fontSize: 16,
+                                          fontWeight: FontWeight.w500,
+                                        ),
+                                      );
+                                    },
+                                  );
+                                },
+                              ),
+                            ),
                           ),
                         ],
                       ),

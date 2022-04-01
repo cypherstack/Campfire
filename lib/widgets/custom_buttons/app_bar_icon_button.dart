@@ -7,7 +7,7 @@ class AppBarIconButton extends StatelessWidget {
     @required this.icon,
     @required this.onPressed,
     this.color,
-    this.circularBorderRadius,
+    this.circularBorderRadius = 10.0,
     this.size = 36.0,
     this.shadows,
   }) : super(key: key);

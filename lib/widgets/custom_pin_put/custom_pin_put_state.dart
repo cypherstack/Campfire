@@ -1,13 +1,7 @@
 import 'package:flutter/material.dart';
-import 'package:flutter/services.dart';
 import 'package:paymint/widgets/custom_pin_put/pin_keyboard.dart';
 
 import 'custom_pin_put.dart';
-
-class AlwaysDisabledFocusNode extends FocusNode {
-  @override
-  bool get hasFocus => false;
-}
 
 class CustomPinPutState extends State<CustomPinPut>
     with WidgetsBindingObserver, SingleTickerProviderStateMixin {
@@ -16,9 +10,6 @@ class CustomPinPutState extends State<CustomPinPut>
   ValueNotifier<String> _textControllerValue;
 
   int get selectedIndex => _controller.value.text.length;
-
-  Animation _cursorAnimation;
-  AnimationController _cursorAnimationController;
 
   @override
   void initState() {
@@ -29,20 +20,6 @@ class CustomPinPutState extends State<CustomPinPut>
     _focusNode?.addListener(() {
       if (mounted) setState(() {});
     });
-
-    if (widget.withCursor) {
-      _cursorAnimationController = AnimationController(
-          vsync: this, duration: Duration(milliseconds: 500));
-      _cursorAnimation = Tween(begin: 0.0, end: 1.0).animate(CurvedAnimation(
-          curve: Curves.linear, parent: _cursorAnimationController));
-
-      _cursorAnimationController.addStatusListener((AnimationStatus status) {
-        if (status == AnimationStatus.completed) {
-          _cursorAnimationController.repeat(reverse: true);
-        }
-      });
-      _cursorAnimationController.forward();
-    }
 
     WidgetsBinding.instance.addObserver(this);
     super.initState();
@@ -65,25 +42,9 @@ class CustomPinPutState extends State<CustomPinPut>
     if (widget.controller == null) _controller.dispose();
     if (widget.focusNode == null) _focusNode.dispose();
 
-    _cursorAnimationController?.dispose();
     _textControllerValue?.dispose();
     WidgetsBinding.instance.removeObserver(this);
     super.dispose();
-  }
-
-  @override
-  void didChangeAppLifecycleState(AppLifecycleState appLifecycleState) {
-    if (appLifecycleState == AppLifecycleState.resumed ||
-        widget.checkClipboard) {
-      _checkClipboard();
-    }
-  }
-
-  Future<void> _checkClipboard() async {
-    final ClipboardData clipboardData = await Clipboard.getData('text/plain');
-    if (clipboardData?.text?.length == widget.fieldsCount) {
-      widget.onClipboardFound?.call(clipboardData.text);
-    }
   }
 
   @override
@@ -122,19 +83,9 @@ class CustomPinPutState extends State<CustomPinPut>
     );
   }
 
-  void _handleTap() {
-    final focus = FocusScope.of(context);
-    if (_focusNode.hasFocus) _focusNode.unfocus();
-    if (focus.hasFocus) focus.unfocus();
-    focus.requestFocus(FocusNode());
-    Future.delayed(Duration.zero, () => focus.requestFocus(_focusNode));
-    if (widget.onTap != null) widget.onTap();
-  }
-
   Widget get _hiddenTextField {
     return TextFormField(
       controller: _controller,
-      onTap: widget.onTap,
       onSaved: widget.onSaved,
       onChanged: widget.onChanged,
       validator: widget.validator,
@@ -167,13 +118,10 @@ class CustomPinPutState extends State<CustomPinPut>
     return ValueListenableBuilder<String>(
       valueListenable: _textControllerValue,
       builder: (BuildContext context, value, Widget child) {
-        return GestureDetector(
-          onTap: _handleTap,
-          child: Row(
-            mainAxisSize: widget.mainAxisSize,
-            mainAxisAlignment: widget.fieldsAlignment,
-            children: _buildFieldsWithSeparator(),
-          ),
+        return Row(
+          mainAxisSize: widget.mainAxisSize,
+          mainAxisAlignment: widget.fieldsAlignment,
+          children: _buildFieldsWithSeparator(),
         );
       },
     );
@@ -183,14 +131,6 @@ class CustomPinPutState extends State<CustomPinPut>
     final fields = Iterable<int>.generate(widget.fieldsCount).map((index) {
       return _getField(index);
     }).toList();
-
-    for (final int i in widget.separatorPositions) {
-      if (i <= widget.fieldsCount) {
-        final List<int> smaller =
-            widget.separatorPositions.where((int d) => d < i).toList();
-        fields.insert(i + smaller.length, widget.separator);
-      }
-    }
 
     return fields;
   }
@@ -228,18 +168,6 @@ class CustomPinPutState extends State<CustomPinPut>
       );
     }
 
-    final isActiveField = index == pin.length;
-    final focused = _focusNode.hasFocus || !widget.useNativeKeyboard;
-
-    if (widget.withCursor && isActiveField && focused) {
-      return _buildCursor();
-    }
-
-    if (widget.preFilledWidget != null)
-      return SizedBox(
-        key: ValueKey<String>(index < pin.length ? pin[index] : ''),
-        child: widget.preFilledWidget,
-      );
     return Text(
       '',
       key: ValueKey<String>(index < pin.length ? pin[index] : ''),
@@ -288,19 +216,5 @@ class CustomPinPutState extends State<CustomPinPut>
           child: child,
         );
     }
-  }
-
-  Widget _buildCursor() {
-    return AnimatedBuilder(
-      animation: _cursorAnimationController,
-      builder: (context, child) {
-        return Center(
-          child: Opacity(
-            opacity: _cursorAnimation.value,
-            child: widget.cursor ?? Text('|', style: widget.textStyle),
-          ),
-        );
-      },
-    );
   }
 }
