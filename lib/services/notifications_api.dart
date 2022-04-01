@@ -28,6 +28,10 @@ class NotificationApi {
     );
   }
 
+  static Future clearNotifications() async => _notifications.cancelAll();
+
+  static Future clearNotification(int id) async => _notifications.cancel(id);
+
   static Future showNotification({
     int id = 0,
     String title,

@@ -37,6 +37,7 @@ import 'package:paymint/utilities/misc_global_constants.dart';
 import 'package:paymint/utilities/shared_utilities.dart';
 
 import '../../globals.dart';
+import '../../notifications_api.dart';
 
 const JMINT_INDEX = 5;
 const MINT_INDEX = 2;
@@ -767,6 +768,7 @@ class FiroWallet extends CoinServiceAPI {
   FiroNetworkType get networkType => _networkType;
 
   Set<String> unconfirmedTxs = {};
+  Set<String> pastUnconfirmedTxs = {};
 
   NetworkType get _network {
     switch (networkType) {
@@ -1055,6 +1057,9 @@ class FiroWallet extends CoinServiceAPI {
       bool needsRefresh = false;
       Logger.print("unonconfirmeds $unconfirmedTxs");
       for (String txid in unconfirmedTxs) {
+        pastUnconfirmedTxs.add(txid);
+      }
+      for (String txid in unconfirmedTxs) {
         final txn = await electrumXClient.getTransaction(tx_hash: txid);
         var confirmations = txn["confirmations"];
         if (!(confirmations is int)) continue;
@@ -1095,9 +1100,15 @@ class FiroWallet extends CoinServiceAPI {
     Logger.print(txData.txChunks);
     Logger.print(lTxData.txChunks);
     Set<String> needRefresh = {};
+    Map<String, String> txsTypes = {};
+    Map<String, bool> txsStatus = {};
+    Map<String, int> txsAmounts = {};
 
     for (models.TransactionChunk chunk in txData.txChunks) {
       for (models.Transaction tx in chunk.transactions) {
+        txsTypes[tx.txid] = tx.subType == null ? tx.txType : tx.subType;
+        txsStatus[tx.txid] = tx.confirmedStatus;
+        txsAmounts[tx.txid] = tx.amount;
         models.Transaction lTx = lTxData.findTransaction(tx.txid);
         if (!tx.confirmedStatus) {
           // Get all normal txs that are at 0 confirmations
@@ -1125,6 +1136,11 @@ class FiroWallet extends CoinServiceAPI {
     for (models.TransactionChunk chunk in lTxData.txChunks) {
       for (models.Transaction lTX in chunk.transactions) {
         models.Transaction tx = txData.findTransaction(lTX.txid);
+        if (tx == null) {
+          txsTypes[lTX.txid] = lTX.subType;
+          txsStatus[lTX.txid] = lTX.confirmedStatus;
+          txsAmounts[lTX.txid] = lTX.amount;
+        }
         if (!lTX.confirmedStatus && tx == null) {
           // if this is a ltx transaction that is unconfirmed and not represented in the normal transaction set.
           needRefresh.add(lTX.txid);
@@ -1133,6 +1149,54 @@ class FiroWallet extends CoinServiceAPI {
       }
     }
     Logger.print("needRefresh $needRefresh");
+    Logger.print("txsTypes \n $txsTypes");
+    Logger.print("txsStatuses \n $txsStatus");
+    Logger.print("pastUnconfirmedTxs \n $pastUnconfirmedTxs");
+    Set<String> notified = {};
+    for (String tx in needRefresh) {
+      switch (txsTypes[tx]) {
+        case "Received":
+          if (txsStatus[tx]) {
+            notified.add(tx);
+            NotificationApi.showNotification(
+                id: 1,
+                title: "Receiving Payment",
+                body: "${txsAmounts[tx] / 100000000.0} $coinName",
+                payload: null);
+          }
+          break;
+        default:
+          break;
+      }
+    }
+    for (String tx in pastUnconfirmedTxs) {
+      if (!needRefresh.contains(tx)) {
+        switch (txsTypes[tx]) {
+          case "mint":
+            notified.add(tx);
+            NotificationApi.showNotification(
+                id: 2,
+                title: "New Funds Available",
+                body: "${txsAmounts[tx] / 100000000.0} $coinName",
+                payload: null);
+            break;
+          case "join":
+            notified.add(tx);
+            NotificationApi.showNotification(
+                id: 3,
+                title: "Payment Sent",
+                body: "${txsAmounts[tx] / 100000000.0} $coinName",
+                payload: null);
+            break;
+          default:
+            break;
+        }
+      }
+    }
+
+    for (String tx in notified) {
+      pastUnconfirmedTxs.remove(tx);
+    }
     unconfirmedTxs = needRefresh;
   }
 

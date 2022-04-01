@@ -241,27 +241,6 @@ class _WalletSelectionViewState extends State<WalletSelectionView> {
                         height: 48,
                         child: GradientButton(
                           onTap: () {
-                            NotificationApi.showNotification(
-                                title: "Coins Received!",
-                                body: null,
-                                payload: null);
-                          },
-                          child: Text(
-                            "Notifications",
-                            style: CFTextStyles.button,
-                          ),
-                        ),
-                      ),
-                    ),
-                    SizedBox(
-                      height: 12,
-                    ),
-                    Padding(
-                      padding: const EdgeInsets.symmetric(horizontal: 20),
-                      child: SizedBox(
-                        height: 48,
-                        child: GradientButton(
-                          onTap: () {
                             Navigator.push(
                               context,
                               CupertinoPageRoute(
