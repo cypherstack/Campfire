@@ -35,6 +35,8 @@ dependencies:
   http: ^0.13.4
   local_auth: ^1.1.10
   permission_handler: ^8.3.0
+  flutter_local_notifications: ^9.4.0
+  rxdart: ^0.27.3
 
   # Bitcoin plugins
   bip39: ^1.0.3

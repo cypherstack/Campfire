@@ -13,6 +13,7 @@ import 'package:paymint/widgets/custom_buttons/gradient_button.dart';
 import 'package:paymint/widgets/custom_buttons/simple_button.dart';
 import 'package:provider/provider.dart';
 
+import '../services/notifications_api.dart';
 import 'lockscreen2.dart';
 import 'onboarding_view/helpers/builders.dart';
 import 'onboarding_view/helpers/create_wallet_type.dart';

@@ -12,6 +12,7 @@ import 'package:paymint/services/address_book_service.dart';
 import 'package:paymint/services/coins/manager.dart';
 import 'package:paymint/services/node_service.dart';
 import 'package:paymint/services/notes_service.dart';
+import 'package:paymint/services/notifications_api.dart';
 import 'package:paymint/services/wallets_service.dart';
 import 'package:paymint/utilities/cfcolors.dart';
 import 'package:paymint/utilities/logger.dart';
@@ -48,6 +49,7 @@ void main() async {
 
   SystemChrome.setEnabledSystemUIMode(SystemUiMode.manual,
       overlays: [SystemUiOverlay.bottom]);
+  await NotificationApi.init();
 
   runApp(MyApp());
 }
