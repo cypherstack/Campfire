@@ -245,6 +245,7 @@ class _WalletViewState extends State<WalletView> {
                     ),
                   ),
                   IconButton(
+                    key: Key("walletViewTransactionSearchButton"),
                     onPressed: () {
                       showDialog(
                           context: context,

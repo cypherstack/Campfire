@@ -328,6 +328,7 @@ class _TransactionSearchViewState extends State<TransactionSearchView> {
           child: AspectRatio(
             aspectRatio: 1,
             child: AppBarIconButton(
+              key: Key("cancelTransactionSearchAppBarButton"),
               size: 36,
               icon: SvgPicture.asset(
                 "assets/svg/x.svg",

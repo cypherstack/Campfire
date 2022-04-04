@@ -25,8 +25,9 @@ import 'helpers/builders.dart';
 class SettingsView extends StatelessWidget {
   const SettingsView({Key key}) : super(key: key);
 
-  _buildItem(String iconAsset, String text, VoidCallback onTap) {
+  _buildItem(String iconAsset, String text, VoidCallback onTap, Key key) {
     return GestureDetector(
+      key: key,
       onTap: onTap,
       child: Container(
         color: Colors.transparent,
@@ -80,6 +81,7 @@ class SettingsView extends StatelessWidget {
           child: AspectRatio(
             aspectRatio: 1,
             child: AppBarIconButton(
+              key: Key("settingsLogoutAppBarButton"),
               size: 36,
               icon: SvgPicture.asset(
                 "assets/svg/log-out.svg",
@@ -212,6 +214,7 @@ class SettingsView extends StatelessWidget {
                     return AddressBookView();
                   }));
                 },
+                Key("settingsOptionAddressBook"),
               ),
               Container(
                 height: 1,
@@ -229,6 +232,7 @@ class SettingsView extends StatelessWidget {
                     // return NodeDetailsView(isEdit: false);
                   }));
                 },
+                Key("settingsOptionNetwork"),
               ),
               Container(
                 height: 1,
@@ -251,6 +255,7 @@ class SettingsView extends StatelessWidget {
                     );
                   }));
                 },
+                Key("settingsOptionWalletBackup"),
               ),
               Container(
                 height: 1,
@@ -267,6 +272,7 @@ class SettingsView extends StatelessWidget {
                     return WalletSettingsView();
                   }));
                 },
+                Key("settingsOptionWalletSettings"),
               ),
               Container(
                 height: 1,
@@ -283,6 +289,7 @@ class SettingsView extends StatelessWidget {
                     return CurrencyView();
                   }));
                 },
+                Key("settingsOptionCurrency"),
               ),
             ],
           ),

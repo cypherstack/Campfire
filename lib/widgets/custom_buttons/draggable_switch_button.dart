@@ -15,11 +15,12 @@ class DraggableSwitchButton extends StatefulWidget {
   final bool enabled;
 
   @override
-  _DraggableSwitchButtonState createState() => _DraggableSwitchButtonState();
+  DraggableSwitchButtonState createState() => DraggableSwitchButtonState();
 }
 
-class _DraggableSwitchButtonState extends State<DraggableSwitchButton> {
+class DraggableSwitchButtonState extends State<DraggableSwitchButton> {
   bool _enabled;
+  bool get enabled => _enabled;
 
   ValueNotifier<double> valueListener = ValueNotifier(0.0);
 
@@ -52,6 +53,7 @@ class _DraggableSwitchButtonState extends State<DraggableSwitchButton> {
               Builder(
                 builder: (context) {
                   final handle = GestureDetector(
+                    key: Key("draggableSwitchButtonSwitch"),
                     onHorizontalDragUpdate: (details) {
                       valueListener.value = (valueListener.value +
                               details.delta.dx / constraint.maxWidth)

@@ -193,6 +193,7 @@ class _MainViewState extends State<MainView> {
           child: AspectRatio(
             aspectRatio: 1,
             child: AppBarIconButton(
+              key: Key("mainViewSettingsButton"),
               size: 36,
               icon: SvgPicture.asset(
                 "assets/svg/menu.svg",
@@ -228,6 +229,7 @@ class _MainViewState extends State<MainView> {
         child: AspectRatio(
           aspectRatio: 1,
           child: AppBarIconButton(
+            key: Key("mainViewRefreshButton"),
             size: 36,
             onPressed: () {
               if (nodeState != NodeConnectionStatus.loading) {
@@ -388,7 +390,7 @@ class _MainViewState extends State<MainView> {
                     icon: SvgPicture.asset(
                       "assets/svg/upload-2.svg",
                       color: _buildIconColor(0), // Index 0 -> send view
-                      semanticsLabel: "send navigation logo",
+                      semanticsLabel: "sendBottomNavigationBarItem logo",
                     ),
                     // TODO: bring back styling that Flutter 2.10 broke
                     label: "Send"
@@ -401,6 +403,7 @@ class _MainViewState extends State<MainView> {
                     icon: SvgPicture.asset(
                       "assets/svg/wallet-2.svg",
                       color: _buildIconColor(1), // Index 1 -> wallet view
+                      semanticsLabel: "walletBottomNavigationBarItem logo",
                     ),
                     label: "Wallet"
                     // title: Text(
@@ -412,6 +415,7 @@ class _MainViewState extends State<MainView> {
                     icon: SvgPicture.asset(
                       "assets/svg/download-2.svg",
                       color: _buildIconColor(2), // Index 2 -> receive view
+                      semanticsLabel: "receiveBottomNavigationBarItem logo",
                     ),
                     label: "Receive"
                     // title: Text(

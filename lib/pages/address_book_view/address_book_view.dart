@@ -50,6 +50,7 @@ class _AddressBookViewState extends State<AddressBookView> {
             child: AspectRatio(
               aspectRatio: 1,
               child: AppBarIconButton(
+                key: Key("addressBookAddButton"),
                 size: 36,
                 icon: SvgPicture.asset(
                   "assets/svg/plus.svg",
@@ -74,6 +75,7 @@ class _AddressBookViewState extends State<AddressBookView> {
           child: AspectRatio(
             aspectRatio: 1,
             child: AppBarIconButton(
+              key: Key("addressBookBackButton"),
               size: 36,
               onPressed: () {
                 Navigator.pop(context);

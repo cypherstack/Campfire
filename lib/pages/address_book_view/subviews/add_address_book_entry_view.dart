@@ -141,6 +141,7 @@ class _AddAddressBookEntryViewState extends State<AddAddressBookEntryView> {
                     bottom: 12,
                   ),
                   child: TextField(
+                    key: Key("addAddressBookEntryViewAddressField"),
                     readOnly: false,
                     inputFormatters: <TextInputFormatter>[
                       FilteringTextInputFormatter.allow(
@@ -270,6 +271,7 @@ class _AddAddressBookEntryViewState extends State<AddAddressBookEntryView> {
                     bottom: 12,
                   ),
                   child: TextField(
+                    key: Key("addAddressBookEntryViewNameField"),
                     controller: nameTextController,
                     decoration: InputDecoration(
                       hintText: "Enter name",
