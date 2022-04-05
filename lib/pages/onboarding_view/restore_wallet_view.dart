@@ -22,6 +22,7 @@ import 'package:paymint/services/node_service.dart';
 import 'package:paymint/services/wallets_service.dart';
 import 'package:paymint/utilities/address_utils.dart';
 import 'package:paymint/utilities/cfcolors.dart';
+import 'package:paymint/utilities/clipboard_interface.dart';
 import 'package:paymint/utilities/misc_global_constants.dart';
 import 'package:paymint/utilities/sizing_utilities.dart';
 import 'package:paymint/utilities/text_styles.dart';
@@ -40,12 +41,16 @@ enum InputStatus {
 }
 
 class RestoreWalletFormView extends StatefulWidget {
-  const RestoreWalletFormView(
-      {Key key, @required this.walletName, @required this.firoNetworkType})
-      : super(key: key);
+  const RestoreWalletFormView({
+    Key key,
+    @required this.walletName,
+    @required this.firoNetworkType,
+    this.clipboard = const ClipboardWrapper(),
+  }) : super(key: key);
 
   final String walletName;
   final FiroNetworkType firoNetworkType;
+  final ClipboardInterface clipboard;
 
   @override
   _RestoreWalletFormViewState createState() => _RestoreWalletFormViewState();
@@ -228,6 +233,7 @@ class _RestoreWalletFormViewState extends State<RestoreWalletFormView> {
                       child: SizedBox(
                         height: 48,
                         child: SimpleButton(
+                          key: Key("restoreWalletViewScanQRButtonKey"),
                           onTap: () async {
                             final qrResult = await BarcodeScanner.scan();
                             final results = AddressUtils.decodeQRSeedData(
@@ -277,9 +283,10 @@ class _RestoreWalletFormViewState extends State<RestoreWalletFormView> {
                       child: SizedBox(
                         height: 48,
                         child: SimpleButton(
+                          key: Key("restoreWalletViewPasteButtonKey"),
                           onTap: () async {
-                            final ClipboardData data =
-                                await Clipboard.getData(Clipboard.kTextPlain);
+                            final ClipboardData data = await widget.clipboard
+                                .getData(Clipboard.kTextPlain);
 
                             if (data != null && data.text.isNotEmpty) {
                               final content = data.text.trim();
@@ -368,6 +375,7 @@ class _RestoreWalletFormViewState extends State<RestoreWalletFormView> {
             SizingUtilities.listItemSpacing / 2,
           ),
           child: TextFormField(
+            key: Key("restoreMnemonicFormField_$i"),
             inputFormatters: <TextInputFormatter>[
               FilteringTextInputFormatter.allow(RegExp("[a-z]")),
             ],
@@ -437,6 +445,7 @@ class _RestoreWalletFormViewState extends State<RestoreWalletFormView> {
         width: MediaQuery.of(context).size.width -
             (SizingUtilities.standardPadding * 2),
         child: GradientButton(
+          key: Key("restoreMnemonicViewRestoreButtonKey"),
           onTap: () async {
             //TODO seems hacky fix for renderflex error
             // wait for keyboard to disappear
@@ -461,13 +470,13 @@ class _RestoreWalletFormViewState extends State<RestoreWalletFormView> {
                       CampfireAlert(message: "Invalid seed phrase!"),
                 );
               } else {
+                Wakelock.enable();
                 // show restoring in progress
                 showDialog(
                   context: context,
                   useSafeArea: false,
                   barrierDismissible: false,
                   builder: (context) {
-                    Wakelock.enable();
                     return _buildWaitDialog();
                   },
                 );
@@ -652,6 +661,7 @@ class _RestoreWalletFormViewState extends State<RestoreWalletFormView> {
                 SizedBox(
                   height: 48,
                   child: TextButton(
+                    key: Key("restoreWalletWaitingDialogCancelButtonKey"),
                     onPressed: () async {
                       await _onBackPressed(5);
                       Wakelock.disable();
@@ -797,6 +807,7 @@ class _RestoreWalletFormViewState extends State<RestoreWalletFormView> {
                   height: SizingUtilities.standardButtonHeight,
                   width: SizingUtilities.standardFixedButtonWidth,
                   child: GradientButton(
+                    key: Key("restoreWalletViewRestoreFailedOkButtonKey"),
                     child: FittedBox(
                       child: Text(
                         "OK",
