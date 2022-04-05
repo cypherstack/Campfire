@@ -1011,6 +1011,7 @@ class FiroWallet extends CoinServiceAPI {
   /// already exist.
   ///
   /// Returns false if bad electrumx server info was provided and/or there is no network connection
+  @override
   Future<bool> initializeWallet() async {
     final wallet = await Hive.openBox(this._walletId);
 

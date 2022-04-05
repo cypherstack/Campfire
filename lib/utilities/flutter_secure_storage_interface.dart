@@ -26,7 +26,7 @@ abstract class FlutterSecureStorageInterface {
 class SecureStorageWrapper implements FlutterSecureStorageInterface {
   final FlutterSecureStorage secureStore;
 
-  SecureStorageWrapper(this.secureStore);
+  const SecureStorageWrapper(this.secureStore);
 
   @override
   Future<String> read({

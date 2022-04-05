@@ -131,6 +131,11 @@ class Manager with ChangeNotifier {
     }
   }
 
+  Future<bool> initializeWallet() async {
+    final success = await _currentWallet.initializeWallet();
+    return success;
+  }
+
   Future<void> exitCurrentWallet() async {
     await _backgroundRefreshListener?.cancel();
     _backgroundRefreshListener = null;
