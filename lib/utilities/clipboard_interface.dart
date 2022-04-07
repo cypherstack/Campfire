@@ -19,7 +19,7 @@ class ClipboardWrapper implements ClipboardInterface {
   }
 }
 
-class MockClipboard implements ClipboardInterface {
+class FakeClipboard implements ClipboardInterface {
   String _value;
 
   @override

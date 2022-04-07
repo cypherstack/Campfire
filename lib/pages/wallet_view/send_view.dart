@@ -1,4 +1,3 @@
-import 'package:barcode_scan2/platform_wrapper.dart';
 import 'package:decimal/decimal.dart';
 import 'package:devicelocale/devicelocale.dart';
 import 'package:flutter/material.dart';
@@ -9,6 +8,7 @@ import 'package:paymint/notifications/campfire_alert.dart';
 import 'package:paymint/pages/wallet_view/confirm_send_view.dart';
 import 'package:paymint/services/coins/manager.dart';
 import 'package:paymint/utilities/address_utils.dart';
+import 'package:paymint/utilities/barcode_scanner_interface.dart';
 import 'package:paymint/utilities/cfcolors.dart';
 import 'package:paymint/utilities/clipboard_interface.dart';
 import 'package:paymint/utilities/logger.dart';
@@ -25,10 +25,12 @@ class SendView extends StatefulWidget {
     Key key,
     this.autofillArgs,
     this.clipboard = const ClipboardWrapper(),
+    this.barcodeScanner = const BarcodeScannerWrapper(),
   }) : super(key: key);
 
   final Map<String, dynamic> autofillArgs;
   final ClipboardInterface clipboard;
+  final BarcodeScannerInterface barcodeScanner;
 
   @override
   _SendViewState createState() => _SendViewState(autofillArgs);
@@ -37,6 +39,7 @@ class SendView extends StatefulWidget {
 class _SendViewState extends State<SendView> {
   final _scaffoldKey = GlobalKey<ScaffoldState>();
   ClipboardInterface clipboard;
+  BarcodeScannerInterface scanner;
   final autofillArgs;
 
   TextEditingController _recipientAddressTextController =
@@ -56,7 +59,6 @@ class _SendViewState extends State<SendView> {
     });
   }
 
-  Decimal _maxFee = Decimal.zero;
   Decimal _balanceMinusMaxFee = Decimal.zero;
   bool _autofill = false;
   String _address = "";
@@ -128,6 +130,7 @@ class _SendViewState extends State<SendView> {
   initState() {
     _fetchLocale();
     clipboard = widget.clipboard;
+    scanner = widget.barcodeScanner;
     amountController = AmountInputFieldController(amountChanged: amountChanged);
     Logger.print("SendView args: $autofillArgs");
     if (autofillArgs != null) {
@@ -272,7 +275,7 @@ class _SendViewState extends State<SendView> {
                           amountController: amountController,
                           locale: _locale,
                           isTinyScreen: SizingUtilities.isTinyWidth(context),
-                          onMaxFeeChanged: (newValue) => _maxFee = newValue,
+                          onMaxFeeChanged: (_) => {},
                         ),
 
                         SizedBox(
@@ -333,52 +336,35 @@ class _SendViewState extends State<SendView> {
                                       _recipientAddressTextController.text;
                                 }
 
-                                final manager = Provider.of<Manager>(context,
-                                    listen: false);
-                                if (manager.validateAddress(_address)) {
-                                  Navigator.of(context)
-                                      .push(
-                                    PageRouteBuilder(
-                                      opaque: false,
-                                      pageBuilder: (
-                                        context,
-                                        widget,
-                                        animation,
-                                      ) {
-                                        return ConfirmSendView(
-                                          amount: amountController.cryptoAmount,
-                                          note: _noteTextController.text,
-                                          address: _address,
-                                        );
-                                      },
-                                      transitionsBuilder: (context, animation,
-                                          secondaryAnimation, child) {
-                                        return FadeTransition(
-                                          opacity: animation,
-                                          child: child,
-                                        );
-                                      },
-                                    ),
-                                  )
-                                      .then(
-                                    (value) {
-                                      if (value != null &&
-                                          value is bool &&
-                                          value) {
-                                        _clearForm();
-                                      }
+                                Navigator.of(context)
+                                    .push(
+                                  PageRouteBuilder(
+                                    opaque: false,
+                                    pageBuilder: (context, widget, animation) {
+                                      return ConfirmSendView(
+                                        amount: amountController.cryptoAmount,
+                                        note: _noteTextController.text,
+                                        address: _address,
+                                      );
                                     },
-                                  );
-                                } else {
-                                  showDialog(
-                                    useSafeArea: false,
-                                    barrierDismissible: false,
-                                    context: context,
-                                    builder: (_) => CampfireAlert(
-                                      message: "Invalid address entered",
-                                    ),
-                                  );
-                                }
+                                    transitionsBuilder: (context, animation,
+                                        secondaryAnimation, child) {
+                                      return FadeTransition(
+                                        opacity: animation,
+                                        child: child,
+                                      );
+                                    },
+                                  ),
+                                )
+                                    .then(
+                                  (value) {
+                                    if (value != null &&
+                                        value is bool &&
+                                        value) {
+                                      _clearForm();
+                                    }
+                                  },
+                                );
                               }
                             },
                             child: Text(
@@ -509,12 +495,10 @@ class _SendViewState extends State<SendView> {
                   width: 10,
                 ),
                 GestureDetector(
+                  key: Key("sendViewAddressBookButtonKey"),
                   onTap: () {
                     Navigator.of(context).pushNamed("/addressbook").then(
                       (value) {
-                        if (value == null) {
-                          return;
-                        }
                         if (value is String) {
                           _recipientAddressTextController.text = value;
                         }
@@ -530,47 +514,55 @@ class _SendViewState extends State<SendView> {
                   width: 10,
                 ),
                 GestureDetector(
+                  key: Key("sendViewScanQrButtonKey"),
                   onTap: () async {
-                    final qrResult = await BarcodeScanner.scan();
-                    final results =
-                        AddressUtils.parseFiroUri(qrResult?.rawContent);
-                    if (results.isNotEmpty) {
-                      // auto fill address
-                      _address = results["address"];
-                      _recipientAddressTextController.text = _address;
+                    try {
+                      final qrResult = await scanner.scan();
+                      final results =
+                          AddressUtils.parseFiroUri(qrResult?.rawContent);
+                      if (results.isNotEmpty) {
+                        // auto fill address
+                        _address = results["address"];
+                        _recipientAddressTextController.text = _address;
 
-                      // autofill notes field
-                      if (results["message"] != null) {
-                        _noteTextController.text = results["message"];
-                      } else if (results["label"] != null) {
-                        _noteTextController.text = results["label"];
+                        // autofill notes field
+                        if (results["message"] != null) {
+                          _noteTextController.text = results["message"];
+                        } else if (results["label"] != null) {
+                          _noteTextController.text = results["label"];
+                        }
+
+                        // autofill amount field
+                        if (results["amount"] != null) {
+                          final amount = Decimal.parse(results["amount"]);
+                          _firoAmountController.text = amount.toString();
+                          amountController.cryptoAmount = amount;
+                        }
+                        setState(() {
+                          _addressToggleFlag =
+                              _recipientAddressTextController.text.isNotEmpty;
+                          _sendButtonEnabled =
+                              (manager.validateAddress(_address) &&
+                                  amountController.cryptoAmount > Decimal.zero);
+                        });
+
+                        // now check for non standard encoded basic address
+                      } else if (manager.validateAddress(qrResult.rawContent)) {
+                        _address = qrResult.rawContent;
+                        _recipientAddressTextController.text = _address;
+                        setState(() {
+                          _addressToggleFlag =
+                              _recipientAddressTextController.text.isNotEmpty;
+                          _sendButtonEnabled =
+                              (manager.validateAddress(_address) &&
+                                  amountController.cryptoAmount > Decimal.zero);
+                        });
                       }
-
-                      // autofill amount field
-                      if (results["amount"] != null) {
-                        final amount = Decimal.parse(results["amount"]);
-                        _firoAmountController.text = amount.toString();
-                        amountController.cryptoAmount = amount;
-                      }
-                      setState(() {
-                        _addressToggleFlag =
-                            _recipientAddressTextController.text.isNotEmpty;
-                        _sendButtonEnabled =
-                            (manager.validateAddress(_address) &&
-                                amountController.cryptoAmount > Decimal.zero);
-                      });
-
-                      // now check for non standard encoded basic address
-                    } else if (manager.validateAddress(qrResult.rawContent)) {
-                      _address = qrResult.rawContent;
-                      _recipientAddressTextController.text = _address;
-                      setState(() {
-                        _addressToggleFlag =
-                            _recipientAddressTextController.text.isNotEmpty;
-                        _sendButtonEnabled =
-                            (manager.validateAddress(_address) &&
-                                amountController.cryptoAmount > Decimal.zero);
-                      });
+                    } on PlatformException catch (e, s) {
+                      // here we ignore the exception caused by not giving permission
+                      // to use the camera to scan a qr code
+                      Logger.print(
+                          "Failed to get camera permissions while trying to scan qr code in SendView: $e\n$s");
                     }
                   },
                   child: SvgPicture.asset(
@@ -605,6 +597,7 @@ class _SpendableBalanceWidgetState extends State<SpendableBalanceWidget> {
   @override
   Widget build(BuildContext context) {
     final manager = Provider.of<Manager>(context);
+    final isTinyScreen = SizingUtilities.isTinyWidth(context);
     return GradientCard(
       gradient: CFColors.fireGradientVerticalLight,
       circularBorderRadius: SizingUtilities.circularBorderRadius,
@@ -614,63 +607,86 @@ class _SpendableBalanceWidgetState extends State<SpendableBalanceWidget> {
           horizontal: 16,
         ),
         child: Container(
-          height: 20,
-          child: Row(
-            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+          height: isTinyScreen ? 36 : 20,
+          child: Column(
             children: [
-              FittedBox(
-                child: Text(
-                  "You can spend: ",
-                  style: GoogleFonts.workSans(
-                    color: CFColors.white,
-                    fontSize: 12,
-                    fontWeight: FontWeight.w600,
-                  ),
-                ),
-              ),
-              FutureBuilder(
-                future: manager.balanceMinusMaxFee,
-                builder: (
-                  BuildContext context,
-                  AsyncSnapshot<Decimal> balanceMinusMaxFee,
-                ) {
-                  if (balanceMinusMaxFee.connectionState ==
-                      ConnectionState.done) {
-                    if (balanceMinusMaxFee == null ||
-                        balanceMinusMaxFee.hasError ||
-                        balanceMinusMaxFee.data == null) {
-                      return Text(
-                        "... ${manager.coinTicker}",
+              if (isTinyScreen)
+                Row(
+                  children: [
+                    FittedBox(
+                      child: Text(
+                        "You can spend: ",
                         style: GoogleFonts.workSans(
                           color: CFColors.white,
-                          fontSize: 16,
+                          fontSize: 12,
                           fontWeight: FontWeight.w600,
                         ),
-                      );
-                    }
-                    if (tempBalanceMinusMaxFee != balanceMinusMaxFee.data) {
-                      tempBalanceMinusMaxFee = balanceMinusMaxFee.data;
-                      widget
-                          .onBalanceMinusMaxFeeChanged(tempBalanceMinusMaxFee);
-                    }
-                  }
-                  return FittedBox(
-                    child: Text(
-                      "${Utilities.localizedStringAsFixed(
-                        value: tempBalanceMinusMaxFee <= Decimal.zero
-                            ? Decimal.zero
-                            : tempBalanceMinusMaxFee,
-                        locale: widget.locale,
-                        decimalPlaces: CampfireConstants.decimalPlaces,
-                      )} ${manager.coinTicker}",
-                      style: GoogleFonts.workSans(
-                        color: CFColors.white,
-                        fontSize: 16,
-                        fontWeight: FontWeight.w600,
                       ),
                     ),
-                  );
-                },
+                    Spacer(),
+                  ],
+                ),
+              if (isTinyScreen) Spacer(),
+              Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                children: [
+                  !isTinyScreen
+                      ? FittedBox(
+                          child: Text(
+                            "You can spend: ",
+                            style: GoogleFonts.workSans(
+                              color: CFColors.white,
+                              fontSize: 12,
+                              fontWeight: FontWeight.w600,
+                            ),
+                          ),
+                        )
+                      : Spacer(),
+                  FutureBuilder(
+                    future: manager.balanceMinusMaxFee,
+                    builder: (
+                      BuildContext context,
+                      AsyncSnapshot<Decimal> balanceMinusMaxFee,
+                    ) {
+                      if (balanceMinusMaxFee.connectionState ==
+                          ConnectionState.done) {
+                        if (balanceMinusMaxFee == null ||
+                            balanceMinusMaxFee.hasError ||
+                            balanceMinusMaxFee.data == null) {
+                          return Text(
+                            "... ${manager.coinTicker}",
+                            style: GoogleFonts.workSans(
+                              color: CFColors.white,
+                              fontSize: 16,
+                              fontWeight: FontWeight.w600,
+                            ),
+                          );
+                        }
+                        if (tempBalanceMinusMaxFee != balanceMinusMaxFee.data) {
+                          tempBalanceMinusMaxFee = balanceMinusMaxFee.data;
+                          widget.onBalanceMinusMaxFeeChanged(
+                              tempBalanceMinusMaxFee);
+                        }
+                      }
+                      return FittedBox(
+                        child: Text(
+                          "${Utilities.localizedStringAsFixed(
+                            value: tempBalanceMinusMaxFee <= Decimal.zero
+                                ? Decimal.zero
+                                : tempBalanceMinusMaxFee,
+                            locale: widget.locale,
+                            decimalPlaces: CampfireConstants.decimalPlaces,
+                          )} ${manager.coinTicker}",
+                          style: GoogleFonts.workSans(
+                            color: CFColors.white,
+                            fontSize: 16,
+                            fontWeight: FontWeight.w600,
+                          ),
+                        ),
+                      );
+                    },
+                  ),
+                ],
               ),
             ],
           ),

@@ -163,7 +163,7 @@ void main() {
   });
 
   testWidgets("paste button test", (tester) async {
-    final clipboard = MockClipboard();
+    final clipboard = FakeClipboard();
     clipboard.setData(ClipboardData(
         text:
             "some mnemonic words some mnemonic words some mnemonic words some mnemonic words some mnemonic words some mnemonic words some mnemonic words some mnemonic words"));
@@ -187,7 +187,7 @@ void main() {
   });
 
   testWidgets("paste valid seed word", (tester) async {
-    final clipboard = MockClipboard();
+    final clipboard = FakeClipboard();
     clipboard.setData(ClipboardData(text: "tree"));
 
     await tester.pumpWidget(
@@ -208,7 +208,7 @@ void main() {
   });
 
   testWidgets("paste invalid seed word", (tester) async {
-    final clipboard = MockClipboard();
+    final clipboard = FakeClipboard();
     clipboard.setData(ClipboardData(text: "trees"));
 
     await tester.pumpWidget(
@@ -229,7 +229,7 @@ void main() {
   });
 
   testWidgets("restore an miss spelled mnemonic", (tester) async {
-    final clipboard = MockClipboard();
+    final clipboard = FakeClipboard();
 
     await tester.pumpWidget(
       MaterialApp(
@@ -259,7 +259,7 @@ void main() {
   });
 
   testWidgets("restore an invalid mnemonic", (tester) async {
-    final clipboard = MockClipboard();
+    final clipboard = FakeClipboard();
 
     await tester.pumpWidget(
       MaterialApp(
@@ -300,7 +300,7 @@ void main() {
     final manager = MockManager();
     final walletsService = MockWalletsService();
     final nodeService = MockNodeService();
-    final clipboard = MockClipboard();
+    final clipboard = FakeClipboard();
 
     clipboard.setData(ClipboardData(text: TEST_MNEMONIC));
 
@@ -384,7 +384,7 @@ void main() {
     final manager = MockManager();
     final walletsService = MockWalletsService();
     final nodeService = MockNodeService();
-    final clipboard = MockClipboard();
+    final clipboard = FakeClipboard();
 
     clipboard.setData(ClipboardData(text: TEST_MNEMONIC));
 

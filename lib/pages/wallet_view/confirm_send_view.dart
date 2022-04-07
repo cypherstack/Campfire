@@ -9,6 +9,7 @@ import 'package:paymint/services/coins/manager.dart';
 import 'package:paymint/services/notes_service.dart';
 import 'package:paymint/utilities/biometrics.dart';
 import 'package:paymint/utilities/cfcolors.dart';
+import 'package:paymint/utilities/flutter_secure_storage_interface.dart';
 import 'package:paymint/utilities/logger.dart';
 import 'package:paymint/utilities/misc_global_constants.dart';
 import 'package:paymint/utilities/sizing_utilities.dart';
@@ -22,12 +23,17 @@ class ConfirmSendView extends StatefulWidget {
     @required this.note,
     @required this.amount,
     this.fee,
+    this.secureStore = const SecureStorageWrapper(
+      const FlutterSecureStorage(),
+    ),
   }) : super(key: key);
 
   final String address;
   final String note;
   final Decimal amount;
   final Decimal fee;
+
+  final FlutterSecureStorageInterface secureStore;
 
   @override
   _ConfirmSendViewState createState() => _ConfirmSendViewState();
@@ -47,9 +53,12 @@ class _ConfirmSendViewState extends State<ConfirmSendView> {
     }
   }
 
+  FlutterSecureStorageInterface _secureStore;
+
   @override
   void initState() {
     _checkUseBiometrics();
+    _secureStore = widget.secureStore;
     super.initState();
   }
 
@@ -66,8 +75,6 @@ class _ConfirmSendViewState extends State<ConfirmSendView> {
 
   @override
   Widget build(BuildContext context) {
-    // final WalletsService walletsService = Provider.of<WalletsService>(context);
-
     return Container(
       height: MediaQuery.of(context).size.height,
       color: CFColors.midnight.withOpacity(0.8),
@@ -161,9 +168,8 @@ class _ConfirmSendViewState extends State<ConfirmSendView> {
                     final manager =
                         Provider.of<Manager>(context, listen: false);
 
-                    final store = new FlutterSecureStorage();
                     final storedPin =
-                        await store.read(key: '${manager.walletId}_pin');
+                        await _secureStore.read(key: '${manager.walletId}_pin');
 
                     if (storedPin == pin) {
                       await attemptSend(context, manager);

@@ -4,22 +4,34 @@ import 'package:google_fonts/google_fonts.dart';
 import 'package:paymint/notifications/overlay_notification.dart';
 import 'package:paymint/services/coins/manager.dart';
 import 'package:paymint/utilities/cfcolors.dart';
+import 'package:paymint/utilities/clipboard_interface.dart';
 import 'package:paymint/utilities/sizing_utilities.dart';
 import 'package:pretty_qr_code/pretty_qr_code.dart';
 import 'package:provider/provider.dart';
 
 class ReceiveView extends StatefulWidget {
-  ReceiveView({Key key}) : super(key: key);
+  const ReceiveView({Key key, this.clipboard = const ClipboardWrapper()})
+      : super(key: key);
+
+  final ClipboardInterface clipboard;
 
   @override
   _ReceiveViewState createState() => _ReceiveViewState();
 }
 
 class _ReceiveViewState extends State<ReceiveView> {
+  bool roundQr = true;
+  ClipboardInterface clipboard;
+
+  @override
+  initState() {
+    clipboard = widget.clipboard;
+    super.initState();
+  }
+
   @override
   Widget build(BuildContext context) {
     final manager = Provider.of<Manager>(context);
-    bool roundQr = true;
     final qrSize = MediaQuery.of(context).size.width / 2;
 
     return SafeArea(
@@ -28,12 +40,13 @@ class _ReceiveViewState extends State<ReceiveView> {
         body: Column(
           mainAxisAlignment: MainAxisAlignment.center,
           crossAxisAlignment: CrossAxisAlignment.stretch,
-          children: <Widget>[
+          children: [
             FutureBuilder(
               future: manager.currentReceivingAddress,
               builder:
                   (BuildContext context, AsyncSnapshot<String> currentAddress) {
-                if (currentAddress.connectionState == ConnectionState.done) {
+                if (currentAddress.connectionState == ConnectionState.done &&
+                    currentAddress.data != null) {
                   return Center(
                     child: PrettyQr(
                       data: "firo:" + currentAddress.data,
@@ -56,7 +69,8 @@ class _ReceiveViewState extends State<ReceiveView> {
             FutureBuilder(
               future: manager.currentReceivingAddress,
               builder: (BuildContext context, AsyncSnapshot<String> address) {
-                if (address.connectionState == ConnectionState.done) {
+                if (address.connectionState == ConnectionState.done &&
+                    address.data != null) {
                   return Container(
                     child: Padding(
                       padding: const EdgeInsets.symmetric(horizontal: 20),
@@ -79,8 +93,8 @@ class _ReceiveViewState extends State<ReceiveView> {
                                     SizingUtilities.circularBorderRadius),
                               ),
                               onPressed: () {
-                                Clipboard.setData(
-                                    new ClipboardData(text: address.data));
+                                clipboard
+                                    .setData(ClipboardData(text: address.data));
                                 OverlayNotification.showInfo(
                                   context,
                                   "Copied to clipboard",
