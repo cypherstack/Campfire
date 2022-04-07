@@ -57,29 +57,29 @@ class _MainViewState extends State<MainView> {
     }
   }
 
-  //
+  // TODO: bring back styling that Flutter 2.10 broke
   /// Tab text color based on tab selection
-  TextStyle _buildTextStyle(int index) {
-    if (index == this._currentIndex) {
-      return GoogleFonts.workSans(
-        textStyle: TextStyle(
-          color: CFColors.spark,
-          fontSize: 14,
-          fontWeight: FontWeight.w600,
-          fontStyle: FontStyle.normal,
-        ),
-      );
-    } else {
-      return GoogleFonts.workSans(
-        textStyle: TextStyle(
-          color: CFColors.twilight,
-          fontSize: 14,
-          fontWeight: FontWeight.w600,
-          fontStyle: FontStyle.normal,
-        ),
-      );
-    }
-  }
+  // TextStyle _buildTextStyle(int index) {
+  //   if (index == this._currentIndex) {
+  //     return GoogleFonts.workSans(
+  //       textStyle: TextStyle(
+  //         color: CFColors.spark,
+  //         fontSize: 14,
+  //         fontWeight: FontWeight.w600,
+  //         fontStyle: FontStyle.normal,
+  //       ),
+  //     );
+  //   } else {
+  //     return GoogleFonts.workSans(
+  //       textStyle: TextStyle(
+  //         color: CFColors.twilight,
+  //         fontSize: 14,
+  //         fontWeight: FontWeight.w600,
+  //         fontStyle: FontStyle.normal,
+  //       ),
+  //     );
+  //   }
+  // }
 
   void _setCurrentIndex(int newIndex) {
     setState(() {
@@ -360,7 +360,7 @@ class _MainViewState extends State<MainView> {
         key: _key,
         backgroundColor: CFColors.white,
         appBar: buildAppBar(context),
-        extendBody: true,
+        extendBody: false,
         bottomNavigationBar: Container(
           height: SizingUtilities.bottomToolBarHeight,
           decoration: BoxDecoration(

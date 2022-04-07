@@ -1,8 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:google_fonts/google_fonts.dart';
-import 'package:hive/hive.dart';
 import 'package:hive_flutter/hive_flutter.dart';
+import 'package:keyboard_dismisser/keyboard_dismisser.dart';
 import 'package:path_provider/path_provider.dart' as path;
 import 'package:paymint/models/models.dart';
 import 'package:paymint/pages/loading_view.dart';
@@ -17,7 +17,6 @@ import 'package:paymint/utilities/cfcolors.dart';
 import 'package:paymint/utilities/logger.dart';
 import 'package:paymint/utilities/sizing_utilities.dart';
 import 'package:provider/provider.dart';
-import 'package:keyboard_dismisser/keyboard_dismisser.dart';
 
 import 'route_generator.dart';
 

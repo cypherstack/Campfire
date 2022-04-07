@@ -1,4 +1,3 @@
-import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
@@ -16,46 +15,52 @@ import 'package:paymint/services/node_service.dart';
 import 'package:paymint/services/wallets_service.dart';
 import 'package:paymint/utilities/biometrics.dart';
 import 'package:paymint/utilities/cfcolors.dart';
+import 'package:paymint/utilities/flutter_secure_storage_interface.dart';
 import 'package:paymint/utilities/misc_global_constants.dart';
 import 'package:paymint/widgets/custom_buttons/app_bar_icon_button.dart';
 import 'package:paymint/widgets/custom_pin_put/custom_pin_put.dart';
 import 'package:provider/provider.dart';
 import 'package:uuid/uuid.dart';
 
-class Lockscreen2View extends StatefulWidget {
+class LockscreenView extends StatefulWidget {
+  const LockscreenView({
+    Key key,
+    @required this.routeOnSuccess,
+    this.biometricsAuthenticationTitle,
+    this.biometricsLocalizedReason,
+    this.biometricsCancelButtonString,
+    this.secureStore = const SecureStorageWrapper(
+      const FlutterSecureStorage(),
+    ),
+  }) : super(key: key);
+
   final String routeOnSuccess;
   final String biometricsAuthenticationTitle;
   final String biometricsLocalizedReason;
   final String biometricsCancelButtonString;
+  final FlutterSecureStorageInterface secureStore;
 
-  const Lockscreen2View(
-      {Key key,
-      @required this.routeOnSuccess,
-      this.biometricsAuthenticationTitle,
-      this.biometricsLocalizedReason,
-      this.biometricsCancelButtonString})
-      : super(key: key);
   @override
-  _Lockscreen2ViewState createState() => _Lockscreen2ViewState();
+  _LockscreenViewState createState() => _LockscreenViewState();
 }
 
-class _Lockscreen2ViewState extends State<Lockscreen2View> {
+class _LockscreenViewState extends State<LockscreenView> {
   _checkUseBiometrics() async {
     final manager = Provider.of<Manager>(context, listen: false);
     final walletsService = Provider.of<WalletsService>(context, listen: false);
     bool useBiometrics = false;
+    final currentWalletName = await walletsService.currentWalletName;
 
     // check if authenticating wallet log in
     if (!manager.hasWallet) {
-      final walletId = await walletsService
-          .getWalletId(await walletsService.currentWalletName);
-      final wallet = await Hive.openBox(walletId);
+      final wallet = await Hive.openBox(
+          await walletsService.getWalletId(currentWalletName));
       useBiometrics = await wallet.get('use_biometrics') ?? false;
     } else {
       useBiometrics = await manager.useBiometrics;
     }
 
-    final title = widget.biometricsAuthenticationTitle ?? manager.walletName;
+    final title = widget.biometricsAuthenticationTitle ?? currentWalletName;
     final localizedReason = widget.biometricsLocalizedReason ?? "Unlock wallet";
     final cancelButtonText = widget.biometricsCancelButtonString ?? "CANCEL";
 
@@ -66,10 +71,8 @@ class _Lockscreen2ViewState extends State<Lockscreen2View> {
           cancelButtonText: cancelButtonText)) {
         // check if initial log in
         if (widget.routeOnSuccess == "/mainview") {
-          final networkName = await walletsService.networkName;
-          final walletName = await walletsService.currentWalletName;
-          final id = await walletsService.getWalletId(walletName);
-          await logIn(networkName, walletName, id);
+          await logIn(await walletsService.networkName, currentWalletName,
+              await walletsService.getWalletId(currentWalletName));
         }
 
         Navigator.pushReplacementNamed(context, widget.routeOnSuccess);
@@ -130,7 +133,9 @@ class _Lockscreen2ViewState extends State<Lockscreen2View> {
       client: ElectrumX.from(node: node),
       cachedClient: CachedElectrumX.from(node: node, hivePath: appDir.path),
     );
-    final success = await firoWallet.initializeWallet();
+
+    manager.currentWallet = firoWallet;
+    final success = await manager.initializeWallet();
     if (!success) {
       await showDialog(
         context: context,
@@ -148,6 +153,7 @@ class _Lockscreen2ViewState extends State<Lockscreen2View> {
 
   @override
   void initState() {
+    _secureStore = widget.secureStore;
     // show system status bar
     SystemChrome.setEnabledSystemUIMode(SystemUiMode.manual,
         overlays: [SystemUiOverlay.top, SystemUiOverlay.bottom]);
@@ -174,9 +180,12 @@ class _Lockscreen2ViewState extends State<Lockscreen2View> {
   final _pinTextController = TextEditingController();
   final FocusNode _pinFocusNode = FocusNode();
 
+  FlutterSecureStorageInterface _secureStore;
+
   @override
   Widget build(BuildContext context) {
-    final WalletsService walletsService = Provider.of<WalletsService>(context);
+    final WalletsService walletsService =
+        Provider.of<WalletsService>(context, listen: false);
 
     return Scaffold(
       backgroundColor: CFColors.white,
@@ -298,11 +307,9 @@ class _Lockscreen2ViewState extends State<Lockscreen2View> {
               selectedFieldDecoration: _pinPutDecoration,
               followingFieldDecoration: _pinPutDecoration,
               onSubmit: (String pin) async {
-                final store = new FlutterSecureStorage();
-
                 final walletName = await walletsService.currentWalletName;
                 final id = await walletsService.getWalletId(walletName);
-                final storedPin = await store.read(key: '${id}_pin');
+                final storedPin = await _secureStore.read(key: '${id}_pin');
 
                 if (storedPin == pin) {
                   OverlayNotification.showSuccess(

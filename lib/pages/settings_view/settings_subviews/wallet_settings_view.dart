@@ -19,7 +19,7 @@ import 'package:paymint/widgets/custom_buttons/gradient_button.dart';
 import 'package:paymint/widgets/custom_buttons/simple_button.dart';
 import 'package:provider/provider.dart';
 
-import '../../lockscreen2.dart';
+import '../../lockscreen_view.dart';
 
 class WalletSettingsView extends StatelessWidget {
   const WalletSettingsView({Key key}) : super(key: key);
@@ -77,7 +77,7 @@ class _WalletSettingsListState extends State<WalletSettingsList> {
         GestureDetector(
           onTap: () {
             Navigator.push(context, CupertinoPageRoute(builder: (context) {
-              return Lockscreen2View(
+              return LockscreenView(
                 routeOnSuccess: '/settings/changepinview',
                 biometricsCancelButtonString: "CANCEL",
                 biometricsLocalizedReason: "Authenticate to change PIN",
@@ -461,7 +461,7 @@ class WalletDeleteConfirmDialog extends StatelessWidget {
                           context,
                           CupertinoPageRoute(
                             builder: (context) {
-                              return Lockscreen2View(
+                              return LockscreenView(
                                 routeOnSuccess:
                                     '/settings/deletewalletwarningview',
                                 biometricsAuthenticationTitle: "Confirm delete",

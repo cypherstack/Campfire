@@ -1,5 +1,4 @@
 import 'package:decimal/decimal.dart';
-import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:google_fonts/google_fonts.dart';
@@ -55,14 +54,12 @@ class AmountInputField extends StatefulWidget {
     this.fiatAmountController,
     this.controller,
     this.locale,
-    this.maxFee,
   }) : super(key: key);
 
   final AmountInputFieldController controller;
   final TextEditingController cryptoAmountController;
   final TextEditingController fiatAmountController;
   final String locale;
-  final Decimal maxFee;
 
   @override
   _AmountInputFieldState createState() => _AmountInputFieldState();
@@ -121,6 +118,7 @@ class _AmountInputFieldState extends State<AmountInputField> {
                     });
                   },
                   child: TextField(
+                    key: Key("amountInputFieldCryptoTextFieldKey"),
                     style: GoogleFonts.workSans(
                       color: CFColors.dusk,
                     ),
@@ -135,7 +133,7 @@ class _AmountInputFieldState extends State<AmountInputField> {
                               ? newValue
                               : oldValue),
                     ],
-                    onChanged: (String cryptoAmount) {
+                    onChanged: (String cryptoAmount) async {
                       if (cryptoAmount.isNotEmpty &&
                           cryptoAmount != "." &&
                           cryptoAmount != ",") {
@@ -143,9 +141,10 @@ class _AmountInputFieldState extends State<AmountInputField> {
                             ? Decimal.parse(cryptoAmount.replaceFirst(",", "."))
                             : Decimal.parse(cryptoAmount);
 
+                        final maxFee = (await manager.maxFee)?.fee ?? 0;
                         setState(() {
-                          controller.cryptoTotal =
-                              controller.cryptoAmount + widget.maxFee;
+                          controller.cryptoTotal = controller.cryptoAmount +
+                              Utilities.satoshisToAmount(maxFee);
                         });
 
                         if (_tempPrice > Decimal.zero) {
@@ -221,6 +220,7 @@ class _AmountInputFieldState extends State<AmountInputField> {
                     });
                   },
                   child: TextField(
+                    key: Key("amountInputFieldFiatTextFieldKey"),
                     style: GoogleFonts.workSans(
                       color: CFColors.dusk,
                     ),
@@ -238,7 +238,7 @@ class _AmountInputFieldState extends State<AmountInputField> {
                               ? newValue
                               : oldValue),
                     ],
-                    onChanged: (String fiatAmount) {
+                    onChanged: (String fiatAmount) async {
                       if (fiatAmount.isNotEmpty &&
                           fiatAmount != "." &&
                           fiatAmount != ",") {
@@ -259,9 +259,10 @@ class _AmountInputFieldState extends State<AmountInputField> {
                           decimalPlaces: CampfireConstants.decimalPlaces,
                         );
 
+                        final maxFee = (await manager.maxFee)?.fee ?? 0;
                         setState(() {
-                          controller.cryptoTotal =
-                              controller.cryptoAmount + widget.maxFee;
+                          controller.cryptoTotal = controller.cryptoAmount +
+                              Utilities.satoshisToAmount(maxFee);
                         });
 
                         cryptoAmountController.text = amountString;

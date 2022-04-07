@@ -10,6 +10,7 @@ import 'package:paymint/pages/wallet_view/confirm_send_view.dart';
 import 'package:paymint/services/coins/manager.dart';
 import 'package:paymint/utilities/address_utils.dart';
 import 'package:paymint/utilities/cfcolors.dart';
+import 'package:paymint/utilities/clipboard_interface.dart';
 import 'package:paymint/utilities/logger.dart';
 import 'package:paymint/utilities/misc_global_constants.dart';
 import 'package:paymint/utilities/shared_utilities.dart';
@@ -20,9 +21,14 @@ import 'package:paymint/widgets/gradient_card.dart';
 import 'package:provider/provider.dart';
 
 class SendView extends StatefulWidget {
-  SendView({Key key, this.autofillArgs}) : super(key: key);
+  const SendView({
+    Key key,
+    this.autofillArgs,
+    this.clipboard = const ClipboardWrapper(),
+  }) : super(key: key);
 
   final Map<String, dynamic> autofillArgs;
+  final ClipboardInterface clipboard;
 
   @override
   _SendViewState createState() => _SendViewState(autofillArgs);
@@ -30,7 +36,7 @@ class SendView extends StatefulWidget {
 
 class _SendViewState extends State<SendView> {
   final _scaffoldKey = GlobalKey<ScaffoldState>();
-
+  ClipboardInterface clipboard;
   final autofillArgs;
 
   TextEditingController _recipientAddressTextController =
@@ -61,7 +67,7 @@ class _SendViewState extends State<SendView> {
   _SendViewState(this.autofillArgs);
 
   Future<void> _fetchLocale() async {
-    _locale = await Devicelocale.currentLocale;
+    _locale = (await Devicelocale.currentLocale) ?? _locale;
   }
 
   void _clearForm() {
@@ -121,6 +127,7 @@ class _SendViewState extends State<SendView> {
   @override
   initState() {
     _fetchLocale();
+    clipboard = widget.clipboard;
     amountController = AmountInputFieldController(amountChanged: amountChanged);
     Logger.print("SendView args: $autofillArgs");
     if (autofillArgs != null) {
@@ -141,226 +148,252 @@ class _SendViewState extends State<SendView> {
         backgroundColor: CFColors.white,
         body: LayoutBuilder(
           builder: (context, constraint) {
-            return SingleChildScrollView(
-              padding: EdgeInsets.only(
-                top: 8,
-                left: 20,
-                right: 20,
-                bottom: 16,
+            return Padding(
+              padding: const EdgeInsets.only(
+                left: 16,
+                right: 16,
               ),
-              child: ConstrainedBox(
-                constraints: BoxConstraints(
-                  // subtract top and bottom padding set in parent
-                  minHeight: constraint.maxHeight - 8 - 16,
+              child: SingleChildScrollView(
+                padding: const EdgeInsets.only(
+                  top: 8,
+                  left: 4,
+                  right: 4,
+                  bottom: 16,
                 ),
-                child: IntrinsicHeight(
-                  child: Column(
-                    mainAxisAlignment: MainAxisAlignment.start,
-                    children: [
-                      SpendableBalanceWidget(
-                        locale: _locale,
-                        onBalanceMinusMaxFeeChanged: (newValue) =>
-                            _balanceMinusMaxFee = newValue,
-                      ),
-                      SizedBox(
-                        height: 17,
-                      ),
-
-                      // Send to
-                      Row(
-                        children: [
-                          FittedBox(
-                            child: Text(
-                              "Send to",
-                              style: GoogleFonts.workSans(
-                                color: CFColors.twilight,
-                                fontWeight: FontWeight.w500,
-                                fontSize: 12,
-                              ),
-                            ),
-                          ),
-                        ],
-                      ),
-                      SizedBox(
-                        height: 8,
-                      ),
-                      _buildAddressTextField(),
-                      SizedBox(
-                        height: 16,
-                      ),
-
-                      // Note
-                      Row(
-                        children: [
-                          FittedBox(
-                            child: Text(
-                              "Note (optional)",
-                              style: GoogleFonts.workSans(
-                                color: CFColors.twilight,
-                                fontWeight: FontWeight.w500,
-                                fontSize: 12,
-                              ),
-                            ),
-                          ),
-                        ],
-                      ),
-                      SizedBox(
-                        height: 8,
-                      ),
-                      TextField(
-                        style: GoogleFonts.workSans(
-                          color: CFColors.dusk,
+                child: ConstrainedBox(
+                  constraints: BoxConstraints(
+                    // subtract top and bottom padding set in parent
+                    minHeight: constraint.maxHeight - 8 - 16,
+                  ),
+                  child: IntrinsicHeight(
+                    child: Column(
+                      mainAxisAlignment: MainAxisAlignment.start,
+                      children: [
+                        SpendableBalanceWidget(
+                          locale: _locale,
+                          onBalanceMinusMaxFeeChanged: (newValue) =>
+                              _balanceMinusMaxFee = newValue,
                         ),
-                        controller: _noteTextController,
-                        decoration: InputDecoration(
-                          fillColor: CFColors.fog,
-                          border: OutlineInputBorder(),
-                          hintText: "Type something...",
-                          hintStyle: GoogleFonts.workSans(
-                            color: CFColors.twilight,
-                            fontWeight: FontWeight.w400,
-                            fontSize: 16,
-                          ),
+                        SizedBox(
+                          height: 17,
                         ),
-                      ),
-                      SizedBox(
-                        height: 16,
-                      ),
 
-                      // Amount
-                      Row(
-                        children: [
-                          FittedBox(
-                            child: Text(
-                              "Amount",
-                              style: GoogleFonts.workSans(
-                                color: CFColors.twilight,
-                                fontWeight: FontWeight.w500,
-                                fontSize: 12,
+                        // Send to
+                        Row(
+                          children: [
+                            FittedBox(
+                              child: Text(
+                                "Send to",
+                                style: GoogleFonts.workSans(
+                                  color: CFColors.twilight,
+                                  fontWeight: FontWeight.w500,
+                                  fontSize: 12,
+                                ),
                               ),
                             ),
+                          ],
+                        ),
+                        SizedBox(
+                          height: 8,
+                        ),
+                        _buildAddressTextField(),
+                        SizedBox(
+                          height: 16,
+                        ),
+
+                        // Note
+                        Row(
+                          children: [
+                            FittedBox(
+                              child: Text(
+                                "Note (optional)",
+                                style: GoogleFonts.workSans(
+                                  color: CFColors.twilight,
+                                  fontWeight: FontWeight.w500,
+                                  fontSize: 12,
+                                ),
+                              ),
+                            ),
+                          ],
+                        ),
+                        SizedBox(
+                          height: 8,
+                        ),
+                        TextField(
+                          style: GoogleFonts.workSans(
+                            color: CFColors.dusk,
                           ),
-                        ],
-                      ),
-                      SizedBox(
-                        height: 8,
-                      ),
-                      AmountInputField(
-                        cryptoAmountController: _firoAmountController,
-                        fiatAmountController: _fiatAmountController,
-                        controller: amountController,
-                        locale: _locale,
-                        maxFee: _maxFee,
-                      ),
+                          controller: _noteTextController,
+                          decoration: InputDecoration(
+                            fillColor: CFColors.fog,
+                            border: OutlineInputBorder(),
+                            hintText: "Type something...",
+                            hintStyle: GoogleFonts.workSans(
+                              color: CFColors.twilight,
+                              fontWeight: FontWeight.w400,
+                              fontSize: 16,
+                            ),
+                          ),
+                        ),
+                        SizedBox(
+                          height: 16,
+                        ),
 
-                      SizedBox(
-                        height: 16,
-                      ),
+                        // Amount
+                        Row(
+                          children: [
+                            FittedBox(
+                              child: Text(
+                                "Amount",
+                                style: GoogleFonts.workSans(
+                                  color: CFColors.twilight,
+                                  fontWeight: FontWeight.w500,
+                                  fontSize: 12,
+                                ),
+                              ),
+                            ),
+                          ],
+                        ),
+                        SizedBox(
+                          height: 8,
+                        ),
+                        AmountInputField(
+                          cryptoAmountController: _firoAmountController,
+                          fiatAmountController: _fiatAmountController,
+                          controller: amountController,
+                          locale: _locale,
+                        ),
 
-                      TransactionFeeInfoWidget(
-                        amountController: amountController,
-                        locale: _locale,
-                        isTinyScreen: SizingUtilities.isTinyWidth(context),
-                        onMaxFeeChanged: (newValue) => _maxFee = newValue,
-                      ),
+                        SizedBox(
+                          height: 16,
+                        ),
 
-                      SizedBox(
-                        height: 16,
-                      ),
+                        TransactionFeeInfoWidget(
+                          amountController: amountController,
+                          locale: _locale,
+                          isTinyScreen: SizingUtilities.isTinyWidth(context),
+                          onMaxFeeChanged: (newValue) => _maxFee = newValue,
+                        ),
 
-                      Spacer(),
-                      // Send Button
-                      SizedBox(
-                        height: 48,
-                        width: MediaQuery.of(context).size.width - 40,
-                        child: GradientButton(
-                          enabled: _sendButtonEnabled,
-                          onTap: () {
-                            Logger.print("SEND pressed");
+                        SizedBox(
+                          height: 16,
+                        ),
 
-                            final Decimal availableBalance =
-                                _balanceMinusMaxFee < Decimal.zero
-                                    ? Decimal.zero
-                                    : _balanceMinusMaxFee;
+                        Spacer(),
+                        // Send Button
+                        SizedBox(
+                          height: 48,
+                          width: MediaQuery.of(context).size.width - 40,
+                          child: GradientButton(
+                            enabled: _sendButtonEnabled,
+                            onTap: () async {
+                              Logger.print("SEND pressed");
 
-                            if (amountController.cryptoAmount >
-                                availableBalance) {
-                              showDialog(
-                                useSafeArea: false,
-                                barrierDismissible: false,
-                                context: context,
-                                builder: (_) => CampfireAlert(
-                                    message: "Insufficient balance!"),
-                              );
-                            } else {
-                              // set address to textfield value if it was not auto filled from address book
-                              // OR if it was but the textfield value does not match anymore
-                              if (!_autofill ||
-                                  _recipientAddressTextController.text !=
-                                      _contactName) {
-                                _address = _recipientAddressTextController.text;
-                              }
-
+                              // don't allow send to self
                               final manager =
                                   Provider.of<Manager>(context, listen: false);
-                              if (manager.validateAddress(_address)) {
-                                Navigator.of(context)
-                                    .push(
-                                  PageRouteBuilder(
-                                    opaque: false,
-                                    pageBuilder: (
-                                      context,
-                                      widget,
-                                      animation,
-                                    ) {
-                                      return ConfirmSendView(
-                                        amount: amountController.cryptoAmount,
-                                        note: _noteTextController.text,
-                                        address: _address,
-                                      );
-                                    },
-                                    transitionsBuilder: (context, animation,
-                                        secondaryAnimation, child) {
-                                      return FadeTransition(
-                                        opacity: animation,
-                                        child: child,
-                                      );
-                                    },
-                                  ),
-                                )
-                                    .then(
-                                  (value) {
-                                    if (value != null &&
-                                        value is bool &&
-                                        value) {
-                                      _clearForm();
-                                    }
+                              final myAddresses = await manager.allOwnAddresses;
+                              if (myAddresses.contains(
+                                  _recipientAddressTextController.text)) {
+                                showDialog(
+                                  context: context,
+                                  useSafeArea: false,
+                                  barrierDismissible: false,
+                                  builder: (_) {
+                                    return CampfireAlert(
+                                      message:
+                                          "Sending to your own address is currently disabled.",
+                                    );
                                   },
                                 );
-                              } else {
+                                return;
+                              }
+
+                              final Decimal availableBalance =
+                                  _balanceMinusMaxFee < Decimal.zero
+                                      ? Decimal.zero
+                                      : _balanceMinusMaxFee;
+
+                              if (amountController.cryptoAmount >
+                                  availableBalance) {
                                 showDialog(
                                   useSafeArea: false,
                                   barrierDismissible: false,
                                   context: context,
                                   builder: (_) => CampfireAlert(
-                                    message: "Invalid address entered",
-                                  ),
+                                      message: "Insufficient balance!"),
                                 );
+                              } else {
+                                // set address to textfield value if it was not auto filled from address book
+                                // OR if it was but the textfield value does not match anymore
+                                if (!_autofill ||
+                                    _recipientAddressTextController.text !=
+                                        _contactName) {
+                                  _address =
+                                      _recipientAddressTextController.text;
+                                }
+
+                                final manager = Provider.of<Manager>(context,
+                                    listen: false);
+                                if (manager.validateAddress(_address)) {
+                                  Navigator.of(context)
+                                      .push(
+                                    PageRouteBuilder(
+                                      opaque: false,
+                                      pageBuilder: (
+                                        context,
+                                        widget,
+                                        animation,
+                                      ) {
+                                        return ConfirmSendView(
+                                          amount: amountController.cryptoAmount,
+                                          note: _noteTextController.text,
+                                          address: _address,
+                                        );
+                                      },
+                                      transitionsBuilder: (context, animation,
+                                          secondaryAnimation, child) {
+                                        return FadeTransition(
+                                          opacity: animation,
+                                          child: child,
+                                        );
+                                      },
+                                    ),
+                                  )
+                                      .then(
+                                    (value) {
+                                      if (value != null &&
+                                          value is bool &&
+                                          value) {
+                                        _clearForm();
+                                      }
+                                    },
+                                  );
+                                } else {
+                                  showDialog(
+                                    useSafeArea: false,
+                                    barrierDismissible: false,
+                                    context: context,
+                                    builder: (_) => CampfireAlert(
+                                      message: "Invalid address entered",
+                                    ),
+                                  );
+                                }
                               }
-                            }
-                          },
-                          child: Text(
-                            "SEND",
-                            style: GoogleFonts.workSans(
-                              color: CFColors.white,
-                              fontSize: 16,
-                              fontWeight: FontWeight.w600,
-                              letterSpacing: 0.5,
+                            },
+                            child: Text(
+                              "SEND",
+                              style: GoogleFonts.workSans(
+                                color: CFColors.white,
+                                fontSize: 16,
+                                fontWeight: FontWeight.w600,
+                                letterSpacing: 0.5,
+                              ),
                             ),
                           ),
                         ),
-                      ),
-                    ],
+                      ],
+                    ),
                   ),
                 ),
               ),
@@ -374,6 +407,7 @@ class _SendViewState extends State<SendView> {
   _buildAddressTextField() {
     final manager = Provider.of<Manager>(context, listen: false);
     return TextField(
+      key: Key("sendViewAddressFieldKey"),
       style: GoogleFonts.workSans(
         color: CFColors.dusk,
       ),
@@ -420,6 +454,7 @@ class _SendViewState extends State<SendView> {
               children: [
                 _addressToggleFlag
                     ? GestureDetector(
+                        key: Key("sendViewClearAddressFieldButtonKey"),
                         onTap: () {
                           _recipientAddressTextController.text = "";
                           _address = "";
@@ -438,31 +473,15 @@ class _SendViewState extends State<SendView> {
                         ),
                       )
                     : GestureDetector(
+                        key: Key("sendViewPasteAddressFieldButtonKey"),
                         onTap: () async {
                           final ClipboardData data =
-                              await Clipboard.getData(Clipboard.kTextPlain);
+                              await clipboard.getData(Clipboard.kTextPlain);
                           if (data != null && data.text.isNotEmpty) {
                             final content = data.text.trim();
 
                             final isValidAddress =
                                 manager.validateAddress(content);
-                            if (isValidAddress) {
-                              final myAddresses = await manager.allOwnAddresses;
-                              Logger.print(myAddresses);
-                              if (myAddresses.contains(content)) {
-                                showDialog(
-                                  context: context,
-                                  useSafeArea: false,
-                                  barrierDismissible: false,
-                                  builder: (_) {
-                                    return CampfireAlert(
-                                        message:
-                                            "Sending to your own address is currently disabled.");
-                                  },
-                                );
-                                return;
-                              }
-                            }
 
                             _recipientAddressTextController.text = content;
                             _address = content;

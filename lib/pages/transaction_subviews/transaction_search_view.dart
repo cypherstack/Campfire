@@ -6,7 +6,6 @@ import 'package:google_fonts/google_fonts.dart';
 import 'package:paymint/pages/settings_view/helpers/builders.dart';
 import 'package:paymint/pages/transaction_subviews/transaction_search_results_view.dart';
 import 'package:paymint/services/address_book_service.dart';
-import 'package:paymint/services/coins/manager.dart';
 import 'package:paymint/services/notes_service.dart';
 import 'package:paymint/utilities/cfcolors.dart';
 import 'package:paymint/utilities/shared_utilities.dart';
@@ -18,7 +17,9 @@ import 'package:paymint/widgets/custom_buttons/simple_button.dart';
 import 'package:provider/provider.dart';
 
 class TransactionSearchView extends StatefulWidget {
-  const TransactionSearchView({Key key}) : super(key: key);
+  const TransactionSearchView({Key key, this.coinTicker}) : super(key: key);
+
+  final String coinTicker;
 
   @override
   _TransactionSearchViewState createState() => _TransactionSearchViewState();
@@ -467,7 +468,7 @@ class _TransactionSearchViewState extends State<TransactionSearchView> {
                         alignment: Alignment.centerLeft,
                         child: FittedBox(
                           child: Text(
-                            "Amount (${Provider.of<Manager>(context, listen: false).coinTicker})",
+                            "Amount (${widget.coinTicker})",
                             style: _labelStyle,
                           ),
                         ),

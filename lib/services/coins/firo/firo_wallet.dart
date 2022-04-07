@@ -2037,21 +2037,26 @@ class FiroWallet extends CoinServiceAPI {
 
   Future<List<Map<String, dynamic>>> _fetchHistory(
       List<String> allAddresses) async {
-    List<Map<String, dynamic>> allTxHashes = [];
-    // int latestTxnBlockHeight = 0;
+    try {
+      List<Map<String, dynamic>> allTxHashes = [];
+      // int latestTxnBlockHeight = 0;
 
-    for (final address in allAddresses) {
-      final scripthash = AddressUtils.convertToScriptHash(address, _network);
-      final txs = await electrumXClient.getHistory(scripthash: scripthash);
-      for (final map in txs) {
-        if (!allTxHashes.contains(map)) {
-          map['address'] = address;
-          allTxHashes.add(map);
+      for (final address in allAddresses) {
+        final scripthash = AddressUtils.convertToScriptHash(address, _network);
+        final txs = await electrumXClient.getHistory(scripthash: scripthash);
+        for (final map in txs) {
+          if (!allTxHashes.contains(map)) {
+            map['address'] = address;
+            allTxHashes.add(map);
+          }
         }
       }
-    }
 
-    return allTxHashes;
+      return allTxHashes;
+    } catch (e, s) {
+      Logger.print("Exception caught in _fetchHistory(): $e\n$s");
+      return [];
+    }
   }
 
   Future<TransactionData> _fetchTransactionData() async {

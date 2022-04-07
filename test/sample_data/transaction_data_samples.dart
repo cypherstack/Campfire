@@ -2467,4 +2467,5 @@ get transactionDataMap {
 
 final transactionDataFromMap = TransactionData.fromMap(transactionDataMap);
 
-final transactionDataFromJsonChunks = Transaction.fromJson(dateTimeChunksJson);
+final transactionDataFromJsonChunks =
+    TransactionData.fromJson(dateTimeChunksJson);
