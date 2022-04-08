@@ -46,7 +46,7 @@ class AddressBookService extends ChangeNotifier {
   }
 
   /// Add address book contact entry to db
-  addAddressBookEntry(String address, String name) async {
+  Future<void> addAddressBookEntry(String address, String name) async {
     final _currentWallet = await currentWalletName;
     final wallet = await Hive.openBox(_currentWallet);
     final _entries = await wallet.get('addressBookEntries');
@@ -65,7 +65,7 @@ class AddressBookService extends ChangeNotifier {
   }
 
   /// Remove address book contact entry from db
-  removeAddressBookEntry(String address) async {
+  Future<void> removeAddressBookEntry(String address) async {
     final _currentWallet = await currentWalletName;
     final wallet = await Hive.openBox(_currentWallet);
     final entries = await wallet.get('addressBookEntries');
@@ -76,7 +76,7 @@ class AddressBookService extends ChangeNotifier {
     // GlobalEventBus.instance.fire(AddressBookChangedEvent("entry removed"));
   }
 
-  _refreshAddressBookEntries() async {
+  Future<void> _refreshAddressBookEntries() async {
     final newAddressBookEntries = await _fetchAddressBookEntries();
     this._addressBookEntries = Future(() => newAddressBookEntries);
     notifyListeners();
