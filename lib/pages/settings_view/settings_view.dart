@@ -65,6 +65,22 @@ class SettingsView extends StatelessWidget {
     );
   }
 
+  Future<void> logout(Manager manager, WalletsService walletsService,
+      BuildContext context) async {
+    await manager.exitCurrentWallet();
+    await walletsService.setCurrentWalletName("");
+    await walletsService.refreshWallets();
+
+    Navigator.pushAndRemoveUntil(
+      context,
+      CupertinoPageRoute(
+        maintainState: false,
+        builder: (_) => WalletSelectionView(),
+      ),
+      (_) => false,
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -91,7 +107,6 @@ class SettingsView extends StatelessWidget {
               ),
               circularBorderRadius: 8,
               onPressed: () async {
-                final manager = Provider.of<Manager>(context, listen: false);
                 final walletsService =
                     Provider.of<WalletsService>(context, listen: false);
                 final walletName = await walletsService.currentWalletName;
@@ -100,7 +115,7 @@ class SettingsView extends StatelessWidget {
                   useSafeArea: false,
                   barrierColor: Colors.transparent,
                   context: context,
-                  builder: (context) {
+                  builder: (ctx) {
                     return ModalPopupDialog(
                       child: Column(
                         children: [
@@ -141,7 +156,7 @@ class SettingsView extends StatelessWidget {
                                         ),
                                       ),
                                       onTap: () {
-                                        Navigator.pop(context);
+                                        Navigator.pop(ctx);
                                       },
                                     ),
                                   ),
@@ -162,27 +177,18 @@ class SettingsView extends StatelessWidget {
                                       ),
                                       onTap: () async {
                                         Logger.print("log out pressed");
-                                        await manager.exitCurrentWallet();
-                                        await walletsService
-                                            .setCurrentWalletName("");
-                                        await walletsService.refreshWallets();
-
-                                        Navigator.pushAndRemoveUntil(
-                                          context,
-                                          CupertinoPageRoute(
-                                            maintainState: false,
-                                            builder: (_) =>
-                                                WalletSelectionView(),
-                                          ),
-                                          (_) => false,
-                                        );
+                                        final manager = Provider.of<Manager>(
+                                            context,
+                                            listen: false);
+                                        await logout(
+                                            manager, walletsService, context);
                                       },
                                     ),
                                   ),
                                 )
                               ],
                             ),
-                          )
+                          ),
                         ],
                       ),
                     );
@@ -209,10 +215,13 @@ class SettingsView extends StatelessWidget {
                 "assets/svg/book-open.svg",
                 "Address Book",
                 () {
-                  Navigator.push(context,
-                      CupertinoPageRoute(builder: (context) {
-                    return AddressBookView();
-                  }));
+                  Navigator.push(
+                    context,
+                    CupertinoPageRoute(
+                      builder: (_) => AddressBookView(),
+                      settings: RouteSettings(name: "/settings/addressbook"),
+                    ),
+                  );
                 },
                 Key("settingsOptionAddressBook"),
               ),
@@ -226,11 +235,13 @@ class SettingsView extends StatelessWidget {
                 "assets/svg/radio.svg",
                 "Network",
                 () {
-                  Navigator.push(context,
-                      CupertinoPageRoute(builder: (context) {
-                    return NetworkSettingsView();
-                    // return NodeDetailsView(isEdit: false);
-                  }));
+                  Navigator.push(
+                    context,
+                    CupertinoPageRoute(
+                      builder: (_) => NetworkSettingsView(),
+                      settings: RouteSettings(name: "/settings/network"),
+                    ),
+                  );
                 },
                 Key("settingsOptionNetwork"),
               ),
@@ -244,16 +255,20 @@ class SettingsView extends StatelessWidget {
                 "assets/svg/lock.svg",
                 "Wallet Backup",
                 () {
-                  Navigator.push(context,
-                      CupertinoPageRoute(builder: (context) {
-                    return LockscreenView(
-                      routeOnSuccess: '/settings/walletbackup',
-                      biometricsAuthenticationTitle: "Show backup key",
-                      biometricsCancelButtonString: "CANCEL",
-                      biometricsLocalizedReason:
-                          "Unlock using fingerprint to show backup key",
-                    );
-                  }));
+                  Navigator.push(
+                    context,
+                    CupertinoPageRoute(
+                      builder: (_) => LockscreenView(
+                        routeOnSuccess: '/settings/walletbackup',
+                        biometricsAuthenticationTitle: "Show backup key",
+                        biometricsCancelButtonString: "CANCEL",
+                        biometricsLocalizedReason:
+                            "Unlock using fingerprint to show backup key",
+                      ),
+                      settings:
+                          RouteSettings(name: "/settings/walletbackupoption"),
+                    ),
+                  );
                 },
                 Key("settingsOptionWalletBackup"),
               ),
@@ -266,11 +281,19 @@ class SettingsView extends StatelessWidget {
               _buildItem(
                 "assets/svg/settings.svg",
                 "Wallet Settings",
-                () {
-                  Navigator.push(context,
-                      CupertinoPageRoute(builder: (context) {
-                    return WalletSettingsView();
-                  }));
+                () async {
+                  final manager = Provider.of<Manager>(context, listen: false);
+                  final useBiometrics = await manager.useBiometrics;
+                  Navigator.push(
+                    context,
+                    CupertinoPageRoute(
+                      builder: (_) => WalletSettingsView(
+                        useBiometrics: useBiometrics,
+                      ),
+                      settings:
+                          RouteSettings(name: "/settings/walletsettingsoption"),
+                    ),
+                  );
                 },
                 Key("settingsOptionWalletSettings"),
               ),
@@ -284,10 +307,13 @@ class SettingsView extends StatelessWidget {
                 "assets/svg/usd-circle.svg",
                 "Currency",
                 () {
-                  Navigator.push(context,
-                      CupertinoPageRoute(builder: (context) {
-                    return CurrencyView();
-                  }));
+                  Navigator.push(
+                    context,
+                    CupertinoPageRoute(
+                      builder: (_) => CurrencyView(),
+                      settings: RouteSettings(name: "/settings/currency"),
+                    ),
+                  );
                 },
                 Key("settingsOptionCurrency"),
               ),

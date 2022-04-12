@@ -37,12 +37,14 @@ class CreatePinView extends StatefulWidget {
     this.secureStore = const SecureStorageWrapper(
       const FlutterSecureStorage(),
     ),
+    this.biometrics = const Biometrics(),
   }) : super(key: key);
 
   final CreateWalletType type;
   final String walletName;
   final bool useTestNet;
   final FlutterSecureStorageInterface secureStore;
+  final Biometrics biometrics;
 
   @override
   _CreatePinViewState createState() => _CreatePinViewState();
@@ -69,10 +71,12 @@ class _CreatePinViewState extends State<CreatePinView> {
   final FocusNode _pinPutFocusNode2 = FocusNode();
 
   FlutterSecureStorageInterface _secureStore;
+  Biometrics biometrics;
 
   @override
   initState() {
     _secureStore = widget.secureStore;
+    biometrics = widget.biometrics;
     super.initState();
   }
 
@@ -199,7 +203,7 @@ class _CreatePinViewState extends State<CreatePinView> {
                       if (_pinPutController1.text == _pinPutController2.text) {
                         // ask if want to use biometrics
                         final bool useBiometrics =
-                            await Biometrics.authenticate(
+                            await biometrics.authenticate(
                           cancelButtonText: "SKIP",
                           localizedReason:
                               "Unlock wallet and confirm transactions with your fingerprint",

@@ -84,10 +84,7 @@ class _CurrencyListState extends State<CurrencyList> {
     }
 
     return ListView.separated(
-      separatorBuilder: (context, index) => Container(
-        height: 1,
-        color: CFColors.fog,
-      ),
+      separatorBuilder: (context, index) => CurrencyListSeparator(),
       itemCount: currenciesWithoutSelected.length,
       itemBuilder: (BuildContext context, int index) {
         return GestureDetector(
@@ -104,6 +101,7 @@ class _CurrencyListState extends State<CurrencyList> {
             manager.changeFiatCurrency(current);
           },
           child: Container(
+            key: Key("currencySelect_${currenciesWithoutSelected[index]}"),
             color: index == 0 ? CFColors.fog : CFColors.white,
             child: Padding(
               padding: EdgeInsets.symmetric(
@@ -112,6 +110,9 @@ class _CurrencyListState extends State<CurrencyList> {
               ),
               child: Text(
                 currenciesWithoutSelected[index],
+                key: (index == 0)
+                    ? Key("selectedCurrencySettingsCurrencyText")
+                    : null,
                 style: GoogleFonts.workSans(
                   color: index == 0 ? CFColors.spark : CFColors.starryNight,
                   fontWeight: FontWeight.w600,
@@ -123,6 +124,19 @@ class _CurrencyListState extends State<CurrencyList> {
           ),
         );
       },
+    );
+  }
+}
+
+class CurrencyListSeparator extends StatelessWidget {
+  const CurrencyListSeparator({Key key, this.height = 1.0}) : super(key: key);
+
+  final double height;
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      height: height,
+      color: CFColors.fog,
     );
   }
 }

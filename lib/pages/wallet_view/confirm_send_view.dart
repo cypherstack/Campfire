@@ -26,6 +26,7 @@ class ConfirmSendView extends StatefulWidget {
     this.secureStore = const SecureStorageWrapper(
       const FlutterSecureStorage(),
     ),
+    this.biometrics = const Biometrics(),
   }) : super(key: key);
 
   final String address;
@@ -34,6 +35,7 @@ class ConfirmSendView extends StatefulWidget {
   final Decimal fee;
 
   final FlutterSecureStorageInterface secureStore;
+  final Biometrics biometrics;
 
   @override
   _ConfirmSendViewState createState() => _ConfirmSendViewState();
@@ -44,7 +46,7 @@ class _ConfirmSendViewState extends State<ConfirmSendView> {
     final manager = Provider.of<Manager>(context, listen: false);
 
     if (await manager.useBiometrics &&
-        await Biometrics.authenticate(
+        await biometrics.authenticate(
           cancelButtonText: "CANCEL",
           localizedReason: "Confirm transaction",
           title: manager.walletName,
@@ -59,6 +61,7 @@ class _ConfirmSendViewState extends State<ConfirmSendView> {
   void initState() {
     _checkUseBiometrics();
     _secureStore = widget.secureStore;
+    biometrics = widget.biometrics;
     super.initState();
   }
 
@@ -72,6 +75,7 @@ class _ConfirmSendViewState extends State<ConfirmSendView> {
 
   final _pinTextController = TextEditingController();
   final FocusNode _pinFocusNode = FocusNode();
+  Biometrics biometrics;
 
   @override
   Widget build(BuildContext context) {

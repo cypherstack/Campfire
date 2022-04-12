@@ -32,6 +32,7 @@ class LockscreenView extends StatefulWidget {
     this.secureStore = const SecureStorageWrapper(
       const FlutterSecureStorage(),
     ),
+    this.biometrics = const Biometrics(),
   }) : super(key: key);
 
   final String routeOnSuccess;
@@ -39,6 +40,7 @@ class LockscreenView extends StatefulWidget {
   final String biometricsLocalizedReason;
   final String biometricsCancelButtonString;
   final FlutterSecureStorageInterface secureStore;
+  final Biometrics biometrics;
 
   @override
   _LockscreenViewState createState() => _LockscreenViewState();
@@ -65,7 +67,7 @@ class _LockscreenViewState extends State<LockscreenView> {
     final cancelButtonText = widget.biometricsCancelButtonString ?? "CANCEL";
 
     if (useBiometrics) {
-      if (await Biometrics.authenticate(
+      if (await biometrics.authenticate(
           title: title,
           localizedReason: localizedReason,
           cancelButtonText: cancelButtonText)) {
@@ -154,6 +156,7 @@ class _LockscreenViewState extends State<LockscreenView> {
   @override
   void initState() {
     _secureStore = widget.secureStore;
+    biometrics = widget.biometrics;
     // show system status bar
     SystemChrome.setEnabledSystemUIMode(SystemUiMode.manual,
         overlays: [SystemUiOverlay.top, SystemUiOverlay.bottom]);
@@ -181,6 +184,7 @@ class _LockscreenViewState extends State<LockscreenView> {
   final FocusNode _pinFocusNode = FocusNode();
 
   FlutterSecureStorageInterface _secureStore;
+  Biometrics biometrics;
 
   @override
   Widget build(BuildContext context) {

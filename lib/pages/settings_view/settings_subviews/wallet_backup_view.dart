@@ -10,6 +10,7 @@ import 'package:paymint/notifications/overlay_notification.dart';
 import 'package:paymint/services/coins/manager.dart';
 import 'package:paymint/utilities/address_utils.dart';
 import 'package:paymint/utilities/cfcolors.dart';
+import 'package:paymint/utilities/clipboard_interface.dart';
 import 'package:paymint/utilities/misc_global_constants.dart';
 import 'package:paymint/utilities/sizing_utilities.dart';
 import 'package:paymint/utilities/text_styles.dart';
@@ -19,7 +20,12 @@ import 'package:pretty_qr_code/pretty_qr_code.dart';
 import 'package:provider/provider.dart';
 
 class WalletBackUpView extends StatelessWidget {
-  const WalletBackUpView({Key key}) : super(key: key);
+  const WalletBackUpView({
+    Key key,
+    this.clipboard = const ClipboardWrapper(),
+  }) : super(key: key);
+
+  final ClipboardInterface clipboard;
 
   Future<List<String>> _getMnemonic(BuildContext context) async {
     final manager = Provider.of<Manager>(context, listen: false);
@@ -29,6 +35,7 @@ class WalletBackUpView extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final _isTinyWidth = SizingUtilities.isTinyWidth(context);
     return Scaffold(
       backgroundColor: CFColors.white,
       appBar: AppBar(
@@ -78,67 +85,97 @@ class WalletBackUpView extends StatelessWidget {
         ),
         child: Column(
           children: [
-            _buildWarningMessage(),
+            BackupWarningDetails(),
             SizedBox(
               height: 32,
             ),
             Expanded(
-              child: _buildMnemonicView(context),
+              child: FutureBuilder(
+                future: _getMnemonic(context),
+                builder: (BuildContext context,
+                    AsyncSnapshot<List<String>> snapshot) {
+                  if (snapshot.connectionState == ConnectionState.done) {
+                    return _buildMnemonicTable(snapshot.data);
+                  } else {
+                    return Center(
+                      child: SpinKitThreeBounce(
+                        color: CFColors.spark,
+                        size: MediaQuery.of(context).size.width * 0.1,
+                      ),
+                    );
+                  }
+                },
+              ),
             ),
             SizedBox(
               height: SizingUtilities.standardPadding,
             ),
-            _buildButtons(context),
+            Row(
+              children: [
+                Expanded(
+                  child: SizedBox(
+                    height: 48,
+                    child: SimpleButton(
+                      key: Key("walletBackupQrCodeButtonKey"),
+                      onTap: () => _onQrcodeButtonPressed(context),
+                      child: Row(
+                        mainAxisAlignment: MainAxisAlignment.center,
+                        children: [
+                          SvgPicture.asset(
+                            "assets/svg/qr-code.svg",
+                            color: CFColors.dusk,
+                          ),
+                          SizedBox(
+                            width: _isTinyWidth ? 4 : 10,
+                          ),
+                          FittedBox(
+                            child: Text(
+                              "QR CODE",
+                              style: CFTextStyles.button.copyWith(
+                                color: CFColors.dusk,
+                              ),
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                  ),
+                ),
+                SizedBox(
+                  width: 16,
+                ),
+                Expanded(
+                  child: SizedBox(
+                    height: 48,
+                    child: SimpleButton(
+                      key: Key("walletBackupCopyButtonKey"),
+                      onTap: () => _onCopyButtonPressed(context),
+                      child: Row(
+                        mainAxisAlignment: MainAxisAlignment.center,
+                        children: [
+                          SvgPicture.asset(
+                            "assets/svg/copy.svg",
+                            color: CFColors.dusk,
+                          ),
+                          SizedBox(
+                            width: _isTinyWidth ? 4 : 10,
+                          ),
+                          Text(
+                            "COPY",
+                            style: CFTextStyles.button.copyWith(
+                              color: CFColors.dusk,
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                  ),
+                )
+              ],
+            ),
           ],
         ),
       ),
-    );
-  }
-
-  _buildWarningMessage() {
-    return Container(
-      decoration: BoxDecoration(
-        color: CFColors.mist,
-        border: Border.all(
-          color: CFColors.smoke,
-        ),
-        borderRadius:
-            BorderRadius.circular(SizingUtilities.circularBorderRadius),
-      ),
-      child: Padding(
-        padding: EdgeInsets.symmetric(
-          horizontal: SizingUtilities.standardPadding,
-          vertical: 16,
-        ),
-        child: Text(
-          "Please write down your backup key. Keep it safe and never share it with anyone." +
-              " Your backup key is the only way you can access your funds if you forget PIN, " +
-              "lose your phone, etc.\n\nCampfire Wallet does not keep nor is able to" +
-              " restore your backup key. Only you have access to your wallet.",
-          style: GoogleFonts.workSans(
-            color: CFColors.dusk,
-            fontWeight: FontWeight.w400,
-            fontSize: 12,
-          ),
-        ),
-      ),
-    );
-  }
-
-  _buildMnemonicView(BuildContext context) {
-    return FutureBuilder(
-      future: _getMnemonic(context),
-      builder: (BuildContext context, AsyncSnapshot<List<String>> snapshot) {
-        if (snapshot.connectionState == ConnectionState.done) {
-          return _buildMnemonicTable(snapshot.data);
-        } else {
-          return Center(
-              child: SpinKitThreeBounce(
-            color: CFColors.spark,
-            size: MediaQuery.of(context).size.width * 0.1,
-          ));
-        }
-      },
     );
   }
 
@@ -323,71 +360,6 @@ class WalletBackUpView extends StatelessWidget {
     );
   }
 
-  _buildButtons(BuildContext context) {
-    final _isTinyWidth = SizingUtilities.isTinyWidth(context);
-    return Row(
-      children: [
-        Expanded(
-          child: SizedBox(
-            height: 48,
-            child: SimpleButton(
-              onTap: () => _onQrcodeButtonPressed(context),
-              child: Row(
-                mainAxisAlignment: MainAxisAlignment.center,
-                children: [
-                  SvgPicture.asset(
-                    "assets/svg/qr-code.svg",
-                    color: CFColors.dusk,
-                  ),
-                  SizedBox(
-                    width: _isTinyWidth ? 4 : 10,
-                  ),
-                  FittedBox(
-                    child: Text(
-                      "QR CODE",
-                      style: CFTextStyles.button.copyWith(
-                        color: CFColors.dusk,
-                      ),
-                    ),
-                  ),
-                ],
-              ),
-            ),
-          ),
-        ),
-        SizedBox(
-          width: 16,
-        ),
-        Expanded(
-          child: SizedBox(
-            height: 48,
-            child: SimpleButton(
-              onTap: () => _onCopyButtonPressed(context),
-              child: Row(
-                mainAxisAlignment: MainAxisAlignment.center,
-                children: [
-                  SvgPicture.asset(
-                    "assets/svg/copy.svg",
-                    color: CFColors.dusk,
-                  ),
-                  SizedBox(
-                    width: _isTinyWidth ? 4 : 10,
-                  ),
-                  Text(
-                    "COPY",
-                    style: CFTextStyles.button.copyWith(
-                      color: CFColors.dusk,
-                    ),
-                  ),
-                ],
-              ),
-            ),
-          ),
-        )
-      ],
-    );
-  }
-
   _onQrcodeButtonPressed(BuildContext context) {
     final _qrSize = MediaQuery.of(context).size.width * 0.42;
 
@@ -395,7 +367,7 @@ class WalletBackUpView extends StatelessWidget {
       context: context,
       useSafeArea: false,
       barrierDismissible: false,
-      builder: (context) {
+      builder: (builderContext) {
         return ModalPopupDialog(
           child: Column(
             children: [
@@ -464,10 +436,11 @@ class WalletBackUpView extends StatelessWidget {
                     Expanded(
                       child: SizedBox(
                         height: 48,
-                        width: MediaQuery.of(context).size.width / 2,
+                        width: MediaQuery.of(builderContext).size.width / 2,
                         child: SimpleButton(
+                          key: Key("walletBackupQrCodeCancelButtonKey"),
                           onTap: () {
-                            Navigator.of(context).pop();
+                            Navigator.of(builderContext).pop();
                           },
                           child: FittedBox(
                             child: Text(
@@ -520,7 +493,7 @@ class WalletBackUpView extends StatelessWidget {
 
   _onCopyButtonPressed(BuildContext context) async {
     final mnemonic = await _getMnemonic(context);
-    Clipboard.setData(
+    clipboard.setData(
       ClipboardData(
         text: mnemonic.join(" "),
       ),
@@ -529,6 +502,41 @@ class WalletBackUpView extends StatelessWidget {
       context,
       "Copied to clipboard",
       Duration(seconds: 2),
+    );
+  }
+}
+
+class BackupWarningDetails extends StatelessWidget {
+  const BackupWarningDetails({Key key}) : super(key: key);
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      decoration: BoxDecoration(
+        color: CFColors.mist,
+        border: Border.all(
+          color: CFColors.smoke,
+        ),
+        borderRadius:
+            BorderRadius.circular(SizingUtilities.circularBorderRadius),
+      ),
+      child: Padding(
+        padding: EdgeInsets.symmetric(
+          horizontal: SizingUtilities.standardPadding,
+          vertical: 16,
+        ),
+        child: Text(
+          "Please write down your backup key. Keep it safe and never share it with anyone." +
+              " Your backup key is the only way you can access your funds if you forget PIN, " +
+              "lose your phone, etc.\n\nCampfire Wallet does not keep nor is able to" +
+              " restore your backup key. Only you have access to your wallet.",
+          style: GoogleFonts.workSans(
+            color: CFColors.dusk,
+            fontWeight: FontWeight.w400,
+            fontSize: 12,
+          ),
+        ),
+      ),
     );
   }
 }

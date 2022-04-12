@@ -95,15 +95,18 @@ class _AddCustomNodeViewState extends State<AddCustomNodeView> {
             message:
                 "Default node already exists. Please enter a different address."),
       );
-    } else if (port != null) {
+
+      // 65535 is max tcp port
+    } else if (port != null && port <= 65535) {
       final manager = Provider.of<Manager>(context, listen: false);
-      final canConnect = await manager.testNetworkConnection(
-        ElectrumX(
-          server: _addressController.text,
-          port: int.parse(_portController.text),
-          useSSL: _useSSL,
-        ),
+      final electrumX = ElectrumX(
+        server: url,
+        port: port,
+        useSSL: _useSSL,
       );
+
+      final canConnect = await manager.testNetworkConnection(electrumX);
+
       if (canConnect) {
         await save(name, url, port.toString(), _useSSL);
       } else {
@@ -128,14 +131,13 @@ class _AddCustomNodeViewState extends State<AddCustomNodeView> {
 
   void _onTestPressed() async {
     final manager = Provider.of<Manager>(context, listen: false);
-
-    final canConnect = await manager.testNetworkConnection(
-      ElectrumX(
-        server: _addressController.text,
-        port: int.parse(_portController.text),
-        useSSL: _useSSL,
-      ),
+    final electrumX = ElectrumX(
+      server: _addressController.text,
+      port: int.parse(_portController.text),
+      useSSL: _useSSL,
     );
+
+    final canConnect = await manager.testNetworkConnection(electrumX);
 
     if (canConnect) {
       OverlayNotification.showSuccess(
@@ -224,6 +226,7 @@ class _AddCustomNodeViewState extends State<AddCustomNodeView> {
     return Column(
       children: [
         TextField(
+          key: Key("addCustomNodeNodeNameFieldKey"),
           controller: _nameController,
           decoration: InputDecoration(
             hintText: "Node name",
@@ -232,7 +235,6 @@ class _AddCustomNodeViewState extends State<AddCustomNodeView> {
           onChanged: (newValue) {
             setState(() {
               _saveButtonEnabled = _checkEnableSaveButton();
-              _testButtonEnabled = _checkEnableTestButton();
             });
           },
         ),
@@ -243,6 +245,7 @@ class _AddCustomNodeViewState extends State<AddCustomNodeView> {
           children: [
             Expanded(
               child: TextField(
+                key: Key("addCustomNodeNodeAddressFieldKey"),
                 controller: _addressController,
                 decoration: InputDecoration(
                   hintText: "IP address",
@@ -261,6 +264,7 @@ class _AddCustomNodeViewState extends State<AddCustomNodeView> {
             ),
             Expanded(
               child: TextField(
+                key: Key("addCustomNodeNodePortFieldKey"),
                 controller: _portController,
                 inputFormatters: [FilteringTextInputFormatter.digitsOnly],
                 keyboardType: TextInputType.number,

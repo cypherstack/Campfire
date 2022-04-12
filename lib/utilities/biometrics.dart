@@ -6,7 +6,9 @@ import 'package:local_auth/local_auth.dart';
 import 'logger.dart';
 
 class Biometrics {
-  static Future<bool> authenticate(
+  const Biometrics();
+
+  Future<bool> authenticate(
       {String cancelButtonText, String localizedReason, String title}) async {
     if (!(Platform.isIOS || Platform.isAndroid)) {
       Logger.print(

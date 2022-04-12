@@ -8,7 +8,7 @@ class SimpleButton extends StatelessWidget {
     @required this.child,
     this.color,
     this.shadows,
-    this.enabled,
+    this.enabled = true,
   }) : super(key: key);
 
   final VoidCallback onTap;
@@ -37,7 +37,7 @@ class SimpleButton extends StatelessWidget {
         shape: _shape,
         shadows: _shadows,
       ),
-      child: (enabled == null || enabled)
+      child: (enabled)
           ? MaterialButton(
               materialTapTargetSize: MaterialTapTargetSize.shrinkWrap,
               shape: _shape,
