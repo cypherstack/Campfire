@@ -5,13 +5,21 @@ import 'package:google_fonts/google_fonts.dart';
 import 'package:paymint/notifications/overlay_notification.dart';
 import 'package:paymint/services/wallets_service.dart';
 import 'package:paymint/utilities/cfcolors.dart';
+import 'package:paymint/utilities/flutter_secure_storage_interface.dart';
 import 'package:paymint/utilities/text_styles.dart';
 import 'package:paymint/widgets/custom_buttons/app_bar_icon_button.dart';
 import 'package:paymint/widgets/custom_pin_put/custom_pin_put.dart';
 import 'package:provider/provider.dart';
 
 class ChangePinView extends StatefulWidget {
-  const ChangePinView({Key key}) : super(key: key);
+  const ChangePinView({
+    Key key,
+    this.secureStore = const SecureStorageWrapper(
+      FlutterSecureStorage(),
+    ),
+  }) : super(key: key);
+
+  final FlutterSecureStorageInterface secureStore;
 
   @override
   _ChangePinViewState createState() => _ChangePinViewState();
@@ -36,6 +44,14 @@ class _ChangePinViewState extends State<ChangePinView> {
   // Attributes for Page 2 of the page view
   final TextEditingController _pinPutController2 = TextEditingController();
   final FocusNode _pinPutFocusNode2 = FocusNode();
+
+  FlutterSecureStorageInterface _secureStore;
+
+  @override
+  void initState() {
+    _secureStore = widget.secureStore;
+    super.initState();
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -140,16 +156,11 @@ class _ChangePinViewState extends State<ChangePinView> {
                       String title = "...";
                       if (snapshot.connectionState == ConnectionState.done) {
                         title = snapshot.data;
-                        return Text(
-                          title,
-                          style: CFTextStyles.pinkHeader,
-                        );
-                      } else {
-                        return Text(
-                          title,
-                          style: CFTextStyles.pinkHeader,
-                        );
                       }
+                      return Text(
+                        title,
+                        style: CFTextStyles.pinkHeader,
+                      );
                     },
                   ),
                 ),
@@ -198,13 +209,12 @@ class _ChangePinViewState extends State<ChangePinView> {
                 followingFieldDecoration: _pinPutDecoration,
                 onSubmit: (String pin) async {
                   if (_pinPutController1.text == _pinPutController2.text) {
-                    final store = new FlutterSecureStorage();
                     final walletName = await walletService.currentWalletName;
                     final id = await walletService.getWalletId(walletName);
 
                     // This should never fail as we are overwriting the existing pin
-                    assert((await store.read(key: "${id}_pin")) != null);
-                    await store.write(key: "${id}_pin", value: pin);
+                    assert((await _secureStore.read(key: "${id}_pin")) != null);
+                    await _secureStore.write(key: "${id}_pin", value: pin);
 
                     OverlayNotification.showSuccess(
                       context,

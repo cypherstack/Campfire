@@ -12,7 +12,6 @@ import 'package:paymint/widgets/custom_buttons/simple_button.dart';
 class DeleteWalletWarningView extends StatelessWidget {
   const DeleteWalletWarningView({Key key}) : super(key: key);
 
-  // final _textStyle = GoogleFonts.workSans();
   @override
   Widget build(BuildContext context) {
     final buttonWidth = MediaQuery.of(context).size.width -
@@ -154,7 +153,11 @@ class DeleteWalletWarningView extends StatelessWidget {
         onTap: () {
           Navigator.push(
             context,
-            CupertinoPageRoute(builder: (_) => WalletDeleteMnemonicView()),
+            CupertinoPageRoute(
+              builder: (_) => WalletDeleteMnemonicView(),
+              settings:
+                  RouteSettings(name: "/settings/walletdeletemnemonicview"),
+            ),
           );
         },
       ),
