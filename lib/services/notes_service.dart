@@ -42,7 +42,7 @@ class NotesService extends ChangeNotifier {
   }
 
   // add note to db
-  addNote({String txid, String note}) async {
+  Future<void> addNote({String txid, String note}) async {
     final walletName = await currentWalletName;
     final wallet = await Hive.openBox(walletName);
     final _notes = await wallet.get('notes');
@@ -60,7 +60,7 @@ class NotesService extends ChangeNotifier {
   }
 
   // edit or add new note
-  editOrAddNote({String txid, String note}) async {
+  Future<void> editOrAddNote({String txid, String note}) async {
     final walletName = await currentWalletName;
     final wallet = await Hive.openBox(walletName);
     final _notes = await wallet.get('notes');
@@ -73,7 +73,7 @@ class NotesService extends ChangeNotifier {
   }
 
   /// Remove note from db
-  removeNote({String txid}) async {
+  Future<void> removeNote({String txid}) async {
     final _currentWallet = await currentWalletName;
     final wallet = await Hive.openBox(_currentWallet);
     final entries = await wallet.get('notes');
@@ -84,7 +84,7 @@ class NotesService extends ChangeNotifier {
     // GlobalEventBus.instance.fire(AddressBookChangedEvent("entry removed"));
   }
 
-  _refreshNotes() async {
+  Future<void> _refreshNotes() async {
     final newNotes = await _fetchNotes();
     this._notes = Future(() => newNotes);
     notifyListeners();

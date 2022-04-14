@@ -1,5 +1,7 @@
+import 'package:decimal/decimal.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_rounded_date_picker/flutter_rounded_date_picker.dart';
 import 'package:flutter_svg/svg.dart';
 import 'package:google_fonts/google_fonts.dart';
@@ -144,7 +146,7 @@ class _TransactionSearchViewState extends State<TransactionSearchView> {
       mainAxisAlignment: MainAxisAlignment.spaceBetween,
       children: [
         GestureDetector(
-          // TODO custom date picker
+          key: Key("transactionSearchViewFromDatePickerKey"),
           onTap: () async {
             final date = await showRoundedDatePicker(
               // This doesn't change statusbar color...
@@ -166,7 +168,7 @@ class _TransactionSearchViewState extends State<TransactionSearchView> {
               styleDatePicker: _buildDatePickerStyle(),
               styleYearPicker: _buildYearPickerStyle(),
             );
-            if (date != null && date != _selectedFromDate) {
+            if (date != null) {
               _selectedFromDate = date;
 
               // flag for search
@@ -231,6 +233,7 @@ class _TransactionSearchViewState extends State<TransactionSearchView> {
           ),
         ),
         GestureDetector(
+          key: Key("transactionSearchViewToDatePickerKey"),
           onTap: () async {
             final date = await showRoundedDatePicker(
               // This doesn't change statusbar color...
@@ -252,7 +255,7 @@ class _TransactionSearchViewState extends State<TransactionSearchView> {
               styleDatePicker: _buildDatePickerStyle(),
               styleYearPicker: _buildYearPickerStyle(),
             );
-            if (date != null && date != _selectedFromDate) {
+            if (date != null) {
               _selectedToDate = date;
 
               // flag for search
@@ -380,6 +383,8 @@ class _TransactionSearchViewState extends State<TransactionSearchView> {
                             height: 20,
                             width: 20,
                             child: Checkbox(
+                              key: Key(
+                                  "transactionSearchViewReceivedCheckboxKey"),
                               materialTapTargetSize:
                                   MaterialTapTargetSize.shrinkWrap,
                               value: _isActiveReceivedCheckbox,
@@ -417,6 +422,7 @@ class _TransactionSearchViewState extends State<TransactionSearchView> {
                             height: 20,
                             width: 20,
                             child: Checkbox(
+                              key: Key("transactionSearchViewSentCheckboxKey"),
                               materialTapTargetSize:
                                   MaterialTapTargetSize.shrinkWrap,
                               value: _isActiveSentCheckbox,
@@ -477,7 +483,19 @@ class _TransactionSearchViewState extends State<TransactionSearchView> {
                         height: 8,
                       ),
                       TextField(
+                        key: Key("transactionSearchViewAmountFieldKey"),
                         controller: _amountTextEditingController,
+                        keyboardType: TextInputType.numberWithOptions(
+                            signed: false, decimal: true),
+                        inputFormatters: [
+                          // regex to validate a crypto amount with 8 decimal places
+                          TextInputFormatter.withFunction((oldValue,
+                                  newValue) =>
+                              RegExp(r'^([0-9]*[,.]?[0-9]{0,8}|[,.][0-9]{0,8})$')
+                                      .hasMatch(newValue.text)
+                                  ? newValue
+                                  : oldValue),
+                        ],
                       ),
                       SizedBox(
                         height: 24,
@@ -495,6 +513,7 @@ class _TransactionSearchViewState extends State<TransactionSearchView> {
                         height: 8,
                       ),
                       TextField(
+                        key: Key("transactionSearchViewKeywordFieldKey"),
                         controller: _keywordTextEditingController,
                       ),
                       Spacer(),
@@ -564,17 +583,38 @@ class _TransactionSearchViewState extends State<TransactionSearchView> {
         Provider.of<AddressBookService>(context, listen: false);
     final notes = await notesService.notes;
     final contacts = await addressBookService.addressBookEntries;
-    Navigator.push(context, CupertinoPageRoute(builder: (_) {
-      return TransactionSearchResultsView(
-        start: _dateSelected ? _selectedFromDate : null,
-        end: _dateSelected ? _selectedToDate : null,
-        sent: _isActiveSentCheckbox,
-        received: _isActiveReceivedCheckbox,
-        amount: double.tryParse(_amountTextEditingController.text),
-        keyword: _keywordTextEditingController.text,
-        notes: notes,
-        contacts: contacts,
-      );
-    }));
+    final amountText = _amountTextEditingController.text;
+    Decimal amount;
+    if (amountText.isNotEmpty && !(amountText == "," || amountText == ".")) {
+      amount = amountText.contains(",")
+          ? Decimal.parse(amountText.replaceFirst(",", "."))
+          : Decimal.parse(amountText);
+    }
+    Navigator.push(
+      context,
+      CupertinoPageRoute(
+        builder: (_) {
+          return TransactionSearchResultsView(
+              start: _dateSelected ? _selectedFromDate : null,
+              // add a almost a whole day to the following date so the search
+              // shows transactions up to and on that day
+              end: _dateSelected
+                  ? _selectedToDate
+                      .add(Duration(days: 1))
+                      .subtract(Duration(microseconds: 1))
+                  : null,
+              sent: _isActiveSentCheckbox,
+              received: _isActiveReceivedCheckbox,
+              amount: amount,
+              keyword: _keywordTextEditingController.text,
+              notes: notes,
+              contacts: contacts,
+              amountString: _amountTextEditingController.text);
+        },
+        settings: RouteSettings(
+          name: "/transactionsearchresultsview",
+        ),
+      ),
+    );
   }
 }

@@ -12,6 +12,7 @@ import 'package:paymint/pages/wallet_view/wallet_view.dart';
 import 'package:paymint/services/coins/manager.dart';
 import 'package:paymint/services/event_bus/events/node_connection_status_changed_event.dart';
 import 'package:paymint/services/event_bus/global_event_bus.dart';
+import 'package:paymint/services/locale_service.dart';
 import 'package:paymint/services/notes_service.dart';
 import 'package:paymint/widgets/custom_buttons/draggable_switch_button.dart';
 import 'package:paymint/widgets/gradient_card.dart';
@@ -24,6 +25,7 @@ import 'wallet_view_screen_test.mocks.dart';
 @GenerateMocks([], customMocks: [
   MockSpec<Manager>(returnNullOnMissingStub: true),
   MockSpec<NotesService>(returnNullOnMissingStub: true),
+  MockSpec<LocaleService>(returnNullOnMissingStub: true),
 ])
 void main() {
   testWidgets("WalletView builds correctly with no transactions",
@@ -38,8 +40,6 @@ void main() {
     when(manager.fiatBalance).thenAnswer((_) async => Decimal.ten);
     when(manager.fiatTotalBalance)
         .thenAnswer((_) async => Decimal.fromInt(100));
-
-    when(manager.refresh()).thenAnswer((_) async {});
 
     await tester.pumpWidget(
       MaterialApp(
@@ -77,6 +77,15 @@ void main() {
     expect(find.text("10.00000000 USD"), findsOneWidget);
     expect(find.text("NO TRANSACTIONS YET"), findsOneWidget);
     expect(find.byType(SvgPicture), findsNWidgets(2));
+
+    verify(manager.addListener(any)).called(1);
+    verify(manager.balance).called(1);
+    verify(manager.fiatBalance).called(1);
+    verify(manager.coinTicker).called(2);
+    verify(manager.fiatCurrency).called(1);
+    verify(manager.transactionData).called(1);
+
+    verifyNoMoreInteractions(manager);
   });
 
   testWidgets("WalletView builds correctly with transaction history",
@@ -84,11 +93,15 @@ void main() {
     final navigator = mockingjay.MockNavigator();
     final manager = MockManager();
     final notesService = MockNotesService();
+    final localeService = MockLocaleService();
+
+    when(localeService.locale).thenAnswer((_) => "en_US");
 
     when(manager.coinTicker).thenAnswer((_) => "FIRO");
     when(manager.fiatCurrency).thenAnswer((_) => "USD");
 
     when(manager.balance).thenAnswer((_) async => Decimal.one);
+    when(manager.fiatPrice).thenAnswer((_) async => Decimal.one);
     when(manager.totalBalance).thenAnswer((_) async => Decimal.ten);
     when(manager.fiatBalance).thenAnswer((_) async => Decimal.ten);
     when(manager.fiatTotalBalance)
@@ -111,6 +124,9 @@ void main() {
                 ),
                 ChangeNotifierProvider<NotesService>(
                   create: (_) => notesService,
+                ),
+                ChangeNotifierProvider<LocaleService>(
+                  create: (_) => localeService,
                 ),
               ],
               child: WalletView(),
@@ -142,12 +158,34 @@ void main() {
     expect(find.text("NO TRANSACTIONS YET"), findsNothing);
     expect(find.byType(SvgPicture), findsNWidgets(1));
     expect(find.byType(TransactionCard), findsNWidgets(6));
+
+    verify(notesService.addListener(any)).called(1);
+
+    verify(localeService.addListener(any)).called(1);
+    verify(localeService.locale).called(18);
+
+    verify(manager.addListener(any)).called(1);
+    verify(manager.balance).called(1);
+    verify(manager.fiatPrice).called(9);
+    verify(manager.fiatBalance).called(1);
+    verify(manager.coinTicker).called(11);
+    verify(manager.fiatCurrency).called(10);
+    verify(manager.transactionData).called(1);
+
+    verifyNoMoreInteractions(localeService);
+    verifyNoMoreInteractions(manager);
+    verifyNoMoreInteractions(notesService);
+
+    mockingjay.verifyNoMoreInteractions(navigator);
   });
 
   testWidgets("tap tx search", (tester) async {
     final navigator = mockingjay.MockNavigator();
     final manager = MockManager();
     final notesService = MockNotesService();
+    final localeService = MockLocaleService();
+
+    when(localeService.locale).thenAnswer((_) => "en_US");
 
     when(manager.coinTicker).thenAnswer((_) => "FIRO");
     when(manager.fiatCurrency).thenAnswer((_) => "USD");
@@ -175,6 +213,9 @@ void main() {
                 ),
                 ChangeNotifierProvider<NotesService>(
                   create: (_) => notesService,
+                ),
+                ChangeNotifierProvider<LocaleService>(
+                  create: (_) => localeService,
                 ),
               ],
               child: WalletView(),
@@ -189,12 +230,34 @@ void main() {
     await tester.pumpAndSettle();
 
     expect(find.byType(TransactionSearchView), findsOneWidget);
+
+    verify(notesService.addListener(any)).called(1);
+
+    verify(localeService.addListener(any)).called(1);
+    verify(localeService.locale).called(18);
+
+    verify(manager.addListener(any)).called(1);
+    verify(manager.balance).called(1);
+    verify(manager.fiatPrice).called(9);
+    verify(manager.fiatBalance).called(1);
+    verify(manager.coinTicker).called(12);
+    verify(manager.fiatCurrency).called(1);
+    verify(manager.transactionData).called(1);
+
+    verifyNoMoreInteractions(localeService);
+    verifyNoMoreInteractions(manager);
+    verifyNoMoreInteractions(notesService);
+
+    mockingjay.verifyNoMoreInteractions(navigator);
   });
 
   testWidgets("scroll transactions", (tester) async {
     final navigator = mockingjay.MockNavigator();
     final manager = MockManager();
     final notesService = MockNotesService();
+    final localeService = MockLocaleService();
+
+    when(localeService.locale).thenAnswer((_) => "en_US");
 
     when(manager.coinTicker).thenAnswer((_) => "FIRO");
     when(manager.fiatCurrency).thenAnswer((_) => "USD");
@@ -222,6 +285,9 @@ void main() {
                 ),
                 ChangeNotifierProvider<NotesService>(
                   create: (_) => notesService,
+                ),
+                ChangeNotifierProvider<LocaleService>(
+                  create: (_) => localeService,
                 ),
               ],
               child: WalletView(),
@@ -236,12 +302,34 @@ void main() {
     await tester.pumpAndSettle();
     await tester.fling(find.byType(ListView), Offset(0, 500), 10000);
     await tester.pumpAndSettle();
+
+    verify(notesService.addListener(any)).called(1);
+
+    verify(localeService.addListener(any)).called(1);
+    verify(localeService.locale).called(78);
+
+    verify(manager.addListener(any)).called(1);
+    verify(manager.balance).called(1);
+    verify(manager.fiatPrice).called(39);
+    verify(manager.fiatBalance).called(1);
+    verify(manager.coinTicker).called(41);
+    verify(manager.fiatCurrency).called(1);
+    verify(manager.transactionData).called(1);
+
+    verifyNoMoreInteractions(localeService);
+    verifyNoMoreInteractions(manager);
+    verifyNoMoreInteractions(notesService);
+
+    mockingjay.verifyNoMoreInteractions(navigator);
   });
 
   testWidgets("node events", (tester) async {
     final navigator = mockingjay.MockNavigator();
     final manager = MockManager();
     final notesService = MockNotesService();
+    final localeService = MockLocaleService();
+
+    when(localeService.locale).thenAnswer((_) => "en_US");
 
     when(manager.coinTicker).thenAnswer((_) => "FIRO");
     when(manager.fiatCurrency).thenAnswer((_) => "USD");
@@ -269,6 +357,9 @@ void main() {
                 ),
                 ChangeNotifierProvider<NotesService>(
                   create: (_) => notesService,
+                ),
+                ChangeNotifierProvider<LocaleService>(
+                  create: (_) => localeService,
                 ),
               ],
               child: WalletView(),
@@ -292,17 +383,40 @@ void main() {
     await tester.pump();
 
     expect(find.byType(SpinKitThreeBounce), findsNothing);
+
+    verify(notesService.addListener(any)).called(1);
+
+    verify(localeService.addListener(any)).called(1);
+    verify(localeService.locale).called(54);
+
+    verify(manager.addListener(any)).called(1);
+    verify(manager.balance).called(3);
+    verify(manager.fiatPrice).called(27);
+    verify(manager.fiatBalance).called(3);
+    verify(manager.coinTicker).called(31);
+    verify(manager.fiatCurrency).called(3);
+    verify(manager.transactionData).called(3);
+
+    verifyNoMoreInteractions(localeService);
+    verifyNoMoreInteractions(manager);
+    verifyNoMoreInteractions(notesService);
+
+    mockingjay.verifyNoMoreInteractions(navigator);
   });
 
   testWidgets("select full/available balances", (tester) async {
     final navigator = mockingjay.MockNavigator();
     final manager = MockManager();
     final notesService = MockNotesService();
+    final localeService = MockLocaleService();
+
+    when(localeService.locale).thenAnswer((_) => "en_US");
 
     when(manager.coinTicker).thenAnswer((_) => "FIRO");
     when(manager.fiatCurrency).thenAnswer((_) => "USD");
 
     when(manager.balance).thenAnswer((_) async => Decimal.one);
+    when(manager.fiatTotalBalance).thenAnswer((_) async => Decimal.one);
     when(manager.totalBalance).thenAnswer((_) async => Decimal.ten);
     when(manager.fiatBalance).thenAnswer((_) async => Decimal.ten);
     when(manager.fiatTotalBalance)
@@ -325,6 +439,9 @@ void main() {
                 ),
                 ChangeNotifierProvider<NotesService>(
                   create: (_) => notesService,
+                ),
+                ChangeNotifierProvider<LocaleService>(
+                  create: (_) => localeService,
                 ),
               ],
               child: WalletView(),
@@ -349,5 +466,26 @@ void main() {
 
     expect(find.text("1.00000000 FIRO"), findsOneWidget);
     expect(find.text("10.00000000 USD"), findsOneWidget);
+
+    verify(notesService.addListener(any)).called(1);
+
+    verify(localeService.addListener(any)).called(1);
+    verify(localeService.locale).called(90);
+
+    verify(manager.addListener(any)).called(1);
+    verify(manager.balance).called(2);
+    verify(manager.fiatPrice).called(45);
+    verify(manager.fiatTotalBalance).called(1);
+    verify(manager.totalBalance).called(1);
+    verify(manager.fiatBalance).called(2);
+    verify(manager.coinTicker).called(51);
+    verify(manager.fiatCurrency).called(3);
+    verify(manager.transactionData).called(3);
+
+    verifyNoMoreInteractions(localeService);
+    verifyNoMoreInteractions(manager);
+    verifyNoMoreInteractions(notesService);
+
+    mockingjay.verifyNoMoreInteractions(navigator);
   });
 }

@@ -10,6 +10,7 @@ import 'package:paymint/pages/onboarding_view/onboarding_view.dart';
 import 'package:paymint/pages/wallet_selection_view.dart';
 import 'package:paymint/services/address_book_service.dart';
 import 'package:paymint/services/coins/manager.dart';
+import 'package:paymint/services/locale_service.dart';
 import 'package:paymint/services/node_service.dart';
 import 'package:paymint/services/notes_service.dart';
 import 'package:paymint/services/wallets_service.dart';
@@ -55,6 +56,9 @@ void main() async {
 class MyApp extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
+    final localeService = LocaleService();
+    localeService.loadLocale();
+
     return KeyboardDismisser(
       child: MultiProvider(
         providers: [
@@ -72,6 +76,9 @@ class MyApp extends StatelessWidget {
           ),
           ChangeNotifierProvider(
             create: (_) => NotesService(),
+          ),
+          ChangeNotifierProvider(
+            create: (_) => localeService,
           ),
         ],
         child: MaterialAppWithTheme(),

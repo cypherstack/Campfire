@@ -11,6 +11,7 @@ import 'package:mockito/mockito.dart';
 import 'package:paymint/pages/address_book_view/subviews/address_book_entry_details_view.dart';
 import 'package:paymint/services/address_book_service.dart';
 import 'package:paymint/services/coins/manager.dart';
+import 'package:paymint/services/locale_service.dart';
 import 'package:paymint/services/notes_service.dart';
 import 'package:paymint/utilities/clipboard_interface.dart';
 import 'package:paymint/widgets/custom_buttons/gradient_button.dart';
@@ -24,6 +25,7 @@ import 'address_book_entry_details_view_screen_test.mocks.dart';
   MockSpec<AddressBookService>(returnNullOnMissingStub: true),
   MockSpec<Manager>(returnNullOnMissingStub: true),
   MockSpec<NotesService>(returnNullOnMissingStub: true),
+  MockSpec<LocaleService>(returnNullOnMissingStub: true),
 ])
 void main() {
   testWidgets("AddressBookDetailsView builds correctly", (tester) async {
@@ -87,10 +89,13 @@ void main() {
     final manager = MockManager();
     final addressBookService = MockAddressBookService();
     final notesService = MockNotesService();
+    final localeService = MockLocaleService();
     final navigator = mockingjay.MockNavigator();
 
     when(manager.transactionData)
         .thenAnswer((_) async => transactionDataFromJsonChunks);
+
+    when(localeService.locale).thenAnswer((_) => "en_US");
 
     when(manager.fiatPrice).thenAnswer((_) async => Decimal.one);
     when(manager.coinTicker).thenAnswer((_) => "FIRO");
@@ -109,6 +114,9 @@ void main() {
               ),
               ChangeNotifierProvider<NotesService>(
                 create: (_) => notesService,
+              ),
+              ChangeNotifierProvider<LocaleService>(
+                create: (_) => localeService,
               ),
             ],
             child: AddressBookEntryDetailsView(
@@ -145,6 +153,10 @@ void main() {
 
     verify(addressBookService.addListener(any)).called(1);
 
+    verify(localeService.addListener(any)).called(1);
+    verify(localeService.locale).called(6);
+
+    verifyNoMoreInteractions(localeService);
     verifyNoMoreInteractions(manager);
     verifyNoMoreInteractions(notesService);
     verifyNoMoreInteractions(addressBookService);
@@ -214,10 +226,13 @@ void main() {
     final manager = MockManager();
     final addressBookService = MockAddressBookService();
     final notesService = MockNotesService();
+    final localeService = MockLocaleService();
     final navigator = mockingjay.MockNavigator();
 
     when(manager.transactionData)
         .thenAnswer((_) async => transactionDataFromJsonChunks);
+
+    when(localeService.locale).thenAnswer((_) => "en_US");
 
     when(manager.fiatPrice).thenAnswer((_) async => Decimal.one);
     when(manager.coinTicker).thenAnswer((_) => "FIRO");
@@ -238,6 +253,9 @@ void main() {
               ),
               ChangeNotifierProvider<NotesService>(
                 create: (_) => notesService,
+              ),
+              ChangeNotifierProvider<LocaleService>(
+                create: (_) => localeService,
               ),
             ],
             child: AddressBookEntryDetailsView(
@@ -277,6 +295,10 @@ void main() {
 
     verify(addressBookService.addListener(any)).called(1);
 
+    verify(localeService.addListener(any)).called(1);
+    verify(localeService.locale).called(6);
+
+    verifyNoMoreInteractions(localeService);
     verifyNoMoreInteractions(manager);
     verifyNoMoreInteractions(notesService);
     verifyNoMoreInteractions(addressBookService);
@@ -291,10 +313,13 @@ void main() {
     final manager = MockManager();
     final addressBookService = MockAddressBookService();
     final notesService = MockNotesService();
+    final localeService = MockLocaleService();
     final navigator = mockingjay.MockNavigator();
 
     when(manager.transactionData)
         .thenAnswer((_) async => transactionDataFromJsonChunks);
+
+    when(localeService.locale).thenAnswer((_) => "en_US");
 
     when(manager.fiatPrice).thenAnswer((_) async => Decimal.one);
     when(manager.coinTicker).thenAnswer((_) => "FIRO");
@@ -315,6 +340,9 @@ void main() {
               ),
               ChangeNotifierProvider<NotesService>(
                 create: (_) => notesService,
+              ),
+              ChangeNotifierProvider<LocaleService>(
+                create: (_) => localeService,
               ),
             ],
             child: AddressBookEntryDetailsView(
@@ -360,6 +388,10 @@ void main() {
 
     verify(addressBookService.addListener(any)).called(1);
 
+    verify(localeService.addListener(any)).called(1);
+    verify(localeService.locale).called(12);
+
+    verifyNoMoreInteractions(localeService);
     verifyNoMoreInteractions(manager);
     verifyNoMoreInteractions(notesService);
     verifyNoMoreInteractions(addressBookService);
@@ -371,7 +403,10 @@ void main() {
     final manager = MockManager();
     final addressBookService = MockAddressBookService();
     final notesService = MockNotesService();
+    final localeService = MockLocaleService();
     final navigator = mockingjay.MockNavigator();
+
+    when(localeService.locale).thenAnswer((_) => "en_US");
 
     when(manager.transactionData)
         .thenAnswer((_) async => transactionDataFromJsonChunks);
@@ -395,6 +430,9 @@ void main() {
               ),
               ChangeNotifierProvider<NotesService>(
                 create: (_) => notesService,
+              ),
+              ChangeNotifierProvider<LocaleService>(
+                create: (_) => localeService,
               ),
             ],
             child: AddressBookEntryDetailsView(
@@ -444,6 +482,10 @@ void main() {
 
     verify(addressBookService.addListener(any)).called(1);
 
+    verify(localeService.addListener(any)).called(1);
+    verify(localeService.locale).called(12);
+
+    verifyNoMoreInteractions(localeService);
     verifyNoMoreInteractions(manager);
     verifyNoMoreInteractions(notesService);
     verifyNoMoreInteractions(addressBookService);
@@ -455,7 +497,10 @@ void main() {
     final manager = MockManager();
     final addressBookService = MockAddressBookService();
     final notesService = MockNotesService();
+    final localeService = MockLocaleService();
     final navigator = mockingjay.MockNavigator();
+
+    when(localeService.locale).thenAnswer((_) => "en_US");
 
     when(manager.transactionData)
         .thenAnswer((_) async => transactionDataFromJsonChunks);
@@ -479,6 +524,9 @@ void main() {
               ),
               ChangeNotifierProvider<NotesService>(
                 create: (_) => notesService,
+              ),
+              ChangeNotifierProvider<LocaleService>(
+                create: (_) => localeService,
               ),
             ],
             child: AddressBookEntryDetailsView(
@@ -531,6 +579,10 @@ void main() {
 
     verify(addressBookService.addListener(any)).called(1);
 
+    verify(localeService.addListener(any)).called(1);
+    verify(localeService.locale).called(12);
+
+    verifyNoMoreInteractions(localeService);
     verifyNoMoreInteractions(manager);
     verifyNoMoreInteractions(notesService);
     verifyNoMoreInteractions(addressBookService);
@@ -542,7 +594,10 @@ void main() {
     final manager = MockManager();
     final addressBookService = MockAddressBookService();
     final notesService = MockNotesService();
+    final localeService = MockLocaleService();
     final navigator = mockingjay.MockNavigator();
+
+    when(localeService.locale).thenAnswer((_) => "en_US");
 
     when(manager.transactionData)
         .thenAnswer((_) async => transactionDataFromJsonChunks);
@@ -570,6 +625,9 @@ void main() {
               ),
               ChangeNotifierProvider<NotesService>(
                 create: (_) => notesService,
+              ),
+              ChangeNotifierProvider<LocaleService>(
+                create: (_) => localeService,
               ),
             ],
             child: AddressBookEntryDetailsView(
@@ -625,6 +683,10 @@ void main() {
             .removeAddressBookEntry("aCN7qLWtwhhtQDv83dFW4BYN26eigB2g1E"))
         .called(1);
 
+    verify(localeService.addListener(any)).called(1);
+    verify(localeService.locale).called(12);
+
+    verifyNoMoreInteractions(localeService);
     verifyNoMoreInteractions(manager);
     verifyNoMoreInteractions(notesService);
     verifyNoMoreInteractions(addressBookService);
@@ -636,11 +698,14 @@ void main() {
     final manager = MockManager();
     final addressBookService = MockAddressBookService();
     final notesService = MockNotesService();
+    final localeService = MockLocaleService();
     final navigator = mockingjay.MockNavigator();
     final clipboard = FakeClipboard();
 
     when(manager.transactionData)
         .thenAnswer((_) async => transactionDataFromJsonChunks);
+
+    when(localeService.locale).thenAnswer((_) => "en_US");
 
     await tester.pumpWidget(
       MaterialApp(
@@ -656,6 +721,9 @@ void main() {
               ),
               ChangeNotifierProvider<NotesService>(
                 create: (_) => notesService,
+              ),
+              ChangeNotifierProvider<LocaleService>(
+                create: (_) => localeService,
               ),
             ],
             child: AddressBookEntryDetailsView(
@@ -704,6 +772,10 @@ void main() {
 
     verify(addressBookService.addListener(any)).called(1);
 
+    verify(localeService.addListener(any)).called(1);
+    verify(localeService.locale).called(6);
+
+    verifyNoMoreInteractions(localeService);
     verifyNoMoreInteractions(manager);
     verifyNoMoreInteractions(notesService);
     verifyNoMoreInteractions(addressBookService);
@@ -715,11 +787,14 @@ void main() {
     final manager = MockManager();
     final addressBookService = MockAddressBookService();
     final notesService = MockNotesService();
+    final localeService = MockLocaleService();
     final navigator = mockingjay.MockNavigator();
     final clipboard = FakeClipboard();
 
     when(manager.transactionData)
         .thenAnswer((_) async => transactionDataFromJsonChunks);
+
+    when(localeService.locale).thenAnswer((_) => "en_US");
 
     mockingjay
         .when(() => navigator.push(mockingjay.any()))
@@ -739,6 +814,9 @@ void main() {
               ),
               ChangeNotifierProvider<NotesService>(
                 create: (_) => notesService,
+              ),
+              ChangeNotifierProvider<LocaleService>(
+                create: (_) => localeService,
               ),
             ],
             child: AddressBookEntryDetailsView(
@@ -780,6 +858,10 @@ void main() {
 
     verify(addressBookService.addListener(any)).called(1);
 
+    verify(localeService.addListener(any)).called(1);
+    verify(localeService.locale).called(6);
+
+    verifyNoMoreInteractions(localeService);
     verifyNoMoreInteractions(manager);
     verifyNoMoreInteractions(notesService);
     verifyNoMoreInteractions(addressBookService);
@@ -794,10 +876,13 @@ void main() {
     final addressBookService = MockAddressBookService();
     final notesService = MockNotesService();
     final navigator = mockingjay.MockNavigator();
+    final localeService = MockLocaleService();
     final clipboard = FakeClipboard();
 
     when(manager.transactionData)
         .thenAnswer((_) async => transactionDataFromJsonChunks);
+
+    when(localeService.locale).thenAnswer((_) => "en_US");
 
     mockingjay
         .when(() =>
@@ -818,6 +903,9 @@ void main() {
               ),
               ChangeNotifierProvider<NotesService>(
                 create: (_) => notesService,
+              ),
+              ChangeNotifierProvider<LocaleService>(
+                create: (_) => localeService,
               ),
             ],
             child: AddressBookEntryDetailsView(
@@ -858,6 +946,10 @@ void main() {
 
     verify(addressBookService.addListener(any)).called(1);
 
+    verify(localeService.addListener(any)).called(1);
+    verify(localeService.locale).called(6);
+
+    verifyNoMoreInteractions(localeService);
     verifyNoMoreInteractions(manager);
     verifyNoMoreInteractions(notesService);
     verifyNoMoreInteractions(addressBookService);
