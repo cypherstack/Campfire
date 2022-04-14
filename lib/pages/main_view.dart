@@ -206,9 +206,8 @@ class _MainViewState extends State<MainView> {
                 Navigator.push(
                   context,
                   CupertinoPageRoute(
-                    builder: (context) {
-                      return SettingsView();
-                    },
+                    builder: (_) => SettingsView(),
+                    settings: RouteSettings(name: "/settingsview"),
                   ),
                 );
               },
@@ -390,7 +389,7 @@ class _MainViewState extends State<MainView> {
                     icon: SvgPicture.asset(
                       "assets/svg/upload-2.svg",
                       color: _buildIconColor(0), // Index 0 -> send view
-                      semanticsLabel: "sendBottomNavigationBarItem logo",
+                      key: Key("mainViewNavBarSendItemKey"),
                     ),
                     // TODO: bring back styling that Flutter 2.10 broke
                     label: "Send"
@@ -403,7 +402,7 @@ class _MainViewState extends State<MainView> {
                     icon: SvgPicture.asset(
                       "assets/svg/wallet-2.svg",
                       color: _buildIconColor(1), // Index 1 -> wallet view
-                      semanticsLabel: "walletBottomNavigationBarItem logo",
+                      key: Key("mainViewNavBarWalletItemKey"),
                     ),
                     label: "Wallet"
                     // title: Text(
@@ -415,7 +414,7 @@ class _MainViewState extends State<MainView> {
                     icon: SvgPicture.asset(
                       "assets/svg/download-2.svg",
                       color: _buildIconColor(2), // Index 2 -> receive view
-                      semanticsLabel: "receiveBottomNavigationBarItem logo",
+                      key: Key("mainViewNavBarReceiveItemKey"),
                     ),
                     label: "Receive"
                     // title: Text(

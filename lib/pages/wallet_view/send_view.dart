@@ -37,7 +37,6 @@ class SendView extends StatefulWidget {
 }
 
 class _SendViewState extends State<SendView> {
-  final _scaffoldKey = GlobalKey<ScaffoldState>();
   ClipboardInterface clipboard;
   BarcodeScannerInterface scanner;
   final autofillArgs;
@@ -146,10 +145,9 @@ class _SendViewState extends State<SendView> {
   @override
   Widget build(BuildContext context) {
     return SafeArea(
-      child: Scaffold(
-        key: _scaffoldKey,
-        backgroundColor: CFColors.white,
-        body: LayoutBuilder(
+      child: Container(
+        color: CFColors.white,
+        child: LayoutBuilder(
           builder: (context, constraint) {
             return Padding(
               padding: const EdgeInsets.only(

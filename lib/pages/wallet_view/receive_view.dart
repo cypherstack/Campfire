@@ -1,3 +1,5 @@
+import 'dart:math';
+
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:google_fonts/google_fonts.dart';
@@ -32,111 +34,111 @@ class _ReceiveViewState extends State<ReceiveView> {
   @override
   Widget build(BuildContext context) {
     final manager = Provider.of<Manager>(context);
-    final qrSize = MediaQuery.of(context).size.width / 2;
+    final size = MediaQuery.of(context).size;
+    final minSize = min(size.width, size.height);
+    final qrSize = minSize / 2;
 
-    return SafeArea(
-      child: Scaffold(
-        backgroundColor: CFColors.white,
-        body: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
-          crossAxisAlignment: CrossAxisAlignment.stretch,
-          children: [
-            FutureBuilder(
-              future: manager.currentReceivingAddress,
-              builder:
-                  (BuildContext context, AsyncSnapshot<String> currentAddress) {
-                if (currentAddress.connectionState == ConnectionState.done &&
-                    currentAddress.data != null) {
-                  return Center(
-                    child: PrettyQr(
-                      data: "firo:" + currentAddress.data,
-                      roundEdges: roundQr,
-                      elementColor: CFColors.starryNight,
-                      typeNumber: 4,
-                      size: qrSize,
-                    ),
-                  );
-                } else {
-                  return Container(
-                      height: qrSize,
-                      child: Center(child: CircularProgressIndicator()));
-                }
-              },
-            ),
-            SizedBox(
-              height: 40,
-            ),
-            FutureBuilder(
-              future: manager.currentReceivingAddress,
-              builder: (BuildContext context, AsyncSnapshot<String> address) {
-                if (address.connectionState == ConnectionState.done &&
-                    address.data != null) {
-                  return Container(
-                    child: Padding(
-                      padding: const EdgeInsets.symmetric(horizontal: 20),
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.center,
-                        children: [
-                          Container(
-                            decoration: BoxDecoration(
-                              color: CFColors.fog,
+    return Container(
+      color: CFColors.white,
+      child: Column(
+        mainAxisAlignment: MainAxisAlignment.center,
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: [
+          FutureBuilder(
+            future: manager.currentReceivingAddress,
+            builder:
+                (BuildContext context, AsyncSnapshot<String> currentAddress) {
+              if (currentAddress.connectionState == ConnectionState.done &&
+                  currentAddress.data != null) {
+                return Center(
+                  child: PrettyQr(
+                    data: "firo:" + currentAddress.data,
+                    roundEdges: roundQr,
+                    elementColor: CFColors.starryNight,
+                    typeNumber: 4,
+                    size: qrSize,
+                  ),
+                );
+              } else {
+                return Container(
+                    height: qrSize,
+                    child: Center(child: CircularProgressIndicator()));
+              }
+            },
+          ),
+          SizedBox(
+            height: 40,
+          ),
+          FutureBuilder(
+            future: manager.currentReceivingAddress,
+            builder: (BuildContext context, AsyncSnapshot<String> address) {
+              if (address.connectionState == ConnectionState.done &&
+                  address.data != null) {
+                return Container(
+                  child: Padding(
+                    padding: const EdgeInsets.symmetric(horizontal: 20),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.center,
+                      children: [
+                        Container(
+                          decoration: BoxDecoration(
+                            color: CFColors.fog,
+                            borderRadius: BorderRadius.circular(
+                                SizingUtilities.circularBorderRadius),
+                            boxShadow: [
+                              CFColors.standardBoxShadow,
+                            ],
+                          ),
+                          child: MaterialButton(
+                            padding: EdgeInsets.all(18),
+                            shape: RoundedRectangleBorder(
                               borderRadius: BorderRadius.circular(
                                   SizingUtilities.circularBorderRadius),
-                              boxShadow: [
-                                CFColors.standardBoxShadow,
-                              ],
                             ),
-                            child: MaterialButton(
-                              padding: EdgeInsets.all(18),
-                              shape: RoundedRectangleBorder(
-                                borderRadius: BorderRadius.circular(
-                                    SizingUtilities.circularBorderRadius),
-                              ),
-                              onPressed: () {
-                                clipboard
-                                    .setData(ClipboardData(text: address.data));
-                                OverlayNotification.showInfo(
-                                  context,
-                                  "Copied to clipboard",
-                                  Duration(seconds: 2),
-                                );
-                              },
-                              child: Center(
-                                child: Text(
-                                  address.data,
-                                  style: GoogleFonts.workSans(
-                                    color: CFColors.midnight,
-                                    fontSize: 12,
-                                    fontWeight: FontWeight.w400,
-                                    letterSpacing: 0.25,
-                                  ),
+                            onPressed: () {
+                              clipboard
+                                  .setData(ClipboardData(text: address.data));
+                              OverlayNotification.showInfo(
+                                context,
+                                "Copied to clipboard",
+                                Duration(seconds: 2),
+                              );
+                            },
+                            child: Center(
+                              child: Text(
+                                address.data,
+                                style: GoogleFonts.workSans(
+                                  color: CFColors.midnight,
+                                  fontSize: 12,
+                                  fontWeight: FontWeight.w400,
+                                  letterSpacing: 0.25,
                                 ),
                               ),
                             ),
                           ),
-                          SizedBox(
-                            height: 12,
+                        ),
+                        SizedBox(
+                          height: 12,
+                        ),
+                        Text(
+                          "TAP ADDRESS TO COPY",
+                          style: GoogleFonts.workSans(
+                            color: CFColors.dew,
+                            fontSize: 12,
+                            fontWeight: FontWeight.w600,
+                            letterSpacing: 0.25,
                           ),
-                          Text(
-                            "TAP ADDRESS TO COPY",
-                            style: GoogleFonts.workSans(
-                              color: CFColors.dew,
-                              fontSize: 12,
-                              fontWeight: FontWeight.w600,
-                              letterSpacing: 0.25,
-                            ),
-                          )
-                        ],
-                      ),
+                        )
+                      ],
                     ),
-                  );
-                } else {
-                  return Container();
-                }
-              },
-            ),
-          ],
-        ),
+                  ),
+                );
+              } else {
+                return Container();
+              }
+            },
+          ),
+        ],
       ),
     );
   }
