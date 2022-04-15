@@ -6,7 +6,8 @@ class DbVersionMigrator {
     final version = wallets.get("db_version");
 
     if (version == null) {
-      final names = Map<String, String>.from(await wallets.get("names"));
+      final names =
+          Map<String, String>.from((await wallets.get("names")) ?? {});
 
       // migrate each
       for (final entry in names.entries) {
