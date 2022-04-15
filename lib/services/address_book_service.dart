@@ -29,8 +29,8 @@ class AddressBookService extends ChangeNotifier {
   /// search addressbook entries
   //TODO optimize addressbook search?
   Future<Map<String, String>> search(String text) async {
-    if (text.isEmpty) return _addressBookEntries;
-    var results = Map<String, String>.from(await _addressBookEntries);
+    if (text.isEmpty) return addressBookEntries;
+    var results = Map<String, String>.from(await addressBookEntries);
     results.removeWhere(
         (key, value) => (!key.contains(text) && !value.contains(text)));
     return results;
@@ -69,10 +69,15 @@ class AddressBookService extends ChangeNotifier {
     final _currentWallet = await currentWalletName;
     final wallet = await Hive.openBox(_currentWallet);
     final entries = await wallet.get('addressBookEntries');
-    entries.remove(address);
-    await wallet.put('addressBookEntries', entries);
-    Logger.print("address book entry removed");
-    await _refreshAddressBookEntries();
+    if (entries.containsKey(address)) {
+      entries.remove(address);
+      await wallet.put('addressBookEntries', entries);
+      Logger.print("address book entry removed");
+      await _refreshAddressBookEntries();
+    } else {
+      throw Exception(
+          "Cannot remove non existent address book entry for '$address'!");
+    }
     // GlobalEventBus.instance.fire(AddressBookChangedEvent("entry removed"));
   }
 

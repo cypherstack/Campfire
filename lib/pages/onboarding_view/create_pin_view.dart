@@ -273,7 +273,7 @@ class _CreatePinViewState extends State<CreatePinView> {
                                   "Bad firo network type encountered");
                           }
 
-                          nodeService.createNode(
+                          await nodeService.createNode(
                             name: defaultNode.name,
                             ipAddress: defaultNode.address,
                             port: defaultNode.port.toString(),

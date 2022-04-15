@@ -148,7 +148,7 @@ void main() {
         port: CampfireConstants.defaultPort.toString(),
         useSSL: CampfireConstants.defaultUseSSL,
       ),
-    ).thenAnswer((_) => true);
+    ).thenAnswer((_) async => true);
 
     when(manager.initializeWallet()).thenAnswer((_) async => true);
 
@@ -238,7 +238,7 @@ void main() {
         port: CampfireConstants.defaultPortTestNet.toString(),
         useSSL: CampfireConstants.defaultUseSSLTestNet,
       ),
-    ).thenAnswer((_) => true);
+    ).thenAnswer((_) async => true);
 
     when(manager.initializeWallet()).thenAnswer((_) async => false);
     when(manager.exitCurrentWallet()).thenAnswer((_) async => {});

@@ -48,7 +48,7 @@ void main() {
         port: CampfireConstants.defaultPort.toString(),
         useSSL: CampfireConstants.defaultUseSSL,
       ),
-    ).thenAnswer((_) => true);
+    ).thenAnswer((_) async => true);
 
     when(manager.hasWallet).thenAnswer((_) => true);
     when(manager.useBiometrics).thenAnswer((_) async => true);
@@ -163,7 +163,7 @@ void main() {
         port: CampfireConstants.defaultPort.toString(),
         useSSL: CampfireConstants.defaultUseSSL,
       ),
-    ).thenAnswer((_) => true);
+    ).thenAnswer((_) async => true);
 
     when(manager.hasWallet).thenAnswer((_) => true);
     when(manager.useBiometrics).thenAnswer((_) async => false);
@@ -246,7 +246,7 @@ void main() {
         port: CampfireConstants.defaultPortTestNet.toString(),
         useSSL: CampfireConstants.defaultUseSSLTestNet,
       ),
-    ).thenAnswer((_) => true);
+    ).thenAnswer((_) async => true);
 
     when(manager.hasWallet).thenAnswer((_) => true);
     when(manager.useBiometrics).thenAnswer((_) async => false);
@@ -345,7 +345,7 @@ void main() {
         port: CampfireConstants.defaultPort.toString(),
         useSSL: CampfireConstants.defaultUseSSL,
       ),
-    ).thenAnswer((_) => true);
+    ).thenAnswer((_) async => true);
 
     when(manager.hasWallet).thenAnswer((_) => true);
     when(manager.useBiometrics).thenAnswer((_) async => false);

@@ -327,7 +327,7 @@ void main() {
         port: CampfireConstants.defaultPort.toString(),
         useSSL: CampfireConstants.defaultUseSSL,
       ),
-    ).thenAnswer((_) => true);
+    ).thenAnswer((_) async => true);
 
     await tester.pumpWidget(
       MaterialApp(
@@ -412,7 +412,7 @@ void main() {
         port: CampfireConstants.defaultPort.toString(),
         useSSL: CampfireConstants.defaultUseSSL,
       ),
-    ).thenAnswer((_) => true);
+    ).thenAnswer((_) async => true);
 
     await tester.pumpWidget(
       MaterialApp(

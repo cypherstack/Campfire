@@ -561,7 +561,7 @@ void main() {
       ipAddress: "mynode.com",
       port: "9000",
       useSSL: false,
-    )).thenAnswer((_) => true);
+    )).thenAnswer((_) async => true);
 
     mockingjay.when(() => navigator.pop()).thenAnswer((_) {});
 
@@ -654,7 +654,7 @@ void main() {
       ipAddress: "mynode.com",
       port: "9000",
       useSSL: false,
-    )).thenAnswer((_) => false);
+    )).thenAnswer((_) async => false);
 
     mockingjay.when(() => navigator.pop()).thenAnswer((_) {});
 
@@ -749,7 +749,7 @@ void main() {
       ipAddress: "mynode.com",
       port: "9000",
       useSSL: false,
-    )).thenAnswer((_) => true);
+    )).thenAnswer((_) async => true);
 
     mockingjay.when(() => navigator.pop()).thenAnswer((_) {});
 

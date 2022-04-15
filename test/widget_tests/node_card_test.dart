@@ -185,7 +185,8 @@ void main() {
     final navigator = mockingjay.MockNavigator();
 
     when(nodeService.activeNodeName).thenAnswer((_) => "Campfire default");
-    when(nodeService.setCurrentNode("some other node")).thenAnswer((_) => {});
+    when(nodeService.setCurrentNode("some other node"))
+        .thenAnswer((_) async {});
 
     mockingjay.when(() => navigator.pop()).thenAnswer((_) {});
 

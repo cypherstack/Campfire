@@ -522,7 +522,7 @@ class _RestoreWalletFormViewState extends State<RestoreWalletFormView> {
                     throw Exception("Bad firo network type encountered");
                 }
 
-                nodeService.createNode(
+                await nodeService.createNode(
                   name: defaultNode.name,
                   ipAddress: defaultNode.address,
                   port: defaultNode.port.toString(),

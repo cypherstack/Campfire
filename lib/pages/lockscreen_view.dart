@@ -119,7 +119,7 @@ class _LockscreenViewState extends State<LockscreenView> {
           throw Exception("Bad firo network type encountered");
       }
 
-      nodeService.createNode(
+      await nodeService.createNode(
         name: node.name,
         ipAddress: node.address,
         port: node.port.toString(),

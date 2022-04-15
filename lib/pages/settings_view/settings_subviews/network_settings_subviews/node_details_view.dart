@@ -65,7 +65,7 @@ class _NodeDetailsViewState extends State<NodeDetailsView> {
 
     final nodesService = Provider.of<NodeService>(context, listen: false);
     final id = widget.nodeData["id"];
-    final success = nodesService.editNode(
+    final success = await nodesService.editNode(
       id: id,
       originalName: widget.nodeName,
       updatedName: name,

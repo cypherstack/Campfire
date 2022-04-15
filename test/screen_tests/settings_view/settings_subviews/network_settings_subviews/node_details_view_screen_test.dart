@@ -724,7 +724,7 @@ void main() {
       updatedIpAddress: "new url",
       updatedPort: "42",
       useSSL: true,
-    )).thenAnswer((_) => false);
+    )).thenAnswer((_) async => false);
 
     mockingjay.when(() => navigator.pop()).thenAnswer((_) {});
 
@@ -816,7 +816,7 @@ void main() {
       updatedIpAddress: "new url",
       updatedPort: "42",
       useSSL: true,
-    )).thenAnswer((_) => true);
+    )).thenAnswer((_) async => true);
 
     mockingjay
         .when(() => navigator.popUntil(mockingjay.any()))
