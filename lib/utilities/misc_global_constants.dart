@@ -6,6 +6,9 @@ abstract class CampfireConstants {
   static const int satsPerCoin = 100000000;
   static const int decimalPlaces = 8;
 
+  // current datastore version
+  static const int currentDbVersion = 1;
+
   // network stuff
   static const String firoGenesisHash =
       "4381deb85b1b2c9843c222944b616d997516dcbd6a964e1eaf0def0830695233";

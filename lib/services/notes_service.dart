@@ -18,18 +18,24 @@ class NotesService extends ChangeNotifier {
 
   // fetch notes map
   Future<Map<String, String>> _fetchNotes() async {
-    final _currentWallet = await currentWalletName;
-    final wallet = await Hive.openBox(_currentWallet);
+    final wallet = await Hive.openBox(await _getWalletId());
     final notes = await wallet.get('notes');
     Logger.print("Transaction notes fetched: $notes");
     return notes == null ? <String, String>{} : Map<String, String>.from(notes);
   }
 
+  Future<String> _getWalletId() async {
+    final wallets = await Hive.openBox('wallets');
+    final names = await wallets.get('names');
+    final currentWallet = await currentWalletName;
+    return names[currentWallet];
+  }
+
   /// search notes
   //TODO optimize notes search?
   Future<Map<String, String>> search(String text) async {
-    if (text.isEmpty) return _notes;
-    var results = Map<String, String>.from(await _notes);
+    if (text == null || text.isEmpty) return notes;
+    var results = Map<String, String>.from(await notes);
     results.removeWhere(
         (key, value) => (!key.contains(text) && !value.contains(text)));
     return results;
@@ -43,39 +49,34 @@ class NotesService extends ChangeNotifier {
 
   // add note to db
   Future<void> addNote({String txid, String note}) async {
-    final walletName = await currentWalletName;
-    final wallet = await Hive.openBox(walletName);
-    final _notes = await wallet.get('notes');
-    final notes = _notes == null ? <String, String>{} : _notes;
+    final wallet = await Hive.openBox(await _getWalletId());
+    final _notes = await notes;
 
-    if (notes.containsKey(txid)) {
+    if (_notes.containsKey(txid)) {
       throw Exception(
           "A note for txid: $txid already exists. Overwriting not allowed!");
     }
 
-    notes[txid] = note;
-    await wallet.put('notes', notes);
+    _notes[txid] = note;
+    await wallet.put('notes', _notes);
     Logger.print("addNote: tx note saved");
     await _refreshNotes();
   }
 
   // edit or add new note
   Future<void> editOrAddNote({String txid, String note}) async {
-    final walletName = await currentWalletName;
-    final wallet = await Hive.openBox(walletName);
-    final _notes = await wallet.get('notes');
-    final notes = _notes == null ? <String, String>{} : _notes;
+    final wallet = await Hive.openBox(await _getWalletId());
+    final _notes = await notes;
 
-    notes[txid] = note;
-    await wallet.put('notes', notes);
+    _notes[txid] = note;
+    await wallet.put('notes', _notes);
     Logger.print("editOrAddNote: tx note saved");
     await _refreshNotes();
   }
 
   /// Remove note from db
   Future<void> removeNote({String txid}) async {
-    final _currentWallet = await currentWalletName;
-    final wallet = await Hive.openBox(_currentWallet);
+    final wallet = await Hive.openBox(await _getWalletId());
     final entries = await wallet.get('notes');
     entries.remove(txid);
     await wallet.put('notes', entries);

@@ -4,14 +4,18 @@ import 'package:hive/hive.dart';
 import 'package:paymint/services/coins/firo/firo_wallet.dart';
 import 'package:paymint/services/event_bus/events/wallet_name_changed_event.dart';
 import 'package:paymint/services/event_bus/global_event_bus.dart';
+import 'package:paymint/utilities/flutter_secure_storage_interface.dart';
 import 'package:paymint/utilities/logger.dart';
 import 'package:uuid/uuid.dart';
 
 class WalletsService extends ChangeNotifier {
+  FlutterSecureStorageInterface _secureStore;
+
   Future<Map<String, String>> _walletNames;
   Future<Map<String, String>> get walletNames =>
       _walletNames ??= _fetchWalletNames();
 
+  String _previousFetchedName;
   Future<String> _currentWalletName;
   Future<String> get currentWalletName =>
       _currentWalletName ??= _fetchCurrentWalletName();
@@ -19,8 +23,14 @@ class WalletsService extends ChangeNotifier {
   Future<String> get networkName async =>
       _getNetworkName(await currentWalletName);
 
-  WalletsService() {
-    _initialize().whenComplete(() => _walletNames = _fetchWalletNames());
+  WalletsService({
+    FlutterSecureStorageInterface secureStorageInterface =
+        const SecureStorageWrapper(
+      const FlutterSecureStorage(),
+    ),
+  }) {
+    _secureStore = secureStorageInterface;
+    _initialize(); //.whenComplete(() => _walletNames = _fetchWalletNames());
   }
 
   Future<void> _initialize() async {
@@ -30,16 +40,18 @@ class WalletsService extends ChangeNotifier {
       wallets.put('names', names);
       wallets.put('currentWalletName', "");
     } else {
-      this._currentWalletName = _fetchCurrentWalletName();
+      // this._currentWalletName = _fetchCurrentWalletName();
     }
   }
 
   Future<String> _getNetworkName(String walletName) async {
     final wallets = await Hive.openBox('wallets');
-    final network = await wallets.get("${walletName}_network");
+    final names = await wallets.get('names');
+    final walletId = names[walletName];
+    final network = await wallets.get("${walletId}_network");
     if (network == null) {
       final mainnet = FiroNetworkType.main.name;
-      await wallets.put("${walletName}_network", mainnet);
+      await wallets.put("${walletId}_network", mainnet);
       return mainnet;
     } else {
       return network;
@@ -48,12 +60,22 @@ class WalletsService extends ChangeNotifier {
 
   Future<void> setCurrentWalletName(String name) async {
     final wallets = await Hive.openBox('wallets');
+    final names = await wallets.get('names');
+
+    if (!names.keys.contains(name)) {
+      throw Exception(
+          "Cannot set current wallet to '$name' which does not exist.");
+    }
+
     await wallets.put('currentWalletName', name);
-    await refreshCurrentName();
+    final currentName = await _fetchCurrentWalletName();
+    this._currentWalletName = Future(() => currentName);
+    notifyListeners();
+    // GlobalEventBus.instance.fire(ActiveWalletNameChangedEvent(currentName));
   }
 
   Future<bool> renameWallet({String toName}) async {
-    final fromName = await _currentWalletName;
+    final fromName = await currentWalletName;
     if (fromName == toName) {
       // fake real success as wallet name is not changing
       return true;
@@ -81,7 +103,8 @@ class WalletsService extends ChangeNotifier {
     final wallets = await Hive.openBox('wallets');
     final currentName = await wallets.get('currentWalletName');
     Logger.print("Fetched current name: $currentName");
-    if (currentName != null && _currentWalletName != currentName) {
+    if (currentName != null && _previousFetchedName != currentName) {
+      _previousFetchedName = currentName;
       GlobalEventBus.instance.fire(ActiveWalletNameChangedEvent(currentName));
     }
     return currentName;
@@ -119,7 +142,7 @@ class WalletsService extends ChangeNotifier {
     names[name] = id;
 
     await wallets.put('names', names);
-    await wallets.put("${name}_network", networkName);
+    await wallets.put("${id}_network", networkName);
     await setCurrentWalletName(name);
     await refreshWallets();
     return true;
@@ -148,11 +171,10 @@ class WalletsService extends ChangeNotifier {
 
     final id = names.remove(name);
 
-    final store = new FlutterSecureStorage();
-    await store.delete(key: "${id}_pin");
-    await store.delete(key: "${id}_mnemonic");
+    await _secureStore.delete(key: "${id}_pin");
+    await _secureStore.delete(key: "${id}_mnemonic");
 
-    await wallets.delete("${name}_network");
+    await wallets.delete("${id}_network");
 
     await Hive.deleteBoxFromDisk(id);
 
@@ -168,13 +190,6 @@ class WalletsService extends ChangeNotifier {
     await setCurrentWalletName(names.keys.toList()[0]);
     await refreshWallets();
     return 0;
-  }
-
-  refreshCurrentName() async {
-    final currentName = await _fetchCurrentWalletName();
-    this._currentWalletName = Future(() => currentName);
-    notifyListeners();
-    GlobalEventBus.instance.fire(ActiveWalletNameChangedEvent(currentName));
   }
 
   refreshWallets() async {

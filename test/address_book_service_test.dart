@@ -7,9 +7,10 @@ void main() {
   setUp(() async {
     await setUpTestHive();
     final wallets = await Hive.openBox('wallets');
+    await wallets.put('names', {"My Firo Wallet": "wallet_id"});
     await wallets.put('currentWalletName', "My Firo Wallet");
 
-    final wallet = await Hive.openBox("My Firo Wallet");
+    final wallet = await Hive.openBox("wallet_id");
     await wallet.put(
       "addressBookEntries",
       {
@@ -27,7 +28,7 @@ void main() {
 
   test("get address empty book entries", () async {
     final service = AddressBookService();
-    final wallet = await Hive.openBox("My Firo Wallet");
+    final wallet = await Hive.openBox("wallet_id");
     await wallet.put("addressBookEntries", null);
     expect(await service.addressBookEntries, <String, String>{});
   });

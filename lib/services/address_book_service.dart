@@ -17,13 +17,19 @@ class AddressBookService extends ChangeNotifier {
 
   // Load address book contact entries
   Future<Map<String, String>> _fetchAddressBookEntries() async {
-    final _currentWallet = await currentWalletName;
-    final wallet = await Hive.openBox(_currentWallet);
+    final wallet = await Hive.openBox(await _getWalletId());
     final entries = await wallet.get('addressBookEntries');
     Logger.print("Address book entries fetched: $entries");
     return entries == null
         ? <String, String>{}
         : Map<String, String>.from(entries);
+  }
+
+  Future<String> _getWalletId() async {
+    final wallets = await Hive.openBox('wallets');
+    final names = await wallets.get('names');
+    final currentWallet = await currentWalletName;
+    return names[currentWallet];
   }
 
   /// search addressbook entries
@@ -38,8 +44,7 @@ class AddressBookService extends ChangeNotifier {
 
   /// check if address already used in address book
   Future<bool> containsAddress(String address) async {
-    final _currentWallet = await currentWalletName;
-    final wallet = await Hive.openBox(_currentWallet);
+    final wallet = await Hive.openBox(await _getWalletId());
     final _entries = await wallet.get('addressBookEntries');
     final entries = _entries == null ? <String, String>{} : _entries;
     return entries.containsKey(address);
@@ -47,8 +52,7 @@ class AddressBookService extends ChangeNotifier {
 
   /// Add address book contact entry to db
   Future<void> addAddressBookEntry(String address, String name) async {
-    final _currentWallet = await currentWalletName;
-    final wallet = await Hive.openBox(_currentWallet);
+    final wallet = await Hive.openBox(await _getWalletId());
     final _entries = await wallet.get('addressBookEntries');
     final entries = _entries == null ? <String, String>{} : _entries;
 
@@ -66,8 +70,7 @@ class AddressBookService extends ChangeNotifier {
 
   /// Remove address book contact entry from db
   Future<void> removeAddressBookEntry(String address) async {
-    final _currentWallet = await currentWalletName;
-    final wallet = await Hive.openBox(_currentWallet);
+    final wallet = await Hive.openBox(await _getWalletId());
     final entries = await wallet.get('addressBookEntries');
     if (entries.containsKey(address)) {
       entries.remove(address);

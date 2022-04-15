@@ -15,7 +15,9 @@ import 'package:paymint/services/node_service.dart';
 import 'package:paymint/services/notes_service.dart';
 import 'package:paymint/services/wallets_service.dart';
 import 'package:paymint/utilities/cfcolors.dart';
+import 'package:paymint/utilities/db_version_migration.dart';
 import 'package:paymint/utilities/logger.dart';
+import 'package:paymint/utilities/misc_global_constants.dart';
 import 'package:paymint/utilities/sizing_utilities.dart';
 import 'package:provider/provider.dart';
 
@@ -45,6 +47,11 @@ void main() async {
   Hive.registerAdapter(LelantusCoinAdapter());
   final wallets = await Hive.openBox('wallets');
   await wallets.put('currentWalletName', "");
+
+  final dbVersion = await wallets.get("db_version");
+  if (dbVersion == null || dbVersion < CampfireConstants.currentDbVersion) {
+    await DbVersionMigrator().migrateToV1();
+  }
 
   SystemChrome.setEnabledSystemUIMode(SystemUiMode.manual,
       overlays: [SystemUiOverlay.bottom]);
