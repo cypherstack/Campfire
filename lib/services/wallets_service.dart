@@ -62,7 +62,7 @@ class WalletsService extends ChangeNotifier {
     final wallets = await Hive.openBox('wallets');
     final names = await wallets.get('names');
 
-    if (!names.keys.contains(name)) {
+    if (!names.keys.contains(name) && name.isNotEmpty) {
       throw Exception(
           "Cannot set current wallet to '$name' which does not exist.");
     }

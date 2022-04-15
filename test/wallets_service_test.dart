@@ -82,6 +82,24 @@ void main() {
     expect(count, 1);
   });
 
+  test("set empty current wallet name", () async {
+    int count = 0;
+    GlobalEventBus.instance
+        .on<ActiveWalletNameChangedEvent>()
+        .listen((_) => count++);
+    final service = WalletsService();
+
+    await service.setCurrentWalletName("");
+    // wait some short time for possible event to propagate
+    await Future.delayed(Duration(milliseconds: 100));
+    expect(count, 1);
+
+    expect(await service.currentWalletName, "");
+    // wait some short time for possible event to propagate
+    await Future.delayed(Duration(milliseconds: 100));
+    expect(count, 1);
+  });
+
   test("set invalid current wallet name", () async {
     int count = 0;
     GlobalEventBus.instance
