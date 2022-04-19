@@ -15,6 +15,7 @@ import 'package:paymint/utilities/logger.dart';
 import 'package:paymint/utilities/misc_global_constants.dart';
 import 'package:paymint/utilities/shared_utilities.dart';
 import 'package:paymint/utilities/sizing_utilities.dart';
+import 'package:paymint/utilities/text_styles.dart';
 import 'package:paymint/widgets/amount_input_field.dart';
 import 'package:paymint/widgets/custom_buttons/gradient_button.dart';
 import 'package:paymint/widgets/gradient_card.dart';
@@ -185,11 +186,7 @@ class _SendViewState extends State<SendView> {
                             FittedBox(
                               child: Text(
                                 "Send to",
-                                style: GoogleFonts.workSans(
-                                  color: CFColors.twilight,
-                                  fontWeight: FontWeight.w500,
-                                  fontSize: 12,
-                                ),
+                                style: CFTextStyles.label,
                               ),
                             ),
                           ],
@@ -208,11 +205,7 @@ class _SendViewState extends State<SendView> {
                             FittedBox(
                               child: Text(
                                 "Note (optional)",
-                                style: GoogleFonts.workSans(
-                                  color: CFColors.twilight,
-                                  fontWeight: FontWeight.w500,
-                                  fontSize: 12,
-                                ),
+                                style: CFTextStyles.label,
                               ),
                             ),
                           ],
@@ -229,11 +222,7 @@ class _SendViewState extends State<SendView> {
                             fillColor: CFColors.fog,
                             border: OutlineInputBorder(),
                             hintText: "Type something...",
-                            hintStyle: GoogleFonts.workSans(
-                              color: CFColors.twilight,
-                              fontWeight: FontWeight.w400,
-                              fontSize: 16,
-                            ),
+                            hintStyle: CFTextStyles.textFieldHint,
                           ),
                         ),
                         SizedBox(
@@ -246,11 +235,7 @@ class _SendViewState extends State<SendView> {
                             FittedBox(
                               child: Text(
                                 "Amount",
-                                style: GoogleFonts.workSans(
-                                  color: CFColors.twilight,
-                                  fontWeight: FontWeight.w500,
-                                  fontSize: 12,
-                                ),
+                                style: CFTextStyles.label,
                               ),
                             ),
                           ],

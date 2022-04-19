@@ -7,6 +7,7 @@ import 'package:paymint/utilities/cfcolors.dart';
 import 'package:paymint/utilities/misc_global_constants.dart';
 import 'package:paymint/utilities/shared_utilities.dart';
 import 'package:paymint/utilities/sizing_utilities.dart';
+import 'package:paymint/utilities/text_styles.dart';
 import 'package:provider/provider.dart';
 
 class AmountInputFieldController {
@@ -93,8 +94,7 @@ class _AmountInputFieldState extends State<AmountInputField> {
             BorderRadius.circular(SizingUtilities.circularBorderRadius),
         border: Border.all(
           width: 1,
-          color:
-              controller.hasFocus ? CFColors.focusedBorder : CFColors.twilight,
+          color: controller.hasFocus ? CFColors.focusedBorder : CFColors.dew,
         ),
       ),
       child: Center(
@@ -184,11 +184,7 @@ class _AmountInputFieldState extends State<AmountInputField> {
                           child: Text(
                             Provider.of<Manager>(context, listen: false)
                                 .coinTicker,
-                            style: TextStyle(
-                              color: CFColors.twilight,
-                              fontWeight: FontWeight.w600,
-                              fontSize: 16,
-                            ),
+                            style: CFTextStyles.textFieldSuffix,
                           ),
                         ),
                       ),
@@ -197,11 +193,7 @@ class _AmountInputFieldState extends State<AmountInputField> {
                         locale: widget.locale,
                         decimalPlaces: 2,
                       ),
-                      hintStyle: GoogleFonts.workSans(
-                        color: CFColors.twilight,
-                        fontWeight: FontWeight.w400,
-                        fontSize: 16,
-                      ),
+                      hintStyle: CFTextStyles.textFieldHint,
                     ),
                   ),
                 ),
@@ -209,7 +201,7 @@ class _AmountInputFieldState extends State<AmountInputField> {
                   height: 1,
                   color: controller.hasFocus
                       ? CFColors.focusedBorder
-                      : CFColors.twilight,
+                      : CFColors.dew,
                 ),
                 Focus(
                   onFocusChange: (hasFocus) {
@@ -295,11 +287,7 @@ class _AmountInputFieldState extends State<AmountInputField> {
                             builder: (context, child) {
                               return Text(
                                 context.watch<String>(),
-                                style: TextStyle(
-                                  color: CFColors.twilight,
-                                  fontWeight: FontWeight.w600,
-                                  fontSize: 16,
-                                ),
+                                style: CFTextStyles.textFieldSuffix,
                               );
                             },
                           ),
@@ -312,11 +300,7 @@ class _AmountInputFieldState extends State<AmountInputField> {
                               locale: widget.locale,
                               decimalPlaces: 2,
                             ),
-                      hintStyle: GoogleFonts.workSans(
-                        color: CFColors.twilight,
-                        fontWeight: FontWeight.w400,
-                        fontSize: 16, // ScalingUtils.fontScaled(context, 16),
-                      ),
+                      hintStyle: CFTextStyles.textFieldHint,
                     ),
                   ),
                 ),
