@@ -73,6 +73,9 @@ class _CreatePinViewState extends State<CreatePinView> {
   FlutterSecureStorageInterface _secureStore;
   Biometrics biometrics;
 
+  int _onSubmitFailCount = 0;
+  int _onSubmitCount = 0;
+
   @override
   initState() {
     _secureStore = widget.secureStore;
@@ -200,6 +203,9 @@ class _CreatePinViewState extends State<CreatePinView> {
                     selectedFieldDecoration: _pinPutDecoration,
                     followingFieldDecoration: _pinPutDecoration,
                     onSubmit: (String pin) async {
+                      _onSubmitCount++;
+                      if (_onSubmitCount - _onSubmitFailCount > 1) return;
+
                       if (_pinPutController1.text == _pinPutController2.text) {
                         // ask if want to use biometrics
                         final bool useBiometrics =
@@ -359,6 +365,7 @@ class _CreatePinViewState extends State<CreatePinView> {
                           ),
                         );
                       } else {
+                        _onSubmitFailCount++;
                         _pageController.animateTo(
                           0,
                           duration: Duration(milliseconds: 250),

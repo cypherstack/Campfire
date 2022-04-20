@@ -46,6 +46,8 @@ class _ChangePinViewState extends State<ChangePinView> {
   final FocusNode _pinPutFocusNode2 = FocusNode();
 
   FlutterSecureStorageInterface _secureStore;
+  int _onSubmitFailCount = 0;
+  int _onSubmitCount = 0;
 
   @override
   void initState() {
@@ -208,6 +210,9 @@ class _ChangePinViewState extends State<ChangePinView> {
                 selectedFieldDecoration: _pinPutDecoration,
                 followingFieldDecoration: _pinPutDecoration,
                 onSubmit: (String pin) async {
+                  _onSubmitCount++;
+                  if (_onSubmitCount - _onSubmitFailCount > 1) return;
+
                   if (_pinPutController1.text == _pinPutController2.text) {
                     final walletName = await walletService.currentWalletName;
                     final id = await walletService.getWalletId(walletName);
@@ -226,6 +231,7 @@ class _ChangePinViewState extends State<ChangePinView> {
 
                     Navigator.of(context).pop();
                   } else {
+                    _onSubmitFailCount++;
                     _pageController.animateTo(
                       0,
                       duration: Duration(milliseconds: 100),
