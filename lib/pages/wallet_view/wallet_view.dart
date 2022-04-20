@@ -81,7 +81,7 @@ class _WalletViewState extends State<WalletView> {
               width: 160,
               child: DraggableSwitchButton(
                 offItem: Text(
-                  "FULL",
+                  "AVAILABLE",
                   style: GoogleFonts.workSans(
                     color: Color(0xFFF27889),
                     fontSize: 10,
@@ -91,7 +91,7 @@ class _WalletViewState extends State<WalletView> {
                   ),
                 ),
                 onItem: Text(
-                  "AVAILABLE",
+                  "FULL",
                   style: GoogleFonts.workSans(
                     color: Color(0xFFF27889),
                     fontSize: 10,
@@ -114,8 +114,8 @@ class _WalletViewState extends State<WalletView> {
             FittedBox(
               child: FutureBuilder(
                 future: _balanceToggleEnabled
-                    ? manager.balance
-                    : manager.totalBalance,
+                    ? manager.totalBalance
+                    : manager.balance,
                 builder: (context, AsyncSnapshot<Decimal> snapshot) {
                   String balance = "...";
                   if (snapshot.connectionState == ConnectionState.done &&
@@ -147,8 +147,8 @@ class _WalletViewState extends State<WalletView> {
                   String fiatTicker = context.watch<String>();
                   return FutureBuilder(
                     future: _balanceToggleEnabled
-                        ? manager.fiatBalance
-                        : manager.fiatTotalBalance,
+                        ? manager.fiatTotalBalance
+                        : manager.fiatBalance,
                     builder: (context, AsyncSnapshot<Decimal> snapshot) {
                       String balance = "...";
                       if (snapshot.connectionState == ConnectionState.done &&

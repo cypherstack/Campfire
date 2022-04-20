@@ -73,14 +73,14 @@ void main() {
 
     await tester.pumpAndSettle();
 
-    expect(find.text("1.00000000 FIRO"), findsOneWidget);
-    expect(find.text("10.00000000 USD"), findsOneWidget);
+    expect(find.text("10.00000000 FIRO"), findsOneWidget);
+    expect(find.text("100.00000000 USD"), findsOneWidget);
     expect(find.text("NO TRANSACTIONS YET"), findsOneWidget);
     expect(find.byType(SvgPicture), findsNWidgets(2));
 
     verify(manager.addListener(any)).called(1);
-    verify(manager.balance).called(1);
-    verify(manager.fiatBalance).called(1);
+    verify(manager.totalBalance).called(1);
+    verify(manager.fiatTotalBalance).called(1);
     verify(manager.coinTicker).called(2);
     verify(manager.fiatCurrency).called(1);
     verify(manager.transactionData).called(1);
@@ -153,8 +153,8 @@ void main() {
 
     await tester.pumpAndSettle();
 
-    expect(find.text("1.00000000 FIRO"), findsOneWidget);
-    expect(find.text("10.00000000 USD"), findsOneWidget);
+    expect(find.text("10.00000000 FIRO"), findsOneWidget);
+    expect(find.text("100.00000000 USD"), findsOneWidget);
     expect(find.text("NO TRANSACTIONS YET"), findsNothing);
     expect(find.byType(SvgPicture), findsNWidgets(1));
     expect(find.byType(TransactionCard), findsNWidgets(6));
@@ -165,9 +165,9 @@ void main() {
     verify(localeService.locale).called(18);
 
     verify(manager.addListener(any)).called(1);
-    verify(manager.balance).called(1);
+    verify(manager.totalBalance).called(1);
     verify(manager.fiatPrice).called(9);
-    verify(manager.fiatBalance).called(1);
+    verify(manager.fiatTotalBalance).called(1);
     verify(manager.coinTicker).called(11);
     verify(manager.fiatCurrency).called(10);
     verify(manager.transactionData).called(1);
@@ -237,9 +237,9 @@ void main() {
     verify(localeService.locale).called(18);
 
     verify(manager.addListener(any)).called(1);
-    verify(manager.balance).called(1);
+    verify(manager.totalBalance).called(1);
     verify(manager.fiatPrice).called(9);
-    verify(manager.fiatBalance).called(1);
+    verify(manager.fiatTotalBalance).called(1);
     verify(manager.coinTicker).called(12);
     verify(manager.fiatCurrency).called(1);
     verify(manager.transactionData).called(1);
@@ -309,9 +309,9 @@ void main() {
     verify(localeService.locale).called(78);
 
     verify(manager.addListener(any)).called(1);
-    verify(manager.balance).called(1);
+    verify(manager.totalBalance).called(1);
     verify(manager.fiatPrice).called(39);
-    verify(manager.fiatBalance).called(1);
+    verify(manager.fiatTotalBalance).called(1);
     verify(manager.coinTicker).called(41);
     verify(manager.fiatCurrency).called(1);
     verify(manager.transactionData).called(1);
@@ -390,9 +390,9 @@ void main() {
     verify(localeService.locale).called(54);
 
     verify(manager.addListener(any)).called(1);
-    verify(manager.balance).called(3);
+    verify(manager.totalBalance).called(3);
     verify(manager.fiatPrice).called(27);
-    verify(manager.fiatBalance).called(3);
+    verify(manager.fiatTotalBalance).called(3);
     verify(manager.coinTicker).called(31);
     verify(manager.fiatCurrency).called(3);
     verify(manager.transactionData).called(3);
@@ -452,12 +452,6 @@ void main() {
     );
     await tester.pumpAndSettle();
 
-    expect(find.text("1.00000000 FIRO"), findsOneWidget);
-    expect(find.text("10.00000000 USD"), findsOneWidget);
-
-    await tester.tap(find.byType(DraggableSwitchButton));
-    await tester.pumpAndSettle();
-
     expect(find.text("10.00000000 FIRO"), findsOneWidget);
     expect(find.text("100.00000000 USD"), findsOneWidget);
 
@@ -467,17 +461,23 @@ void main() {
     expect(find.text("1.00000000 FIRO"), findsOneWidget);
     expect(find.text("10.00000000 USD"), findsOneWidget);
 
+    await tester.tap(find.byType(DraggableSwitchButton));
+    await tester.pumpAndSettle();
+
+    expect(find.text("10.00000000 FIRO"), findsOneWidget);
+    expect(find.text("100.00000000 USD"), findsOneWidget);
+
     verify(notesService.addListener(any)).called(1);
 
     verify(localeService.addListener(any)).called(1);
     verify(localeService.locale).called(90);
 
     verify(manager.addListener(any)).called(1);
-    verify(manager.balance).called(2);
+    verify(manager.balance).called(1);
     verify(manager.fiatPrice).called(45);
-    verify(manager.fiatTotalBalance).called(1);
-    verify(manager.totalBalance).called(1);
-    verify(manager.fiatBalance).called(2);
+    verify(manager.fiatTotalBalance).called(2);
+    verify(manager.totalBalance).called(2);
+    verify(manager.fiatBalance).called(1);
     verify(manager.coinTicker).called(51);
     verify(manager.fiatCurrency).called(3);
     verify(manager.transactionData).called(3);
