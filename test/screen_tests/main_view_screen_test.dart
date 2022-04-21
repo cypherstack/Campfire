@@ -97,8 +97,9 @@ void main() {
     expect(find.byKey(Key("mainViewRefreshButton")), findsOneWidget);
     expect(find.byKey(Key("mainViewSettingsButton")), findsOneWidget);
     expect(find.text("My Firo Wallet"), findsOneWidget);
-    expect(find.text("1.00000000 FIRO"), findsNWidgets(2));
-    expect(find.text("10.00000000 USD"), findsOneWidget);
+    expect(find.text("1.00000000 FIRO"), findsNWidgets(1));
+    expect(find.text("10.00000000 FIRO"), findsNWidgets(1));
+    expect(find.text("100.00000000 USD"), findsOneWidget);
     expect(find.text("TRANSACTIONS"), findsOneWidget);
     expect(find.text("Wallet"), findsOneWidget);
     expect(find.text("Send"), findsOneWidget);
@@ -124,9 +125,9 @@ void main() {
     verify(manager.addListener(any)).called(1);
     verify(manager.fiatPrice).called(8);
     verify(manager.refresh()).called(1);
-    verify(manager.balance).called(1);
+    verify(manager.totalBalance).called(1);
     verify(manager.balanceMinusMaxFee).called(1);
-    verify(manager.fiatBalance).called(1);
+    verify(manager.fiatTotalBalance).called(1);
     verify(manager.maxFee).called(1);
     verify(manager.coinTicker).called(16);
     verify(manager.fiatCurrency).called(10);
@@ -233,9 +234,9 @@ void main() {
     verify(manager.addListener(any)).called(1);
     verify(manager.fiatPrice).called(8);
     verify(manager.refresh()).called(1);
-    verify(manager.balance).called(1);
+    verify(manager.totalBalance).called(1);
     verify(manager.balanceMinusMaxFee).called(1);
-    verify(manager.fiatBalance).called(1);
+    verify(manager.fiatTotalBalance).called(1);
     verify(manager.maxFee).called(1);
     verify(manager.coinTicker).called(16);
     verify(manager.fiatCurrency).called(10);
@@ -568,9 +569,9 @@ void main() {
     verify(manager.addListener(any)).called(1);
     verify(manager.fiatPrice).called(8);
     verify(manager.refresh()).called(1);
-    verify(manager.balance).called(1);
+    verify(manager.totalBalance).called(1);
     verify(manager.balanceMinusMaxFee).called(1);
-    verify(manager.fiatBalance).called(1);
+    verify(manager.fiatTotalBalance).called(1);
     verify(manager.maxFee).called(1);
     verify(manager.coinTicker).called(16);
     verify(manager.fiatCurrency).called(10);

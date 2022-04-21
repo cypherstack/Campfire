@@ -110,9 +110,9 @@ void main() {
     verify(manager.addListener(any)).called(1);
     verify(manager.fiatPrice).called(29);
     verify(manager.refresh()).called(1);
-    verify(manager.balance).called(4);
+    verify(manager.totalBalance).called(4);
     verify(manager.balanceMinusMaxFee).called(1);
-    verify(manager.fiatBalance).called(4);
+    verify(manager.fiatTotalBalance).called(4);
     verify(manager.maxFee).called(1);
     verify(manager.coinTicker).called(40);
     verify(manager.fiatCurrency).called(6);

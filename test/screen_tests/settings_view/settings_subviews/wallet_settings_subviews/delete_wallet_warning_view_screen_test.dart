@@ -87,7 +87,7 @@ void main() {
     await tester.tap(find.byType(SimpleButton));
     await tester.pump(Duration(milliseconds: 100));
 
-    mockingjay.verify(() => navigator.pop()).called(2);
+    mockingjay.verify(() => navigator.pop()).called(1);
 
     mockingjay.verifyNoMoreInteractions(navigator);
   });
