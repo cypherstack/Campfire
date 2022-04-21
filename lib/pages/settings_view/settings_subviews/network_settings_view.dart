@@ -191,7 +191,7 @@ class _NetworkSettingsViewState extends State<NetworkSettingsView> {
         // final isConnected = key == nodeService.activeNodeName;
         list.add(
           NodeCard(
-            key: ValueKey(key),
+            key: Key("networkSettingsViewNodeCard_$key"),
             nodeName: key,
             nodeData: Map<String, dynamic>.from(value),
             // isConnected: isConnected,

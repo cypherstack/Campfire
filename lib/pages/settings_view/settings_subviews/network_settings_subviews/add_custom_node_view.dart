@@ -414,6 +414,7 @@ class CouldNotConnectOnSaveDialog extends StatelessWidget {
                   child: SizedBox(
                     height: SizingUtilities.standardButtonHeight,
                     child: GradientButton(
+                      key: Key("couldNotConnectOnSaveConfirmSaveButtonKey"),
                       child: FittedBox(
                         child: Text(
                           "SAVE",

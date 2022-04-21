@@ -319,7 +319,7 @@ class _LockscreenViewState extends State<LockscreenView> {
                   OverlayNotification.showSuccess(
                     context,
                     "PIN code correct. Unlocking wallet...",
-                    Duration(milliseconds: 2200),
+                    Duration(milliseconds: 2000),
                   );
 
                   // check if initial log in

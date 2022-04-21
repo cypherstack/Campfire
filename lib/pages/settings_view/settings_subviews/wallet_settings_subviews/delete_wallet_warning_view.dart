@@ -133,7 +133,6 @@ class DeleteWalletWarningView extends StatelessWidget {
         onTap: () {
           final navigator = Navigator.of(context);
           navigator.pop();
-          navigator.pop();
         },
       ),
     );

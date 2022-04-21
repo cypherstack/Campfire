@@ -154,9 +154,16 @@ class _WalletSettingsListState extends State<WalletSettingsList> {
               final listOfauthentifications =
                   await localAuthentication.getAvailableBiometrics();
 
-              if (canCheckBiometrics &&
-                  isDeviceSupported &&
-                  listOfauthentifications.isEmpty) {
+              print(canCheckBiometrics);
+              print(isDeviceSupported);
+              print(listOfauthentifications);
+
+              if ((canCheckBiometrics &&
+                      isDeviceSupported &&
+                      listOfauthentifications.isEmpty) ||
+                  (canCheckBiometrics &&
+                      !isDeviceSupported &&
+                      listOfauthentifications.isNotEmpty)) {
                 await showDialog(
                   useSafeArea: false,
                   barrierColor: Colors.transparent,
