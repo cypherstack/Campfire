@@ -251,7 +251,7 @@ void main() {
     mockingjay.verifyNoMoreInteractions(navigator);
   });
 
-  testWidgets("scroll transactions", (tester) async {
+  testWidgets("scroll transactions and test pull down refresh", (tester) async {
     final navigator = mockingjay.MockNavigator();
     final manager = MockManager();
     final notesService = MockNotesService();
@@ -298,23 +298,24 @@ void main() {
     );
     await tester.pumpAndSettle();
 
-    await tester.fling(find.byType(ListView), Offset(0, -500), 10000);
-    await tester.pumpAndSettle();
     await tester.fling(find.byType(ListView), Offset(0, 500), 10000);
+    await tester.pumpAndSettle();
+    await tester.fling(find.byType(ListView), Offset(0, -500), 10000);
     await tester.pumpAndSettle();
 
     verify(notesService.addListener(any)).called(1);
 
     verify(localeService.addListener(any)).called(1);
-    verify(localeService.locale).called(78);
+    verify(localeService.locale).called(48);
 
     verify(manager.addListener(any)).called(1);
     verify(manager.totalBalance).called(1);
-    verify(manager.fiatPrice).called(39);
+    verify(manager.fiatPrice).called(24);
     verify(manager.fiatTotalBalance).called(1);
-    verify(manager.coinTicker).called(41);
+    verify(manager.coinTicker).called(26);
     verify(manager.fiatCurrency).called(1);
     verify(manager.transactionData).called(1);
+    verify(manager.refresh()).called(1);
 
     verifyNoMoreInteractions(localeService);
     verifyNoMoreInteractions(manager);

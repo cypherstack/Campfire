@@ -59,7 +59,7 @@ class _WalletViewState extends State<WalletView> {
 
   @override
   void dispose() {
-    _nodeConnectionStatusChangedEventListener.cancel();
+    _nodeConnectionStatusChangedEventListener?.cancel();
     super.dispose();
   }
 
@@ -316,6 +316,30 @@ class TransactionList extends StatefulWidget {
 class _TransactionListState extends State<TransactionList> {
   TransactionData txData;
 
+  NodeConnectionStatus _nodeStatus = NodeConnectionStatus.disconnected;
+  StreamSubscription _nodeConnectionStatusChangedEventListener;
+
+  @override
+  void initState() {
+    // add listener
+    _nodeConnectionStatusChangedEventListener = GlobalEventBus.instance
+        .on<NodeConnectionStatusChangedEvent>()
+        .listen((event) {
+      if (_nodeStatus != event.newStatus) {
+        setState(() {
+          _nodeStatus = event.newStatus;
+        });
+      }
+    });
+    super.initState();
+  }
+
+  @override
+  void dispose() {
+    _nodeConnectionStatusChangedEventListener?.cancel();
+    super.dispose();
+  }
+
   @override
   Widget build(BuildContext context) {
     return Provider<Future<TransactionData>>.value(
@@ -338,19 +362,27 @@ class _TransactionListState extends State<TransactionList> {
                   vertical: 0,
                   horizontal: 16,
                 ),
-                child: ListView.builder(
-                  itemCount: list.length,
-                  itemBuilder: (context, index) {
-                    return Padding(
-                      padding: EdgeInsets.all(
-                        SizingUtilities.listItemSpacing / 2,
-                      ),
-                      child: TransactionCard(
-                        key: ValueKey(list[index]),
-                        transaction: list[index],
-                      ),
-                    );
+                child: RefreshIndicator(
+                  onRefresh: () async {
+                    Logger.print("pulled down to refresh on transaction list");
+                    if (_nodeStatus != NodeConnectionStatus.loading) {
+                      Provider.of<Manager>(context, listen: false).refresh();
+                    }
                   },
+                  child: ListView.builder(
+                    itemCount: list.length,
+                    itemBuilder: (context, index) {
+                      return Padding(
+                        padding: EdgeInsets.all(
+                          SizingUtilities.listItemSpacing / 2,
+                        ),
+                        child: TransactionCard(
+                          key: ValueKey(list[index]),
+                          transaction: list[index],
+                        ),
+                      );
+                    },
+                  ),
                 ),
               );
             }

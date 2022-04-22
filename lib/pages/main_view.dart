@@ -131,6 +131,7 @@ class _MainViewState extends State<MainView> {
         setState(() {
           nodeState = event.newStatus;
         });
+        _disableRefreshOnInit = false;
       }
     });
 
@@ -151,8 +152,8 @@ class _MainViewState extends State<MainView> {
 
   @override
   dispose() {
-    _nodeConnectionStatusChangedEventListener.cancel();
-    _refreshPercentChangedEventListener.cancel();
+    _nodeConnectionStatusChangedEventListener?.cancel();
+    _refreshPercentChangedEventListener?.cancel();
     super.dispose();
   }
 
@@ -232,7 +233,6 @@ class _MainViewState extends State<MainView> {
             size: 36,
             onPressed: () {
               if (nodeState != NodeConnectionStatus.loading) {
-                _disableRefreshOnInit = false;
                 manager.refresh();
               }
             },
