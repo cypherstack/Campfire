@@ -424,6 +424,22 @@ class _CreatePinViewState extends State<CreatePinView> {
                 ),
               ),
               SizedBox(
+                height: 12,
+              ),
+              Padding(
+                padding: const EdgeInsets.symmetric(horizontal: 20),
+                child: FittedBox(
+                  child: Text(
+                    "Do not close or leave the app until this completes!",
+                    style: GoogleFonts.workSans(
+                      color: CFColors.dusk,
+                      fontWeight: FontWeight.w600,
+                      fontSize: 16,
+                    ),
+                  ),
+                ),
+              ),
+              SizedBox(
                 height: 50,
               ),
               Container(

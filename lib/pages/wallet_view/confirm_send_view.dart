@@ -279,6 +279,26 @@ class _ConfirmSendViewState extends State<ConfirmSendView> {
               ),
             ),
           ),
+          Padding(
+            padding: const EdgeInsets.only(
+              left: 24,
+              right: 24,
+              bottom: 12,
+            ),
+            child: FittedBox(
+              child: Align(
+                alignment: Alignment.topCenter,
+                child: Text(
+                  "Do not close or leave the app until this completes!",
+                  style: GoogleFonts.workSans(
+                    color: CFColors.dusk,
+                    fontWeight: FontWeight.w600,
+                    fontSize: 18,
+                  ),
+                ),
+              ),
+            ),
+          ),
           SizedBox(
             height: SizingUtilities.standardPadding,
           ),

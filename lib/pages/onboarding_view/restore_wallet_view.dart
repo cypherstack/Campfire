@@ -639,6 +639,23 @@ class _RestoreWalletFormViewState extends State<RestoreWalletFormView> {
               ),
             ),
             SizedBox(
+              height: 12,
+            ),
+            Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 20),
+              child: FittedBox(
+                child: Text(
+                  "Do not close or leave the app until this completes!",
+                  style: GoogleFonts.workSans(
+                    color: CFColors.dusk,
+                    fontWeight: FontWeight.w400,
+                    fontSize: 14,
+                  ),
+                  maxLines: 2,
+                ),
+              ),
+            ),
+            SizedBox(
               height: 50,
             ),
             Container(
