@@ -10,6 +10,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_svg/flutter_svg.dart';
 import 'package:google_fonts/google_fonts.dart';
+import 'package:hive/hive.dart';
 import 'package:path_provider/path_provider.dart';
 import 'package:paymint/electrumx_rpc/cached_electrumx.dart';
 import 'package:paymint/electrumx_rpc/electrumx.dart';
@@ -23,6 +24,7 @@ import 'package:paymint/services/wallets_service.dart';
 import 'package:paymint/utilities/address_utils.dart';
 import 'package:paymint/utilities/cfcolors.dart';
 import 'package:paymint/utilities/clipboard_interface.dart';
+import 'package:paymint/utilities/logger.dart';
 import 'package:paymint/utilities/misc_global_constants.dart';
 import 'package:paymint/utilities/sizing_utilities.dart';
 import 'package:paymint/utilities/text_styles.dart';
@@ -151,7 +153,7 @@ class _RestoreWalletFormViewState extends State<RestoreWalletFormView> {
 
   _onBackPressed(int pops) async {
     // set manager wallet to null if it isn't already
-    Provider.of<Manager>(context, listen: false).exitCurrentWallet();
+    await Provider.of<Manager>(context, listen: false).exitCurrentWallet();
 
     // delete created wallet name and pin
     final walletsService = Provider.of<WalletsService>(context, listen: false);
@@ -484,7 +486,7 @@ class _RestoreWalletFormViewState extends State<RestoreWalletFormView> {
                 final manager = Provider.of<Manager>(context, listen: false);
                 // should already be null but just in case:
                 if (manager.hasWallet) {
-                  manager.exitCurrentWallet();
+                  await manager.exitCurrentWallet();
                 }
 
                 final walletsService =
@@ -563,10 +565,18 @@ class _RestoreWalletFormViewState extends State<RestoreWalletFormView> {
                     },
                   );
                 } catch (e) {
+                  Wakelock.disable();
+
+                  // TODO: Possibly cancel all wallet isolates on exit?
+                  // hacky fix for handling restore cancel/interruption
+                  if (e is HiveError &&
+                      e.message == "Box has already been closed.") {
+                    // restore was cancelled
+                    return;
+                  }
+
                   // pop waiting dialog
                   Navigator.pop(context);
-
-                  Wakelock.disable();
 
                   // show restoring wallet failed dialog
                   showDialog(
@@ -663,6 +673,7 @@ class _RestoreWalletFormViewState extends State<RestoreWalletFormView> {
                   child: TextButton(
                     key: Key("restoreWalletWaitingDialogCancelButtonKey"),
                     onPressed: () async {
+                      Logger.print("cancel restore pressed");
                       await _onBackPressed(5);
                       Wakelock.disable();
                     },
