@@ -26,6 +26,7 @@ void main() {
     final notesService = MockNotesService();
 
     when(manager.useBiometrics).thenAnswer((_) async => true);
+    when(manager.walletName).thenAnswer((_) => "My Firo Wallet");
 
     await tester.pumpWidget(
       MaterialApp(
@@ -52,6 +53,13 @@ void main() {
     expect(find.text("Confirm transaction"), findsOneWidget);
     expect(find.text("Enter PIN"), findsOneWidget);
     expect(find.byType(CustomPinPut), findsOneWidget);
+
+    verify(manager.addListener(any)).called(1);
+    verify(manager.walletName).called(1);
+    verify(manager.useBiometrics).called(1);
+
+    verifyNoMoreInteractions(manager);
+    verifyNoMoreInteractions(notesService);
   });
 
   testWidgets("confirm wrong pin", (tester) async {
@@ -63,6 +71,7 @@ void main() {
 
     when(manager.useBiometrics).thenAnswer((_) async => true);
     when(manager.walletId).thenAnswer((_) => "walletID");
+    when(manager.walletName).thenAnswer((_) => "My Firo Wallet");
 
     await tester.pumpWidget(
       MaterialApp(
@@ -104,6 +113,14 @@ void main() {
     await tester.pump(Duration(seconds: 1));
 
     expect(find.text("Incorrect PIN. Transaction cancelled."), findsNothing);
+
+    verify(manager.walletId).called(1);
+    verify(manager.useBiometrics).called(1);
+    verify(manager.walletName).called(1);
+    verify(manager.addListener(any)).called(1);
+
+    verifyNoMoreInteractions(manager);
+    verifyNoMoreInteractions(notesService);
   });
 
   testWidgets("confirm correct pin but send fails", (tester) async {
@@ -114,6 +131,7 @@ void main() {
 
     secureStore.write(key: "walletID_pin", value: "1234");
 
+    when(manager.walletName).thenAnswer((_) => "My Firo Wallet");
     when(manager.useBiometrics).thenAnswer((_) async => true);
     when(manager.send(
       toAddress: "a8VV7vMzJdTQj1eLEJNskhLEBUxfNWhpAg",
@@ -176,7 +194,21 @@ void main() {
     await tester.tap(find.byType(GradientButton));
     await tester.pump(Duration(seconds: 1));
 
+    verify(manager.addListener(any)).called(1);
+    verify(manager.send(
+      toAddress: "a8VV7vMzJdTQj1eLEJNskhLEBUxfNWhpAg",
+      amount: 1000000000,
+    )).called(1);
+    verify(manager.useBiometrics).called(1);
+    verify(manager.walletId).called(1);
+    verify(manager.walletName).called(1);
+
+    verifyNoMoreInteractions(manager);
+    verifyNoMoreInteractions(notesService);
+
     mockingjay.verify(() => navigator.pop()).called(2);
+
+    mockingjay.verifyNoMoreInteractions(navigator);
   });
 
   testWidgets("confirm correct pin and send succeeds", (tester) async {
@@ -196,10 +228,12 @@ void main() {
     when(manager.walletId).thenAnswer((_) => "walletID");
 
     when(notesService.addNote(txid: "some txid", note: "some note"))
-        .thenAnswer((realInvocation) {});
+        .thenAnswer((_) {});
 
-    mockingjay.when(() => navigator.pop()).thenAnswer((_) {});
-    mockingjay.when(() => navigator.pop(true)).thenAnswer((_) {});
+    mockingjay
+        .when(() =>
+            navigator.pushNamedAndRemoveUntil("/mainview", (route) => false))
+        .thenAnswer((_) async => {});
 
     await tester.pumpWidget(
       MaterialApp(
@@ -250,10 +284,27 @@ void main() {
     expect(find.text("Transaction sent"), findsNothing);
     expect(find.text("Incorrect PIN. Transaction cancelled."), findsNothing);
 
-    verify(manager.refresh()).called(1);
     verify(notesService.addNote(txid: "some txid", note: "some note"))
         .called(1);
-    mockingjay.verify(() => navigator.pop()).called(1);
-    mockingjay.verify(() => navigator.pop(true)).called(1);
+
+    verify(manager.addListener(any)).called(1);
+    verify(manager.send(
+      toAddress: "a8VV7vMzJdTQj1eLEJNskhLEBUxfNWhpAg",
+      amount: 1000000000,
+    )).called(1);
+    verify(manager.useBiometrics).called(1);
+    verify(manager.walletId).called(1);
+    verify(manager.walletName).called(1);
+
+    verify(notesService.addListener(any)).called(1);
+
+    verifyNoMoreInteractions(manager);
+    verifyNoMoreInteractions(notesService);
+
+    mockingjay
+        .verify(() =>
+            navigator.pushNamedAndRemoveUntil("/mainview", mockingjay.any()))
+        .called(1);
+    mockingjay.verifyNoMoreInteractions(navigator);
   });
 }

@@ -230,9 +230,11 @@ class _ConfirmSendViewState extends State<ConfirmSendView> {
         Duration(milliseconds: 2700),
       );
       await Future.delayed(Duration(milliseconds: 100)).then((_) {
-        manager.refresh();
-        Navigator.pop(context);
-        Navigator.pop(context, true);
+        // manager.refresh();
+        // Navigator.pop(context);
+        // Navigator.pop(context, true);
+        Navigator.pushNamedAndRemoveUntil(
+            context, "/mainview", (route) => false);
       });
     } catch (e) {
       Logger.print("Exception caught in ConfirmSendView: $e");
