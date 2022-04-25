@@ -1,13 +1,11 @@
-import '../bots/onboarding/backup_key_warning_bot.dart';
 import '../bots/onboarding/create_pin_view_bot.dart';
 import '../bots/onboarding/name_your_wallet_view_bot.dart';
 import '../bots/onboarding/terms_and_conditions_bot.dart';
 
-Future<void> createNewWalletUntilPinConfirmation(
+Future<void> createWalletUntilPinConfirmation(
   TermsAndConditionsViewBot termsAndConditionsViewBot,
   NameYourWalletViewBot nameYourWalletViewBot,
   CreatePinViewBot createPinViewBot,
-  BackupKeyWarningViewBot backupKeyWarningViewBot,
 ) async {
   await termsAndConditionsViewBot.ensureVisible();
 

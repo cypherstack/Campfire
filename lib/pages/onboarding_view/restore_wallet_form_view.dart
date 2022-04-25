@@ -2,7 +2,6 @@ import 'dart:async';
 import 'dart:collection';
 import 'dart:math';
 
-import 'package:barcode_scan2/platform_wrapper.dart';
 import 'package:bip39/bip39.dart' as bip39;
 import 'package:bip39/src/wordlists/english.dart' as bip39wordlist;
 import 'package:flutter/cupertino.dart';
@@ -22,6 +21,7 @@ import 'package:paymint/services/coins/manager.dart';
 import 'package:paymint/services/node_service.dart';
 import 'package:paymint/services/wallets_service.dart';
 import 'package:paymint/utilities/address_utils.dart';
+import 'package:paymint/utilities/barcode_scanner_interface.dart';
 import 'package:paymint/utilities/cfcolors.dart';
 import 'package:paymint/utilities/clipboard_interface.dart';
 import 'package:paymint/utilities/logger.dart';
@@ -48,11 +48,13 @@ class RestoreWalletFormView extends StatefulWidget {
     @required this.walletName,
     @required this.firoNetworkType,
     this.clipboard = const ClipboardWrapper(),
+    this.barcodeScanner = const BarcodeScannerWrapper(),
   }) : super(key: key);
 
   final String walletName;
   final FiroNetworkType firoNetworkType;
   final ClipboardInterface clipboard;
+  final BarcodeScannerInterface barcodeScanner;
 
   @override
   _RestoreWalletFormViewState createState() => _RestoreWalletFormViewState();
@@ -67,8 +69,11 @@ class _RestoreWalletFormViewState extends State<RestoreWalletFormView> {
   final List<TextEditingController> _controllers = [];
   final List<InputStatus> _inputStatuses = [];
 
+  BarcodeScannerInterface scanner;
+
   @override
   void initState() {
+    scanner = widget.barcodeScanner;
     for (int i = 0; i < _seedWordCount; i++) {
       _controllers.add(TextEditingController());
       _inputStatuses.add(InputStatus.empty);
@@ -237,17 +242,22 @@ class _RestoreWalletFormViewState extends State<RestoreWalletFormView> {
                         child: SimpleButton(
                           key: Key("restoreWalletViewScanQRButtonKey"),
                           onTap: () async {
-                            final qrResult = await BarcodeScanner.scan();
-                            final results = AddressUtils.decodeQRSeedData(
-                                qrResult.rawContent);
+                            try {
+                              final qrResult = await scanner.scan();
+                              final results = AddressUtils.decodeQRSeedData(
+                                  qrResult?.rawContent);
 
-                            if (results["mnemonic"] != null) {
-                              final list = (results["mnemonic"] as List)
-                                  ?.map((value) => value as String)
-                                  ?.toList(growable: false);
-                              if (list.length > 0) {
-                                _clearAndPopulateMnemonic(list);
+                              if (results["mnemonic"] != null) {
+                                final list = (results["mnemonic"] as List)
+                                    ?.map((value) => value as String)
+                                    ?.toList(growable: false);
+                                if (list.length > 0) {
+                                  _clearAndPopulateMnemonic(list);
+                                }
                               }
+                            } on PlatformException catch (e) {
+                              // likely failed to get camera permissions
+                              Logger.print("Restore wallet qr scan failed: $e");
                             }
                           },
                           child: FittedBox(
@@ -449,7 +459,6 @@ class _RestoreWalletFormViewState extends State<RestoreWalletFormView> {
         child: GradientButton(
           key: Key("restoreMnemonicViewRestoreButtonKey"),
           onTap: () async {
-            //TODO seems hacky fix for renderflex error
             // wait for keyboard to disappear
             FocusScope.of(context).unfocus();
             await Future.delayed(Duration(milliseconds: 100));

@@ -5,9 +5,10 @@
 // @dart=2.9
 
 import 'package:mockito/mockito.dart' as _i1;
-import 'package:paymint/services/coins/manager.dart' as _i3;
-import 'package:paymint/services/node_service.dart' as _i4;
-import 'package:paymint/services/wallets_service.dart' as _i2;
+import 'package:paymint/services/coins/manager.dart' as _i4;
+import 'package:paymint/services/node_service.dart' as _i5;
+import 'package:paymint/services/wallets_service.dart' as _i3;
+import 'package:paymint/utilities/barcode_scanner_interface.dart' as _i2;
 
 // ignore_for_file: type=lint
 // ignore_for_file: avoid_redundant_argument_values
@@ -19,17 +20,27 @@ import 'package:paymint/services/wallets_service.dart' as _i2;
 // ignore_for_file: unnecessary_parenthesis
 // ignore_for_file: camel_case_types
 
+/// A class which mocks [BarcodeScannerWrapper].
+///
+/// See the documentation for Mockito's code generation for more information.
+class MockBarcodeScannerWrapper extends _i1.Mock
+    implements _i2.BarcodeScannerWrapper {
+  MockBarcodeScannerWrapper() {
+    _i1.throwOnMissingStub(this);
+  }
+}
+
 /// A class which mocks [WalletsService].
 ///
 /// See the documentation for Mockito's code generation for more information.
-class MockWalletsService extends _i1.Mock implements _i2.WalletsService {}
+class MockWalletsService extends _i1.Mock implements _i3.WalletsService {}
 
 /// A class which mocks [Manager].
 ///
 /// See the documentation for Mockito's code generation for more information.
-class MockManager extends _i1.Mock implements _i3.Manager {}
+class MockManager extends _i1.Mock implements _i4.Manager {}
 
 /// A class which mocks [NodeService].
 ///
 /// See the documentation for Mockito's code generation for more information.
-class MockNodeService extends _i1.Mock implements _i4.NodeService {}
+class MockNodeService extends _i1.Mock implements _i5.NodeService {}

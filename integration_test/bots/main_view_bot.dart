@@ -22,19 +22,17 @@ class MainViewBot {
   }
 
   Future<void> tapSend() async {
-    await tester.tap(find.bySemanticsLabel("sendBottomNavigationBarItem logo"));
+    await tester.tap(find.byKey(Key("mainViewNavBarSendItemKey")));
     await tester.pumpAndSettle();
   }
 
   Future<void> tapWallet() async {
-    await tester
-        .tap(find.bySemanticsLabel("walletBottomNavigationBarItem logo"));
+    await tester.tap(find.byKey(Key("mainViewNavBarWalletItemKey")));
     await tester.pumpAndSettle();
   }
 
   Future<void> tapReceive() async {
-    await tester
-        .tap(find.bySemanticsLabel("receiveBottomNavigationBarItem logo"));
+    await tester.tap(find.byKey(Key("mainViewNavBarReceiveItemKey")));
     await tester.pumpAndSettle();
   }
 }

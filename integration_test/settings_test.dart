@@ -11,7 +11,7 @@ import 'package:paymint/widgets/custom_buttons/simple_button.dart';
 import 'package:paymint/widgets/node_card.dart';
 import 'package:pretty_qr_code/pretty_qr_code.dart';
 
-import 'bot_runners/create_new_wallet_until_pin_confirmation.dart';
+import 'bot_runners/create_wallet_until_pin_confirmation.dart';
 import 'bots/addressbook/add_address_book_entry_view_bot.dart';
 import 'bots/addressbook/address_book_card_bot.dart';
 import 'bots/addressbook/address_book_entry_details_view_bot.dart';
@@ -63,11 +63,10 @@ void main() {
     await onboardingViewBot.tapCreateNewWallet();
     await termsAndConditionsViewBot.ensureVisible();
 
-    await createNewWalletUntilPinConfirmation(
+    await createWalletUntilPinConfirmation(
       termsAndConditionsViewBot,
       nameYourWalletViewBot,
       createPinViewBot,
-      backupKeyWarningViewBot,
     );
 
     // wait for wallet generation

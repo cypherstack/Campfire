@@ -9,7 +9,7 @@ import 'package:paymint/notifications/campfire_alert.dart';
 import 'package:paymint/notifications/modal_popup_dialog.dart';
 import 'package:paymint/notifications/overlay_notification.dart';
 import 'package:paymint/pages/onboarding_view/helpers/builders.dart';
-import 'package:paymint/pages/onboarding_view/restore_wallet_view.dart';
+import 'package:paymint/pages/onboarding_view/restore_wallet_form_view.dart';
 import 'package:paymint/services/coins/firo/firo_wallet.dart';
 import 'package:paymint/services/coins/manager.dart';
 import 'package:paymint/services/node_service.dart';

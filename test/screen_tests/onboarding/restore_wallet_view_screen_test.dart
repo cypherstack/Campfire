@@ -1,3 +1,4 @@
+import 'package:barcode_scan2/barcode_scan2.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_svg/svg.dart';
@@ -6,11 +7,12 @@ import 'package:mockingjay/mockingjay.dart' as mockingjay;
 import 'package:mockito/annotations.dart';
 import 'package:mockito/mockito.dart';
 import 'package:paymint/notifications/campfire_alert.dart';
-import 'package:paymint/pages/onboarding_view/restore_wallet_view.dart';
+import 'package:paymint/pages/onboarding_view/restore_wallet_form_view.dart';
 import 'package:paymint/services/coins/firo/firo_wallet.dart';
 import 'package:paymint/services/coins/manager.dart';
 import 'package:paymint/services/node_service.dart';
 import 'package:paymint/services/wallets_service.dart';
+import 'package:paymint/utilities/barcode_scanner_interface.dart';
 import 'package:paymint/utilities/clipboard_interface.dart';
 import 'package:paymint/utilities/misc_global_constants.dart';
 import 'package:paymint/widgets/custom_buttons/gradient_button.dart';
@@ -19,7 +21,9 @@ import 'package:provider/provider.dart';
 import '../../firo_wallet_test_parameters.dart';
 import 'restore_wallet_view_screen_test.mocks.dart';
 
-@GenerateMocks([], customMocks: [
+@GenerateMocks([
+  BarcodeScannerWrapper
+], customMocks: [
   MockSpec<WalletsService>(returnNullOnMissingStub: true),
   MockSpec<Manager>(returnNullOnMissingStub: true),
   MockSpec<NodeService>(returnNullOnMissingStub: true),
@@ -149,17 +153,33 @@ void main() {
         .called(1);
   });
 
-  testWidgets("scan qr button test", (tester) async {
+  testWidgets("scan qr button succeeds", (tester) async {
+    final scanner = MockBarcodeScannerWrapper();
+
+    when(scanner.scan()).thenAnswer((_) async => ScanResult(
+        rawContent:
+            '{"mnemonic": ["some","mnemonic","words","some","mnemonic","words","some","mnemonic","words","some","mnemonic","words","some","mnemonic","words","some","mnemonic","words","some","mnemonic","words","some","mnemonic","words"]}'));
+
     await tester.pumpWidget(
       MaterialApp(
         home: RestoreWalletFormView(
           walletName: "My Firo Wallet",
           firoNetworkType: FiroNetworkType.main,
+          barcodeScanner: scanner,
         ),
       ),
     );
 
     await tester.tap(find.byKey(Key("restoreWalletViewScanQRButtonKey")));
+    await tester.pumpAndSettle();
+
+    expect(find.text("some"), findsNWidgets(8));
+    expect(find.text("mnemonic"), findsNWidgets(8));
+    expect(find.text("words"), findsNWidgets(8));
+
+    verify(scanner.scan()).called(1);
+
+    verifyNoMoreInteractions(scanner);
   });
 
   testWidgets("paste button test", (tester) async {

@@ -4,7 +4,7 @@ import 'package:integration_test/integration_test.dart';
 import 'package:paymint/main.dart' as campfireApp;
 import 'package:paymint/pages/main_view.dart';
 
-import 'bot_runners/create_new_wallet_until_pin_confirmation.dart';
+import 'bot_runners/create_wallet_until_pin_confirmation.dart';
 import 'bots/onboarding/backup_key_view_bot.dart';
 import 'bots/onboarding/backup_key_warning_bot.dart';
 import 'bots/onboarding/create_pin_view_bot.dart';
@@ -39,11 +39,10 @@ void main() {
       // tap new again
       await onboardingViewBot.tapCreateNewWallet();
 
-      await createNewWalletUntilPinConfirmation(
+      await createWalletUntilPinConfirmation(
         termsAndConditionsViewBot,
         nameYourWalletViewBot,
         createPinViewBot,
-        backupKeyWarningViewBot,
       );
 
       // wait for wallet generation
@@ -68,11 +67,10 @@ void main() {
       await onboardingViewBot.tapCreateNewWallet();
 
       // run through to backup key warning again
-      await createNewWalletUntilPinConfirmation(
+      await createWalletUntilPinConfirmation(
         termsAndConditionsViewBot,
         nameYourWalletViewBot,
         createPinViewBot,
-        backupKeyWarningViewBot,
       );
 
       // wait for wallet generation
