@@ -17,8 +17,7 @@ class AddressBookService extends ChangeNotifier {
 
   // Load address book contact entries
   Future<Map<String, String>> _fetchAddressBookEntries() async {
-    final _currentWallet = await currentWalletName;
-    final wallet = await Hive.openBox(_currentWallet);
+    final wallet = await Hive.openBox(await _getWalletId());
     final entries = await wallet.get('addressBookEntries');
     Logger.print("Address book entries fetched: $entries");
     return entries == null
@@ -26,11 +25,18 @@ class AddressBookService extends ChangeNotifier {
         : Map<String, String>.from(entries);
   }
 
+  Future<String> _getWalletId() async {
+    final wallets = await Hive.openBox('wallets');
+    final names = await wallets.get('names');
+    final currentWallet = await currentWalletName;
+    return names[currentWallet];
+  }
+
   /// search addressbook entries
   //TODO optimize addressbook search?
   Future<Map<String, String>> search(String text) async {
-    if (text.isEmpty) return _addressBookEntries;
-    var results = Map<String, String>.from(await _addressBookEntries);
+    if (text.isEmpty) return addressBookEntries;
+    var results = Map<String, String>.from(await addressBookEntries);
     results.removeWhere(
         (key, value) => (!key.contains(text) && !value.contains(text)));
     return results;
@@ -38,17 +44,15 @@ class AddressBookService extends ChangeNotifier {
 
   /// check if address already used in address book
   Future<bool> containsAddress(String address) async {
-    final _currentWallet = await currentWalletName;
-    final wallet = await Hive.openBox(_currentWallet);
+    final wallet = await Hive.openBox(await _getWalletId());
     final _entries = await wallet.get('addressBookEntries');
     final entries = _entries == null ? <String, String>{} : _entries;
     return entries.containsKey(address);
   }
 
   /// Add address book contact entry to db
-  addAddressBookEntry(String address, String name) async {
-    final _currentWallet = await currentWalletName;
-    final wallet = await Hive.openBox(_currentWallet);
+  Future<void> addAddressBookEntry(String address, String name) async {
+    final wallet = await Hive.openBox(await _getWalletId());
     final _entries = await wallet.get('addressBookEntries');
     final entries = _entries == null ? <String, String>{} : _entries;
 
@@ -65,18 +69,22 @@ class AddressBookService extends ChangeNotifier {
   }
 
   /// Remove address book contact entry from db
-  removeAddressBookEntry(String address) async {
-    final _currentWallet = await currentWalletName;
-    final wallet = await Hive.openBox(_currentWallet);
+  Future<void> removeAddressBookEntry(String address) async {
+    final wallet = await Hive.openBox(await _getWalletId());
     final entries = await wallet.get('addressBookEntries');
-    entries.remove(address);
-    await wallet.put('addressBookEntries', entries);
-    Logger.print("address book entry removed");
-    await _refreshAddressBookEntries();
+    if (entries.containsKey(address)) {
+      entries.remove(address);
+      await wallet.put('addressBookEntries', entries);
+      Logger.print("address book entry removed");
+      await _refreshAddressBookEntries();
+    } else {
+      throw Exception(
+          "Cannot remove non existent address book entry for '$address'!");
+    }
     // GlobalEventBus.instance.fire(AddressBookChangedEvent("entry removed"));
   }
 
-  _refreshAddressBookEntries() async {
+  Future<void> _refreshAddressBookEntries() async {
     final newAddressBookEntries = await _fetchAddressBookEntries();
     this._addressBookEntries = Future(() => newAddressBookEntries);
     notifyListeners();

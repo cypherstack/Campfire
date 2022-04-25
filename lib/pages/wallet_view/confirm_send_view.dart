@@ -9,6 +9,7 @@ import 'package:paymint/services/coins/manager.dart';
 import 'package:paymint/services/notes_service.dart';
 import 'package:paymint/utilities/biometrics.dart';
 import 'package:paymint/utilities/cfcolors.dart';
+import 'package:paymint/utilities/flutter_secure_storage_interface.dart';
 import 'package:paymint/utilities/logger.dart';
 import 'package:paymint/utilities/misc_global_constants.dart';
 import 'package:paymint/utilities/sizing_utilities.dart';
@@ -22,12 +23,19 @@ class ConfirmSendView extends StatefulWidget {
     @required this.note,
     @required this.amount,
     this.fee,
+    this.secureStore = const SecureStorageWrapper(
+      const FlutterSecureStorage(),
+    ),
+    this.biometrics = const Biometrics(),
   }) : super(key: key);
 
   final String address;
   final String note;
   final Decimal amount;
   final Decimal fee;
+
+  final FlutterSecureStorageInterface secureStore;
+  final Biometrics biometrics;
 
   @override
   _ConfirmSendViewState createState() => _ConfirmSendViewState();
@@ -38,7 +46,7 @@ class _ConfirmSendViewState extends State<ConfirmSendView> {
     final manager = Provider.of<Manager>(context, listen: false);
 
     if (await manager.useBiometrics &&
-        await Biometrics.authenticate(
+        await biometrics.authenticate(
           cancelButtonText: "CANCEL",
           localizedReason: "Confirm transaction",
           title: manager.walletName,
@@ -47,9 +55,13 @@ class _ConfirmSendViewState extends State<ConfirmSendView> {
     }
   }
 
+  FlutterSecureStorageInterface _secureStore;
+
   @override
   void initState() {
     _checkUseBiometrics();
+    _secureStore = widget.secureStore;
+    biometrics = widget.biometrics;
     super.initState();
   }
 
@@ -63,11 +75,10 @@ class _ConfirmSendViewState extends State<ConfirmSendView> {
 
   final _pinTextController = TextEditingController();
   final FocusNode _pinFocusNode = FocusNode();
+  Biometrics biometrics;
 
   @override
   Widget build(BuildContext context) {
-    // final WalletsService walletsService = Provider.of<WalletsService>(context);
-
     return Container(
       height: MediaQuery.of(context).size.height,
       color: CFColors.midnight.withOpacity(0.8),
@@ -161,9 +172,8 @@ class _ConfirmSendViewState extends State<ConfirmSendView> {
                     final manager =
                         Provider.of<Manager>(context, listen: false);
 
-                    final store = new FlutterSecureStorage();
                     final storedPin =
-                        await store.read(key: '${manager.walletId}_pin');
+                        await _secureStore.read(key: '${manager.walletId}_pin');
 
                     if (storedPin == pin) {
                       await attemptSend(context, manager);
@@ -220,9 +230,11 @@ class _ConfirmSendViewState extends State<ConfirmSendView> {
         Duration(milliseconds: 2700),
       );
       await Future.delayed(Duration(milliseconds: 100)).then((_) {
-        manager.refresh();
-        Navigator.pop(context);
-        Navigator.pop(context, true);
+        // manager.refresh();
+        // Navigator.pop(context);
+        // Navigator.pop(context, true);
+        Navigator.pushNamedAndRemoveUntil(
+            context, "/mainview", (route) => false);
       });
     } catch (e) {
       Logger.print("Exception caught in ConfirmSendView: $e");
@@ -263,6 +275,26 @@ class _ConfirmSendViewState extends State<ConfirmSendView> {
                   color: CFColors.dusk,
                   fontWeight: FontWeight.w600,
                   fontSize: 18,
+                ),
+              ),
+            ),
+          ),
+          Padding(
+            padding: const EdgeInsets.only(
+              left: 24,
+              right: 24,
+              bottom: 12,
+            ),
+            child: FittedBox(
+              child: Align(
+                alignment: Alignment.topCenter,
+                child: Text(
+                  "Do not close or leave the app until this completes!",
+                  style: GoogleFonts.workSans(
+                    color: CFColors.dusk,
+                    fontWeight: FontWeight.w600,
+                    fontSize: 18,
+                  ),
                 ),
               ),
             ),

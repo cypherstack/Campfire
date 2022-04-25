@@ -1,4 +1,3 @@
-import 'package:barcode_scan2/platform_wrapper.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_svg/svg.dart';
@@ -6,7 +5,9 @@ import 'package:paymint/notifications/campfire_alert.dart';
 import 'package:paymint/services/address_book_service.dart';
 import 'package:paymint/services/coins/manager.dart';
 import 'package:paymint/utilities/address_utils.dart';
+import 'package:paymint/utilities/barcode_scanner_interface.dart';
 import 'package:paymint/utilities/cfcolors.dart';
+import 'package:paymint/utilities/clipboard_interface.dart';
 import 'package:paymint/utilities/logger.dart';
 import 'package:paymint/utilities/sizing_utilities.dart';
 import 'package:paymint/utilities/text_styles.dart';
@@ -16,7 +17,14 @@ import 'package:paymint/widgets/custom_buttons/simple_button.dart';
 import 'package:provider/provider.dart';
 
 class AddAddressBookEntryView extends StatefulWidget {
-  const AddAddressBookEntryView({Key key}) : super(key: key);
+  const AddAddressBookEntryView({
+    Key key,
+    this.barcodeScanner = const BarcodeScannerWrapper(),
+    this.clipboard = const ClipboardWrapper(),
+  }) : super(key: key);
+
+  final BarcodeScannerInterface barcodeScanner;
+  final ClipboardInterface clipboard;
 
   @override
   _AddAddressBookEntryViewState createState() =>
@@ -26,55 +34,8 @@ class AddAddressBookEntryView extends StatefulWidget {
 class _AddAddressBookEntryViewState extends State<AddAddressBookEntryView> {
   TextEditingController addressTextController = TextEditingController();
   TextEditingController nameTextController = TextEditingController();
-
-  Future<void> _saveNewAddressEntry(BuildContext context) async {
-    final addressService =
-        Provider.of<AddressBookService>(context, listen: false);
-
-    final name = nameTextController.text;
-    final address = addressTextController.text;
-
-    if (name.isEmpty || address.isEmpty) {
-      showDialog(
-        context: context,
-        useSafeArea: false,
-        barrierDismissible: false,
-        builder: (_) {
-          return CampfireAlert(message: "Please fill out both fields.");
-        },
-      );
-    } else {
-      if (await addressService.containsAddress(address)) {
-        showDialog(
-          context: context,
-          useSafeArea: false,
-          barrierDismissible: false,
-          builder: (_) {
-            return CampfireAlert(
-                message:
-                    "The address you entered is already in your contacts!");
-          },
-        );
-      } else {
-        try {
-          await addressService.addAddressBookEntry(address, name);
-          // on success pop back to address book
-          Navigator.pop(context);
-        } catch (error) {
-          showDialog(
-            context: context,
-            useSafeArea: false,
-            barrierDismissible: false,
-            builder: (_) {
-              return CampfireAlert(
-                  message:
-                      "The address you entered is already in your contacts!");
-            },
-          );
-        }
-      }
-    }
-  }
+  BarcodeScannerInterface scanner;
+  ClipboardInterface clipboard;
 
   bool _enabledSave = false;
   bool _isEmptyAddress = true;
@@ -87,9 +48,15 @@ class _AddAddressBookEntryViewState extends State<AddAddressBookEntryView> {
   }
 
   @override
+  initState() {
+    scanner = widget.barcodeScanner;
+    clipboard = widget.clipboard;
+    super.initState();
+  }
+
+  @override
   Widget build(BuildContext context) {
     final manager = Provider.of<Manager>(context, listen: false);
-    final screenWidth = MediaQuery.of(context).size.width;
 
     return Scaffold(
       appBar: AppBar(
@@ -141,6 +108,7 @@ class _AddAddressBookEntryViewState extends State<AddAddressBookEntryView> {
                     bottom: 12,
                   ),
                   child: TextField(
+                    key: Key("addAddressBookEntryViewAddressField"),
                     readOnly: false,
                     inputFormatters: <TextInputFormatter>[
                       FilteringTextInputFormatter.allow(
@@ -186,10 +154,10 @@ class _AddAddressBookEntryViewState extends State<AddAddressBookEntryView> {
                             ),
                             _isEmptyAddress
                                 ? GestureDetector(
+                                    key: Key("addAddressPasteAddressButtonKey"),
                                     onTap: () async {
-                                      final ClipboardData data =
-                                          await Clipboard.getData(
-                                              Clipboard.kTextPlain);
+                                      final ClipboardData data = await clipboard
+                                          .getData(Clipboard.kTextPlain);
 
                                       if (data != null &&
                                           data.text.isNotEmpty) {
@@ -212,6 +180,8 @@ class _AddAddressBookEntryViewState extends State<AddAddressBookEntryView> {
                                     ),
                                   )
                                 : GestureDetector(
+                                    key: Key(
+                                        "addAddressBookClearAddressButtonKey"),
                                     onTap: () async {
                                       addressTextController.text = "";
                                       setState(() {
@@ -230,21 +200,44 @@ class _AddAddressBookEntryViewState extends State<AddAddressBookEntryView> {
                               width: 10,
                             ),
                             GestureDetector(
+                              key: Key("addAddressBookEntryScanQrButtonKey"),
                               onTap: () async {
-                                final qrResult = await BarcodeScanner.scan();
+                                try {
+                                  final qrResult = await scanner.scan();
 
-                                final results = AddressUtils.parseFiroUri(
-                                    qrResult.rawContent);
-                                if (results.isNotEmpty) {
-                                  addressTextController.text =
-                                      results["address"];
-                                  nameTextController.text = results["label"] ??
-                                      nameTextController.text;
-                                  // now check for non standard encoded basic address
-                                } else if (manager
-                                    .validateAddress(qrResult.rawContent)) {
-                                  addressTextController.text =
-                                      qrResult.rawContent;
+                                  final results = AddressUtils.parseFiroUri(
+                                      qrResult.rawContent);
+                                  if (results.isNotEmpty) {
+                                    addressTextController.text =
+                                        results["address"];
+                                    nameTextController.text =
+                                        results["label"] ??
+                                            nameTextController.text;
+                                    setState(() {
+                                      _isEmptyAddress =
+                                          addressTextController.text == null ||
+                                              addressTextController
+                                                  .text.isEmpty;
+                                      _enabledSave = manager.validateAddress(
+                                              addressTextController.text) &&
+                                          nameTextController.text.isNotEmpty;
+                                    });
+                                    // now check for non standard encoded basic address
+                                  } else if (manager
+                                      .validateAddress(qrResult.rawContent)) {
+                                    addressTextController.text =
+                                        qrResult.rawContent;
+                                    setState(() {
+                                      _isEmptyAddress =
+                                          addressTextController.text.isEmpty;
+                                      _enabledSave = manager.validateAddress(
+                                              addressTextController.text) &&
+                                          nameTextController.text.isNotEmpty;
+                                    });
+                                  }
+                                } on PlatformException catch (e, s) {
+                                  Logger.print(
+                                      "Failed to get camera permissions to scan address qr code: $e\n$s");
                                 }
                               },
                               child: SvgPicture.asset(
@@ -270,6 +263,7 @@ class _AddAddressBookEntryViewState extends State<AddAddressBookEntryView> {
                     bottom: 12,
                   ),
                   child: TextField(
+                    key: Key("addAddressBookEntryViewNameField"),
                     controller: nameTextController,
                     decoration: InputDecoration(
                       hintText: "Enter name",
@@ -286,40 +280,87 @@ class _AddAddressBookEntryViewState extends State<AddAddressBookEntryView> {
               ],
             ),
             Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 0, vertical: 20),
+              padding: const EdgeInsets.symmetric(
+                horizontal: 20,
+                vertical: 20,
+              ),
               child: Row(
                 mainAxisAlignment: MainAxisAlignment.spaceEvenly,
                 children: [
-                  SizedBox(
-                    height: 48,
-                    width: (screenWidth - 40 - 16) /
-                        2, // 20+20 padding, 16 spacing
-                    child: SimpleButton(
-                      onTap: () {
-                        Logger.print("cancel add new address entry pressed");
-                        Navigator.pop(context);
-                      },
-                      child: Text(
-                        "CANCEL",
-                        style: CFTextStyles.button.copyWith(
-                          color: CFColors.dusk,
+                  Expanded(
+                    child: SizedBox(
+                      height: 48,
+                      child: SimpleButton(
+                        onTap: () {
+                          Logger.print("cancel add new address entry pressed");
+                          Navigator.pop(context);
+                        },
+                        child: Text(
+                          "CANCEL",
+                          style: CFTextStyles.button.copyWith(
+                            color: CFColors.dusk,
+                          ),
                         ),
                       ),
                     ),
                   ),
                   SizedBox(
-                    height: 48,
-                    width: (screenWidth - 40 - 16) /
-                        2, // 20+20 padding, 16 spacing,
-                    child: GradientButton(
-                      enabled: _enabledSave,
-                      child: Text(
-                        "SAVE",
-                        style: CFTextStyles.button,
+                    width: 16,
+                  ),
+                  Expanded(
+                    child: SizedBox(
+                      height: 48,
+                      child: GradientButton(
+                        enabled: _enabledSave,
+                        child: Text(
+                          "SAVE",
+                          style: CFTextStyles.button,
+                        ),
+                        onTap: () async {
+                          final addressService =
+                              Provider.of<AddressBookService>(context,
+                                  listen: false);
+
+                          final name = nameTextController.text;
+                          final address = addressTextController.text;
+
+                          // these should never fail as the save button should not be enabled
+                          // when either field is empty
+                          assert(name.isNotEmpty);
+                          assert(address.isNotEmpty);
+
+                          if (await addressService.containsAddress(address)) {
+                            showDialog(
+                              context: context,
+                              useSafeArea: false,
+                              barrierDismissible: false,
+                              builder: (_) {
+                                return CampfireAlert(
+                                    message:
+                                        "The address you entered is already in your contacts!");
+                              },
+                            );
+                          } else {
+                            try {
+                              await addressService.addAddressBookEntry(
+                                  address, name);
+                              // on success pop back to address book
+                              Navigator.pop(context);
+                            } catch (error) {
+                              showDialog(
+                                context: context,
+                                useSafeArea: false,
+                                barrierDismissible: false,
+                                builder: (_) {
+                                  return CampfireAlert(
+                                      message:
+                                          "The address you entered is already in your contacts!");
+                                },
+                              );
+                            }
+                          }
+                        },
                       ),
-                      onTap: () {
-                        _saveNewAddressEntry(context);
-                      },
                     ),
                   ),
                 ],

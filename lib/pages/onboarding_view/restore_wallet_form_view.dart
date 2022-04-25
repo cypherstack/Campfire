@@ -2,7 +2,6 @@ import 'dart:async';
 import 'dart:collection';
 import 'dart:math';
 
-import 'package:barcode_scan2/platform_wrapper.dart';
 import 'package:bip39/bip39.dart' as bip39;
 import 'package:bip39/src/wordlists/english.dart' as bip39wordlist;
 import 'package:flutter/cupertino.dart';
@@ -10,6 +9,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_svg/flutter_svg.dart';
 import 'package:google_fonts/google_fonts.dart';
+import 'package:hive/hive.dart';
 import 'package:path_provider/path_provider.dart';
 import 'package:paymint/electrumx_rpc/cached_electrumx.dart';
 import 'package:paymint/electrumx_rpc/electrumx.dart';
@@ -21,7 +21,10 @@ import 'package:paymint/services/coins/manager.dart';
 import 'package:paymint/services/node_service.dart';
 import 'package:paymint/services/wallets_service.dart';
 import 'package:paymint/utilities/address_utils.dart';
+import 'package:paymint/utilities/barcode_scanner_interface.dart';
 import 'package:paymint/utilities/cfcolors.dart';
+import 'package:paymint/utilities/clipboard_interface.dart';
+import 'package:paymint/utilities/logger.dart';
 import 'package:paymint/utilities/misc_global_constants.dart';
 import 'package:paymint/utilities/sizing_utilities.dart';
 import 'package:paymint/utilities/text_styles.dart';
@@ -40,12 +43,18 @@ enum InputStatus {
 }
 
 class RestoreWalletFormView extends StatefulWidget {
-  const RestoreWalletFormView(
-      {Key key, @required this.walletName, @required this.firoNetworkType})
-      : super(key: key);
+  const RestoreWalletFormView({
+    Key key,
+    @required this.walletName,
+    @required this.firoNetworkType,
+    this.clipboard = const ClipboardWrapper(),
+    this.barcodeScanner = const BarcodeScannerWrapper(),
+  }) : super(key: key);
 
   final String walletName;
   final FiroNetworkType firoNetworkType;
+  final ClipboardInterface clipboard;
+  final BarcodeScannerInterface barcodeScanner;
 
   @override
   _RestoreWalletFormViewState createState() => _RestoreWalletFormViewState();
@@ -60,8 +69,11 @@ class _RestoreWalletFormViewState extends State<RestoreWalletFormView> {
   final List<TextEditingController> _controllers = [];
   final List<InputStatus> _inputStatuses = [];
 
+  BarcodeScannerInterface scanner;
+
   @override
   void initState() {
+    scanner = widget.barcodeScanner;
     for (int i = 0; i < _seedWordCount; i++) {
       _controllers.add(TextEditingController());
       _inputStatuses.add(InputStatus.empty);
@@ -146,7 +158,7 @@ class _RestoreWalletFormViewState extends State<RestoreWalletFormView> {
 
   _onBackPressed(int pops) async {
     // set manager wallet to null if it isn't already
-    Provider.of<Manager>(context, listen: false).exitCurrentWallet();
+    await Provider.of<Manager>(context, listen: false).exitCurrentWallet();
 
     // delete created wallet name and pin
     final walletsService = Provider.of<WalletsService>(context, listen: false);
@@ -228,18 +240,24 @@ class _RestoreWalletFormViewState extends State<RestoreWalletFormView> {
                       child: SizedBox(
                         height: 48,
                         child: SimpleButton(
+                          key: Key("restoreWalletViewScanQRButtonKey"),
                           onTap: () async {
-                            final qrResult = await BarcodeScanner.scan();
-                            final results = AddressUtils.decodeQRSeedData(
-                                qrResult.rawContent);
+                            try {
+                              final qrResult = await scanner.scan();
+                              final results = AddressUtils.decodeQRSeedData(
+                                  qrResult?.rawContent);
 
-                            if (results["mnemonic"] != null) {
-                              final list = (results["mnemonic"] as List)
-                                  ?.map((value) => value as String)
-                                  ?.toList(growable: false);
-                              if (list.length > 0) {
-                                _clearAndPopulateMnemonic(list);
+                              if (results["mnemonic"] != null) {
+                                final list = (results["mnemonic"] as List)
+                                    ?.map((value) => value as String)
+                                    ?.toList(growable: false);
+                                if (list.length > 0) {
+                                  _clearAndPopulateMnemonic(list);
+                                }
                               }
+                            } on PlatformException catch (e) {
+                              // likely failed to get camera permissions
+                              Logger.print("Restore wallet qr scan failed: $e");
                             }
                           },
                           child: FittedBox(
@@ -277,9 +295,10 @@ class _RestoreWalletFormViewState extends State<RestoreWalletFormView> {
                       child: SizedBox(
                         height: 48,
                         child: SimpleButton(
+                          key: Key("restoreWalletViewPasteButtonKey"),
                           onTap: () async {
-                            final ClipboardData data =
-                                await Clipboard.getData(Clipboard.kTextPlain);
+                            final ClipboardData data = await widget.clipboard
+                                .getData(Clipboard.kTextPlain);
 
                             if (data != null && data.text.isNotEmpty) {
                               final content = data.text.trim();
@@ -368,6 +387,7 @@ class _RestoreWalletFormViewState extends State<RestoreWalletFormView> {
             SizingUtilities.listItemSpacing / 2,
           ),
           child: TextFormField(
+            key: Key("restoreMnemonicFormField_$i"),
             inputFormatters: <TextInputFormatter>[
               FilteringTextInputFormatter.allow(RegExp("[a-z]")),
             ],
@@ -437,8 +457,8 @@ class _RestoreWalletFormViewState extends State<RestoreWalletFormView> {
         width: MediaQuery.of(context).size.width -
             (SizingUtilities.standardPadding * 2),
         child: GradientButton(
+          key: Key("restoreMnemonicViewRestoreButtonKey"),
           onTap: () async {
-            //TODO seems hacky fix for renderflex error
             // wait for keyboard to disappear
             FocusScope.of(context).unfocus();
             await Future.delayed(Duration(milliseconds: 100));
@@ -461,13 +481,13 @@ class _RestoreWalletFormViewState extends State<RestoreWalletFormView> {
                       CampfireAlert(message: "Invalid seed phrase!"),
                 );
               } else {
+                Wakelock.enable();
                 // show restoring in progress
                 showDialog(
                   context: context,
                   useSafeArea: false,
                   barrierDismissible: false,
                   builder: (context) {
-                    Wakelock.enable();
                     return _buildWaitDialog();
                   },
                 );
@@ -475,7 +495,7 @@ class _RestoreWalletFormViewState extends State<RestoreWalletFormView> {
                 final manager = Provider.of<Manager>(context, listen: false);
                 // should already be null but just in case:
                 if (manager.hasWallet) {
-                  manager.exitCurrentWallet();
+                  await manager.exitCurrentWallet();
                 }
 
                 final walletsService =
@@ -513,7 +533,7 @@ class _RestoreWalletFormViewState extends State<RestoreWalletFormView> {
                     throw Exception("Bad firo network type encountered");
                 }
 
-                nodeService.createNode(
+                await nodeService.createNode(
                   name: defaultNode.name,
                   ipAddress: defaultNode.address,
                   port: defaultNode.port.toString(),
@@ -554,10 +574,18 @@ class _RestoreWalletFormViewState extends State<RestoreWalletFormView> {
                     },
                   );
                 } catch (e) {
+                  Wakelock.disable();
+
+                  // TODO: Possibly cancel all wallet isolates on exit?
+                  // hacky fix for handling restore cancel/interruption
+                  if (e is HiveError &&
+                      e.message == "Box has already been closed.") {
+                    // restore was cancelled
+                    return;
+                  }
+
                   // pop waiting dialog
                   Navigator.pop(context);
-
-                  Wakelock.disable();
 
                   // show restoring wallet failed dialog
                   showDialog(
@@ -620,6 +648,23 @@ class _RestoreWalletFormViewState extends State<RestoreWalletFormView> {
               ),
             ),
             SizedBox(
+              height: 12,
+            ),
+            Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 20),
+              child: FittedBox(
+                child: Text(
+                  "Do not close or leave the app until this completes!",
+                  style: GoogleFonts.workSans(
+                    color: CFColors.dusk,
+                    fontWeight: FontWeight.w400,
+                    fontSize: 14,
+                  ),
+                  maxLines: 2,
+                ),
+              ),
+            ),
+            SizedBox(
               height: 50,
             ),
             Container(
@@ -652,7 +697,9 @@ class _RestoreWalletFormViewState extends State<RestoreWalletFormView> {
                 SizedBox(
                   height: 48,
                   child: TextButton(
+                    key: Key("restoreWalletWaitingDialogCancelButtonKey"),
                     onPressed: () async {
+                      Logger.print("cancel restore pressed");
                       await _onBackPressed(5);
                       Wakelock.disable();
                     },
@@ -797,6 +844,7 @@ class _RestoreWalletFormViewState extends State<RestoreWalletFormView> {
                   height: SizingUtilities.standardButtonHeight,
                   width: SizingUtilities.standardFixedButtonWidth,
                   child: GradientButton(
+                    key: Key("restoreWalletViewRestoreFailedOkButtonKey"),
                     child: FittedBox(
                       child: Text(
                         "OK",

@@ -16,10 +16,27 @@ void main() {
     expect(condensedAddress, "a6ESW...3Yt1j");
   });
 
-  test("parse a valid firo uri string", () {
+  test("parse a valid firo uri string A", () {
     final uri = "firo:$firoAddress?amount=50&label=eggs";
     final result = AddressUtils.parseFiroUri(uri);
     expect(result, {"address": firoAddress, "amount": "50", "label": "eggs"});
+  });
+
+  test("parse a valid firo uri string B", () {
+    final uri = "firo:$firoAddress?amount=50&message=eggs+are+good";
+    final result = AddressUtils.parseFiroUri(uri);
+    expect(result,
+        {"address": firoAddress, "amount": "50", "message": "eggs are good"});
+  });
+
+  test("parse a valid firo uri string C", () {
+    final uri = "firo:$firoAddress?amount=50.1&message=eggs%20are%20good%21";
+    final result = AddressUtils.parseFiroUri(uri);
+    expect(result, {
+      "address": firoAddress,
+      "amount": "50.1",
+      "message": "eggs are good!"
+    });
   });
 
   test("parse an invalid firo uri string", () {
@@ -67,5 +84,27 @@ void main() {
         '{"mnemonic":"hello","word","something","who","green","seven"]}';
 
     expect(AddressUtils.decodeQRSeedData(jsonString), {});
+  });
+
+  test("build a firo uri string with null params", () {
+    expect(AddressUtils.buildFiroUriString(firoAddress, null),
+        "firo:$firoAddress");
+  });
+
+  test("build a firo uri string with empty params", () {
+    expect(
+        AddressUtils.buildFiroUriString(firoAddress, {}), "firo:$firoAddress");
+  });
+
+  test("build a firo uri string with one param", () {
+    expect(AddressUtils.buildFiroUriString(firoAddress, {"amount": "10.0123"}),
+        "firo:$firoAddress?amount=10.0123");
+  });
+
+  test("build a firo uri string with some params", () {
+    expect(
+        AddressUtils.buildFiroUriString(firoAddress,
+            {"amount": "10.0123", "message": "Some kind of message!"}),
+        "firo:$firoAddress?amount=10.0123&message=Some+kind+of+message%21");
   });
 }

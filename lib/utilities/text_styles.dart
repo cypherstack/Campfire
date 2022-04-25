@@ -33,4 +33,16 @@ class CFTextStyles {
     fontWeight: FontWeight.w400,
     fontSize: 16,
   );
+
+  static final TextStyle textFieldSuffix = GoogleFonts.workSans(
+    color: CFColors.twilight,
+    fontWeight: FontWeight.w600,
+    fontSize: 16,
+  );
+
+  static final TextStyle label = GoogleFonts.workSans(
+    color: CFColors.twilight,
+    fontWeight: FontWeight.w500,
+    fontSize: 12,
+  );
 }

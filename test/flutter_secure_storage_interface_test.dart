@@ -20,6 +20,7 @@ void main() {
         returnsNormally);
 
     verify(secureStore.write(key: "testKey", value: "some value")).called(1);
+    verifyNoMoreInteractions(secureStore);
   });
 
   test("SecureStorageWrapper read", () async {
@@ -31,5 +32,20 @@ void main() {
     final result = await wrapper.read(key: "testKey");
 
     expect(result, "some value");
+
+    verify(secureStore.read(key: "testKey")).called(1);
+    verifyNoMoreInteractions(secureStore);
+  });
+
+  test("SecureStorageWrapper delete", () async {
+    final secureStore = MockFlutterSecureStorage();
+    when(secureStore.delete(key: "testKey")).thenAnswer((_) async {});
+    final wrapper = SecureStorageWrapper(secureStore);
+
+    await expectLater(
+        () async => await wrapper.delete(key: "testKey"), returnsNormally);
+
+    verify(secureStore.delete(key: "testKey")).called(1);
+    verifyNoMoreInteractions(secureStore);
   });
 }

@@ -26,6 +26,7 @@ buildOnboardingAppBar(BuildContext context,
       child: AspectRatio(
         aspectRatio: 1,
         child: AppBarIconButton(
+          key: Key("onboardingAppBarBackButton"),
           shadows: [],
           color: Color(0xFF51566E).withOpacity(0.3),
           size: 36,
@@ -38,6 +39,7 @@ buildOnboardingAppBar(BuildContext context,
           circularBorderRadius: 8,
           icon: SvgPicture.asset(
             "assets/svg/chevronLeft.svg",
+            key: Key("onboardingAppBarBackButtonChevronSvg"),
             color: CFColors.twilight,
             width: 24,
             height: 24,

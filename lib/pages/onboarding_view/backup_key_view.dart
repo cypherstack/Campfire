@@ -33,10 +33,9 @@ class _BackupKeyViewState extends State<BackupKeyView> {
   }
 
   Widget _buildKeys(List<String> words) {
-    final int wordsCount = 24;
     List<TableRow> rows = [];
 
-    for (int i = 0; i < wordsCount / 2; i++) {
+    for (int i = 0; i < CampfireConstants.seedPhraseWordCount / 2; i++) {
       final row = TableRow(
         children: [
           TableCell(
@@ -91,6 +90,7 @@ class _BackupKeyViewState extends State<BackupKeyView> {
                       child: FittedBox(
                         child: Text(
                           "${words[i]}",
+                          key: Key("mnemonic_word_text_$i"),
                           style: GoogleFonts.workSans(
                             color: CFColors.starryNight,
                             fontWeight: FontWeight.w700,
@@ -144,7 +144,7 @@ class _BackupKeyViewState extends State<BackupKeyView> {
                         child: Center(
                           child: FittedBox(
                             child: Text(
-                              "${i + (wordsCount ~/ 2) + 1}",
+                              "${i + (CampfireConstants.seedPhraseWordCount ~/ 2) + 1}",
                               style: GoogleFonts.workSans(
                                 color: CFColors.starryNight,
                                 fontWeight: FontWeight.w700,
@@ -161,7 +161,9 @@ class _BackupKeyViewState extends State<BackupKeyView> {
                     child: Center(
                       child: FittedBox(
                         child: Text(
-                          "${words[i + wordsCount ~/ 2]}",
+                          "${words[i + CampfireConstants.seedPhraseWordCount ~/ 2]}",
+                          key: Key(
+                              "mnemonic_word_text_${i + CampfireConstants.seedPhraseWordCount ~/ 2}"),
                           style: GoogleFonts.workSans(
                             color: CFColors.starryNight,
                             fontWeight: FontWeight.w700,
@@ -182,7 +184,7 @@ class _BackupKeyViewState extends State<BackupKeyView> {
       rows.add(row);
 
       // add space between each row hack
-      if (i < (wordsCount / 2) - 1) {
+      if (i < (CampfireConstants.seedPhraseWordCount / 2) - 1) {
         final spacerRow = TableRow(
           children: [
             SizedBox(
@@ -284,6 +286,7 @@ class _BackupKeyViewState extends State<BackupKeyView> {
                     height: 48,
                     width: MediaQuery.of(context).size.width / 2,
                     child: SimpleButton(
+                      key: Key("backUpKeyViewQrCodeCancelButtonKey"),
                       onTap: () {
                         Navigator.of(context).pop();
                       },
@@ -421,6 +424,7 @@ class _BackupKeyViewState extends State<BackupKeyView> {
                     child: SizedBox(
                       height: 48,
                       child: SimpleButton(
+                        key: const Key("backupKeyQrCodeButtonKey"),
                         onTap: () {
                           showDialog(
                             context: context,
@@ -464,40 +468,42 @@ class _BackupKeyViewState extends State<BackupKeyView> {
                     child: SizedBox(
                       height: 48,
                       child: SimpleButton(
-                          onTap: () async {
-                            final mnemonic = await _getMnemonic(context);
-                            Clipboard.setData(
-                              ClipboardData(
-                                text: mnemonic.join(" "),
-                              ),
-                            );
-                            OverlayNotification.showInfo(
-                              context,
-                              "Copied to clipboard",
-                              Duration(seconds: 2),
-                            );
-                          },
-                          child: Row(
-                            mainAxisAlignment: MainAxisAlignment.center,
-                            children: [
-                              SvgPicture.asset(
-                                "assets/svg/copy.svg",
+                        key: const Key("backupKeyViewCopyButtonKey"),
+                        onTap: () async {
+                          final mnemonic = await _getMnemonic(context);
+                          Clipboard.setData(
+                            ClipboardData(
+                              text: mnemonic.join(" "),
+                            ),
+                          );
+                          OverlayNotification.showInfo(
+                            context,
+                            "Copied to clipboard",
+                            Duration(seconds: 2),
+                          );
+                        },
+                        child: Row(
+                          mainAxisAlignment: MainAxisAlignment.center,
+                          children: [
+                            SvgPicture.asset(
+                              "assets/svg/copy.svg",
+                              color: CFColors.dusk,
+                            ),
+                            SizedBox(
+                              width: 10,
+                            ),
+                            Text(
+                              "COPY",
+                              style: GoogleFonts.workSans(
                                 color: CFColors.dusk,
+                                fontWeight: FontWeight.w600,
+                                fontSize: 16,
+                                letterSpacing: 0.5,
                               ),
-                              SizedBox(
-                                width: 10,
-                              ),
-                              Text(
-                                "COPY",
-                                style: GoogleFonts.workSans(
-                                  color: CFColors.dusk,
-                                  fontWeight: FontWeight.w600,
-                                  fontSize: 16,
-                                  letterSpacing: 0.5,
-                                ),
-                              ),
-                            ],
-                          )),
+                            ),
+                          ],
+                        ),
+                      ),
                     ),
                   ),
                 ],
@@ -524,10 +530,11 @@ class _BackupKeyViewState extends State<BackupKeyView> {
                     child: Text(
                       "VERIFY",
                       style: GoogleFonts.workSans(
-                          color: CFColors.white,
-                          fontWeight: FontWeight.w600,
-                          fontSize: 16,
-                          letterSpacing: 0.5),
+                        color: CFColors.white,
+                        fontWeight: FontWeight.w600,
+                        fontSize: 16,
+                        letterSpacing: 0.5,
+                      ),
                     ),
                   ),
                 ),

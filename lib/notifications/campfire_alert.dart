@@ -46,6 +46,7 @@ class CampfireAlert extends StatelessWidget {
                 height: SizingUtilities.standardButtonHeight,
                 width: SizingUtilities.standardFixedButtonWidth,
                 child: GradientButton(
+                  key: Key("campfireAlertOKButtonKey"),
                   child: FittedBox(
                     child: Text(
                       "OK",

@@ -56,5 +56,7 @@ abstract class CoinServiceAPI {
 
   Future<void> recoverFromMnemonic(String mnemonic);
 
+  Future<bool> initializeWallet();
+
   Future<void> exit();
 }

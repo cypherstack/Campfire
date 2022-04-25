@@ -14,6 +14,7 @@ import 'package:paymint/services/coins/manager.dart';
 import 'package:paymint/services/wallets_service.dart';
 import 'package:paymint/utilities/address_utils.dart';
 import 'package:paymint/utilities/cfcolors.dart';
+import 'package:paymint/utilities/clipboard_interface.dart';
 import 'package:paymint/utilities/misc_global_constants.dart';
 import 'package:paymint/utilities/sizing_utilities.dart';
 import 'package:paymint/utilities/text_styles.dart';
@@ -25,7 +26,12 @@ import 'package:provider/provider.dart';
 import '../../../wallet_selection_view.dart';
 
 class WalletDeleteMnemonicView extends StatelessWidget {
-  const WalletDeleteMnemonicView({Key key}) : super(key: key);
+  const WalletDeleteMnemonicView({
+    Key key,
+    this.clipboard = const ClipboardWrapper(),
+  }) : super(key: key);
+
+  final ClipboardInterface clipboard;
 
   Future<List<String>> _getMnemonic(BuildContext context) async {
     final manager = Provider.of<Manager>(context, listen: false);
@@ -95,7 +101,7 @@ class WalletDeleteMnemonicView extends StatelessWidget {
                     barrierColor: Colors.transparent,
                     barrierDismissible: false,
                     context: context,
-                    builder: (context) => _buildConfirmDialog(context),
+                    builder: (_) => _buildConfirmDialog(context),
                   );
                 },
                 child: FittedBox(
@@ -144,6 +150,7 @@ class WalletDeleteMnemonicView extends StatelessWidget {
                   child: SizedBox(
                     height: SizingUtilities.standardButtonHeight,
                     child: SimpleButton(
+                      key: Key("walletDeleteContinueCancelButtonKey"),
                       child: FittedBox(
                         child: Text(
                           "CANCEL",
@@ -165,6 +172,7 @@ class WalletDeleteMnemonicView extends StatelessWidget {
                   child: SizedBox(
                     height: SizingUtilities.standardButtonHeight,
                     child: GradientButton(
+                      key: Key("walletDeleteContinueDeleteButtonKey"),
                       child: FittedBox(
                         child: Text(
                           "DELETE",
@@ -172,7 +180,6 @@ class WalletDeleteMnemonicView extends StatelessWidget {
                         ),
                       ),
                       onTap: () async {
-                        // TODO possibly show progress of deletion if it takes any significant time
                         final walletsService =
                             Provider.of<WalletsService>(context, listen: false);
                         final walletName =
@@ -191,6 +198,7 @@ class WalletDeleteMnemonicView extends StatelessWidget {
                             CupertinoPageRoute(
                               maintainState: false,
                               builder: (_) => OnboardingView(),
+                              settings: RouteSettings(name: "/onboardingview"),
                             ),
                             (_) => false,
                           );
@@ -199,6 +207,8 @@ class WalletDeleteMnemonicView extends StatelessWidget {
                             context,
                             CupertinoPageRoute(
                               builder: (_) => WalletSelectionView(),
+                              settings:
+                                  RouteSettings(name: "/walletselectionview"),
                             ),
                             (_) => false,
                           );
@@ -223,12 +233,13 @@ class WalletDeleteMnemonicView extends StatelessWidget {
           child: SizedBox(
             height: SizingUtilities.standardButtonHeight,
             child: SimpleButton(
+              key: Key("walletDeleteShowQrCodeButtonKey"),
               onTap: () {
                 showDialog(
                   context: context,
                   useSafeArea: false,
                   barrierDismissible: false,
-                  builder: (context) {
+                  builder: (_) {
                     return _buildQrCodePopup(context);
                   },
                 );
@@ -263,9 +274,10 @@ class WalletDeleteMnemonicView extends StatelessWidget {
           child: SizedBox(
             height: 48,
             child: SimpleButton(
+              key: Key("walletDeleteCopySeedButtonKey"),
               onTap: () async {
                 final mnemonic = await _getMnemonic(context);
-                Clipboard.setData(
+                clipboard.setData(
                   ClipboardData(
                     text: mnemonic.join(" "),
                   ),
@@ -554,6 +566,7 @@ class WalletDeleteMnemonicView extends StatelessWidget {
                     height: 48,
                     width: MediaQuery.of(context).size.width / 2,
                     child: SimpleButton(
+                      key: Key("deleteWalletQrCodePopupCancelButtonKey"),
                       onTap: () {
                         Navigator.of(context).pop();
                       },

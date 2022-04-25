@@ -82,9 +82,14 @@ class NodeService extends ChangeNotifier {
     return Map<String, dynamic>.from(nodes);
   }
 
-  setCurrentNode(String nodeName) async {
+  Future<void> setCurrentNode(String nodeName) async {
     final id = _walletId;
     final wallet = Hive.box(id);
+    final nodes = wallet.get('nodes');
+
+    if (!nodes.containsKey(nodeName)) {
+      throw Exception("Cannot set active node: '$nodeName' does not exist!");
+    }
 
     await wallet.put('activeNodeName', nodeName);
     refresh();
@@ -93,20 +98,19 @@ class NodeService extends ChangeNotifier {
   }
 
   /// returns false if node with same name exists, true on success
-  bool createNode({
+  Future<bool> createNode({
     @required String name,
     @required String ipAddress,
     @required String port,
     @required bool useSSL,
     bool shouldNotifyListeners = true,
-  }) {
+  }) async {
     if (name == null || name.isEmpty) {
       throw Exception("node name must not be empty");
     }
 
-    final id = _walletId;
-    final wallet = Hive.box(id);
-    var nodes = wallet.get('nodes');
+    final wallet = await Hive.openBox(_walletId);
+    var nodes = await wallet.get('nodes');
 
     if (nodes == null) {
       nodes = <String, dynamic>{};
@@ -123,31 +127,26 @@ class NodeService extends ChangeNotifier {
       "useSSL": useSSL,
     };
 
-    wallet.put('nodes', nodes).then((_) {
-      if (nodes.length == 1) {
-        wallet
-            .put('activeNodeName', name)
-            .then((_) => refresh(shouldNotifyListeners: shouldNotifyListeners));
-      } else {
-        refresh(shouldNotifyListeners: shouldNotifyListeners);
-      }
-    });
+    await wallet.put('nodes', nodes);
 
-    refresh();
+    if (nodes.length == 1) {
+      await wallet.put('activeNodeName', name);
+    }
+    refresh(shouldNotifyListeners: shouldNotifyListeners);
     return true;
   }
 
   /// returns false if node with same name exists, true on successful edit
-  bool editNode({
+  Future<bool> editNode({
     String id,
     String originalName,
     String updatedName,
     String updatedIpAddress,
     String updatedPort,
     bool useSSL,
-  }) {
-    final wallet = Hive.box(_walletId);
-    final nodes = wallet.get('nodes');
+  }) async {
+    final wallet = await Hive.openBox(_walletId);
+    final nodes = await wallet.get('nodes');
 
     if (nodes.keys.contains(updatedName) && nodes[updatedName]['id'] != id) {
       // do not allow duplicate names
@@ -160,7 +159,10 @@ class NodeService extends ChangeNotifier {
     node["useSSL"] = useSSL;
     nodes[updatedName] = node;
 
-    wallet.put('nodes', nodes);
+    await wallet.put('nodes', nodes);
+    if (originalName == activeNodeName) {
+      await wallet.put('activeNodeName', updatedName);
+    }
     refresh();
     return true;
   }
@@ -177,16 +179,20 @@ class NodeService extends ChangeNotifier {
     final nodes = Map<String, dynamic>.from(wallet.get('nodes'));
 
     final removedNode = nodes.remove(name);
+    if (removedNode == null) {
+      return false;
+    }
+
     await wallet.put('nodes', nodes);
 
     // connect to default node if active connected node is deleted
     if (_activeNodeName == name) {
-      setCurrentNode(CampfireConstants.defaultNodeName);
+      await setCurrentNode(CampfireConstants.defaultNodeName);
     } else {
       // refresh here as setCurrentNode already call refresh on completion
       refresh();
     }
 
-    return removedNode != null;
+    return true;
   }
 }

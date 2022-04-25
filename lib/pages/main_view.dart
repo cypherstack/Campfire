@@ -57,29 +57,29 @@ class _MainViewState extends State<MainView> {
     }
   }
 
-  //
+  // TODO: bring back styling that Flutter 2.10 broke
   /// Tab text color based on tab selection
-  TextStyle _buildTextStyle(int index) {
-    if (index == this._currentIndex) {
-      return GoogleFonts.workSans(
-        textStyle: TextStyle(
-          color: CFColors.spark,
-          fontSize: 14,
-          fontWeight: FontWeight.w600,
-          fontStyle: FontStyle.normal,
-        ),
-      );
-    } else {
-      return GoogleFonts.workSans(
-        textStyle: TextStyle(
-          color: CFColors.twilight,
-          fontSize: 14,
-          fontWeight: FontWeight.w600,
-          fontStyle: FontStyle.normal,
-        ),
-      );
-    }
-  }
+  // TextStyle _buildTextStyle(int index) {
+  //   if (index == this._currentIndex) {
+  //     return GoogleFonts.workSans(
+  //       textStyle: TextStyle(
+  //         color: CFColors.spark,
+  //         fontSize: 14,
+  //         fontWeight: FontWeight.w600,
+  //         fontStyle: FontStyle.normal,
+  //       ),
+  //     );
+  //   } else {
+  //     return GoogleFonts.workSans(
+  //       textStyle: TextStyle(
+  //         color: CFColors.twilight,
+  //         fontSize: 14,
+  //         fontWeight: FontWeight.w600,
+  //         fontStyle: FontStyle.normal,
+  //       ),
+  //     );
+  //   }
+  // }
 
   void _setCurrentIndex(int newIndex) {
     setState(() {
@@ -131,6 +131,7 @@ class _MainViewState extends State<MainView> {
         setState(() {
           nodeState = event.newStatus;
         });
+        _disableRefreshOnInit = false;
       }
     });
 
@@ -151,8 +152,8 @@ class _MainViewState extends State<MainView> {
 
   @override
   dispose() {
-    _nodeConnectionStatusChangedEventListener.cancel();
-    _refreshPercentChangedEventListener.cancel();
+    _nodeConnectionStatusChangedEventListener?.cancel();
+    _refreshPercentChangedEventListener?.cancel();
     super.dispose();
   }
 
@@ -193,6 +194,7 @@ class _MainViewState extends State<MainView> {
           child: AspectRatio(
             aspectRatio: 1,
             child: AppBarIconButton(
+              key: Key("mainViewSettingsButton"),
               size: 36,
               icon: SvgPicture.asset(
                 "assets/svg/menu.svg",
@@ -205,9 +207,8 @@ class _MainViewState extends State<MainView> {
                 Navigator.push(
                   context,
                   CupertinoPageRoute(
-                    builder: (context) {
-                      return SettingsView();
-                    },
+                    builder: (_) => SettingsView(),
+                    settings: RouteSettings(name: "/settingsview"),
                   ),
                 );
               },
@@ -228,10 +229,10 @@ class _MainViewState extends State<MainView> {
         child: AspectRatio(
           aspectRatio: 1,
           child: AppBarIconButton(
+            key: Key("mainViewRefreshButton"),
             size: 36,
             onPressed: () {
               if (nodeState != NodeConnectionStatus.loading) {
-                _disableRefreshOnInit = false;
                 manager.refresh();
               }
             },
@@ -358,7 +359,7 @@ class _MainViewState extends State<MainView> {
         key: _key,
         backgroundColor: CFColors.white,
         appBar: buildAppBar(context),
-        extendBody: true,
+        extendBody: false,
         bottomNavigationBar: Container(
           height: SizingUtilities.bottomToolBarHeight,
           decoration: BoxDecoration(
@@ -388,7 +389,7 @@ class _MainViewState extends State<MainView> {
                     icon: SvgPicture.asset(
                       "assets/svg/upload-2.svg",
                       color: _buildIconColor(0), // Index 0 -> send view
-                      semanticsLabel: "send navigation logo",
+                      key: Key("mainViewNavBarSendItemKey"),
                     ),
                     // TODO: bring back styling that Flutter 2.10 broke
                     label: "Send"
@@ -401,6 +402,7 @@ class _MainViewState extends State<MainView> {
                     icon: SvgPicture.asset(
                       "assets/svg/wallet-2.svg",
                       color: _buildIconColor(1), // Index 1 -> wallet view
+                      key: Key("mainViewNavBarWalletItemKey"),
                     ),
                     label: "Wallet"
                     // title: Text(
@@ -412,6 +414,7 @@ class _MainViewState extends State<MainView> {
                     icon: SvgPicture.asset(
                       "assets/svg/download-2.svg",
                       color: _buildIconColor(2), // Index 2 -> receive view
+                      key: Key("mainViewNavBarReceiveItemKey"),
                     ),
                     label: "Receive"
                     // title: Text(

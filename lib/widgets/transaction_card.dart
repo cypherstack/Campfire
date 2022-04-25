@@ -1,5 +1,4 @@
 import 'package:decimal/decimal.dart';
-import 'package:devicelocale/devicelocale.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_feather_icons/flutter_feather_icons.dart';
@@ -8,6 +7,7 @@ import 'package:paymint/models/transactions_model.dart';
 import 'package:paymint/pages/transaction_subviews/transaction_details_view.dart';
 import 'package:paymint/services/coins/manager.dart';
 import 'package:paymint/services/globals.dart';
+import 'package:paymint/services/locale_service.dart';
 import 'package:paymint/services/notes_service.dart';
 import 'package:paymint/utilities/cfcolors.dart';
 import 'package:paymint/utilities/shared_utilities.dart';
@@ -26,11 +26,6 @@ class TransactionCard extends StatefulWidget {
 
 class _TransactionCardState extends State<TransactionCard> {
   Transaction _transaction;
-  String _locale = "en_US";
-
-  Future<void> _fetchLocale() async {
-    _locale = await Devicelocale.currentLocale;
-  }
 
   NotesService notesService;
 
@@ -56,7 +51,6 @@ class _TransactionCardState extends State<TransactionCard> {
 
   @override
   void initState() {
-    _fetchLocale();
     notesService = Provider.of<NotesService>(context, listen: false);
     _transaction = widget.transaction;
     super.initState();
@@ -114,9 +108,11 @@ class _TransactionCardState extends State<TransactionCard> {
                 return TransactionDetailsView(
                   transaction: _transaction,
                   note: note,
-                  locale: _locale,
                 );
               },
+              settings: RouteSettings(
+                name: "/transactiondetailsview",
+              ),
             ),
           );
         },
@@ -173,14 +169,21 @@ class _TransactionCardState extends State<TransactionCard> {
                           Flexible(
                             child: FittedBox(
                               fit: BoxFit.scaleDown,
-                              child: Text(
-                                "${Utilities.satoshiAmountToPrettyString(_transaction.amount, _locale)} ${Provider.of<Manager>(context, listen: false).coinTicker}",
-                                style: GoogleFonts.workSans(
-                                  color: CFColors.starryNight,
-                                  fontSize: 16,
-                                  fontWeight: FontWeight.w600,
-                                  letterSpacing: 0.25,
-                                ),
+                              child: Provider<String>.value(
+                                value:
+                                    Provider.of<LocaleService>(context).locale,
+                                builder: (ctx, child) {
+                                  final String locale = ctx.watch<String>();
+                                  return Text(
+                                    "${Utilities.satoshiAmountToPrettyString(_transaction.amount, locale)} ${Provider.of<Manager>(context, listen: false).coinTicker}",
+                                    style: GoogleFonts.workSans(
+                                      color: CFColors.starryNight,
+                                      fontSize: 16,
+                                      fontWeight: FontWeight.w600,
+                                      letterSpacing: 0.25,
+                                    ),
+                                  );
+                                },
                               ),
                             ),
                           ),
@@ -218,34 +221,43 @@ class _TransactionCardState extends State<TransactionCard> {
                                 builder: (context, child) {
                                   final manager = Provider.of<Manager>(context,
                                       listen: false);
-                                  return FutureBuilder(
-                                    future: context.watch<Future<Decimal>>(),
-                                    builder: (context,
-                                        AsyncSnapshot<Decimal> snapshot) {
-                                      String symbol = "";
-                                      String _fiatValue = "0.00";
-                                      if (snapshot.connectionState ==
-                                          ConnectionState.done) {
-                                        final value = snapshot.data *
-                                            Utilities.satoshisToAmount(
-                                                _transaction.amount);
-                                        _fiatValue = value < Decimal.zero
-                                            ? "0.00"
-                                            : Utilities.localizedStringAsFixed(
-                                                value: value,
-                                                locale: _locale,
-                                                decimalPlaces: 2);
+                                  return Provider.value(
+                                    value: Provider.of<LocaleService>(context)
+                                        .locale,
+                                    builder: (ctx, child) {
+                                      final String locale = ctx.watch<String>();
+                                      return FutureBuilder(
+                                        future:
+                                            context.watch<Future<Decimal>>(),
+                                        builder: (context,
+                                            AsyncSnapshot<Decimal> snapshot) {
+                                          String symbol = "";
+                                          String _fiatValue = "0.00";
+                                          if (snapshot.connectionState ==
+                                              ConnectionState.done) {
+                                            final value = snapshot.data *
+                                                Utilities.satoshisToAmount(
+                                                    _transaction.amount);
+                                            _fiatValue = value < Decimal.zero
+                                                ? "0.00"
+                                                : Utilities
+                                                    .localizedStringAsFixed(
+                                                        value: value,
+                                                        locale: locale,
+                                                        decimalPlaces: 2);
 
-                                        symbol =
-                                            currencyMap[manager.fiatCurrency];
-                                      }
-                                      return Text(
-                                        symbol + _fiatValue,
-                                        style: GoogleFonts.workSans(
-                                          color: CFColors.twilight,
-                                          fontSize: 16,
-                                          fontWeight: FontWeight.w500,
-                                        ),
+                                            symbol = currencyMap[
+                                                manager.fiatCurrency];
+                                          }
+                                          return Text(
+                                            symbol + _fiatValue,
+                                            style: GoogleFonts.workSans(
+                                              color: CFColors.twilight,
+                                              fontSize: 16,
+                                              fontWeight: FontWeight.w500,
+                                            ),
+                                          );
+                                        },
                                       );
                                     },
                                   );

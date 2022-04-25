@@ -50,6 +50,7 @@ class _AddressBookViewState extends State<AddressBookView> {
             child: AspectRatio(
               aspectRatio: 1,
               child: AppBarIconButton(
+                key: Key("addressBookAddButton"),
                 size: 36,
                 icon: SvgPicture.asset(
                   "assets/svg/plus.svg",
@@ -74,6 +75,7 @@ class _AddressBookViewState extends State<AddressBookView> {
           child: AspectRatio(
             aspectRatio: 1,
             child: AppBarIconButton(
+              key: Key("addressBookBackButton"),
               size: 36,
               onPressed: () {
                 Navigator.pop(context);
@@ -124,18 +126,62 @@ class _AddressBookViewState extends State<AddressBookView> {
                     ? addressService.addressBookEntries
                     : addressService.search(_searchString),
                 builder: (context, entries) {
-                  if (entries.connectionState == ConnectionState.done) {
-                    return _buildAddressBookEntryList(context, entries);
+                  Map<String, String> data = {};
+                  if (entries.connectionState == ConnectionState.done &&
+                      entries?.data != null) {
+                    data = entries.data;
+                  }
+                  // No transactions in wallet
+                  if (data.isEmpty) {
+                    return Center(
+                      child: Column(
+                        // mainAxisAlignment: MainAxisAlignment.center,
+                        children: [
+                          SizedBox(
+                            height: 40,
+                          ),
+                          SvgPicture.asset(
+                            "assets/svg/empty-address-list.svg",
+                            width: MediaQuery.of(context).size.width * 0.52,
+                          ),
+                          SizedBox(
+                            height: 8,
+                          ),
+                          FittedBox(
+                            child: Text(
+                              _searchString == ""
+                                  ? "NO ADDRESSES YET"
+                                  : "NO ADDRESSES FOUND",
+                              style: GoogleFonts.workSans(
+                                color: CFColors.dew,
+                                fontWeight: FontWeight.w600,
+                                fontSize: 12,
+                                letterSpacing: 0.25,
+                              ),
+                            ),
+                          )
+                        ],
+                      ),
+                    );
                   } else {
-                    // TODO maybe show the following animation if search takes a while
-                    // return empty container because showing animation happens so fast its distracting
-                    return Container();
-                    // return Center(
-                    //   child: SpinKitThreeBounce(
-                    //     color: CFColors.spark,
-                    //     size: MediaQuery.of(context).size.width * 0.25,
-                    //   ),
-                    // );
+                    final addresses = data.keys.toList().reversed.toList();
+                    return Container(
+                      child: ListView.builder(
+                        itemCount: addresses.length,
+                        itemBuilder: (context, index) {
+                          return Padding(
+                            padding: EdgeInsets.symmetric(
+                              vertical: SizingUtilities.listItemSpacing / 2,
+                              horizontal: 20,
+                            ),
+                            child: AddressBookCard(
+                              name: data[addresses[index]],
+                              address: addresses[index],
+                            ),
+                          );
+                        },
+                      ),
+                    );
                   }
                 },
               ),
@@ -144,59 +190,5 @@ class _AddressBookViewState extends State<AddressBookView> {
         ),
       ),
     );
-  }
-
-  Widget _buildAddressBookEntryList(
-      BuildContext context, AsyncSnapshot<Map<String, String>> entries) {
-    // No transactions in wallet
-    if (entries.data == null || entries.data.length == 0) {
-      return Center(
-        child: Column(
-          // mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            SizedBox(
-              height: 40,
-            ),
-            SvgPicture.asset(
-              "assets/svg/empty-address-list.svg",
-              width: MediaQuery.of(context).size.width * 0.52,
-            ),
-            SizedBox(
-              height: 8,
-            ),
-            FittedBox(
-              child: Text(
-                _searchString == "" ? "NO ADDRESSES YET" : "NO ADDRESSES FOUND",
-                style: GoogleFonts.workSans(
-                  color: CFColors.dew,
-                  fontWeight: FontWeight.w600,
-                  fontSize: 12,
-                  letterSpacing: 0.25,
-                ),
-              ),
-            )
-          ],
-        ),
-      );
-    } else {
-      final addresses = entries.data.keys.toList().reversed.toList();
-      return Container(
-        child: ListView.builder(
-          itemCount: addresses.length,
-          itemBuilder: (context, index) {
-            return Padding(
-              padding: EdgeInsets.symmetric(
-                vertical: SizingUtilities.listItemSpacing / 2,
-                horizontal: 20,
-              ),
-              child: AddressBookCard(
-                name: entries.data[addresses[index]],
-                address: addresses[index],
-              ),
-            );
-          },
-        ),
-      );
-    }
   }
 }

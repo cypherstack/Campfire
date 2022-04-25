@@ -6,6 +6,7 @@
 
 import 'package:mockito/mockito.dart' as _i1;
 import 'package:paymint/services/coins/manager.dart' as _i2;
+import 'package:paymint/services/locale_service.dart' as _i4;
 import 'package:paymint/services/notes_service.dart' as _i3;
 
 // ignore_for_file: type=lint
@@ -27,3 +28,8 @@ class MockManager extends _i1.Mock implements _i2.Manager {}
 ///
 /// See the documentation for Mockito's code generation for more information.
 class MockNotesService extends _i1.Mock implements _i3.NotesService {}
+
+/// A class which mocks [LocaleService].
+///
+/// See the documentation for Mockito's code generation for more information.
+class MockLocaleService extends _i1.Mock implements _i4.LocaleService {}

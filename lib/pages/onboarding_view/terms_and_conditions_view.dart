@@ -6,6 +6,7 @@ import 'package:paymint/pages/onboarding_view/helpers/builders.dart';
 import 'package:paymint/pages/onboarding_view/helpers/create_wallet_type.dart';
 import 'package:paymint/utilities/cfcolors.dart';
 import 'package:paymint/utilities/logger.dart';
+import 'package:paymint/utilities/misc_global_constants.dart';
 import 'package:paymint/utilities/terms_and_conditions.dart';
 import 'package:paymint/utilities/text_styles.dart';
 import 'package:paymint/widgets/custom_buttons/gradient_button.dart';
@@ -94,6 +95,7 @@ class _TermsAndConditionsViewState extends State<TermsAndConditionsView> {
                       CupertinoPageRoute(
                         builder: (_) => NameYourWalletView(
                           type: widget.type,
+                          allowTestNet: CampfireConstants.allowTestnets,
                         ),
                       ),
                     );

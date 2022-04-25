@@ -1988,8 +1988,6 @@ void main() {
       final secureStore = FakeSecureStorage();
       final priceAPI = MockPriceAPI();
 
-      String expectedTxid;
-
       when(client.getBlockHeadTip()).thenAnswer(
           (_) async => {"height": 459185, "hex": "... some block hex ..."});
 
@@ -2005,7 +2003,6 @@ void main() {
             Uint8List.fromList(hash.bytes.reversed.toList(growable: false));
 
         final txid = uint8listToString(reversedBytes);
-        expectedTxid = txid;
         return txid;
       });
 
@@ -2167,8 +2164,6 @@ void main() {
       final cachedClient = MockCachedElectrumX();
       final secureStore = FakeSecureStorage();
       final priceAPI = MockPriceAPI();
-
-      String expectedTxid;
 
       when(client.getBlockHeadTip()).thenAnswer(
           (_) async => {"height": 459185, "hex": "... some block hex ..."});

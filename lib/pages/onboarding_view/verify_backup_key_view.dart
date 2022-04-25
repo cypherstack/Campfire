@@ -90,6 +90,7 @@ class _VerifyBackupKeyViewState extends State<VerifyBackupKeyView> {
                   FittedBox(
                     child: Text(
                       "Type the ${_positionStrings[_randomPosition]} word from your key.",
+                      key: Key("nThWordVerificationString"),
                       style: GoogleFonts.workSans(
                         color: CFColors.dusk,
                         fontWeight: FontWeight.w400,

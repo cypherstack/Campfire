@@ -1,10 +1,8 @@
 import 'dart:async';
 
-import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_svg/flutter_svg.dart';
 import 'package:google_fonts/google_fonts.dart';
-import 'package:paymint/pages/settings_view/settings_subviews/network_settings_subviews/node_card.dart';
 import 'package:paymint/services/event_bus/events/node_connection_status_changed_event.dart';
 import 'package:paymint/services/event_bus/global_event_bus.dart';
 import 'package:paymint/services/node_service.dart';
@@ -12,6 +10,7 @@ import 'package:paymint/utilities/cfcolors.dart';
 import 'package:paymint/utilities/logger.dart';
 import 'package:paymint/utilities/sizing_utilities.dart';
 import 'package:paymint/widgets/custom_buttons/app_bar_icon_button.dart';
+import 'package:paymint/widgets/node_card.dart';
 import 'package:provider/provider.dart';
 
 import '../helpers/builders.dart';
@@ -39,32 +38,40 @@ class _NetworkSettingsViewState extends State<NetworkSettingsView> {
 
   String _statusLabel = "Synchronized";
   StreamSubscription _nodeConnectionStatusChangedEventListener;
+  String statusIconAsset;
 
   @override
   initState() {
+    statusIconAsset = "assets/svg/check-circle3.svg";
     // TODO add animations and other icons based on status
     _nodeConnectionStatusChangedEventListener = GlobalEventBus.instance
         .on<NodeConnectionStatusChangedEvent>()
         .listen((event) {
-      Logger.print("event caught");
+      Logger.print("event caught in network settings view: $event");
       String newLabel;
+      String iconAsset;
       switch (event.newStatus) {
         case NodeConnectionStatus.synced:
           newLabel = "Synchronized";
+          iconAsset = "assets/svg/check-circle3.svg";
           break;
         case NodeConnectionStatus.loading:
           newLabel = "Synchronizing";
+          iconAsset = "assets/svg/check-circle3.svg";
           break;
         case NodeConnectionStatus.disconnected:
           newLabel = "Disconnected";
+          iconAsset = "assets/svg/check-circle3.svg";
           break;
         case NodeConnectionStatus.connecting:
           newLabel = "Connecting";
+          iconAsset = "assets/svg/check-circle3.svg";
           break;
       }
       if (newLabel != _statusLabel) {
         setState(() {
           _statusLabel = newLabel;
+          statusIconAsset = iconAsset;
         });
       }
     });
@@ -94,6 +101,7 @@ class _NetworkSettingsViewState extends State<NetworkSettingsView> {
           child: AspectRatio(
             aspectRatio: 1,
             child: AppBarIconButton(
+              key: Key("networkSettingsAddNodeButtonKey"),
               size: 36,
               icon: SvgPicture.asset(
                 "assets/svg/plus.svg",
@@ -128,7 +136,7 @@ class _NetworkSettingsViewState extends State<NetworkSettingsView> {
                     width: 8,
                   ),
                   SvgPicture.asset(
-                    "assets/svg/check-circle3.svg",
+                    statusIconAsset,
                     color: CFColors.twilight,
                     width: 24,
                     height: 24,
@@ -183,7 +191,7 @@ class _NetworkSettingsViewState extends State<NetworkSettingsView> {
         // final isConnected = key == nodeService.activeNodeName;
         list.add(
           NodeCard(
-            key: ValueKey(key),
+            key: Key("networkSettingsViewNodeCard_$key"),
             nodeName: key,
             nodeData: Map<String, dynamic>.from(value),
             // isConnected: isConnected,

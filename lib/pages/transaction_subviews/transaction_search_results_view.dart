@@ -1,3 +1,4 @@
+import 'package:decimal/decimal.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_spinkit/flutter_spinkit.dart';
 import 'package:flutter_svg/svg.dart';
@@ -20,6 +21,7 @@ class TransactionSearchResultsView extends StatelessWidget {
     this.received,
     this.keyword,
     this.amount,
+    this.amountString,
     this.notes,
     this.contacts,
   }) : super(key: key);
@@ -29,7 +31,8 @@ class TransactionSearchResultsView extends StatelessWidget {
   final bool sent;
   final bool received;
   final String keyword;
-  final double amount;
+  final String amountString;
+  final Decimal amount;
 
   final Map<String, String> notes;
   final Map<String, String> contacts;
@@ -38,10 +41,10 @@ class TransactionSearchResultsView extends StatelessWidget {
     return transactions.where((tx) {
       // check if either both are checked or unchecked
       if (received != null && sent != null && sent == received) {
-        return _isAmountMatch(tx) &&
+        return _isKeywordMatch(tx) &&
             _isAfter(tx) &&
             _isBefore(tx) &&
-            _isKeywordMatch(tx);
+            _isAmountMatch(tx);
 
         // otherwise check for sent
       } else if (sent != null && sent) {
@@ -66,7 +69,8 @@ class TransactionSearchResultsView extends StatelessWidget {
   // transaction search criteria matches
   // null returns true as criteria not set
   bool _isAmountMatch(Transaction tx) =>
-      amount == null || tx.amount == (amount * 100000000.0).toInt();
+      amount == null ||
+      Decimal.fromInt(tx.amount) == (amount * Decimal.fromInt(100000000));
 
   bool _isReceived(Transaction tx) =>
       received == null || tx.txType == "Received";
@@ -212,7 +216,7 @@ class TransactionSearchResultsView extends StatelessWidget {
               ),
             if (amount != null)
               _buildSearchCriteriaBox(
-                  "$amount ${Provider.of<Manager>(context, listen: false).coinTicker}"),
+                  "$amountString ${Provider.of<Manager>(context, listen: false).coinTicker}"),
             if (amount != null)
               SizedBox(
                 width: 8,

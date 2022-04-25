@@ -44,6 +44,7 @@ AppBar buildSettingsAppBar(BuildContext context, String title,
             child: AspectRatio(
               aspectRatio: 1,
               child: AppBarIconButton(
+                key: Key("settingsAppBarBackButton"),
                 size: 36,
                 onPressed: () async {
                   if (backDelayed) {

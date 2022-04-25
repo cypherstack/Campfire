@@ -1,4 +1,3 @@
-import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_svg/svg.dart';
@@ -6,6 +5,7 @@ import 'package:paymint/notifications/campfire_alert.dart';
 import 'package:paymint/services/address_book_service.dart';
 import 'package:paymint/services/coins/manager.dart';
 import 'package:paymint/utilities/cfcolors.dart';
+import 'package:paymint/utilities/clipboard_interface.dart';
 import 'package:paymint/utilities/logger.dart';
 import 'package:paymint/utilities/sizing_utilities.dart';
 import 'package:paymint/utilities/text_styles.dart';
@@ -19,10 +19,12 @@ class EditAddressBookEntryView extends StatefulWidget {
     Key key,
     @required this.name,
     @required this.address,
+    this.clipboard = const ClipboardWrapper(),
   }) : super(key: key);
 
   final String name;
   final String address;
+  final ClipboardInterface clipboard;
 
   @override
   _EditAddressBookEntryViewState createState() =>
@@ -32,7 +34,7 @@ class EditAddressBookEntryView extends StatefulWidget {
 class _EditAddressBookEntryViewState extends State<EditAddressBookEntryView> {
   TextEditingController addressTextController = TextEditingController();
   TextEditingController nameTextController = TextEditingController();
-
+  ClipboardInterface clipboard;
   var _manager;
 
   bool _enabledSave;
@@ -41,6 +43,7 @@ class _EditAddressBookEntryViewState extends State<EditAddressBookEntryView> {
   @override
   initState() {
     _manager = Provider.of<Manager>(context, listen: false);
+    clipboard = widget.clipboard;
     addressTextController.text = widget.address;
     nameTextController.text = widget.name;
     _enabledSave =
@@ -59,39 +62,49 @@ class _EditAddressBookEntryViewState extends State<EditAddressBookEntryView> {
   Future<void> _saveEditedAddressEntry(BuildContext context) async {
     final name = nameTextController.text;
     final address = addressTextController.text;
-    print("controller address: $address");
-    print("controller name: $name");
-    print("widget address: ${widget.address}");
-    print("widget name: ${widget.name}");
 
     if (name == widget.name && address == widget.address) {
       // no need to update anything
-      print("same same");
+      Navigator.pop(context);
       return;
     }
+
+    // these should never fail as the send button should be disabled
+    // if either field is left empty
+    assert(name.isNotEmpty);
+    assert(address.isNotEmpty);
 
     final addressService =
         Provider.of<AddressBookService>(context, listen: false);
 
-    if (name.isEmpty || address.isEmpty) {
-      print("both empoty");
+    if (address == widget.address) {
+      await addressService.removeAddressBookEntry(address);
+      await addressService.addAddressBookEntry(address, name);
+      // on success pop back to address book
+      Navigator.pop(context);
+      Navigator.pop(context);
+    } else if (await addressService.containsAddress(address)) {
       showDialog(
         context: context,
         useSafeArea: false,
         barrierDismissible: false,
         builder: (_) {
-          return CampfireAlert(message: "Please fill out both fields.");
+          return CampfireAlert(
+              message: "The address you entered is already in your contacts!");
         },
       );
     } else {
-      if (address == widget.address) {
-        print("editing name only!");
-        await addressService.removeAddressBookEntry(address);
+      try {
+        // add the edited contact
         await addressService.addAddressBookEntry(address, name);
+
+        // remove the original
+        await addressService.removeAddressBookEntry(widget.address);
+
         // on success pop back to address book
         Navigator.pop(context);
         Navigator.pop(context);
-      } else if (await addressService.containsAddress(address)) {
+      } catch (error) {
         showDialog(
           context: context,
           useSafeArea: false,
@@ -102,31 +115,6 @@ class _EditAddressBookEntryViewState extends State<EditAddressBookEntryView> {
                     "The address you entered is already in your contacts!");
           },
         );
-      } else {
-        try {
-          print("editing address and possibly name!");
-
-          // add the edited contact
-          await addressService.addAddressBookEntry(address, name);
-
-          // remove the original
-          await addressService.removeAddressBookEntry(widget.address);
-
-          // on success pop back to address book
-          Navigator.pop(context);
-          Navigator.pop(context);
-        } catch (error) {
-          showDialog(
-            context: context,
-            useSafeArea: false,
-            barrierDismissible: false,
-            builder: (_) {
-              return CampfireAlert(
-                  message:
-                      "The address you entered is already in your contacts!");
-            },
-          );
-        }
       }
     }
   }
@@ -158,15 +146,17 @@ class _EditAddressBookEntryViewState extends State<EditAddressBookEntryView> {
           child: AspectRatio(
             aspectRatio: 1,
             child: AppBarIconButton(
-                size: 36,
-                onPressed: () {
-                  Navigator.pop(context);
-                },
-                circularBorderRadius: SizingUtilities.circularBorderRadius,
-                icon: SvgPicture.asset(
-                  "assets/svg/chevronLeft.svg",
-                  color: CFColors.twilight,
-                )),
+              key: Key("editAddressBookEntryBackButtonKey"),
+              size: 36,
+              onPressed: () {
+                Navigator.pop(context);
+              },
+              circularBorderRadius: SizingUtilities.circularBorderRadius,
+              icon: SvgPicture.asset(
+                "assets/svg/chevronLeft.svg",
+                color: CFColors.twilight,
+              ),
+            ),
           ),
         ),
       ),
@@ -185,6 +175,7 @@ class _EditAddressBookEntryViewState extends State<EditAddressBookEntryView> {
                     bottom: 12,
                   ),
                   child: TextField(
+                    key: Key("editAddressBookEntryAddressFieldKey"),
                     readOnly: false,
                     inputFormatters: <TextInputFormatter>[
                       FilteringTextInputFormatter.allow(
@@ -230,10 +221,11 @@ class _EditAddressBookEntryViewState extends State<EditAddressBookEntryView> {
                             ),
                             _isEmptyAddress
                                 ? GestureDetector(
+                                    key: Key(
+                                        "editAddressBookEntryPasteAddressButtonKey"),
                                     onTap: () async {
-                                      final ClipboardData data =
-                                          await Clipboard.getData(
-                                              Clipboard.kTextPlain);
+                                      final ClipboardData data = await clipboard
+                                          .getData(Clipboard.kTextPlain);
 
                                       if (data != null &&
                                           data.text.isNotEmpty) {
@@ -256,6 +248,8 @@ class _EditAddressBookEntryViewState extends State<EditAddressBookEntryView> {
                                     ),
                                   )
                                 : GestureDetector(
+                                    key: Key(
+                                        "editAddressBookEntryClearAddressButtonKey"),
                                     onTap: () async {
                                       addressTextController.text = "";
                                       setState(() {
@@ -286,6 +280,7 @@ class _EditAddressBookEntryViewState extends State<EditAddressBookEntryView> {
                     bottom: 12,
                   ),
                   child: TextField(
+                    key: Key("editAddressBookEntryNameFieldKey"),
                     controller: nameTextController,
                     decoration: InputDecoration(
                       hintText: "Enter name",
