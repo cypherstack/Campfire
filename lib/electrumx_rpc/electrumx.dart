@@ -1,4 +1,5 @@
 import 'dart:convert';
+import 'dart:io';
 
 import 'package:flutter/cupertino.dart';
 import 'package:paymint/electrumx_rpc/rpc.dart';
@@ -62,6 +63,7 @@ class ElectrumX {
     List<dynamic> args = const [],
     Duration connectionTimeout,
     String requestID,
+    int retries = 2,
   }) async {
     if (_rpcClient == null) {
       _rpcClient = JsonRPC(
@@ -87,6 +89,15 @@ class ElectrumX {
       }
 
       return response;
+    } on SocketException catch (e) {
+      // likely timed out so then retry
+      if (retries > 0)
+        return request(
+            command: command,
+            args: args,
+            connectionTimeout: connectionTimeout,
+            requestID: requestID,
+            retries: retries - 1);
     } catch (e) {
       throw e;
     }
