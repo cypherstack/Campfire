@@ -995,6 +995,12 @@ class FiroWallet extends CoinServiceAPI {
         ? SecureStorageWrapper(FlutterSecureStorage())
         : secureStore;
 
+    Logger.print("isolate length: ${isolates.length}");
+    for (final isolate in isolates.values) {
+      isolate.kill(priority: Isolate.immediate);
+    }
+    isolates.clear();
+
     // add listener for nodes changed
     _nodesChangedListener =
         GlobalEventBus.instance.on<NodesChangedEvent>().listen((event) async {
@@ -2925,6 +2931,10 @@ class FiroWallet extends CoinServiceAPI {
     _nodesChangedListener = null;
     timer?.cancel();
     timer = null;
+    for (final isolate in isolates.values) {
+      isolate.kill(priority: Isolate.immediate);
+    }
     isolates.clear();
+    Logger.print("firo_wallet exit finished");
   }
 }
