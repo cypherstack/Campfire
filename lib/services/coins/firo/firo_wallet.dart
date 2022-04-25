@@ -762,6 +762,8 @@ bip32.BIP32 getBip32Root(String mnemonic, NetworkType network) {
 
 /// Handles a single instance of a firo wallet
 class FiroWallet extends CoinServiceAPI {
+  static const integrationTestFlag =
+      bool.fromEnvironment("IS_INTEGRATION_TEST");
   Timer timer;
   FiroNetworkType _networkType;
   FiroNetworkType get networkType => _networkType;
@@ -1145,15 +1147,18 @@ class FiroWallet extends CoinServiceAPI {
 
   /// Generates initial wallet values such as mnemonic, chain (receive/change) arrays and indexes.
   Future<void> _generateNewWallet(Box<dynamic> wallet) async {
-    final features = await electrumXClient.getServerFeatures();
-    Logger.print("features: $features");
-    if (_networkType == FiroNetworkType.main) {
-      if (features['genesis_hash'] != CampfireConstants.firoGenesisHash) {
-        throw Exception("genesis hash does not match!");
-      }
-    } else if (_networkType == FiroNetworkType.test) {
-      if (features['genesis_hash'] != CampfireConstants.firoTestGenesisHash) {
-        throw Exception("genesis hash does not match!");
+    Logger.print("IS_INTEGRATION_TEST: $integrationTestFlag");
+    if (!integrationTestFlag) {
+      final features = await electrumXClient.getServerFeatures();
+      Logger.print("features: $features");
+      if (_networkType == FiroNetworkType.main) {
+        if (features['genesis_hash'] != CampfireConstants.firoGenesisHash) {
+          throw Exception("genesis hash does not match!");
+        }
+      } else if (_networkType == FiroNetworkType.test) {
+        if (features['genesis_hash'] != CampfireConstants.firoTestGenesisHash) {
+          throw Exception("genesis hash does not match!");
+        }
       }
     }
 
@@ -2631,15 +2636,19 @@ class FiroWallet extends CoinServiceAPI {
   @override
   Future<void> recoverFromMnemonic(String mnemonic) async {
     try {
-      final features = await electrumXClient.getServerFeatures();
-      Logger.print("features: $features");
-      if (_networkType == FiroNetworkType.main) {
-        if (features['genesis_hash'] != CampfireConstants.firoGenesisHash) {
-          throw Exception("genesis hash does not match main net!");
-        }
-      } else if (_networkType == FiroNetworkType.test) {
-        if (features['genesis_hash'] != CampfireConstants.firoTestGenesisHash) {
-          throw Exception("genesis hash does not match test net!");
+      Logger.print("IS_INTEGRATION_TEST: $integrationTestFlag");
+      if (!integrationTestFlag) {
+        final features = await electrumXClient.getServerFeatures();
+        Logger.print("features: $features");
+        if (_networkType == FiroNetworkType.main) {
+          if (features['genesis_hash'] != CampfireConstants.firoGenesisHash) {
+            throw Exception("genesis hash does not match main net!");
+          }
+        } else if (_networkType == FiroNetworkType.test) {
+          if (features['genesis_hash'] !=
+              CampfireConstants.firoTestGenesisHash) {
+            throw Exception("genesis hash does not match test net!");
+          }
         }
       }
       await _recoverWalletFromBIP32SeedPhrase(mnemonic);
