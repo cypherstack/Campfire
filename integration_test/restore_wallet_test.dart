@@ -38,7 +38,7 @@ void main() {
       createPinViewBot,
     );
 
-    await tester.pumpAndSettle();
+    await tester.pumpAndSettle(Duration(seconds: 2));
     final restoreWalletFormViewBot = RestoreWalletFormViewBot(tester);
     await restoreWalletFormViewBot.ensureVisible();
 
