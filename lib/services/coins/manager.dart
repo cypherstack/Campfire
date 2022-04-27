@@ -143,4 +143,12 @@ class Manager with ChangeNotifier {
     _currentWallet = null;
     Logger.print("manager.exitCurrentWallet completed");
   }
+
+  Future<void> fullRescan() async {
+    try {
+      await _currentWallet.fullRescan();
+    } catch (e) {
+      throw e;
+    }
+  }
 }

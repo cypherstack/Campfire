@@ -576,8 +576,6 @@ class _RestoreWalletFormViewState extends State<RestoreWalletFormView> {
                 } catch (e) {
                   Wakelock.disable();
 
-                  // TODO: Possibly cancel all wallet isolates on exit?
-                  // hacky fix for handling restore cancel/interruption
                   if (e is HiveError &&
                       e.message == "Box has already been closed.") {
                     // restore was cancelled

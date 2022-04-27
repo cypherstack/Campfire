@@ -52,7 +52,7 @@ void main() {
 
     expect(find.byType(AppBarIconButton), findsOneWidget);
     expect(find.byType(SvgPicture), findsOneWidget);
-    expect(find.byType(CFDivider), findsNWidgets(4));
+    expect(find.byType(CFDivider), findsNWidgets(5));
 
     expect(find.text("Wallet Settings"), findsOneWidget);
     expect(find.text("Change PIN"), findsOneWidget);
@@ -60,6 +60,7 @@ void main() {
     expect(find.text("Rename wallet"), findsOneWidget);
     expect(find.text("Delete wallet"), findsOneWidget);
     expect(find.text("Clear shared transaction cache"), findsOneWidget);
+    expect(find.text("Full Rescan"), findsOneWidget);
 
     verify(manager.addListener(any)).called(1);
 
@@ -513,6 +514,120 @@ void main() {
     verifyNoMoreInteractions(manager);
     verifyNoMoreInteractions(walletsService);
 
+    mockingjay.verify(() => navigator.pop()).called(1);
+
+    mockingjay.verifyNoMoreInteractions(navigator);
+  });
+
+  testWidgets("tap rescan wallet and cancel", (tester) async {
+    final manager = MockManager();
+    final walletsService = MockWalletsService();
+    final navigator = mockingjay.MockNavigator();
+
+    mockingjay.when(() => navigator.pop()).thenAnswer((_) {});
+
+    when(walletsService.currentWalletName)
+        .thenAnswer((realInvocation) async => "My Firo Wallet");
+
+    await tester.pumpWidget(
+      MaterialApp(
+        home: mockingjay.MockNavigatorProvider(
+          navigator: navigator,
+          child: MultiProvider(
+            providers: [
+              ChangeNotifierProvider<WalletsService>(
+                create: (_) => walletsService,
+              ),
+              ChangeNotifierProvider<Manager>(
+                create: (_) => manager,
+              ),
+            ],
+            child: WalletSettingsView(
+              useBiometrics: true,
+            ),
+          ),
+        ),
+      ),
+    );
+
+    await tester.tap(find.byKey(Key("walletSettingsFullRescanButtonKey")));
+    await tester.pumpAndSettle();
+
+    expect(find.byType(ConfirmationDialog), findsOneWidget);
+    expect(find.text("Are you sure you want to do a full rescan?"),
+        findsOneWidget);
+    expect(find.text("CANCEL"), findsOneWidget);
+    expect(find.text("RESCAN"), findsOneWidget);
+
+    await tester.tap(find.byType(SimpleButton));
+    await tester.pumpAndSettle();
+
+    verify(manager.addListener(any)).called(1);
+
+    verifyNoMoreInteractions(manager);
+    verifyNoMoreInteractions(walletsService);
+
+    mockingjay.verify(() => navigator.pop()).called(1);
+
+    mockingjay.verifyNoMoreInteractions(navigator);
+  });
+
+  testWidgets("tap rescan wallet and continue", (tester) async {
+    final manager = MockManager();
+    final walletsService = MockWalletsService();
+    final navigator = mockingjay.MockNavigator();
+
+    mockingjay.when(() => navigator.pop()).thenAnswer((_) {});
+    mockingjay
+        .when(() => navigator.push(mockingjay.any()))
+        .thenAnswer((_) async {});
+
+    when(walletsService.currentWalletName)
+        .thenAnswer((realInvocation) async => "My Firo Wallet");
+
+    await tester.pumpWidget(
+      MaterialApp(
+        home: mockingjay.MockNavigatorProvider(
+          navigator: navigator,
+          child: MultiProvider(
+            providers: [
+              ChangeNotifierProvider<WalletsService>(
+                create: (_) => walletsService,
+              ),
+              ChangeNotifierProvider<Manager>(
+                create: (_) => manager,
+              ),
+            ],
+            child: WalletSettingsView(
+              useBiometrics: true,
+            ),
+          ),
+        ),
+      ),
+    );
+
+    await tester.tap(find.byKey(Key("walletSettingsFullRescanButtonKey")));
+    await tester.pumpAndSettle();
+
+    expect(find.byType(ConfirmationDialog), findsOneWidget);
+    expect(find.text("Are you sure you want to do a full rescan?"),
+        findsOneWidget);
+    expect(find.text("CANCEL"), findsOneWidget);
+    expect(find.text("RESCAN"), findsOneWidget);
+
+    await tester.tap(find.byType(GradientButton));
+    await tester.pumpAndSettle();
+
+    verify(manager.addListener(any)).called(1);
+
+    verifyNoMoreInteractions(manager);
+    verifyNoMoreInteractions(walletsService);
+
+    mockingjay
+        .verify(() => navigator.push(mockingjay.any(
+            that: mockingjay.isRoute(
+                whereName: equals("/settings/rescanwalletlockscreen")))))
+        .called(1);
     mockingjay.verify(() => navigator.pop()).called(1);
 
     mockingjay.verifyNoMoreInteractions(navigator);

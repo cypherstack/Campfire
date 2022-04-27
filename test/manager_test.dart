@@ -422,6 +422,26 @@ void main() {
     expect(() => manager.dispose(), returnsNormally);
   });
 
+  test("fullRescan succeeds", () {
+    final CoinServiceAPI wallet = MockFiroWallet();
+    when(wallet.fullRescan()).thenAnswer((_) async {});
+
+    final manager = Manager();
+    manager.currentWallet = wallet;
+
+    expect(() => manager.fullRescan(), returnsNormally);
+  });
+
+  test("fullRescan fails", () {
+    final CoinServiceAPI wallet = MockFiroWallet();
+    when(wallet.fullRescan()).thenThrow(Exception());
+
+    final manager = Manager();
+    manager.currentWallet = wallet;
+
+    expect(() => manager.fullRescan(), throwsA(isA<Exception>()));
+  });
+
   test("act on event", () async {
     final CoinServiceAPI wallet = MockFiroWallet();
     when(wallet.exit()).thenReturn(null);

@@ -146,7 +146,9 @@ class CachedElectrumX {
 
   /// Clear all cached transactions for the specified coin
   Future<void> clearSharedTransactionCache({String coinName}) async {
-    await Hive.deleteBoxFromDisk('${coinName}_txCache');
-    await Hive.deleteBoxFromDisk('${coinName}_anonymitySetCache');
+    final txCache = await Hive.openBox('${coinName}_txCache');
+    await txCache.clear();
+    final setCache = await Hive.openBox('${coinName}_anonymitySetCache');
+    await setCache.clear();
   }
 }

@@ -119,4 +119,10 @@ class FakeCoinServiceAPI extends CoinServiceAPI {
     // TODO: implement initializeWallet
     throw UnimplementedError();
   }
+
+  @override
+  Future<void> fullRescan() {
+    // TODO: implement fullRescan
+    throw UnimplementedError();
+  }
 }
