@@ -27,7 +27,7 @@ void main() {
     final nameYourWalletViewBot = NameYourWalletViewBot(tester);
     final createPinViewBot = CreatePinViewBot(tester);
 
-    // tap create new wallet button
+    // tap restore wallet button
     await onboardingViewBot.ensureVisible();
     await onboardingViewBot.tapRestoreWallet();
     await termsAndConditionsViewBot.ensureVisible();
