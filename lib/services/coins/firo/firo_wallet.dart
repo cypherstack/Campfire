@@ -198,7 +198,7 @@ Future<void> executeNative(arguments) async {
 }
 
 void stop(ReceivePort port) {
-  Isolate isolate = isolates[port];
+  Isolate isolate = isolates.remove(port);
   if (isolate != null) {
     Logger.print('Stopping Isolate...');
     isolate.kill(priority: Isolate.immediate);
@@ -846,7 +846,7 @@ class FiroWallet extends CoinServiceAPI {
 
   /// Holds final balances, all utxos under control
   Future<UtxoData> _utxoData;
-  Future<UtxoData> get utxoData => _utxoData;
+  Future<UtxoData> get utxoData => _utxoData ??= _fetchUtxoData();
 
   /// Holds wallet transaction data
   Future<TransactionData> _transactionData;
@@ -1050,9 +1050,9 @@ class FiroWallet extends CoinServiceAPI {
       final useBio = await _fetchUseBiometrics();
       this._useBiometrics = Future(() => useBio);
     }
-
-    this._utxoData = _fetchUtxoData();
-    this._transactionData = _fetchTransactionData();
+    //
+    // this._utxoData = _fetchUtxoData();
+    // this._transactionData = _fetchTransactionData();
 
     await checkReceivingAddressForTransactions();
     return true;
@@ -1998,38 +1998,6 @@ class FiroWallet extends CoinServiceAPI {
   Future<ElectrumXNode> _getCurrentNode() async {
     final wallet = await Hive.openBox(this._walletId);
     var nodes = await wallet.get('nodes');
-    //
-    // if (nodes == null || nodes.isEmpty) {
-    //   // initialize default node
-    //   nodes = <String, dynamic>{};
-    //   String ip;
-    //   String port;
-    //   bool useSSL;
-    //   String nodeName;
-    //   if (networkType == FiroNetworkType.main) {
-    //     ip = CampfireConstants.defaultIpAddress;
-    //     port = CampfireConstants.defaultPort.toString();
-    //     useSSL = CampfireConstants.defaultUseSSL;
-    //     nodeName = CampfireConstants.defaultNodeName;
-    //   } else if (networkType == FiroNetworkType.test) {
-    //     ip = CampfireConstants.defaultIpAddressTestNet;
-    //     port = CampfireConstants.defaultPortTestNet.toString();
-    //     useSSL = CampfireConstants.defaultUseSSLTestNet;
-    //     nodeName = CampfireConstants.defaultNodeNameTestNet;
-    //   }
-    //
-    //   nodes.addAll({
-    //     nodeName: {
-    //       "id": Uuid().v1(),
-    //       "ipAddress": ip,
-    //       "port": port,
-    //       "useSSL": useSSL,
-    //     }
-    //   });
-    //
-    //   await wallet.put('nodes', nodes);
-    //   await wallet.put('activeNodeName', nodeName);
-    // }
 
     final name = await wallet.get('activeNodeName');
     try {
@@ -2696,6 +2664,117 @@ class FiroWallet extends CoinServiceAPI {
     }
   }
 
+  @override
+  Future<void> fullRescan() async {
+    Logger.print("Starting full rescan!");
+    // timer?.cancel();
+    // for (final isolate in isolates.values) {
+    //   isolate.kill(priority: Isolate.immediate);
+    // }
+    // isolates.clear();
+    longMutex = true;
+
+    // clear cache
+    _cachedElectrumXClient.clearSharedTransactionCache(coinName: this.coinName);
+
+    // back up data
+    await _rescanBackup();
+
+    try {
+      final mnemonic =
+          await _secureStore.read(key: '${this._walletId}_mnemonic');
+      await _recoverWalletFromBIP32SeedPhrase(mnemonic);
+
+      longMutex = false;
+      Logger.print("Full rescan complete!");
+    } catch (e, s) {
+      // restore from backup
+      await _rescanRestore();
+
+      longMutex = false;
+      Logger.print("Exception rethrown from fullRescan(): $e\n$s");
+      throw e;
+    }
+  }
+
+  Future<void> _rescanBackup() async {
+    Logger.print("starting rescan backup");
+    final wallet = await Hive.openBox(this._walletId);
+
+    // backup current and clear data
+    final tempReceivingAddresses = await wallet.get('receivingAddresses');
+    await wallet.delete('receivingAddresses');
+    await wallet.put('receivingAddresses_BACKUP', tempReceivingAddresses);
+
+    final tempChangeAddresses = await wallet.get('changeAddresses');
+    await wallet.delete('changeAddresses');
+    await wallet.put('changeAddresses_BACKUP', tempChangeAddresses);
+
+    final tempReceivingIndex = await wallet.get('receivingIndex');
+    await wallet.delete('receivingIndex');
+    await wallet.put('receivingIndex_BACKUP', tempReceivingIndex);
+
+    final tempChangeIndex = await wallet.get('changeIndex');
+    await wallet.delete('changeIndex');
+    await wallet.put('changeIndex_BACKUP', tempChangeIndex);
+
+    final tempReceiveDerivations = await wallet.get('receiveDerivations');
+    await wallet.delete('receiveDerivations');
+    await wallet.put('receiveDerivations_BACKUP', tempReceiveDerivations);
+
+    final tempChangeDerivations = await wallet.get('changeDerivations');
+    await wallet.delete('changeDerivations');
+    await wallet.put('changeDerivations_BACKUP', tempChangeDerivations);
+
+    // back up but no need to delete
+    final tempMintIndex = await wallet.get('mintIndex');
+    await wallet.put('mintIndex_BACKUP', tempMintIndex);
+
+    final tempLelantusCoins = await wallet.get('_lelantus_coins');
+    await wallet.put('_lelantus_coins_BACKUP', tempLelantusCoins);
+
+    final tempJIndex = await wallet.get('jindex');
+    await wallet.put('jindex_BACKUP', tempJIndex);
+
+    final tempLelantusTxModel = await wallet.get('latest_lelantus_tx_model');
+    await wallet.put('latest_lelantus_tx_model_BACKUP', tempLelantusTxModel);
+
+    Logger.print("rescan backup complete");
+  }
+
+  Future<void> _rescanRestore() async {
+    Logger.print("starting rescan restore");
+    final wallet = await Hive.openBox(this._walletId);
+
+    // restore from backup
+    final tempReceivingAddresses =
+        await wallet.get('receivingAddresses_BACKUP');
+    final tempChangeAddresses = await wallet.get('changeAddresses_BACKUP');
+    final tempReceivingIndex = await wallet.get('receivingIndex_BACKUP');
+    final tempChangeIndex = await wallet.get('changeIndex_BACKUP');
+    final tempReceiveDerivations =
+        await wallet.get('receiveDerivations_BACKUP');
+    final tempChangeDerivations = await wallet.get('changeDerivations_BACKUP');
+    final tempMintIndex = await wallet.get('mintIndex_BACKUP');
+    final tempLelantusCoins = await wallet.get('_lelantus_coins_BACKUP');
+    final tempJIndex = await wallet.get('jindex_BACKUP');
+    final tempLelantusTxModel =
+        await wallet.get('latest_lelantus_tx_model_BACKUP');
+
+    await wallet.put('receivingAddresses', tempReceivingAddresses);
+    await wallet.put('changeAddresses', tempChangeAddresses);
+    await wallet.put('receivingIndex', tempReceivingIndex);
+    await wallet.put('changeIndex', tempChangeIndex);
+    await wallet.put('receiveDerivations', tempReceiveDerivations);
+    await wallet.put('changeDerivations', tempChangeDerivations);
+    await wallet.put('mintIndex', tempMintIndex);
+    await wallet.put('_lelantus_coins', tempLelantusCoins);
+    await wallet.put('jindex', tempJIndex);
+    await wallet.put('latest_lelantus_tx_model', tempLelantusTxModel);
+
+    Logger.print("rescan restore  complete");
+  }
+
   /// wrapper for _recoverWalletFromBIP32SeedPhrase()
   @override
   Future<void> recoverFromMnemonic(String mnemonic) async {
@@ -2715,7 +2794,14 @@ class FiroWallet extends CoinServiceAPI {
           }
         }
       }
-      await _recoverWalletFromBIP32SeedPhrase(mnemonic);
+      // this should never fail
+      if ((await _secureStore.read(key: '${this._walletId}_mnemonic')) !=
+          null) {
+        throw Exception("Attempted to overwrite mnemonic on restore!");
+      }
+      await _secureStore.write(
+          key: '${this._walletId}_mnemonic', value: mnemonic.trim());
+      await _recoverWalletFromBIP32SeedPhrase(mnemonic.trim());
     } catch (e, s) {
       Logger.print("Exception rethrown from recoverFromMnemonic(): $e\n$s");
       throw e;
@@ -2730,12 +2816,6 @@ class FiroWallet extends CoinServiceAPI {
     longMutex = true;
     Logger.print("PROCESSORS ${Platform.numberOfProcessors}");
     try {
-      // this should never fail as overwriting a mnemonic is big bad
-      assert(
-          (await _secureStore.read(key: '${this._walletId}_mnemonic')) == null);
-      await _secureStore.write(
-          key: '${this._walletId}_mnemonic', value: suppliedMnemonic.trim());
-
       final wallet = await Hive.openBox(this._walletId);
       final setDataMap = Map();
       final latestSetId = await getLatestSetId();

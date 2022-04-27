@@ -433,7 +433,59 @@ class _WalletSettingsListState extends State<WalletSettingsList> {
               ),
             ),
           ),
-        )
+        ),
+        CFDivider(),
+        GestureDetector(
+          key: Key("walletSettingsFullRescanButtonKey"),
+          onTap: () async {
+            showDialog(
+              useSafeArea: false,
+              barrierColor: Colors.transparent,
+              barrierDismissible: false,
+              context: context,
+              builder: (_) => ConfirmationDialog(
+                cancelButtonText: "CANCEL",
+                confirmButtonText: "RESCAN",
+                message: "Are you sure you want to do a full rescan?",
+                onCancel: () {
+                  Navigator.pop(context);
+                },
+                onConfirm: () async {
+                  Navigator.pop(context);
+                  Navigator.push(
+                    context,
+                    CupertinoPageRoute(
+                      builder: (_) => LockscreenView(
+                        routeOnSuccess: '/settings/rescanwarning',
+                        biometricsAuthenticationTitle: "Confirm Full Rescan",
+                        biometricsCancelButtonString: "CANCEL",
+                        biometricsLocalizedReason:
+                            "Initiate full wallet rescan",
+                      ),
+                      settings: RouteSettings(
+                          name: "/settings/rescanwalletlockscreen"),
+                    ),
+                  );
+                },
+              ),
+            );
+          },
+          child: Container(
+            width: double.infinity,
+            color: Colors.white,
+            child: Padding(
+              padding: const EdgeInsets.only(
+                top: 16,
+                bottom: 16,
+                right: 10,
+              ),
+              child: Text(
+                "Full Rescan",
+                style: _itemTextStyle,
+              ),
+            ),
+          ),
+        ),
       ],
     );
   }

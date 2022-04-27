@@ -45,6 +45,11 @@ class WalletSettingsViewBot {
     await tester.pumpAndSettle();
   }
 
+  Future<void> tapFullRescan() async {
+    await tester.tap(find.byKey(Key("walletSettingsFullRescanButtonKey")));
+    await tester.pumpAndSettle();
+  }
+
   Future<void> tapCancelDeleteConfirmationDialog() async {
     expect(find.byType(ConfirmationDialog), findsOneWidget);
     expect(find.text("CANCEL"), findsOneWidget);
@@ -60,6 +65,28 @@ class WalletSettingsViewBot {
     expect(find.text("CANCEL"), findsOneWidget);
     expect(find.text("DELETE"), findsOneWidget);
     expect(find.textContaining("Do you want to delete "), findsOneWidget);
+    await tester.tap(find.byType(GradientButton));
+    await tester.pumpAndSettle();
+    expect(find.byType(ConfirmationDialog), findsNothing);
+  }
+
+  Future<void> tapCancelRescanConfirmationDialog() async {
+    expect(find.byType(ConfirmationDialog), findsOneWidget);
+    expect(find.text("CANCEL"), findsOneWidget);
+    expect(find.text("RESCAN"), findsOneWidget);
+    expect(find.text("Are you sure you want to do a full rescan?"),
+        findsOneWidget);
+    await tester.tap(find.byType(SimpleButton));
+    await tester.pumpAndSettle();
+    expect(find.byType(ConfirmationDialog), findsNothing);
+  }
+
+  Future<void> tapRescanOnRescanConfirmationDialog() async {
+    expect(find.byType(ConfirmationDialog), findsOneWidget);
+    expect(find.text("CANCEL"), findsOneWidget);
+    expect(find.text("RESCAN"), findsOneWidget);
+    expect(find.text("Are you sure you want to do a full rescan?"),
+        findsOneWidget);
     await tester.tap(find.byType(GradientButton));
     await tester.pumpAndSettle();
     expect(find.byType(ConfirmationDialog), findsNothing);

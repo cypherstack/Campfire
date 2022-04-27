@@ -389,9 +389,16 @@ void main() {
 
     expect(find.text("Restoring wallet"), findsOneWidget);
     expect(find.text("This may take a while."), findsOneWidget);
+    expect(find.text("Do not close or leave the app until this completes!"),
+        findsOneWidget);
     expect(find.byType(CircularProgressIndicator), findsOneWidget);
 
-    await tester.pump(Duration(seconds: 3));
+    await tester.pump(Duration(seconds: 1));
+
+    expect(find.text("Wallet Restored!"), findsOneWidget);
+    expect(find.text("Get ready to spend your Firo."), findsOneWidget);
+
+    await tester.pump(Duration(seconds: 2));
 
     mockingjay.verifyNever(() => navigator.pop());
     mockingjay
@@ -474,6 +481,8 @@ void main() {
 
     expect(find.text("Restoring wallet"), findsOneWidget);
     expect(find.text("This may take a while."), findsOneWidget);
+    expect(find.text("Do not close or leave the app until this completes!"),
+        findsOneWidget);
     expect(find.byType(CircularProgressIndicator), findsOneWidget);
 
     await tester.pump(Duration(seconds: 3));

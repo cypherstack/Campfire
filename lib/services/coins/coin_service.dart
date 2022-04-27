@@ -59,4 +59,6 @@ abstract class CoinServiceAPI {
   Future<bool> initializeWallet();
 
   Future<void> exit();
+
+  Future<void> fullRescan();
 }
