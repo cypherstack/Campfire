@@ -46,8 +46,7 @@ void main() {
       );
 
       // wait for wallet generation
-      expect(find.byType(CircularProgressIndicator), findsOneWidget);
-      await tester.pumpAndSettle(Duration(seconds: 10));
+      await tester.pumpAndSettle(Duration(seconds: 60));
 
       await backupKeyWarningViewBot.ensureVisible();
 

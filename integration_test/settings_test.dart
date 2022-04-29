@@ -70,8 +70,7 @@ void main() {
     );
 
     // wait for wallet generation
-    expect(find.byType(CircularProgressIndicator), findsOneWidget);
-    await tester.pumpAndSettle(Duration(seconds: 10));
+    await tester.pumpAndSettle(Duration(seconds: 60));
 
     await backupKeyWarningViewBot.ensureVisible();
 
@@ -377,6 +376,8 @@ void main() {
       await nodeDetailsViewBot.enterAddress("somenewaddress");
       await nodeDetailsViewBot.enterPort("00");
       await nodeDetailsViewBot.tapUseSSLCheckbox();
+      await tester.tap(find.text("Use SSL"));
+      await tester.pumpAndSettle();
       await nodeDetailsViewBot.tapSave();
       await networkSettingsViewBot.ensureVisible();
 
@@ -527,8 +528,8 @@ void main() {
       await tester.pumpAndSettle(Duration(seconds: 2));
 
       // biometrics doesn't test well as it prompts for system settings
-      await walletSettingsViewBot.tapToggleBiometrics();
-      await walletSettingsViewBot.tapCancelBiometricsSystemSettingsDialog();
+      // await walletSettingsViewBot.tapToggleBiometrics();
+      // await walletSettingsViewBot.tapCancelBiometricsSystemSettingsDialog();
 
       // rename wallet save
       await walletSettingsViewBot.tapRenameWallet();

@@ -6,6 +6,9 @@ import 'package:local_auth/local_auth.dart';
 import 'logger.dart';
 
 class Biometrics {
+  static const integrationTestFlag =
+      bool.fromEnvironment("IS_INTEGRATION_TEST");
+
   const Biometrics();
 
   Future<bool> authenticate(
@@ -13,6 +16,11 @@ class Biometrics {
     if (!(Platform.isIOS || Platform.isAndroid)) {
       Logger.print(
           "Tried to use Biometrics.authenticate() on a platform that is not Android or iOS! ...returning false.");
+      return false;
+    }
+    if (integrationTestFlag) {
+      Logger.print(
+          "Tried to use Biometrics.authenticate() during integration testing. Returning false.");
       return false;
     }
 

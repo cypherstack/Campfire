@@ -48,7 +48,11 @@ class AddCustomNodeViewBot {
   }
 
   Future<void> tapSave() async {
+    await tester.fling(
+        find.byType(SingleChildScrollView), Offset(0, -500), 10000);
+    await tester.pumpAndSettle();
     await tester.tap(find.byType(GradientButton));
+    await tester.pumpAndSettle();
     await tester.pumpAndSettle();
   }
 }

@@ -1,8 +1,8 @@
+import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:integration_test/integration_test.dart';
 import 'package:paymint/main.dart' as campfireApp;
-import 'package:paymint/widgets/transaction_card.dart';
 
 import 'bot_runners/create_wallet_until_pin_confirmation.dart';
 import 'bots/lockscreen_view_bot.dart';
@@ -55,7 +55,7 @@ void main() {
 
     await Future.delayed(Duration(seconds: 10));
 
-    expect(find.byType(TransactionCard, skipOffstage: false), findsNWidgets(7));
+    expect(find.byType(ListView, skipOffstage: false), findsNWidgets(1));
     expect(find.text("0.00041252 FIRO"), findsOneWidget);
 
     // restore should have succeeded by now
