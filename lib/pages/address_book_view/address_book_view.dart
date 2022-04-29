@@ -26,6 +26,7 @@ class _AddressBookViewState extends State<AddressBookView> {
   @override
   Widget build(BuildContext context) {
     final addressService = Provider.of<AddressBookService>(context);
+    final isTiny = SizingUtilities.isTinyWidth(context);
 
     return Scaffold(
       backgroundColor: CFColors.white,
@@ -138,11 +139,12 @@ class _AddressBookViewState extends State<AddressBookView> {
                         // mainAxisAlignment: MainAxisAlignment.center,
                         children: [
                           SizedBox(
-                            height: 40,
+                            height: isTiny ? 1 : 40,
                           ),
                           SvgPicture.asset(
                             "assets/svg/empty-address-list.svg",
-                            width: MediaQuery.of(context).size.width * 0.52,
+                            width: MediaQuery.of(context).size.width *
+                                (isTiny ? 0.4 : 0.5),
                           ),
                           SizedBox(
                             height: 8,

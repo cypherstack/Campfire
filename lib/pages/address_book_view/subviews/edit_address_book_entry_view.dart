@@ -162,179 +162,201 @@ class _EditAddressBookEntryViewState extends State<EditAddressBookEntryView> {
       ),
       body: Container(
         color: CFColors.white,
-        child: Column(
-          mainAxisAlignment: MainAxisAlignment.spaceBetween,
-          children: [
-            Column(
-              children: [
-                Padding(
-                  padding: const EdgeInsets.only(
-                    top: 16,
-                    left: 20,
-                    right: 20,
-                    bottom: 12,
+        child: LayoutBuilder(
+          builder: (context, constraint) {
+            return Padding(
+              padding: const EdgeInsets.only(
+                left: 16,
+                right: 16,
+              ),
+              child: SingleChildScrollView(
+                padding: const EdgeInsets.only(
+                  top: 8,
+                  left: 4,
+                  right: 4,
+                  bottom: 16,
+                ),
+                child: ConstrainedBox(
+                  constraints: BoxConstraints(
+                    // subtract top and bottom padding set in parent
+                    minHeight: constraint.maxHeight - 8 - 16,
                   ),
-                  child: TextField(
-                    key: Key("editAddressBookEntryAddressFieldKey"),
-                    readOnly: false,
-                    inputFormatters: <TextInputFormatter>[
-                      FilteringTextInputFormatter.allow(
-                          RegExp("[a-zA-Z0-9]{34}")),
-                    ],
-                    toolbarOptions: ToolbarOptions(
-                      copy: true,
-                      cut: false,
-                      paste: true,
-                      selectAll: false,
-                    ),
-                    onChanged: (newValue) {
-                      final content = newValue;
-                      setState(() {
-                        _enabledSave = _manager.validateAddress(content) &&
-                            nameTextController.text.isNotEmpty;
-                        _isEmptyAddress = content.isEmpty;
-                      });
-                    },
-                    controller: addressTextController,
-                    decoration: InputDecoration(
-                      errorText: _updateInvalidAddressText(
-                          addressTextController.text, _manager),
-                      focusedBorder: OutlineInputBorder(
-                        borderSide: BorderSide(
-                          color: CFColors.twilight,
+                  child: IntrinsicHeight(
+                    child: Column(
+                      children: [
+                        TextField(
+                          key: Key("editAddressBookEntryAddressFieldKey"),
+                          readOnly: false,
+                          inputFormatters: <TextInputFormatter>[
+                            FilteringTextInputFormatter.allow(
+                                RegExp("[a-zA-Z0-9]{34}")),
+                          ],
+                          toolbarOptions: ToolbarOptions(
+                            copy: true,
+                            cut: false,
+                            paste: true,
+                            selectAll: false,
+                          ),
+                          onChanged: (newValue) {
+                            final content = newValue;
+                            setState(() {
+                              _enabledSave =
+                                  _manager.validateAddress(content) &&
+                                      nameTextController.text.isNotEmpty;
+                              _isEmptyAddress = content.isEmpty;
+                            });
+                          },
+                          controller: addressTextController,
+                          decoration: InputDecoration(
+                            errorText: _updateInvalidAddressText(
+                                addressTextController.text, _manager),
+                            focusedBorder: OutlineInputBorder(
+                              borderSide: BorderSide(
+                                color: CFColors.twilight,
+                              ),
+                              borderRadius: BorderRadius.circular(
+                                  SizingUtilities.circularBorderRadius),
+                            ),
+                            hintText: "Paste address",
+                            contentPadding: EdgeInsets.only(
+                              left: 16,
+                              top: 12,
+                              bottom: 12,
+                              right: 0,
+                            ),
+                            suffixIcon: UnconstrainedBox(
+                              child: Row(
+                                children: [
+                                  SizedBox(
+                                    width: 16,
+                                  ),
+                                  _isEmptyAddress
+                                      ? GestureDetector(
+                                          key: Key(
+                                              "editAddressBookEntryPasteAddressButtonKey"),
+                                          onTap: () async {
+                                            final ClipboardData data =
+                                                await clipboard.getData(
+                                                    Clipboard.kTextPlain);
+
+                                            if (data != null &&
+                                                data.text.isNotEmpty) {
+                                              final content = data.text.trim();
+                                              addressTextController.text =
+                                                  content;
+                                              setState(() {
+                                                _enabledSave =
+                                                    _manager.validateAddress(
+                                                            content) &&
+                                                        nameTextController
+                                                            .text.isNotEmpty;
+                                                _isEmptyAddress =
+                                                    content.isEmpty;
+                                              });
+                                            }
+                                          },
+                                          child: SvgPicture.asset(
+                                            "assets/svg/clipboard.svg",
+                                            color: CFColors.twilight,
+                                            width: 20,
+                                            height: 20,
+                                          ),
+                                        )
+                                      : GestureDetector(
+                                          key: Key(
+                                              "editAddressBookEntryClearAddressButtonKey"),
+                                          onTap: () async {
+                                            addressTextController.text = "";
+                                            setState(() {
+                                              _enabledSave = false;
+                                              _isEmptyAddress = true;
+                                            });
+                                          },
+                                          child: SvgPicture.asset(
+                                            "assets/svg/x.svg",
+                                            color: CFColors.twilight,
+                                            width: 20,
+                                            height: 20,
+                                          ),
+                                        ),
+                                  SizedBox(
+                                    width: 16,
+                                  ),
+                                ],
+                              ),
+                            ),
+                          ),
                         ),
-                        borderRadius: BorderRadius.circular(
-                            SizingUtilities.circularBorderRadius),
-                      ),
-                      hintText: "Paste address",
-                      contentPadding: EdgeInsets.only(
-                        left: 16,
-                        top: 12,
-                        bottom: 12,
-                        right: 0,
-                      ),
-                      suffixIcon: UnconstrainedBox(
-                        child: Row(
+                        SizedBox(
+                          height: 12,
+                        ),
+                        TextField(
+                          key: Key("editAddressBookEntryNameFieldKey"),
+                          controller: nameTextController,
+                          decoration: InputDecoration(
+                            hintText: "Enter name",
+                          ),
+                          onChanged: (_) {
+                            setState(() {
+                              _enabledSave = _manager.validateAddress(
+                                      addressTextController.text) &&
+                                  nameTextController.text.isNotEmpty;
+                            });
+                          },
+                        ),
+                        SizedBox(
+                          height: 12,
+                        ),
+                        Spacer(),
+                        Row(
+                          mainAxisAlignment: MainAxisAlignment.spaceEvenly,
                           children: [
                             SizedBox(
-                              width: 16,
-                            ),
-                            _isEmptyAddress
-                                ? GestureDetector(
-                                    key: Key(
-                                        "editAddressBookEntryPasteAddressButtonKey"),
-                                    onTap: () async {
-                                      final ClipboardData data = await clipboard
-                                          .getData(Clipboard.kTextPlain);
-
-                                      if (data != null &&
-                                          data.text.isNotEmpty) {
-                                        final content = data.text.trim();
-                                        addressTextController.text = content;
-                                        setState(() {
-                                          _enabledSave = _manager
-                                                  .validateAddress(content) &&
-                                              nameTextController
-                                                  .text.isNotEmpty;
-                                          _isEmptyAddress = content.isEmpty;
-                                        });
-                                      }
-                                    },
-                                    child: SvgPicture.asset(
-                                      "assets/svg/clipboard.svg",
-                                      color: CFColors.twilight,
-                                      width: 20,
-                                      height: 20,
-                                    ),
-                                  )
-                                : GestureDetector(
-                                    key: Key(
-                                        "editAddressBookEntryClearAddressButtonKey"),
-                                    onTap: () async {
-                                      addressTextController.text = "";
-                                      setState(() {
-                                        _enabledSave = false;
-                                        _isEmptyAddress = true;
-                                      });
-                                    },
-                                    child: SvgPicture.asset(
-                                      "assets/svg/x.svg",
-                                      color: CFColors.twilight,
-                                      width: 20,
-                                      height: 20,
-                                    ),
+                              height: 48,
+                              width: (screenWidth - 40 - 16) / 2,
+                              child: SimpleButton(
+                                onTap: () async {
+                                  FocusScope.of(context).unfocus();
+                                  await Future.delayed(
+                                      Duration(milliseconds: 150));
+                                  Logger.print(
+                                      "cancel add new address entry pressed");
+                                  Navigator.pop(context);
+                                },
+                                child: Text(
+                                  "CANCEL",
+                                  style: CFTextStyles.button.copyWith(
+                                    color: CFColors.dusk,
                                   ),
+                                ),
+                              ),
+                            ),
                             SizedBox(
-                              width: 16,
+                              height: 48,
+                              width: (screenWidth - 40 - 16) / 2,
+                              child: GradientButton(
+                                enabled: _enabledSave,
+                                child: Text(
+                                  "SAVE",
+                                  style: CFTextStyles.button,
+                                ),
+                                onTap: () async {
+                                  FocusScope.of(context).unfocus();
+                                  await Future.delayed(
+                                      Duration(milliseconds: 150));
+                                  _saveEditedAddressEntry(context);
+                                },
+                              ),
                             ),
                           ],
                         ),
-                      ),
+                      ],
                     ),
                   ),
                 ),
-                Padding(
-                  padding: const EdgeInsets.only(
-                    left: 20,
-                    right: 20,
-                    bottom: 12,
-                  ),
-                  child: TextField(
-                    key: Key("editAddressBookEntryNameFieldKey"),
-                    controller: nameTextController,
-                    decoration: InputDecoration(
-                      hintText: "Enter name",
-                    ),
-                    onChanged: (_) {
-                      setState(() {
-                        _enabledSave = _manager
-                                .validateAddress(addressTextController.text) &&
-                            nameTextController.text.isNotEmpty;
-                      });
-                    },
-                  ),
-                ),
-              ],
-            ),
-            Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 0, vertical: 20),
-              child: Row(
-                mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-                children: [
-                  SizedBox(
-                    height: 48,
-                    width: (screenWidth - 40 - 16) / 2,
-                    child: SimpleButton(
-                      onTap: () {
-                        Logger.print("cancel add new address entry pressed");
-                        Navigator.pop(context);
-                      },
-                      child: Text(
-                        "CANCEL",
-                        style: CFTextStyles.button.copyWith(
-                          color: CFColors.dusk,
-                        ),
-                      ),
-                    ),
-                  ),
-                  SizedBox(
-                    height: 48,
-                    width: (screenWidth - 40 - 16) / 2,
-                    child: GradientButton(
-                      enabled: _enabledSave,
-                      child: Text(
-                        "SAVE",
-                        style: CFTextStyles.button,
-                      ),
-                      onTap: () {
-                        _saveEditedAddressEntry(context);
-                      },
-                    ),
-                  ),
-                ],
               ),
-            ),
-          ],
+            );
+          },
         ),
       ),
     );

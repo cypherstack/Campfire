@@ -1,4 +1,3 @@
-import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:integration_test/integration_test.dart';
 import 'package:paymint/main.dart' as campfireApp;
@@ -47,8 +46,7 @@ void main() {
     );
 
     // wait for wallet generation
-    expect(find.byType(CircularProgressIndicator), findsOneWidget);
-    await tester.pumpAndSettle(Duration(seconds: 10));
+    await tester.pumpAndSettle(Duration(seconds: 60));
 
     await backupKeyWarningViewBot.ensureVisible();
 

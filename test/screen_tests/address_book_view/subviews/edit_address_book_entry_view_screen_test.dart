@@ -198,10 +198,11 @@ void main() {
     expect(find.text("Invalid address"), findsNothing);
 
     await tester.tap(find.byType(SimpleButton));
+    await tester.pump(Duration(milliseconds: 200));
 
     verify(manager.addListener(any)).called(1);
     verify(manager.validateAddress("a8VV7vMzJdTQj1eLEJNskhLEBUxfNWhpAg"))
-        .called(2);
+        .called(3);
 
     verifyNoMoreInteractions(manager);
     verifyNoMoreInteractions(addressBookService);
@@ -263,10 +264,11 @@ void main() {
     expect(find.text("Invalid address"), findsNothing);
 
     await tester.tap(find.byType(GradientButton));
+    await tester.pump(Duration(milliseconds: 200));
 
     verify(manager.addListener(any)).called(1);
     verify(manager.validateAddress("a8VV7vMzJdTQj1eLEJNskhLEBUxfNWhpAg"))
-        .called(2);
+        .called(3);
 
     verifyNoMoreInteractions(manager);
     verifyNoMoreInteractions(addressBookService);
@@ -637,12 +639,13 @@ void main() {
         true);
 
     await tester.tap(find.byType(GradientButton));
+    await tester.pump(Duration(milliseconds: 200));
 
     verify(manager.addListener(any)).called(1);
     verify(manager.validateAddress("a8VV7vMzJdTQj1eLEJNskhLEBUxfNWhpAg"))
         .called(2);
     verify(manager.validateAddress("aCN7qLWtwhhtQDv83dFW4BYN26eigB2g1E"))
-        .called(2);
+        .called(3);
 
     verify(addressBookService.addListener(any)).called(1);
     verify(addressBookService.addAddressBookEntry(
@@ -735,10 +738,11 @@ void main() {
         true);
 
     await tester.tap(find.byType(GradientButton));
+    await tester.pump(Duration(milliseconds: 200));
 
     verify(manager.addListener(any)).called(1);
     verify(manager.validateAddress("a8VV7vMzJdTQj1eLEJNskhLEBUxfNWhpAg"))
-        .called(4);
+        .called(5);
 
     verify(addressBookService.addListener(any)).called(1);
     verify(addressBookService.addAddressBookEntry(
@@ -852,7 +856,7 @@ void main() {
     verify(manager.validateAddress("a8VV7vMzJdTQj1eLEJNskhLEBUxfNWhpAg"))
         .called(2);
     verify(manager.validateAddress("aCN7qLWtwhhtQDv83dFW4BYN26eigB2g1E"))
-        .called(2);
+        .called(3);
 
     verify(addressBookService.addListener(any)).called(1);
 
@@ -964,7 +968,7 @@ void main() {
     verify(manager.validateAddress("a8VV7vMzJdTQj1eLEJNskhLEBUxfNWhpAg"))
         .called(2);
     verify(manager.validateAddress("aCN7qLWtwhhtQDv83dFW4BYN26eigB2g1E"))
-        .called(2);
+        .called(3);
 
     verify(addressBookService.addListener(any)).called(1);
     verify(addressBookService.addAddressBookEntry(

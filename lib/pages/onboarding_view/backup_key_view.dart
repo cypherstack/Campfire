@@ -339,6 +339,8 @@ class _BackupKeyViewState extends State<BackupKeyView> {
 
   @override
   Widget build(BuildContext context) {
+    final isTiny = SizingUtilities.isTinyWidth(context);
+
     return Scaffold(
       backgroundColor: CFColors.starryNight,
       appBar: buildOnboardingAppBar(
@@ -443,7 +445,7 @@ class _BackupKeyViewState extends State<BackupKeyView> {
                               color: CFColors.dusk,
                             ),
                             SizedBox(
-                              width: 10,
+                              width: isTiny ? 5 : 10,
                             ),
                             FittedBox(
                               child: Text(
@@ -451,7 +453,7 @@ class _BackupKeyViewState extends State<BackupKeyView> {
                                 style: GoogleFonts.workSans(
                                   color: CFColors.dusk,
                                   fontWeight: FontWeight.w600,
-                                  fontSize: 16,
+                                  fontSize: isTiny ? 14 : 16,
                                   letterSpacing: 0.5,
                                 ),
                               ),
@@ -490,14 +492,14 @@ class _BackupKeyViewState extends State<BackupKeyView> {
                               color: CFColors.dusk,
                             ),
                             SizedBox(
-                              width: 10,
+                              width: isTiny ? 5 : 10,
                             ),
                             Text(
                               "COPY",
                               style: GoogleFonts.workSans(
                                 color: CFColors.dusk,
                                 fontWeight: FontWeight.w600,
-                                fontSize: 16,
+                                fontSize: isTiny ? 14 : 16,
                                 letterSpacing: 0.5,
                               ),
                             ),

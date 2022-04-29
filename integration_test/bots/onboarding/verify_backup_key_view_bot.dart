@@ -14,6 +14,9 @@ class VerifyBackupKeyViewBot {
   }
 
   Future<void> tapConfirm() async {
+    await tester.fling(
+        find.byType(SingleChildScrollView), Offset(0, -500), 1000);
+    await tester.pumpAndSettle();
     final buttonFinder = find.byType(GradientButton);
     await tester.ensureVisible(buttonFinder);
     await tester.tap(buttonFinder);

@@ -282,7 +282,7 @@ class NoTransActionsFound extends StatelessWidget {
         ),
         SvgPicture.asset(
           "assets/svg/empty-tx-list.svg",
-          width: MediaQuery.of(context).size.width * 0.5,
+          width: MediaQuery.of(context).size.width * 0.45,
         ),
         SizedBox(
           height: 8,
