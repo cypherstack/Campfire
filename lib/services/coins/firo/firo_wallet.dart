@@ -2828,8 +2828,8 @@ class FiroWallet extends CoinServiceAPI {
       List<String> receivingAddressArray = [];
       List<String> changeAddressArray = [];
 
-      int receivingIndex = 0;
-      int changeIndex = 0;
+      int receivingIndex = -1;
+      int changeIndex = -1;
 
       // The gap limit will be capped at 20
       int receivingGapCounter = 0;
@@ -2899,24 +2899,23 @@ class FiroWallet extends CoinServiceAPI {
 
       // If restoring a wallet that never received any funds, then set receivingArray manually
       // If we didn't do this, it'd store an empty array
-      if (receivingIndex == 0) {
-        final String receivingAddress =
-            await _generateAddressForChain(0, receivingIndex);
+      if (receivingIndex == -1) {
+        final String receivingAddress = await _generateAddressForChain(0, 0);
         receivingAddressArray.add(receivingAddress);
       }
 
       // If restoring a wallet that never sent any funds with change, then set changeArray
       // manually. If we didn't do this, it'd store an empty array.
-      if (changeIndex == 0) {
-        final String changeAddress =
-            await _generateAddressForChain(1, changeIndex);
+      if (changeIndex == -1) {
+        final String changeAddress = await _generateAddressForChain(1, 0);
         changeAddressArray.add(changeAddress);
       }
 
       await wallet.put('receivingAddresses', receivingAddressArray);
       await wallet.put('changeAddresses', changeAddressArray);
-      await wallet.put('receivingIndex', receivingIndex);
-      await wallet.put('changeIndex', changeIndex);
+      await wallet.put(
+          'receivingIndex', receivingIndex == -1 ? 0 : receivingIndex);
+      await wallet.put('changeIndex', changeIndex == -1 ? 0 : changeIndex);
       await wallet.put("id", this._walletId);
 
       for (int setId = 1; setId <= latestSetId; setId++) {
