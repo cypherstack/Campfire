@@ -76,12 +76,58 @@ class _AmountInputFieldState extends State<AmountInputField> {
 
   Decimal _tempPrice = Decimal.zero;
 
+  VoidCallback onCryptoAmountChanged;
+  bool cryptoAmountChangeLock = false;
+
+  void _cryptoAmountChanged() async {
+    if (!cryptoAmountChangeLock) {
+      final String cryptoAmount = cryptoAmountController.text;
+      if (cryptoAmount.isNotEmpty &&
+          cryptoAmount != "." &&
+          cryptoAmount != ",") {
+        controller.cryptoAmount = cryptoAmount.contains(",")
+            ? Decimal.parse(cryptoAmount.replaceFirst(",", "."))
+            : Decimal.parse(cryptoAmount);
+        final manager = Provider.of<Manager>(context, listen: false);
+        final maxFee = (await manager.maxFee)?.fee ?? 0;
+        setState(() {
+          controller.cryptoTotal =
+              controller.cryptoAmount + Utilities.satoshisToAmount(maxFee);
+        });
+
+        if (_tempPrice > Decimal.zero) {
+          final String fiatAmountString = Utilities.localizedStringAsFixed(
+            value: controller.cryptoAmount * _tempPrice,
+            locale: widget.locale,
+            decimalPlaces: 2,
+          );
+
+          fiatAmountController.text = fiatAmountString;
+        }
+      } else {
+        setState(() {
+          controller.cryptoTotal = Decimal.zero;
+          controller.cryptoAmount = Decimal.zero;
+        });
+        fiatAmountController.text = "";
+      }
+    }
+  }
+
   @override
   void initState() {
     controller = widget.controller;
     cryptoAmountController = widget.cryptoAmountController;
     fiatAmountController = widget.fiatAmountController;
+    onCryptoAmountChanged = _cryptoAmountChanged;
+    cryptoAmountController.addListener(onCryptoAmountChanged);
     super.initState();
+  }
+
+  @override
+  void dispose() {
+    cryptoAmountController.removeListener(onCryptoAmountChanged);
+    super.dispose();
   }
 
   @override
@@ -133,38 +179,6 @@ class _AmountInputFieldState extends State<AmountInputField> {
                               ? newValue
                               : oldValue),
                     ],
-                    onChanged: (String cryptoAmount) async {
-                      if (cryptoAmount.isNotEmpty &&
-                          cryptoAmount != "." &&
-                          cryptoAmount != ",") {
-                        controller.cryptoAmount = cryptoAmount.contains(",")
-                            ? Decimal.parse(cryptoAmount.replaceFirst(",", "."))
-                            : Decimal.parse(cryptoAmount);
-
-                        final maxFee = (await manager.maxFee)?.fee ?? 0;
-                        setState(() {
-                          controller.cryptoTotal = controller.cryptoAmount +
-                              Utilities.satoshisToAmount(maxFee);
-                        });
-
-                        if (_tempPrice > Decimal.zero) {
-                          final String fiatAmountString =
-                              Utilities.localizedStringAsFixed(
-                            value: controller.cryptoAmount * _tempPrice,
-                            locale: widget.locale,
-                            decimalPlaces: 2,
-                          );
-
-                          fiatAmountController.text = fiatAmountString;
-                        }
-                      } else {
-                        setState(() {
-                          controller.cryptoTotal = Decimal.zero;
-                          controller.cryptoAmount = Decimal.zero;
-                        });
-                        fiatAmountController.text = "";
-                      }
-                    },
                     decoration: InputDecoration(
                       filled: false,
                       border: InputBorder.none,
@@ -257,12 +271,17 @@ class _AmountInputFieldState extends State<AmountInputField> {
                               Utilities.satoshisToAmount(maxFee);
                         });
 
+                        cryptoAmountChangeLock = true;
                         cryptoAmountController.text = amountString;
+                        cryptoAmountChangeLock = false;
                       } else {
                         setState(() {
                           controller.cryptoTotal = Decimal.zero;
                         });
+                        cryptoAmountChangeLock = true;
                         cryptoAmountController.text = "";
+                        cryptoAmountChangeLock = false;
+
                         controller.cryptoAmount = Decimal.zero;
                       }
                     },

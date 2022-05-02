@@ -4,6 +4,7 @@ import 'package:paymint/pages/settings_view/helpers/builders.dart';
 import 'package:paymint/services/wallets_service.dart';
 import 'package:paymint/utilities/cfcolors.dart';
 import 'package:paymint/utilities/logger.dart';
+import 'package:paymint/utilities/shared_utilities.dart';
 import 'package:paymint/utilities/sizing_utilities.dart';
 import 'package:paymint/utilities/text_styles.dart';
 import 'package:paymint/widgets/custom_buttons/gradient_button.dart';
@@ -64,7 +65,18 @@ class _RenameWalletViewState extends State<RenameWalletView> {
                   final walletsService =
                       Provider.of<WalletsService>(context, listen: false);
                   final name = _controller.text.trim();
-                  if (await walletsService.renameWallet(toName: name)) {
+                  if (!Utilities.isAscii(name)) {
+                    Logger.print(
+                        "rename wallet failed due to non ascii characters");
+                    showDialog(
+                      context: context,
+                      useSafeArea: false,
+                      barrierDismissible: false,
+                      builder: (ctx) => CampfireAlert(
+                        message: "Non ASCII characters are not allowed!",
+                      ),
+                    );
+                  } else if (await walletsService.renameWallet(toName: name)) {
                     Navigator.pop(context);
                     Logger.print("renamed wallet");
                   } else {

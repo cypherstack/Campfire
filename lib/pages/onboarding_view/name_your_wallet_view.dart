@@ -5,6 +5,7 @@ import 'package:paymint/notifications/overlay_notification.dart';
 import 'package:paymint/pages/onboarding_view/create_pin_view.dart';
 import 'package:paymint/services/wallets_service.dart';
 import 'package:paymint/utilities/cfcolors.dart';
+import 'package:paymint/utilities/shared_utilities.dart';
 import 'package:paymint/utilities/sizing_utilities.dart';
 import 'package:paymint/utilities/text_styles.dart';
 import 'package:paymint/widgets/custom_buttons/gradient_button.dart';
@@ -138,6 +139,12 @@ class _NameYourWalletViewState extends State<NameYourWalletView> {
                                 OverlayNotification.showError(
                                   context,
                                   "Please name your wallet",
+                                  Duration(seconds: 2),
+                                );
+                              } else if (!Utilities.isAscii(walletName)) {
+                                OverlayNotification.showError(
+                                  context,
+                                  "Non ASCII characters are not allowed",
                                   Duration(seconds: 2),
                                 );
                               } else {

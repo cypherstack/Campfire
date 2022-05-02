@@ -175,6 +175,9 @@ class _SendViewState extends State<SendView> {
                           locale: _locale,
                           onBalanceMinusMaxFeeChanged: (newValue) =>
                               _balanceMinusMaxFee = newValue,
+                          onBalanceTapped: (balance) {
+                            _firoAmountController.text = balance;
+                          },
                         ),
                         SizedBox(
                           height: 17,
@@ -566,9 +569,11 @@ class SpendableBalanceWidget extends StatefulWidget {
     Key key,
     this.onBalanceMinusMaxFeeChanged,
     this.locale,
+    this.onBalanceTapped,
   }) : super(key: key);
 
   final void Function(Decimal) onBalanceMinusMaxFeeChanged;
+  final void Function(String) onBalanceTapped;
   final String locale;
 
   @override
@@ -577,6 +582,19 @@ class SpendableBalanceWidget extends StatefulWidget {
 
 class _SpendableBalanceWidgetState extends State<SpendableBalanceWidget> {
   Decimal tempBalanceMinusMaxFee = Decimal.zero;
+
+  void Function(Decimal) onBalanceMinusMaxFeeChanged;
+  void Function(String) onBalanceTapped;
+  String locale;
+
+  @override
+  void initState() {
+    this.onBalanceMinusMaxFeeChanged = widget.onBalanceMinusMaxFeeChanged;
+    this.onBalanceTapped = widget.onBalanceTapped;
+    this.locale = widget.locale;
+    super.initState();
+  }
+
   @override
   Widget build(BuildContext context) {
     final manager = Provider.of<Manager>(context);
@@ -647,23 +665,26 @@ class _SpendableBalanceWidgetState extends State<SpendableBalanceWidget> {
                         }
                         if (tempBalanceMinusMaxFee != balanceMinusMaxFee.data) {
                           tempBalanceMinusMaxFee = balanceMinusMaxFee.data;
-                          widget.onBalanceMinusMaxFeeChanged(
-                              tempBalanceMinusMaxFee);
+                          onBalanceMinusMaxFeeChanged(tempBalanceMinusMaxFee);
                         }
                       }
-                      return FittedBox(
-                        child: Text(
-                          "${Utilities.localizedStringAsFixed(
-                            value: tempBalanceMinusMaxFee <= Decimal.zero
-                                ? Decimal.zero
-                                : tempBalanceMinusMaxFee,
-                            locale: widget.locale,
-                            decimalPlaces: CampfireConstants.decimalPlaces,
-                          )} ${manager.coinTicker}",
-                          style: GoogleFonts.workSans(
-                            color: CFColors.white,
-                            fontSize: 16,
-                            fontWeight: FontWeight.w600,
+                      final balanceString = Utilities.localizedStringAsFixed(
+                        value: tempBalanceMinusMaxFee <= Decimal.zero
+                            ? Decimal.zero
+                            : tempBalanceMinusMaxFee,
+                        locale: locale,
+                        decimalPlaces: CampfireConstants.decimalPlaces,
+                      );
+                      return GestureDetector(
+                        onTap: () => onBalanceTapped(balanceString),
+                        child: FittedBox(
+                          child: Text(
+                            "$balanceString ${manager.coinTicker}",
+                            style: GoogleFonts.workSans(
+                              color: CFColors.white,
+                              fontSize: 16,
+                              fontWeight: FontWeight.w600,
+                            ),
                           ),
                         ),
                       );

@@ -64,4 +64,9 @@ class Utilities {
 
     return "$month/$day/$year";
   }
+
+  static bool isAscii(String string) {
+    final asciiRegex = RegExp(r'^[\x00-\x7F]+$');
+    return asciiRegex.hasMatch(string);
+  }
 }
