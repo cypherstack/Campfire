@@ -676,6 +676,7 @@ class _SpendableBalanceWidgetState extends State<SpendableBalanceWidget> {
                         decimalPlaces: CampfireConstants.decimalPlaces,
                       );
                       return GestureDetector(
+                        key: Key("availableToSpendBalanceLabelKey"),
                         onTap: () => onBalanceTapped(balanceString),
                         child: FittedBox(
                           child: Text(

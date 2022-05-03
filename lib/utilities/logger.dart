@@ -1,10 +1,13 @@
 import 'dart:core' as core;
+import 'dart:io';
 
 import 'misc_global_constants.dart';
 
 abstract class Logger {
+  static final isTestEnv = Platform.environment["FLUTTER_TEST"] == "true";
+
   static void print(core.Object object) async {
-    if (CampfireConstants.disableLogger) {
+    if (CampfireConstants.disableLogger && !isTestEnv) {
       return;
     }
     final utcTime = core.DateTime.now().toUtc().toString() + ": ";

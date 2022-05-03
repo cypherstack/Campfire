@@ -625,6 +625,64 @@ void main() {
         false);
   });
 
+  testWidgets("tap available to autofill maximum amount", (tester) async {
+    final manager = MockManager();
+    final notesService = MockNotesService();
+    final clipboard = FakeClipboard();
+
+    when(manager.validateAddress("")).thenAnswer((_) => false);
+    when(manager.allOwnAddresses).thenAnswer((_) async => []);
+    when(manager.coinTicker).thenAnswer((_) => "FIRO");
+    when(manager.fiatCurrency).thenAnswer((_) => "USD");
+    when(manager.fiatPrice).thenAnswer((_) async => Decimal.ten);
+    when(manager.balanceMinusMaxFee)
+        .thenAnswer((_) async => Decimal.fromInt(9));
+    when(manager.maxFee)
+        .thenAnswer((_) async => LelantusFeeData(null, 100000000, null));
+
+    await tester.pumpWidget(
+      MaterialApp(
+        home: Material(
+          child: MultiProvider(
+            providers: [
+              ChangeNotifierProvider<Manager>(
+                create: (_) => manager,
+              ),
+              ChangeNotifierProvider<NotesService>(
+                create: (_) => notesService,
+              ),
+            ],
+            child: SendView(
+              clipboard: clipboard,
+            ),
+          ),
+        ),
+      ),
+    );
+    await tester.pumpAndSettle();
+
+    await tester.tap(find.byKey(Key("availableToSpendBalanceLabelKey")));
+    await tester.pumpAndSettle();
+
+    expect(find.text("0.00"), findsNWidgets(2));
+    expect(find.text("1.00000000 FIRO"), findsOneWidget);
+    expect(
+        (find.byType(GradientButton).evaluate().single.widget as GradientButton)
+            .enabled,
+        false);
+
+    verify(manager.addListener(any)).called(1);
+    verify(manager.validateAddress("")).called(1);
+    verify(manager.coinTicker).called(15);
+    verify(manager.fiatPrice).called(3);
+    verify(manager.fiatCurrency).called(5);
+    verify(manager.balanceMinusMaxFee).called(2);
+    verify(manager.maxFee).called(3);
+
+    verifyNoMoreInteractions(manager);
+    verifyNoMoreInteractions(notesService);
+  });
+
   testWidgets("enter a fiat amount", (tester) async {
     final manager = MockManager();
     final notesService = MockNotesService();

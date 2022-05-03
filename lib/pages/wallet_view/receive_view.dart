@@ -38,24 +38,6 @@ class _ReceiveViewState extends State<ReceiveView> {
   bool _showMoreOptions = false;
   String _locale = "en_US"; // default
 
-  TextStyle get moreOptionsStyle => _showMoreOptions
-      ? CFTextStyles.button.copyWith(color: CFColors.dusk.withOpacity(0.5))
-      : CFTextStyles.button.copyWith(color: CFColors.dusk);
-
-  _buildOptionsButtonText() {
-    final booool = _showMoreOptions;
-    var s;
-    if (booool) {
-      s = CFTextStyles.button.copyWith(color: CFColors.dusk.withOpacity(0.5));
-    } else {
-      s = CFTextStyles.button.copyWith(color: CFColors.dusk);
-    }
-    return Text(
-      "MORE OPTIONS",
-      // style: s,
-    );
-  }
-
   @override
   initState() {
     clipboard = widget.clipboard;
