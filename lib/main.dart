@@ -52,6 +52,7 @@ void main() async {
   final dbVersion = await wallets.get("db_version");
   if (dbVersion == null || dbVersion < CampfireConstants.currentDbVersion) {
     await DbVersionMigrator().migrateToV1();
+    await DbVersionMigrator().migrateToV2();
   }
 
   SystemChrome.setEnabledSystemUIMode(SystemUiMode.manual,

@@ -553,26 +553,30 @@ class _RestoreWalletFormViewState extends State<RestoreWalletFormView> {
 
                 try {
                   await manager.recoverFromMnemonic(mnemonic);
-                  Navigator.pushReplacementNamed(context, "/mainview");
 
-                  Timer timer = Timer(Duration(milliseconds: 2200), () {
-                    Navigator.of(context, rootNavigator: true).pop();
-                  });
+                  // check if state is still active before continuing
+                  if (mounted) {
+                    Navigator.pushReplacementNamed(context, "/mainview");
 
-                  showDialog(
-                    context: context,
-                    useSafeArea: false,
-                    barrierDismissible: false,
-                    builder: (context) {
-                      return _buildRecoveryCompleteDialog();
-                    },
-                  ).then(
-                    (_) {
-                      Wakelock.disable();
-                      timer.cancel();
-                      timer = null;
-                    },
-                  );
+                    Timer timer = Timer(Duration(milliseconds: 2200), () {
+                      Navigator.of(context, rootNavigator: true).pop();
+                    });
+
+                    showDialog(
+                      context: context,
+                      useSafeArea: false,
+                      barrierDismissible: false,
+                      builder: (context) {
+                        return _buildRecoveryCompleteDialog();
+                      },
+                    ).then(
+                      (_) {
+                        Wakelock.disable();
+                        timer.cancel();
+                        timer = null;
+                      },
+                    );
+                  }
                 } catch (e) {
                   Wakelock.disable();
 
@@ -582,19 +586,24 @@ class _RestoreWalletFormViewState extends State<RestoreWalletFormView> {
                     return;
                   }
 
-                  // pop waiting dialog
-                  Navigator.pop(context);
+                  // check if state is still active before continuing
+                  if (mounted) {
+                    // pop waiting dialog
+                    Navigator.pop(context);
 
-                  // show restoring wallet failed dialog
-                  showDialog(
-                    context: context,
-                    useSafeArea: false,
-                    barrierDismissible: false,
-                    builder: (context) {
-                      return _buildRestoreFailedDialog(e.toString());
-                    },
-                  );
+                    // show restoring wallet failed dialog
+                    showDialog(
+                      context: context,
+                      useSafeArea: false,
+                      barrierDismissible: false,
+                      builder: (context) {
+                        return _buildRestoreFailedDialog(e.toString());
+                      },
+                    );
+                  }
                 }
+
+                Wakelock.disable();
               }
             }
           },

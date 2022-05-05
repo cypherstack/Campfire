@@ -1,4 +1,6 @@
 import 'dart:async';
+import 'dart:convert';
+import 'dart:developer';
 import 'dart:io';
 import 'dart:isolate';
 import 'dart:typed_data';
@@ -208,8 +210,8 @@ void stop(ReceivePort port) {
 
 isolateDerive(String mnemonic, int from, int to, dynamic _network) async {
   Map<String, dynamic> result = Map();
-  Map<int, dynamic> allReceive = Map();
-  Map<int, dynamic> allChange = Map();
+  Map<String, dynamic> allReceive = Map();
+  Map<String, dynamic> allChange = Map();
   final root = getBip32Root(mnemonic, _network);
   for (int i = from; i < to; i++) {
     var currentNode = getBip32NodeFromRoot(0, i, root);
@@ -218,12 +220,12 @@ isolateDerive(String mnemonic, int from, int to, dynamic _network) async {
             data: new PaymentData(pubkey: currentNode.publicKey))
         .data
         .address;
-    allReceive[i] = {
+    allReceive["$i"] = {
       "publicKey": uint8listToString(currentNode.publicKey),
       "wif": currentNode.toWIF(),
-      "fingerprint": uint8listToString(currentNode.fingerprint),
-      "identifier": uint8listToString(currentNode.identifier),
-      "privateKey": uint8listToString(currentNode.privateKey),
+      // "fingerprint": uint8listToString(currentNode.fingerprint),
+      // "identifier": uint8listToString(currentNode.identifier),
+      // "privateKey": uint8listToString(currentNode.privateKey),
       "address": address,
     };
 
@@ -233,12 +235,12 @@ isolateDerive(String mnemonic, int from, int to, dynamic _network) async {
             data: new PaymentData(pubkey: currentNode.publicKey))
         .data
         .address;
-    allChange[i] = {
+    allChange["$i"] = {
       "publicKey": uint8listToString(currentNode.publicKey),
       "wif": currentNode.toWIF(),
-      "fingerprint": uint8listToString(currentNode.fingerprint),
-      "identifier": uint8listToString(currentNode.identifier),
-      "privateKey": uint8listToString(currentNode.privateKey),
+      // "fingerprint": uint8listToString(currentNode.fingerprint),
+      // "identifier": uint8listToString(currentNode.identifier),
+      // "privateKey": uint8listToString(currentNode.privateKey),
       "address": address,
     };
     if (i % 50 == 0) {
@@ -1272,7 +1274,10 @@ class FiroWallet extends CoinServiceAPI {
       GlobalEventBus.instance.fire(RefreshPercentChangedEvent(0.0));
 
       final wallet = await Hive.openBox(this._walletId);
-      if (wallet.get('receiveDerivations') == null) {
+      final receiveDerivationsString =
+          await _secureStore.read(key: "${this.walletId}_receiveDerivations");
+      if (receiveDerivationsString == null ||
+          receiveDerivationsString == "{}") {
         GlobalEventBus.instance.fire(RefreshPercentChangedEvent(0.05));
         final mnemonic =
             await _secureStore.read(key: '${this._walletId}_mnemonic');
@@ -1671,15 +1676,25 @@ class FiroWallet extends CoinServiceAPI {
 
     List<ECPair> elipticCurvePairArray = [];
     List<Uint8List> outputDataArray = [];
-    var receiveDerivations = wallet.get('receiveDerivations');
-    var changeDerivations = wallet.get('changeDerivations');
+    // var receiveDerivations = wallet.get('receiveDerivations');
+    // var changeDerivations = wallet.get('changeDerivations');
+
+    final receiveDerivationsString =
+        await _secureStore.read(key: "${this.walletId}_receiveDerivations");
+    final changeDerivationsString =
+        await _secureStore.read(key: "${this.walletId}_changeDerivations");
+
+    final receiveDerivations =
+        Map<String, dynamic>.from(jsonDecode(receiveDerivationsString ?? "{}"));
+    final changeDerivations =
+        Map<String, dynamic>.from(jsonDecode(changeDerivationsString ?? "{}"));
 
     for (var i = 0; i < addressesToDerive.length; i++) {
       final addressToCheckFor = addressesToDerive[i];
 
       for (var i = 0; i < receiveDerivations.length; i++) {
-        var receive = receiveDerivations[i];
-        var change = changeDerivations[i];
+        final receive = receiveDerivations["$i"];
+        final change = changeDerivations["$i"];
 
         if (receive['address'] == addressToCheckFor) {
           Logger.print('Receiving found on loop $i');
@@ -2519,16 +2534,22 @@ class FiroWallet extends CoinServiceAPI {
     if (NUMBER_OF_THREADS < 0) {
       NUMBER_OF_THREADS = 1;
     }
-    final wallet = await Hive.openBox(this._walletId);
-    var receiveDerivations = wallet.get('receiveDerivations');
-    var changeDerivations = wallet.get('changeDerivations');
-    int start = 0;
-    if (receiveDerivations == null || changeDerivations == null) {
-      receiveDerivations = {};
-      changeDerivations = {};
-    } else {
-      start = receiveDerivations.length;
-    }
+    // final wallet = await Hive.openBox(this._walletId);
+    // var receiveDerivations = wallet.get('receiveDerivations');
+    // var changeDerivations = wallet.get('changeDerivations');
+
+    final receiveDerivationsString =
+        await _secureStore.read(key: "${this.walletId}_receiveDerivations");
+    final changeDerivationsString =
+        await _secureStore.read(key: "${this.walletId}_changeDerivations");
+
+    var receiveDerivations =
+        Map<String, dynamic>.from(jsonDecode(receiveDerivationsString ?? "{}"));
+    var changeDerivations =
+        Map<String, dynamic>.from(jsonDecode(changeDerivationsString ?? "{}"));
+
+    final int start = receiveDerivations.length;
+
     List<ReceivePort> ports = List.empty(growable: true);
     for (int i = 0; i < NUMBER_OF_THREADS; i++) {
       ReceivePort receivePort = await getIsolate({
@@ -2556,31 +2577,52 @@ class FiroWallet extends CoinServiceAPI {
     Logger.print("isolate derives");
     Logger.print(receiveDerivations);
     Logger.print(changeDerivations);
-    wallet.put('receiveDerivations', receiveDerivations);
-    wallet.put('changeDerivations', changeDerivations);
+
+    final newReceiveDerivationsString = jsonEncode(receiveDerivations);
+    final newChangeDerivationsString = jsonEncode(changeDerivations);
+
+    await _secureStore.write(
+        key: "${this.walletId}_receiveDerivations",
+        value: newReceiveDerivationsString);
+    await _secureStore.write(
+        key: "${this.walletId}_changeDerivations",
+        value: newChangeDerivationsString);
+    // wallet.put('receiveDerivations', receiveDerivations);
+    // wallet.put('changeDerivations', changeDerivations);
   }
 
   /// Generates a new internal or external chain address for the wallet using a BIP84 derivation path.
   /// [chain] - Use 0 for receiving (external), 1 for change (internal). Should not be any other value!
   /// [index] - This can be any integer >= 0
   Future<String> _generateAddressForChain(int chain, int index) async {
-    final wallet = await Hive.openBox(this._walletId);
+    // final wallet = await Hive.openBox(this._walletId);
     final mnemonic = await _secureStore.read(key: '${this._walletId}_mnemonic');
     var derivations;
     if (chain == 0) {
-      derivations = wallet.get('receiveDerivations');
+      final receiveDerivationsString =
+          await _secureStore.read(key: "${this.walletId}_receiveDerivations");
+      derivations = Map<String, dynamic>.from(
+          jsonDecode(receiveDerivationsString ?? "{}"));
+
+      // derivations = wallet.get('receiveDerivations');
     } else if (chain == 1) {
-      derivations = wallet.get('changeDerivations');
+      final changeDerivationsString =
+          await _secureStore.read(key: "${this.walletId}_changeDerivations");
+      derivations = Map<String, dynamic>.from(
+          jsonDecode(changeDerivationsString ?? "{}"));
+
+      // derivations = wallet.get('changeDerivations');
     }
 
-    if (derivations != null) {
-      if (derivations[index] == null) {
+    if (derivations != null && derivations.length > 0) {
+      if (derivations["$index"] == null) {
         await fillAddresses(mnemonic,
             NUMBER_OF_THREADS:
                 Platform.numberOfProcessors - isolates.length - 1);
+        Logger.print("calling _generateAddressForChain recursively");
         return _generateAddressForChain(chain, index);
       }
-      return derivations[index]['address'];
+      return derivations["$index"]['address'];
     } else {
       final node = getBip32Node(chain, index, mnemonic, this._network);
       return P2PKH(
@@ -2718,13 +2760,30 @@ class FiroWallet extends CoinServiceAPI {
     await wallet.delete('changeIndex');
     await wallet.put('changeIndex_BACKUP', tempChangeIndex);
 
-    final tempReceiveDerivations = await wallet.get('receiveDerivations');
-    await wallet.delete('receiveDerivations');
-    await wallet.put('receiveDerivations_BACKUP', tempReceiveDerivations);
+    // final tempReceiveDerivations = await wallet.get('receiveDerivations');
+    // await wallet.delete('receiveDerivations');
+    // await wallet.put('receiveDerivations_BACKUP', tempReceiveDerivations);
+    //
+    // final tempChangeDerivations = await wallet.get('changeDerivations');
+    // await wallet.delete('changeDerivations');
+    // await wallet.put('changeDerivations_BACKUP', tempChangeDerivations);
 
-    final tempChangeDerivations = await wallet.get('changeDerivations');
-    await wallet.delete('changeDerivations');
-    await wallet.put('changeDerivations_BACKUP', tempChangeDerivations);
+    final receiveDerivationsString =
+        await _secureStore.read(key: "${this.walletId}_receiveDerivations");
+    final changeDerivationsString =
+        await _secureStore.read(key: "${this.walletId}_changeDerivations");
+
+    await _secureStore.write(
+        key: "${this.walletId}_receiveDerivations_BACKUP",
+        value: receiveDerivationsString);
+    await _secureStore.write(
+        key: "${this.walletId}_changeDerivations_BACKUP",
+        value: changeDerivationsString);
+
+    await _secureStore.write(
+        key: "${this.walletId}_receiveDerivations", value: null);
+    await _secureStore.write(
+        key: "${this.walletId}_changeDerivations", value: null);
 
     // back up but no need to delete
     final tempMintIndex = await wallet.get('mintIndex');
@@ -2752,21 +2811,33 @@ class FiroWallet extends CoinServiceAPI {
     final tempChangeAddresses = await wallet.get('changeAddresses_BACKUP');
     final tempReceivingIndex = await wallet.get('receivingIndex_BACKUP');
     final tempChangeIndex = await wallet.get('changeIndex_BACKUP');
-    final tempReceiveDerivations =
-        await wallet.get('receiveDerivations_BACKUP');
-    final tempChangeDerivations = await wallet.get('changeDerivations_BACKUP');
+    // final tempReceiveDerivations =
+    //     await wallet.get('receiveDerivations_BACKUP');
+    // final tempChangeDerivations = await wallet.get('changeDerivations_BACKUP');
     final tempMintIndex = await wallet.get('mintIndex_BACKUP');
     final tempLelantusCoins = await wallet.get('_lelantus_coins_BACKUP');
     final tempJIndex = await wallet.get('jindex_BACKUP');
     final tempLelantusTxModel =
         await wallet.get('latest_lelantus_tx_model_BACKUP');
 
+    final receiveDerivationsString = await _secureStore.read(
+        key: "${this.walletId}_receiveDerivations_BACKUP");
+    final changeDerivationsString = await _secureStore.read(
+        key: "${this.walletId}_changeDerivations_BACKUP");
+
+    await _secureStore.write(
+        key: "${this.walletId}_receiveDerivations",
+        value: receiveDerivationsString);
+    await _secureStore.write(
+        key: "${this.walletId}_changeDerivations",
+        value: changeDerivationsString);
+
     await wallet.put('receivingAddresses', tempReceivingAddresses);
     await wallet.put('changeAddresses', tempChangeAddresses);
     await wallet.put('receivingIndex', tempReceivingIndex);
     await wallet.put('changeIndex', tempChangeIndex);
-    await wallet.put('receiveDerivations', tempReceiveDerivations);
-    await wallet.put('changeDerivations', tempChangeDerivations);
+    // await wallet.put('receiveDerivations', tempReceiveDerivations);
+    // await wallet.put('changeDerivations', tempChangeDerivations);
     await wallet.put('mintIndex', tempMintIndex);
     await wallet.put('_lelantus_coins', tempLelantusCoins);
     await wallet.put('jindex', tempJIndex);
@@ -2838,8 +2909,21 @@ class FiroWallet extends CoinServiceAPI {
       await fillAddresses(suppliedMnemonic,
           NUMBER_OF_THREADS: Platform.numberOfProcessors - isolates.length - 1);
 
-      var receiveDerivations = wallet.get('receiveDerivations');
-      var changeDerivations = wallet.get('changeDerivations');
+      // var receiveDerivations = wallet.get('receiveDerivations');
+      // var changeDerivations = wallet.get('changeDerivations');
+
+      final receiveDerivationsString =
+          await _secureStore.read(key: "${this.walletId}_receiveDerivations");
+      final changeDerivationsString =
+          await _secureStore.read(key: "${this.walletId}_changeDerivations");
+
+      final receiveDerivations = Map<String, dynamic>.from(
+          jsonDecode(receiveDerivationsString ?? "{}"));
+      final changeDerivations = Map<String, dynamic>.from(
+          jsonDecode(changeDerivationsString ?? "{}"));
+
+      log("rcv: $receiveDerivations");
+      log("chg: $changeDerivations");
 
       // Deriving and checking for receiving addresses
       for (var i = 0; i < receiveDerivations.length; i++) {
@@ -2849,10 +2933,10 @@ class FiroWallet extends CoinServiceAPI {
           break;
         }
 
-        var receiveDerivation = receiveDerivations[i];
+        final receiveDerivation = receiveDerivations["$i"];
         final address = receiveDerivation['address'];
 
-        var changeDerivation = changeDerivations[i];
+        var changeDerivation = changeDerivations["$i"];
         final _address = changeDerivation['address'];
         dynamic futureNumTxs = null;
         dynamic _futureNumTxs = null;

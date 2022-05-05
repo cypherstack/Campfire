@@ -3380,16 +3380,15 @@ void main() {
 
       firo.timer = Timer(Duration(minutes: 3), () {});
 
-      final adrs = await firo.allOwnAddresses;
-
-      print("adrs.length: ${adrs.length}");
-      for (final adr in adrs) {
-        print(AddressUtils.convertToScriptHash(adr, firoNetwork));
-      }
-
       await firo.refresh();
 
-      await expectLater(() async => await firo.autoMint(), returnsNormally);
+      bool flag = false;
+      try {
+        await firo.autoMint();
+      } catch (_) {
+        flag = true;
+      }
+      expect(flag, false);
 
       await firo.exit();
     }, timeout: Timeout(Duration(minutes: 3)));
@@ -3407,8 +3406,14 @@ void main() {
 
       firo.timer = Timer(Duration(seconds: 2), () {});
 
-      expectLater(() => firo.exit(), returnsNormally)
-          .then((_) => expect(firo.timer, null));
+      bool flag = false;
+      try {
+        await firo.exit();
+      } catch (_) {
+        flag = true;
+      }
+      expect(flag, false);
+      expect(firo.timer, null);
     });
 
     tearDown(() async {
