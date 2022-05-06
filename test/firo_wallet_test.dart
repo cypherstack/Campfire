@@ -1,4 +1,5 @@
 import 'dart:async';
+import 'dart:convert';
 import 'dart:typed_data';
 
 import 'package:crypto/crypto.dart';
@@ -1196,9 +1197,13 @@ void main() {
       );
 
       await firo.fillAddresses(FillAddressesParams.mnemonic);
-      final wallet = await Hive.openBox(testWalletId + "fillAddresses");
-      final receiveDerivations = await wallet.get('receiveDerivations');
-      final changeDerivations = await wallet.get('changeDerivations');
+
+      final rcv = await secureStore.read(
+          key: "${testWalletId}fillAddresses_receiveDerivations");
+      final chg = await secureStore.read(
+          key: "${testWalletId}fillAddresses_changeDerivations");
+      final receiveDerivations = Map<String, dynamic>.from(jsonDecode(rcv));
+      final changeDerivations = Map<String, dynamic>.from(jsonDecode(chg));
 
       expect(receiveDerivations.toString(),
           FillAddressesParams.expectedReceiveDerivationsString);
@@ -1254,10 +1259,13 @@ void main() {
       final wallet = await Hive.openBox(testWalletId + "buildMintTransaction");
 
       await wallet.put("mintIndex", 0);
-      await wallet.put(
-          'receiveDerivations', BuildMintTxTestParams.receiveDerivations);
-      await wallet.put(
-          'changeDerivations', BuildMintTxTestParams.changeDerivations);
+
+      await secureStore.write(
+          key: "${testWalletId}buildMintTransaction_receiveDerivations",
+          value: jsonEncode(BuildMintTxTestParams.receiveDerivations));
+      await secureStore.write(
+          key: "${testWalletId}buildMintTransaction_changeDerivations",
+          value: jsonEncode(BuildMintTxTestParams.changeDerivations));
 
       final result = await firo.buildMintTransaction(utxos, sats);
 
@@ -1309,13 +1317,19 @@ void main() {
       // pre grab derivations in order to set up mock calls needed later on
       await firo.fillAddresses(TEST_MNEMONIC);
       final wallet = await Hive.openBox(testWalletId + "recoverFromMnemonic");
-      final receiveDerivations = await wallet.get('receiveDerivations');
-      final changeDerivations = await wallet.get('changeDerivations');
+
+      final rcv = await secureStore.read(
+          key: "${testWalletId}recoverFromMnemonic_receiveDerivations");
+      final chg = await secureStore.read(
+          key: "${testWalletId}recoverFromMnemonic_changeDerivations");
+      final receiveDerivations = Map<String, dynamic>.from(jsonDecode(rcv));
+      final changeDerivations = Map<String, dynamic>.from(jsonDecode(chg));
+
       for (int i = 0; i < receiveDerivations.length; i++) {
         final receiveHash = AddressUtils.convertToScriptHash(
-            receiveDerivations[i]["address"], firoNetwork);
+            receiveDerivations["$i"]["address"], firoNetwork);
         final changeHash = AddressUtils.convertToScriptHash(
-            changeDerivations[i]["address"], firoNetwork);
+            changeDerivations["$i"]["address"], firoNetwork);
         List<Map<String, dynamic>> data;
         switch (receiveHash) {
           case SampleGetHistoryData.scripthash0:
@@ -1371,10 +1385,13 @@ void main() {
       final changeIndex = await wallet.get('changeIndex');
       expect(changeIndex, 0);
 
-      final _receiveDerivations = await wallet.get('receiveDerivations');
+      final _rcv = await secureStore.read(
+          key: "${testWalletId}recoverFromMnemonic_receiveDerivations");
+      final _chg = await secureStore.read(
+          key: "${testWalletId}recoverFromMnemonic_changeDerivations");
+      final _receiveDerivations = Map<String, dynamic>.from(jsonDecode(_rcv));
+      final _changeDerivations = Map<String, dynamic>.from(jsonDecode(_chg));
       expect(_receiveDerivations.length, 4750);
-
-      final _changeDerivations = await wallet.get('changeDerivations');
       expect(_changeDerivations.length, 4750);
 
       final mintIndex = await wallet.get('mintIndex');
@@ -1441,13 +1458,19 @@ void main() {
       // pre grab derivations in order to set up mock calls needed later on
       await firo.fillAddresses(TEST_MNEMONIC);
       final wallet = await Hive.openBox(testWalletId + "fullRescan");
-      final receiveDerivations = await wallet.get('receiveDerivations');
-      final changeDerivations = await wallet.get('changeDerivations');
+
+      final rcv = await secureStore.read(
+          key: "${testWalletId}fullRescan_receiveDerivations");
+      final chg = await secureStore.read(
+          key: "${testWalletId}fullRescan_changeDerivations");
+      final receiveDerivations = Map<String, dynamic>.from(jsonDecode(rcv));
+      final changeDerivations = Map<String, dynamic>.from(jsonDecode(chg));
+
       for (int i = 0; i < receiveDerivations.length; i++) {
         final receiveHash = AddressUtils.convertToScriptHash(
-            receiveDerivations[i]["address"], firoNetwork);
+            receiveDerivations["$i"]["address"], firoNetwork);
         final changeHash = AddressUtils.convertToScriptHash(
-            changeDerivations[i]["address"], firoNetwork);
+            changeDerivations["$i"]["address"], firoNetwork);
         List<Map<String, dynamic>> data;
         switch (receiveHash) {
           case SampleGetHistoryData.scripthash0:
@@ -1503,10 +1526,13 @@ void main() {
       final changeIndex = await wallet.get('changeIndex');
       expect(changeIndex, 0);
 
-      final _receiveDerivations = await wallet.get('receiveDerivations');
+      final _rcv = await secureStore.read(
+          key: "${testWalletId}fullRescan_receiveDerivations");
+      final _chg = await secureStore.read(
+          key: "${testWalletId}fullRescan_changeDerivations");
+      final _receiveDerivations = Map<String, dynamic>.from(jsonDecode(_rcv));
+      final _changeDerivations = Map<String, dynamic>.from(jsonDecode(_chg));
       expect(_receiveDerivations.length, 3750);
-
-      final _changeDerivations = await wallet.get('changeDerivations');
       expect(_changeDerivations.length, 3750);
 
       final mintIndex = await wallet.get('mintIndex');
@@ -1573,13 +1599,19 @@ void main() {
       // pre grab derivations in order to set up mock calls needed later on
       await firo.fillAddresses(TEST_MNEMONIC);
       final wallet = await Hive.openBox(testWalletId + "fullRescan");
-      final receiveDerivations = await wallet.get('receiveDerivations');
-      final changeDerivations = await wallet.get('changeDerivations');
+
+      final rcv = await secureStore.read(
+          key: "${testWalletId}fullRescan_receiveDerivations");
+      final chg = await secureStore.read(
+          key: "${testWalletId}fullRescan_changeDerivations");
+      final receiveDerivations = Map<String, dynamic>.from(jsonDecode(rcv));
+      final changeDerivations = Map<String, dynamic>.from(jsonDecode(chg));
+
       for (int i = 0; i < receiveDerivations.length; i++) {
         final receiveHash = AddressUtils.convertToScriptHash(
-            receiveDerivations[i]["address"], firoNetwork);
+            receiveDerivations["$i"]["address"], firoNetwork);
         final changeHash = AddressUtils.convertToScriptHash(
-            changeDerivations[i]["address"], firoNetwork);
+            changeDerivations["$i"]["address"], firoNetwork);
         List<Map<String, dynamic>> data;
         switch (receiveHash) {
           case SampleGetHistoryData.scripthash0:
@@ -1643,10 +1675,14 @@ void main() {
       final changeIndex = await wallet.get('changeIndex');
       expect(changeIndex, null);
 
-      final _receiveDerivations = await wallet.get('receiveDerivations');
-      expect(_receiveDerivations.length, 1000);
+      final _rcv = await secureStore.read(
+          key: "${testWalletId}fullRescan_receiveDerivations");
+      final _chg = await secureStore.read(
+          key: "${testWalletId}fullRescan_changeDerivations");
+      final _receiveDerivations = Map<String, dynamic>.from(jsonDecode(_rcv));
+      final _changeDerivations = Map<String, dynamic>.from(jsonDecode(_chg));
 
-      final _changeDerivations = await wallet.get('changeDerivations');
+      expect(_receiveDerivations.length, 1000);
       expect(_changeDerivations.length, 1000);
 
       final mintIndex = await wallet.get('mintIndex');
@@ -1710,13 +1746,19 @@ void main() {
       // pre grab derivations in order to set up mock calls needed later on
       await firo.fillAddresses(TEST_MNEMONIC);
       final wallet = await Hive.openBox(testWalletId + "recoverFromMnemonic");
-      final receiveDerivations = await wallet.get('receiveDerivations');
-      final changeDerivations = await wallet.get('changeDerivations');
+
+      final rcv = await secureStore.read(
+          key: "${testWalletId}recoverFromMnemonic_receiveDerivations");
+      final chg = await secureStore.read(
+          key: "${testWalletId}recoverFromMnemonic_changeDerivations");
+      final receiveDerivations = Map<String, dynamic>.from(jsonDecode(rcv));
+      final changeDerivations = Map<String, dynamic>.from(jsonDecode(chg));
+
       for (int i = 0; i < receiveDerivations.length; i++) {
         final receiveHash = AddressUtils.convertToScriptHash(
-            receiveDerivations[i]["address"], firoNetwork);
+            receiveDerivations["$i"]["address"], firoNetwork);
         final changeHash = AddressUtils.convertToScriptHash(
-            changeDerivations[i]["address"], firoNetwork);
+            changeDerivations["$i"]["address"], firoNetwork);
         List<Map<String, dynamic>> data;
         switch (receiveHash) {
           case SampleGetHistoryData.scripthash0:
@@ -1772,10 +1814,13 @@ void main() {
       final changeIndex = await wallet.get('changeIndex');
       expect(changeIndex, 0);
 
-      final _receiveDerivations = await wallet.get('receiveDerivations');
+      final _rcv = await secureStore.read(
+          key: "${testWalletId}recoverFromMnemonic_receiveDerivations");
+      final _chg = await secureStore.read(
+          key: "${testWalletId}recoverFromMnemonic_changeDerivations");
+      final _receiveDerivations = Map<String, dynamic>.from(jsonDecode(_rcv));
+      final _changeDerivations = Map<String, dynamic>.from(jsonDecode(_chg));
       expect(_receiveDerivations.length, 4750);
-
-      final _changeDerivations = await wallet.get('changeDerivations');
       expect(_changeDerivations.length, 4750);
 
       final mintIndex = await wallet.get('mintIndex');
@@ -1815,10 +1860,13 @@ void main() {
       final _changeIndex = await wallet.get('changeIndex');
       expect(_changeIndex, 0);
 
-      final __receiveDerivations = await wallet.get('receiveDerivations');
+      final __rcv = await secureStore.read(
+          key: "${testWalletId}recoverFromMnemonic_receiveDerivations");
+      final __chg = await secureStore.read(
+          key: "${testWalletId}recoverFromMnemonic_changeDerivations");
+      final __receiveDerivations = Map<String, dynamic>.from(jsonDecode(__rcv));
+      final __changeDerivations = Map<String, dynamic>.from(jsonDecode(__chg));
       expect(__receiveDerivations.length, 3750);
-
-      final __changeDerivations = await wallet.get('changeDerivations');
       expect(__changeDerivations.length, 3750);
 
       final _mintIndex = await wallet.get('mintIndex');
@@ -2407,14 +2455,19 @@ void main() {
       // build sending wallet
       await firo.fillAddresses(TEST_MNEMONIC);
       final wallet = await Hive.openBox(testWalletId + "send");
-      final receiveDerivations = await wallet.get('receiveDerivations');
-      final changeDerivations = await wallet.get('changeDerivations');
+
+      final rcv =
+          await secureStore.read(key: "${testWalletId}send_receiveDerivations");
+      final chg =
+          await secureStore.read(key: "${testWalletId}send_changeDerivations");
+      final receiveDerivations = Map<String, dynamic>.from(jsonDecode(rcv));
+      final changeDerivations = Map<String, dynamic>.from(jsonDecode(chg));
 
       for (int i = 0; i < receiveDerivations.length; i++) {
         final receiveHash = AddressUtils.convertToScriptHash(
-            receiveDerivations[i]["address"], firoNetwork);
+            receiveDerivations["$i"]["address"], firoNetwork);
         final changeHash = AddressUtils.convertToScriptHash(
-            changeDerivations[i]["address"], firoNetwork);
+            changeDerivations["$i"]["address"], firoNetwork);
         List<Map<String, dynamic>> data;
         switch (receiveHash) {
           case SampleGetHistoryData.scripthash0:
@@ -2586,14 +2639,19 @@ void main() {
       // build sending wallet
       await firo.fillAddresses(TEST_MNEMONIC);
       final wallet = await Hive.openBox(testWalletId + "send");
-      final receiveDerivations = await wallet.get('receiveDerivations');
-      final changeDerivations = await wallet.get('changeDerivations');
+
+      final rcv =
+          await secureStore.read(key: "${testWalletId}send_receiveDerivations");
+      final chg =
+          await secureStore.read(key: "${testWalletId}send_changeDerivations");
+      final receiveDerivations = Map<String, dynamic>.from(jsonDecode(rcv));
+      final changeDerivations = Map<String, dynamic>.from(jsonDecode(chg));
 
       for (int i = 0; i < receiveDerivations.length; i++) {
         final receiveHash = AddressUtils.convertToScriptHash(
-            receiveDerivations[i]["address"], firoNetwork);
+            receiveDerivations["$i"]["address"], firoNetwork);
         final changeHash = AddressUtils.convertToScriptHash(
-            changeDerivations[i]["address"], firoNetwork);
+            changeDerivations["$i"]["address"], firoNetwork);
         List<Map<String, dynamic>> data;
         switch (receiveHash) {
           case SampleGetHistoryData.scripthash0:
@@ -2753,14 +2811,19 @@ void main() {
       // build sending wallet
       await firo.fillAddresses(TEST_MNEMONIC);
       final wallet = await Hive.openBox(testWalletId + "send");
-      final receiveDerivations = await wallet.get('receiveDerivations');
-      final changeDerivations = await wallet.get('changeDerivations');
+
+      final rcv =
+          await secureStore.read(key: "${testWalletId}send_receiveDerivations");
+      final chg =
+          await secureStore.read(key: "${testWalletId}send_changeDerivations");
+      final receiveDerivations = Map<String, dynamic>.from(jsonDecode(rcv));
+      final changeDerivations = Map<String, dynamic>.from(jsonDecode(chg));
 
       for (int i = 0; i < receiveDerivations.length; i++) {
         final receiveHash = AddressUtils.convertToScriptHash(
-            receiveDerivations[i]["address"], firoNetwork);
+            receiveDerivations["$i"]["address"], firoNetwork);
         final changeHash = AddressUtils.convertToScriptHash(
-            changeDerivations[i]["address"], firoNetwork);
+            changeDerivations["$i"]["address"], firoNetwork);
         List<Map<String, dynamic>> data;
         switch (receiveHash) {
           case SampleGetHistoryData.scripthash0:
@@ -3212,6 +3275,10 @@ void main() {
     });
 
     test("autoMint", () async {
+      TestWidgetsFlutterBinding.ensureInitialized();
+      const MethodChannel('uk.spiralarm.flutter/devicelocale')
+          .setMockMethodCallHandler((methodCall) async => 'en_US');
+
       final client = MockElectrumX();
       final cachedClient = MockCachedElectrumX();
       final secureStore = FakeSecureStorage();
@@ -3323,13 +3390,19 @@ void main() {
       await wallet.put(
           'receivingAddresses', RefreshTestParams.receivingAddresses);
       await wallet.put('changeAddresses', RefreshTestParams.changeAddresses);
-      final receiveDerivations = await wallet.get('receiveDerivations');
-      final changeDerivations = await wallet.get('changeDerivations');
+
+      final rcv = await secureStore.read(
+          key: "${testWalletId}autoMint_receiveDerivations");
+      final chg = await secureStore.read(
+          key: "${testWalletId}autoMint_changeDerivations");
+      final receiveDerivations = Map<String, dynamic>.from(jsonDecode(rcv));
+      final changeDerivations = Map<String, dynamic>.from(jsonDecode(chg));
+
       for (int i = 0; i < receiveDerivations.length; i++) {
         final receiveHash = AddressUtils.convertToScriptHash(
-            receiveDerivations[i]["address"], firoNetwork);
+            receiveDerivations["$i"]["address"], firoNetwork);
         final changeHash = AddressUtils.convertToScriptHash(
-            changeDerivations[i]["address"], firoNetwork);
+            changeDerivations["$i"]["address"], firoNetwork);
         List<Map<String, dynamic>> data;
         switch (receiveHash) {
           case SampleGetHistoryData.scripthash0:

@@ -49,10 +49,10 @@ void main() async {
   final wallets = await Hive.openBox('wallets');
   await wallets.put('currentWalletName', "");
 
-  final dbVersion = await wallets.get("db_version");
+  int dbVersion = await wallets.get("db_version");
   if (dbVersion == null || dbVersion < CampfireConstants.currentDbVersion) {
-    await DbVersionMigrator().migrateToV1();
-    await DbVersionMigrator().migrateToV2();
+    if (dbVersion == null) dbVersion = 0;
+    await DbVersionMigrator().migrate(dbVersion);
   }
 
   SystemChrome.setEnabledSystemUIMode(SystemUiMode.manual,

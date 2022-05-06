@@ -1676,8 +1676,6 @@ class FiroWallet extends CoinServiceAPI {
 
     List<ECPair> elipticCurvePairArray = [];
     List<Uint8List> outputDataArray = [];
-    // var receiveDerivations = wallet.get('receiveDerivations');
-    // var changeDerivations = wallet.get('changeDerivations');
 
     final receiveDerivationsString =
         await _secureStore.read(key: "${this.walletId}_receiveDerivations");
@@ -2531,12 +2529,9 @@ class FiroWallet extends CoinServiceAPI {
 
   Future<void> fillAddresses(String suppliedMnemonic,
       {int PER_BATCH = 250, int NUMBER_OF_THREADS = 4}) async {
-    if (NUMBER_OF_THREADS < 0) {
+    if (NUMBER_OF_THREADS <= 0) {
       NUMBER_OF_THREADS = 1;
     }
-    // final wallet = await Hive.openBox(this._walletId);
-    // var receiveDerivations = wallet.get('receiveDerivations');
-    // var changeDerivations = wallet.get('changeDerivations');
 
     final receiveDerivationsString =
         await _secureStore.read(key: "${this.walletId}_receiveDerivations");
@@ -2587,8 +2582,6 @@ class FiroWallet extends CoinServiceAPI {
     await _secureStore.write(
         key: "${this.walletId}_changeDerivations",
         value: newChangeDerivationsString);
-    // wallet.put('receiveDerivations', receiveDerivations);
-    // wallet.put('changeDerivations', changeDerivations);
   }
 
   /// Generates a new internal or external chain address for the wallet using a BIP84 derivation path.
@@ -2603,15 +2596,11 @@ class FiroWallet extends CoinServiceAPI {
           await _secureStore.read(key: "${this.walletId}_receiveDerivations");
       derivations = Map<String, dynamic>.from(
           jsonDecode(receiveDerivationsString ?? "{}"));
-
-      // derivations = wallet.get('receiveDerivations');
     } else if (chain == 1) {
       final changeDerivationsString =
           await _secureStore.read(key: "${this.walletId}_changeDerivations");
       derivations = Map<String, dynamic>.from(
           jsonDecode(changeDerivationsString ?? "{}"));
-
-      // derivations = wallet.get('changeDerivations');
     }
 
     if (derivations != null && derivations.length > 0) {
@@ -2760,14 +2749,6 @@ class FiroWallet extends CoinServiceAPI {
     await wallet.delete('changeIndex');
     await wallet.put('changeIndex_BACKUP', tempChangeIndex);
 
-    // final tempReceiveDerivations = await wallet.get('receiveDerivations');
-    // await wallet.delete('receiveDerivations');
-    // await wallet.put('receiveDerivations_BACKUP', tempReceiveDerivations);
-    //
-    // final tempChangeDerivations = await wallet.get('changeDerivations');
-    // await wallet.delete('changeDerivations');
-    // await wallet.put('changeDerivations_BACKUP', tempChangeDerivations);
-
     final receiveDerivationsString =
         await _secureStore.read(key: "${this.walletId}_receiveDerivations");
     final changeDerivationsString =
@@ -2811,9 +2792,6 @@ class FiroWallet extends CoinServiceAPI {
     final tempChangeAddresses = await wallet.get('changeAddresses_BACKUP');
     final tempReceivingIndex = await wallet.get('receivingIndex_BACKUP');
     final tempChangeIndex = await wallet.get('changeIndex_BACKUP');
-    // final tempReceiveDerivations =
-    //     await wallet.get('receiveDerivations_BACKUP');
-    // final tempChangeDerivations = await wallet.get('changeDerivations_BACKUP');
     final tempMintIndex = await wallet.get('mintIndex_BACKUP');
     final tempLelantusCoins = await wallet.get('_lelantus_coins_BACKUP');
     final tempJIndex = await wallet.get('jindex_BACKUP');
@@ -2836,8 +2814,6 @@ class FiroWallet extends CoinServiceAPI {
     await wallet.put('changeAddresses', tempChangeAddresses);
     await wallet.put('receivingIndex', tempReceivingIndex);
     await wallet.put('changeIndex', tempChangeIndex);
-    // await wallet.put('receiveDerivations', tempReceiveDerivations);
-    // await wallet.put('changeDerivations', tempChangeDerivations);
     await wallet.put('mintIndex', tempMintIndex);
     await wallet.put('_lelantus_coins', tempLelantusCoins);
     await wallet.put('jindex', tempJIndex);
@@ -2908,9 +2884,6 @@ class FiroWallet extends CoinServiceAPI {
 
       await fillAddresses(suppliedMnemonic,
           NUMBER_OF_THREADS: Platform.numberOfProcessors - isolates.length - 1);
-
-      // var receiveDerivations = wallet.get('receiveDerivations');
-      // var changeDerivations = wallet.get('changeDerivations');
 
       final receiveDerivationsString =
           await _secureStore.read(key: "${this.walletId}_receiveDerivations");
