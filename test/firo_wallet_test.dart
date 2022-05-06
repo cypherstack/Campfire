@@ -1391,8 +1391,8 @@ void main() {
           key: "${testWalletId}recoverFromMnemonic_changeDerivations");
       final _receiveDerivations = Map<String, dynamic>.from(jsonDecode(_rcv));
       final _changeDerivations = Map<String, dynamic>.from(jsonDecode(_chg));
-      expect(_receiveDerivations.length, 4750);
-      expect(_changeDerivations.length, 4750);
+      expect(_receiveDerivations.length, 190);
+      expect(_changeDerivations.length, 190);
 
       final mintIndex = await wallet.get('mintIndex');
       expect(mintIndex, 2);
@@ -1532,8 +1532,8 @@ void main() {
           key: "${testWalletId}fullRescan_changeDerivations");
       final _receiveDerivations = Map<String, dynamic>.from(jsonDecode(_rcv));
       final _changeDerivations = Map<String, dynamic>.from(jsonDecode(_chg));
-      expect(_receiveDerivations.length, 3750);
-      expect(_changeDerivations.length, 3750);
+      expect(_receiveDerivations.length, 150);
+      expect(_changeDerivations.length, 150);
 
       final mintIndex = await wallet.get('mintIndex');
       expect(mintIndex, 2);
@@ -1682,8 +1682,8 @@ void main() {
       final _receiveDerivations = Map<String, dynamic>.from(jsonDecode(_rcv));
       final _changeDerivations = Map<String, dynamic>.from(jsonDecode(_chg));
 
-      expect(_receiveDerivations.length, 1000);
-      expect(_changeDerivations.length, 1000);
+      expect(_receiveDerivations.length, 40);
+      expect(_changeDerivations.length, 40);
 
       final mintIndex = await wallet.get('mintIndex');
       expect(mintIndex, null);
@@ -1820,8 +1820,8 @@ void main() {
           key: "${testWalletId}recoverFromMnemonic_changeDerivations");
       final _receiveDerivations = Map<String, dynamic>.from(jsonDecode(_rcv));
       final _changeDerivations = Map<String, dynamic>.from(jsonDecode(_chg));
-      expect(_receiveDerivations.length, 4750);
-      expect(_changeDerivations.length, 4750);
+      expect(_receiveDerivations.length, 190);
+      expect(_changeDerivations.length, 190);
 
       final mintIndex = await wallet.get('mintIndex');
       expect(mintIndex, 2);
@@ -1866,8 +1866,8 @@ void main() {
           key: "${testWalletId}recoverFromMnemonic_changeDerivations");
       final __receiveDerivations = Map<String, dynamic>.from(jsonDecode(__rcv));
       final __changeDerivations = Map<String, dynamic>.from(jsonDecode(__chg));
-      expect(__receiveDerivations.length, 3750);
-      expect(__changeDerivations.length, 3750);
+      expect(__receiveDerivations.length, 150);
+      expect(__changeDerivations.length, 150);
 
       final _mintIndex = await wallet.get('mintIndex');
       expect(_mintIndex, 2);

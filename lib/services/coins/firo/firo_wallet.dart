@@ -2532,6 +2532,9 @@ class FiroWallet extends CoinServiceAPI {
     if (NUMBER_OF_THREADS <= 0) {
       NUMBER_OF_THREADS = 1;
     }
+    if (Platform.environment["FLUTTER_TEST"] == "true" || integrationTestFlag) {
+      PER_BATCH = 10;
+    }
 
     final receiveDerivationsString =
         await _secureStore.read(key: "${this.walletId}_receiveDerivations");

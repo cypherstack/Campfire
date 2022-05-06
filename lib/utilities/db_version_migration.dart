@@ -2,9 +2,15 @@ import 'dart:convert';
 
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 import 'package:hive/hive.dart';
+import 'package:paymint/utilities/flutter_secure_storage_interface.dart';
 
 class DbVersionMigrator {
-  Future<void> migrate(int fromVersion) async {
+  Future<void> migrate(
+    int fromVersion, {
+    FlutterSecureStorageInterface secureStore = const SecureStorageWrapper(
+      const FlutterSecureStorage(),
+    ),
+  }) async {
     final wallets = await Hive.openBox('wallets');
     final names = Map<String, String>.from((await wallets.get("names")) ?? {});
 
@@ -33,12 +39,10 @@ class DbVersionMigrator {
           await wallet.put("addressBookEntries", addressBook);
           await old.put("addressBookEntries", null);
 
-          final secureStore = FlutterSecureStorage();
-
           // receiveDerivations
           Map<String, dynamic> newReceiveDerivations = {};
-          final receiveDerivations = Map<int, dynamic>.from(
-              await wallet.get("receiveDerivations") ?? {});
+          final receiveDerivations =
+              Map<int, dynamic>.from(await old.get("receiveDerivations") ?? {});
 
           for (int i = 0; i < receiveDerivations.length; i++) {
             receiveDerivations[i].remove("fingerprint");
@@ -51,14 +55,14 @@ class DbVersionMigrator {
           await secureStore.write(
               key: "${walletId}_receiveDerivations",
               value: receiveDerivationsString);
-          await wallet.delete("receiveDerivations");
+          await old.delete("receiveDerivations");
 
           // changeDerivations
           Map<String, dynamic> newChangeDerivations = {};
-          final changeDerivations = Map<int, dynamic>.from(
-              await wallet.get("changeDerivations") ?? {});
+          final changeDerivations =
+              Map<int, dynamic>.from(await old.get("changeDerivations") ?? {});
 
-          for (int i = 0; i < receiveDerivations.length; i++) {
+          for (int i = 0; i < changeDerivations.length; i++) {
             changeDerivations[i].remove("fingerprint");
             changeDerivations[i].remove("identifier");
             changeDerivations[i].remove("privateKey");
@@ -69,7 +73,7 @@ class DbVersionMigrator {
           await secureStore.write(
               key: "${walletId}_changeDerivations",
               value: changeDerivationsString);
-          await wallet.delete("changeDerivations");
+          await old.delete("changeDerivations");
         }
 
         // finally update version
