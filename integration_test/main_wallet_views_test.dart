@@ -19,7 +19,7 @@ void main() {
   IntegrationTestWidgetsFlutterBinding.ensureInitialized();
   testWidgets("wallet, send, and receive view test", (tester) async {
     campfireApp.main();
-    await tester.pumpAndSettle();
+    await tester.pumpAndSettle(Duration(seconds: 10));
 
     // robots
     final onboardingViewBot = OnboardingViewBot(tester);

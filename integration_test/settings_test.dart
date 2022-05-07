@@ -47,7 +47,7 @@ void main() {
   // may fail if a network connection fails somewhere
   testWidgets("settings integration test", (tester) async {
     campfireApp.main();
-    await tester.pumpAndSettle();
+    await tester.pumpAndSettle(Duration(seconds: 10));
 
     // robots
     final onboardingViewBot = OnboardingViewBot(tester);

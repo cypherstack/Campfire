@@ -18,7 +18,7 @@ void main() {
     IntegrationTestWidgetsFlutterBinding.ensureInitialized();
     testWidgets("new wallet creation", (tester) async {
       campfireApp.main();
-      await tester.pumpAndSettle();
+      await tester.pumpAndSettle(Duration(seconds: 10));
 
       final onboardingViewBot = OnboardingViewBot(tester);
       final termsAndConditionsViewBot = TermsAndConditionsViewBot(tester);
