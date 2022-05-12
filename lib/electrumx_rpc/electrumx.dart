@@ -158,6 +158,7 @@ class ElectrumX {
       final response = await request(
         requestID: requestID,
         command: 'server.features',
+        retries: 0,
       );
       return response["result"];
     } catch (e) {
