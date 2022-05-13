@@ -277,13 +277,19 @@ class _SendViewState extends State<SendView> {
                             enabled: _sendButtonEnabled,
                             onTap: () async {
                               Logger.print("SEND pressed");
+                              // set address to textfield value if it was not auto filled from address book
+                              // OR if it was but the textfield value does not match anymore
+                              if (!_autofill ||
+                                  _recipientAddressTextController.text !=
+                                      _contactName) {
+                                _address = _recipientAddressTextController.text;
+                              }
 
                               // don't allow send to self
                               final manager =
                                   Provider.of<Manager>(context, listen: false);
                               final myAddresses = await manager.allOwnAddresses;
-                              if (myAddresses.contains(
-                                  _recipientAddressTextController.text)) {
+                              if (myAddresses.contains(_address)) {
                                 showDialog(
                                   context: context,
                                   useSafeArea: false,
@@ -313,15 +319,6 @@ class _SendViewState extends State<SendView> {
                                       message: "Insufficient balance!"),
                                 );
                               } else {
-                                // set address to textfield value if it was not auto filled from address book
-                                // OR if it was but the textfield value does not match anymore
-                                if (!_autofill ||
-                                    _recipientAddressTextController.text !=
-                                        _contactName) {
-                                  _address =
-                                      _recipientAddressTextController.text;
-                                }
-
                                 Navigator.of(context)
                                     .push(
                                   PageRouteBuilder(
