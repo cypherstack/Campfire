@@ -19,7 +19,7 @@ import 'private.dart';
 
 void main() {
   IntegrationTestWidgetsFlutterBinding.ensureInitialized();
-  testWidgets("restore from seed test", (tester) async {
+  testWidgets("rescan test", (tester) async {
     campfireApp.main();
     await tester.pumpAndSettle(Duration(seconds: 10));
 
