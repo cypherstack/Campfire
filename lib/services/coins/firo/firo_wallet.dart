@@ -1,6 +1,5 @@
 import 'dart:async';
 import 'dart:convert';
-import 'dart:developer';
 import 'dart:io';
 import 'dart:isolate';
 import 'dart:typed_data';
@@ -1282,6 +1281,7 @@ class FiroWallet extends CoinServiceAPI {
         final mnemonic =
             await _secureStore.read(key: '${this._walletId}_mnemonic');
         await fillAddresses(mnemonic,
+            PER_BATCH: 10,
             NUMBER_OF_THREADS:
                 Platform.numberOfProcessors - isolates.length - 1);
       }
@@ -2609,6 +2609,7 @@ class FiroWallet extends CoinServiceAPI {
     if (derivations != null && derivations.length > 0) {
       if (derivations["$index"] == null) {
         await fillAddresses(mnemonic,
+            PER_BATCH: 10,
             NUMBER_OF_THREADS:
                 Platform.numberOfProcessors - isolates.length - 1);
         Logger.print("calling _generateAddressForChain recursively");
@@ -2897,9 +2898,6 @@ class FiroWallet extends CoinServiceAPI {
           jsonDecode(receiveDerivationsString ?? "{}"));
       final changeDerivations = Map<String, dynamic>.from(
           jsonDecode(changeDerivationsString ?? "{}"));
-
-      log("rcv: $receiveDerivations");
-      log("chg: $changeDerivations");
 
       // Deriving and checking for receiving addresses
       for (var i = 0; i < receiveDerivations.length; i++) {
