@@ -20,37 +20,31 @@ class JsonRPC {
 
   Future<dynamic> request(String jsonRpcRequest) async {
     var socket;
-    dynamic result;
-    final chunks = <String>[];
-    int openBracketCount = 0;
+    final completer = Completer();
+    final List<int> responseData = [];
 
     void dataHandler(data) {
-      final jsonString = String.fromCharCodes(data);
-      chunks.add(jsonString);
-      for (int i = 0; i < jsonString.length; i++) {
-        if (jsonString[i] == "{" || jsonString[i] == "[") {
-          openBracketCount += 1;
-        } else if (jsonString[i] == "}" || jsonString[i] == "]") {
-          openBracketCount -= 1;
-        }
-      }
+      responseData.addAll(data);
 
-      // complete/valid json so we attempt to parse and return
-      if (openBracketCount == 0) {
+      // 0x0A is newline
+      // https://electrumx-spesmilo.readthedocs.io/en/latest/protocol-basics.html
+      if (data.last == 0x0A) {
         try {
-          result = json.decode(chunks.join());
+          final response = json.decode(String.fromCharCodes(responseData));
+          completer.complete(response);
         } catch (e, s) {
-          Logger.print("$e\n$s");
-          throw e;
+          Logger.print("JsonRPC json.decode: $e\n$s");
+          completer.completeError(e, s);
         } finally {
           socket?.destroy();
         }
       }
     }
 
-    //TODO handle error better
     void errorHandler(error, StackTrace trace) {
-      Logger.print(error);
+      Logger.print("JsonRPC errorHandler: $error\n$trace");
+      completer.completeError(error, trace);
+      socket?.destroy();
     }
 
     void doneHandler() {
@@ -64,31 +58,18 @@ class JsonRPC {
         socket = sock;
         socket?.listen(dataHandler,
             onError: errorHandler, onDone: doneHandler, cancelOnError: true);
-      }).catchError((e) {
-        Logger.print("Unable to connect: $e");
-        socket?.destroy();
-        throw e;
-      });
+      }).catchError(errorHandler);
     } else {
       await Socket.connect(this.address, this.port, timeout: connectionTimeout)
           .then((Socket sock) {
         socket = sock;
         socket?.listen(dataHandler,
             onError: errorHandler, onDone: doneHandler, cancelOnError: true);
-      }).catchError((e) {
-        Logger.print("Unable to connect: $e");
-        socket?.destroy();
-        throw e;
-      });
+      }).catchError(errorHandler);
     }
 
     socket?.write('$jsonRpcRequest\r\n');
 
-    // wait for call to complete and return result
-    while (result == null) {
-      // sleep
-      await Future.delayed(Duration(milliseconds: 100));
-    }
-    return result;
+    return completer.future;
   }
 }
