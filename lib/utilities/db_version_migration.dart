@@ -21,10 +21,12 @@ class DbVersionMigrator {
           final walletId = entry.value;
           final walletName = entry.key;
 
+          // backup everything besides the derivations
+          await _backupV0(walletId: walletId, walletName: walletName);
+
           // move main/test network to walletId based
-          final network = await wallets.get("${entry.key}_network");
+          final network = await wallets.get("${walletName}_network");
           await wallets.put("${walletId}_network", network);
-          await wallets.delete("${walletName}_network");
 
           final old = await Hive.openBox(walletName);
           final wallet = await Hive.openBox(walletId);
@@ -32,12 +34,10 @@ class DbVersionMigrator {
           // notes
           final oldNotes = await old.get("notes");
           await wallet.put("notes", oldNotes);
-          await old.delete("notes");
 
           // address book
           final addressBook = await old.get("addressBookEntries");
           await wallet.put("addressBookEntries", addressBook);
-          await old.put("addressBookEntries", null);
 
           // receiveDerivations
           Map<String, dynamic> newReceiveDerivations = {};
@@ -55,7 +55,6 @@ class DbVersionMigrator {
           await secureStore.write(
               key: "${walletId}_receiveDerivations",
               value: receiveDerivationsString);
-          await old.delete("receiveDerivations");
 
           // changeDerivations
           Map<String, dynamic> newChangeDerivations = {};
@@ -73,7 +72,13 @@ class DbVersionMigrator {
           await secureStore.write(
               key: "${walletId}_changeDerivations",
               value: changeDerivationsString);
+
+          // finally delete originals
+          await wallets.delete("${walletName}_network");
+          await old.delete("notes");
+          await old.delete("addressBookEntries");
           await old.delete("changeDerivations");
+          await old.delete("receiveDerivations");
         }
 
         // finally update version
@@ -89,5 +94,31 @@ class DbVersionMigrator {
       default:
         return;
     }
+  }
+
+  Future<void> _backupV0({String walletId, String walletName}) async {
+    final wallets = await Hive.openBox('wallets');
+    final old = await Hive.openBox(walletName);
+
+    final network = await wallets.get("${walletName}_network");
+    final oldNotes = await old.get("notes");
+    final addressBook = await old.get("addressBookEntries");
+
+    await wallets.put("${walletId}_backupV0", {
+      "network": network,
+      "notes": oldNotes,
+      "addressBookEntries": addressBook,
+    });
+  }
+
+  Future<void> _restoreV0({String walletId, String walletName}) async {
+    final wallets = await Hive.openBox('wallets');
+    final old = await Hive.openBox(walletName);
+
+    final backup = await wallets.get("${walletId}_backupV0");
+
+    await old.put("notes", backup["notes"]);
+    await old.put("addressBookEntries", backup["addressBookEntries"]);
+    await wallets.put("${walletName}_network", backup["network"]);
   }
 }
