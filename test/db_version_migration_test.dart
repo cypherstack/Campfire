@@ -18,6 +18,7 @@ void main() {
     await wallets.put('currentWalletName', "My Firo Wallet");
     await wallets.put("My Firo Wallet_network", "main");
 
+    final wallet2 = await Hive.openBox("wallet_id");
     final wallet = await Hive.openBox("My Firo Wallet");
     await wallet.put("notes", {"txid1": "note1", "txid2": "note2"});
     await wallet.put(
@@ -28,7 +29,7 @@ void main() {
       },
     );
 
-    await wallet.put(
+    await wallet2.put(
       "receiveDerivations",
       {
         0: {
@@ -48,7 +49,7 @@ void main() {
         },
       },
     );
-    await wallet.put(
+    await wallet2.put(
       "changeDerivations",
       {
         0: {
@@ -81,8 +82,6 @@ void main() {
 
     expect(await wallets.get("My Firo Wallet_network"), null);
     expect(await wallets.get("wallet_id_network"), "main");
-
-    final wallet2 = await Hive.openBox("wallet_id");
 
     expect(await wallet.get("notes"), null);
     expect(await wallet2.get("notes"), {"txid1": "note1", "txid2": "note2"});

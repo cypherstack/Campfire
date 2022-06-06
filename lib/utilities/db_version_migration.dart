@@ -41,8 +41,8 @@ class DbVersionMigrator {
 
           // receiveDerivations
           Map<String, dynamic> newReceiveDerivations = {};
-          final receiveDerivations =
-              Map<int, dynamic>.from(await old.get("receiveDerivations") ?? {});
+          final receiveDerivations = Map<int, dynamic>.from(
+              (await wallet.get("receiveDerivations")) ?? {});
 
           for (int i = 0; i < receiveDerivations.length; i++) {
             receiveDerivations[i].remove("fingerprint");
@@ -58,8 +58,8 @@ class DbVersionMigrator {
 
           // changeDerivations
           Map<String, dynamic> newChangeDerivations = {};
-          final changeDerivations =
-              Map<int, dynamic>.from(await old.get("changeDerivations") ?? {});
+          final changeDerivations = Map<int, dynamic>.from(
+              (await wallet.get("changeDerivations")) ?? {});
 
           for (int i = 0; i < changeDerivations.length; i++) {
             changeDerivations[i].remove("fingerprint");
@@ -77,8 +77,8 @@ class DbVersionMigrator {
           await wallets.delete("${walletName}_network");
           await old.delete("notes");
           await old.delete("addressBookEntries");
-          await old.delete("changeDerivations");
-          await old.delete("receiveDerivations");
+          await wallet.delete("changeDerivations");
+          await wallet.delete("receiveDerivations");
         }
 
         // finally update version
