@@ -3,6 +3,7 @@ import 'package:google_fonts/google_fonts.dart';
 import 'package:paymint/models/models.dart';
 import 'package:paymint/pages/settings_view/helpers/builders.dart';
 import 'package:paymint/services/address_book_service.dart';
+import 'package:paymint/services/locale_service.dart';
 import 'package:paymint/services/notes_service.dart';
 import 'package:paymint/utilities/cfcolors.dart';
 import 'package:paymint/utilities/shared_utilities.dart';
@@ -14,12 +15,10 @@ class TransactionDetailsView extends StatefulWidget {
     Key key,
     @required this.transaction,
     @required this.note,
-    @required this.locale,
   }) : super(key: key);
 
   final Transaction transaction;
-  final note;
-  final String locale;
+  final String note;
 
   @override
   _TransactionDetailsViewState createState() => _TransactionDetailsViewState();
@@ -47,7 +46,7 @@ class _TransactionDetailsViewState extends State<TransactionDetailsView> {
   }
 
   _onNoteFocusChanged() {
-    if (!_focusNode.hasFocus) {
+    if (!_focusNode.hasFocus && _noteController.text != widget.note) {
       final notesService = Provider.of<NotesService>(context, listen: false);
       notesService.editOrAddNote(
           txid: _transaction.txid, note: _noteController.text);
@@ -138,7 +137,7 @@ class _TransactionDetailsViewState extends State<TransactionDetailsView> {
               ),
             );
           },
-        )
+        ),
       ],
     );
   }
@@ -228,59 +227,66 @@ class _TransactionDetailsViewState extends State<TransactionDetailsView> {
                 height: SizingUtilities.standardPadding,
               ),
               Expanded(
-                child: SingleChildScrollView(
-                  child: Column(
-                    children: [
-                      _buildNoteItem(context),
-                      if (_transaction.txType == "Sent")
-                        _buildSentToItem(context),
-                      if (_transaction.txType == "Sent") _buildSeparator(),
-                      if (_transaction.txType == "Received")
-                        _buildItem(
-                          "Received on:",
-                          _transaction.address,
-                          1,
-                        ),
-                      if (_transaction.txType == "Received") _buildSeparator(),
-                      _buildItem(
-                        "Amount:",
-                        // _transaction.confirmedStatus
-                        // ?
-                        Utilities.satoshiAmountToPrettyString(
-                            _transaction.amount, widget.locale),
-                        // : "Pending",
-                        1,
+                child: Provider<String>.value(
+                  value: Provider.of<LocaleService>(context).locale,
+                  builder: (ctx, child) {
+                    final String locale = ctx.watch<String>();
+                    return SingleChildScrollView(
+                      child: Column(
+                        children: [
+                          _buildNoteItem(context),
+                          if (_transaction.txType == "Sent")
+                            _buildSentToItem(context),
+                          if (_transaction.txType == "Sent") _buildSeparator(),
+                          if (_transaction.txType == "Received")
+                            _buildItem(
+                              "Received on:",
+                              _transaction.address,
+                              1,
+                            ),
+                          if (_transaction.txType == "Received")
+                            _buildSeparator(),
+                          _buildItem(
+                            "Amount:",
+                            // _transaction.confirmedStatus
+                            // ?
+                            Utilities.satoshiAmountToPrettyString(
+                                _transaction.amount, locale),
+                            // : "Pending",
+                            1,
+                          ),
+                          _buildSeparator(),
+                          _buildItem(
+                              "Fee:",
+                              _transaction.confirmedStatus
+                                  ? Utilities.satoshiAmountToPrettyString(
+                                      _transaction.fees, locale)
+                                  : "Pending",
+                              1),
+                          _buildSeparator(),
+                          _buildItem(
+                            "Date:",
+                            Utilities.extractDateFrom(_transaction.timestamp),
+                            1,
+                          ),
+                          _buildSeparator(),
+                          _buildItem(
+                            "Transaction ID:",
+                            _transaction.txid,
+                            2,
+                          ),
+                          _buildSeparator(),
+                          _buildItem(
+                            "Block Height:",
+                            _transaction.confirmedStatus
+                                ? _transaction.height.toString()
+                                : "Pending",
+                            1,
+                          ),
+                        ],
                       ),
-                      _buildSeparator(),
-                      _buildItem(
-                          "Fee:",
-                          _transaction.confirmedStatus
-                              ? Utilities.satoshiAmountToPrettyString(
-                                  _transaction.fees, widget.locale)
-                              : "Pending",
-                          1),
-                      _buildSeparator(),
-                      _buildItem(
-                        "Date:",
-                        Utilities.extractDateFrom(_transaction.timestamp),
-                        1,
-                      ),
-                      _buildSeparator(),
-                      _buildItem(
-                        "Transaction ID:",
-                        _transaction.txid,
-                        2,
-                      ),
-                      _buildSeparator(),
-                      _buildItem(
-                        "Block Height:",
-                        _transaction.confirmedStatus
-                            ? _transaction.height.toString()
-                            : "Pending",
-                        1,
-                      ),
-                    ],
-                  ),
+                    );
+                  },
                 ),
               ),
               SizedBox(

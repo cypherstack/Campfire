@@ -5,7 +5,7 @@ import 'package:paymint/notifications/overlay_notification.dart';
 import 'package:paymint/pages/onboarding_view/create_pin_view.dart';
 import 'package:paymint/services/wallets_service.dart';
 import 'package:paymint/utilities/cfcolors.dart';
-import 'package:paymint/utilities/misc_global_constants.dart';
+import 'package:paymint/utilities/shared_utilities.dart';
 import 'package:paymint/utilities/sizing_utilities.dart';
 import 'package:paymint/utilities/text_styles.dart';
 import 'package:paymint/widgets/custom_buttons/gradient_button.dart';
@@ -15,9 +15,14 @@ import 'helpers/builders.dart';
 import 'helpers/create_wallet_type.dart';
 
 class NameYourWalletView extends StatefulWidget {
-  const NameYourWalletView({Key key, @required this.type}) : super(key: key);
+  const NameYourWalletView({
+    Key key,
+    @required this.type,
+    this.allowTestNet = false,
+  }) : super(key: key);
 
   final CreateWalletType type;
+  final bool allowTestNet;
 
   @override
   _NameYourWalletViewState createState() => _NameYourWalletViewState();
@@ -30,7 +35,6 @@ class _NameYourWalletViewState extends State<NameYourWalletView> {
 
   @override
   Widget build(BuildContext context) {
-    final WalletsService walletsService = Provider.of<WalletsService>(context);
     return Scaffold(
       backgroundColor: CFColors.starryNight,
       appBar: buildOnboardingAppBar(context),
@@ -70,11 +74,24 @@ class _NameYourWalletViewState extends State<NameYourWalletView> {
                             style: CFTextStyles.textField,
                           ),
                         ),
-                        _buildNameField(),
+                        Padding(
+                          padding: const EdgeInsets.only(
+                            top: 20,
+                            bottom: 7,
+                          ),
+                          child: TextField(
+                            controller: _nameTextEditingController,
+                            style: CFTextStyles.textField,
+                            decoration: InputDecoration(
+                              hintText: "Enter wallet name",
+                              hintStyle: CFTextStyles.textFieldHint,
+                            ),
+                          ),
+                        ),
                         SizedBox(
                           height: 12,
                         ),
-                        if (CampfireConstants.allowTestnets)
+                        if (widget.allowTestNet)
                           Row(
                             children: [
                               SizedBox(
@@ -110,7 +127,72 @@ class _NameYourWalletViewState extends State<NameYourWalletView> {
                             ],
                           ),
                         Spacer(),
-                        _buildNextButton(walletsService),
+                        SizedBox(
+                          height: 48,
+                          width: MediaQuery.of(context).size.width -
+                              (SizingUtilities.standardPadding * 2),
+                          child: GradientButton(
+                            onTap: () {
+                              final walletName =
+                                  _nameTextEditingController.text;
+                              if (walletName.isEmpty) {
+                                OverlayNotification.showError(
+                                  context,
+                                  "Please name your wallet",
+                                  Duration(seconds: 2),
+                                );
+                              } else if (!Utilities.isAscii(walletName)) {
+                                OverlayNotification.showError(
+                                  context,
+                                  "Non ASCII characters are not allowed",
+                                  Duration(seconds: 2),
+                                );
+                              } else {
+                                // check if wallet name is already in use
+                                final walletsService =
+                                    Provider.of<WalletsService>(context,
+                                        listen: false);
+                                walletsService
+                                    .checkForDuplicate(walletName)
+                                    .then(
+                                  (isInUse) async {
+                                    if (isInUse) {
+                                      OverlayNotification.showError(
+                                        context,
+                                        "You already have a wallet named: $walletName",
+                                        Duration(seconds: 2),
+                                      );
+                                    } else {
+                                      FocusScope.of(context).unfocus();
+                                      // Wait for keyboard to disappear before navigating
+                                      // to prevent render exception being thrown.
+                                      // TODO: find a less hacky method of dealing with this
+                                      await Future.delayed(
+                                          Duration(milliseconds: 100));
+
+                                      // continue setting up wallet
+                                      Navigator.of(context).push(
+                                        CupertinoPageRoute(
+                                          builder: (context) {
+                                            return CreatePinView(
+                                              type: widget.type,
+                                              walletName: walletName,
+                                              useTestNet: _useTestNet,
+                                            );
+                                          },
+                                        ),
+                                      );
+                                    }
+                                  },
+                                );
+                              }
+                            },
+                            child: Text(
+                              "NEXT",
+                              style: CFTextStyles.button,
+                            ),
+                          ),
+                        ),
                       ],
                     ),
                   ),
@@ -118,79 +200,6 @@ class _NameYourWalletViewState extends State<NameYourWalletView> {
               );
             },
           ),
-        ),
-      ),
-    );
-  }
-
-  _buildNameField() {
-    return Padding(
-      padding: const EdgeInsets.only(
-        top: 20,
-        bottom: 7,
-      ),
-      child: TextField(
-        controller: _nameTextEditingController,
-        style: CFTextStyles.textField,
-        decoration: InputDecoration(
-          hintText: "Enter wallet name",
-          hintStyle: CFTextStyles.textFieldHint,
-        ),
-      ),
-    );
-  }
-
-  _buildNextButton(WalletsService walletsService) {
-    return SizedBox(
-      height: 48,
-      width: MediaQuery.of(context).size.width -
-          (SizingUtilities.standardPadding * 2),
-      child: GradientButton(
-        onTap: () {
-          final walletName = _nameTextEditingController.text;
-          if (walletName.isEmpty) {
-            OverlayNotification.showError(
-              context,
-              "Please name your wallet",
-              Duration(seconds: 2),
-            );
-          } else {
-            // check if wallet name is already in use
-            walletsService.checkForDuplicate(walletName).then(
-              (isInUse) async {
-                if (isInUse) {
-                  OverlayNotification.showError(
-                    context,
-                    "You already have a wallet named: $walletName",
-                    Duration(seconds: 2),
-                  );
-                } else {
-                  FocusScope.of(context).unfocus();
-                  // Wait for keyboard to disappear before navigating
-                  // to prevent render exception being thrown.
-                  // TODO: find a less hacky method of dealing with this
-                  await Future.delayed(Duration(milliseconds: 100));
-
-                  // continue setting up wallet
-                  Navigator.of(context).push(
-                    CupertinoPageRoute(
-                      builder: (context) {
-                        return CreatePinView(
-                          type: widget.type,
-                          walletName: walletName,
-                          useTestNet: _useTestNet,
-                        );
-                      },
-                    ),
-                  );
-                }
-              },
-            );
-          }
-        },
-        child: Text(
-          "NEXT",
-          style: CFTextStyles.button,
         ),
       ),
     );

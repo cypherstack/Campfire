@@ -38,8 +38,6 @@ class _NodeDetailsViewState extends State<NodeDetailsView> {
   final _nameController = TextEditingController();
   final _addressController = TextEditingController();
   final _portController = TextEditingController();
-  // final _usernameController = TextEditingController();
-  // final _passwordController = TextEditingController();
 
   var _useSSL = false;
   final _isEditing;
@@ -52,6 +50,14 @@ class _NodeDetailsViewState extends State<NodeDetailsView> {
 
   _NodeDetailsViewState(this._isEditing);
 
+  bool _saveButtonEnabled;
+  bool _testButtonEnabled;
+
+  bool _checkEnableSaveButton() =>
+      _nameController.text.isNotEmpty && _checkEnableTestButton();
+  bool _checkEnableTestButton() =>
+      _portController.text.isNotEmpty && _addressController.text.isNotEmpty;
+
   void _onSavePressed() async {
     final name = _nameController.text;
     final ipAddress = _addressController.text;
@@ -59,7 +65,7 @@ class _NodeDetailsViewState extends State<NodeDetailsView> {
 
     final nodesService = Provider.of<NodeService>(context, listen: false);
     final id = widget.nodeData["id"];
-    final success = nodesService.editNode(
+    final success = await nodesService.editNode(
       id: id,
       originalName: widget.nodeName,
       updatedName: name,
@@ -72,7 +78,9 @@ class _NodeDetailsViewState extends State<NodeDetailsView> {
     if (success) {
       FocusScope.of(context).unfocus();
       await Future.delayed(Duration(milliseconds: 200));
-      Navigator.pop(context);
+      // Navigator.pop(context);
+      Navigator.popUntil(
+          context, (route) => route.settings.name == "/settings/network");
     } else {
       showDialog(
         useSafeArea: false,
@@ -86,14 +94,12 @@ class _NodeDetailsViewState extends State<NodeDetailsView> {
 
   void _onTestPressed() async {
     final manager = Provider.of<Manager>(context, listen: false);
-
-    final canConnect = await manager.testNetworkConnection(
-      ElectrumX(
-        server: _addressController.text,
-        port: int.parse(_portController.text),
-        useSSL: _useSSL,
-      ),
+    final electrumX = ElectrumX(
+      server: _addressController.text,
+      port: int.parse(_portController.text),
+      useSSL: _useSSL,
     );
+    final canConnect = await manager.testNetworkConnection(electrumX);
 
     if (canConnect) {
       OverlayNotification.showSuccess(
@@ -110,6 +116,8 @@ class _NodeDetailsViewState extends State<NodeDetailsView> {
     _addressController.text = widget.nodeData["ipAddress"];
     _portController.text = widget.nodeData["port"];
     _useSSL = widget.nodeData["useSSL"];
+    _saveButtonEnabled = false;
+    _testButtonEnabled = _checkEnableTestButton();
     super.initState();
   }
 
@@ -153,7 +161,7 @@ class _NodeDetailsViewState extends State<NodeDetailsView> {
     return AppBar(
       backgroundColor: CFColors.white,
       title: Text(
-        _isEditing ? "Edit node" : "Node Details",
+        _isEditing ? "Edit Node" : "Node Details",
         style: _titleStyle,
       ),
       leadingWidth: 36.0 + 20.0, // account for 20 padding
@@ -167,6 +175,7 @@ class _NodeDetailsViewState extends State<NodeDetailsView> {
         child: AspectRatio(
           aspectRatio: 1,
           child: AppBarIconButton(
+            key: Key("nodeDetailsViewBackButtonKey"),
             size: 36,
             onPressed: () async {
               if (_isEditing) {
@@ -174,9 +183,7 @@ class _NodeDetailsViewState extends State<NodeDetailsView> {
                 await Future.delayed(Duration(milliseconds: 50));
               }
 
-              final navigator = Navigator.of(context);
-              navigator.pop();
-              navigator.pop();
+              Navigator.of(context).pop();
             },
             circularBorderRadius: 8,
             icon: SvgPicture.asset(
@@ -199,6 +206,7 @@ class _NodeDetailsViewState extends State<NodeDetailsView> {
             child: AspectRatio(
               aspectRatio: 1,
               child: AppBarIconButton(
+                key: Key("nodeDetailsViewMoreButtonKey"),
                 size: 36,
                 icon: SvgPicture.asset(
                   "assets/svg/more-vertical.svg",
@@ -214,7 +222,7 @@ class _NodeDetailsViewState extends State<NodeDetailsView> {
                   showDialog(
                     barrierColor: Colors.transparent,
                     context: context,
-                    builder: (context) {
+                    builder: (_) {
                       return _buildPopupMenu(context);
                     },
                   );
@@ -244,18 +252,19 @@ class _NodeDetailsViewState extends State<NodeDetailsView> {
               children: [
                 GestureDetector(
                   onTap: () {
-                    Navigator.push(context,
-                        CupertinoPageRoute(builder: (context) {
-                      return NodeDetailsView(
-                        isEdit: true,
-                        nodeData: widget.nodeData,
-                        nodeName: widget.nodeName,
-                      );
-                    })).then((_) {
-                      final navigator = Navigator.of(context);
-                      navigator.pop();
-                      navigator.pop();
-                    });
+                    Navigator.of(context).pop();
+                    Navigator.push(
+                      context,
+                      CupertinoPageRoute(
+                        builder: (context) => NodeDetailsView(
+                            isEdit: true,
+                            nodeData: widget.nodeData,
+                            nodeName: widget.nodeName),
+                        settings: RouteSettings(
+                          name: "/more/editnode",
+                        ),
+                      ),
+                    );
                   },
                   child: Padding(
                     padding: const EdgeInsets.only(
@@ -312,7 +321,6 @@ class _NodeDetailsViewState extends State<NodeDetailsView> {
   }
 
   _buildNodeDeleteConfirmDialog() {
-    final nodeService = Provider.of<NodeService>(context, listen: false);
     return ModalPopupDialog(
       child: Column(
         children: [
@@ -340,6 +348,7 @@ class _NodeDetailsViewState extends State<NodeDetailsView> {
                   child: SizedBox(
                     height: SizingUtilities.standardButtonHeight,
                     child: SimpleButton(
+                      key: Key("nodeDetailsConfirmDeleteCancelButtonKey"),
                       child: FittedBox(
                         child: Text(
                           "CANCEL",
@@ -363,6 +372,7 @@ class _NodeDetailsViewState extends State<NodeDetailsView> {
                   child: SizedBox(
                     height: SizingUtilities.standardButtonHeight,
                     child: GradientButton(
+                      key: Key("nodeDetailsConfirmDeleteConfirmButtonKey"),
                       child: FittedBox(
                         child: Text(
                           "DELETE",
@@ -370,11 +380,12 @@ class _NodeDetailsViewState extends State<NodeDetailsView> {
                         ),
                       ),
                       onTap: () async {
+                        final nodeService =
+                            Provider.of<NodeService>(context, listen: false);
                         bool success =
                             await nodeService.deleteNode(widget.nodeName);
                         if (success) {
                           final navigator = Navigator.of(context);
-                          navigator.pop();
                           navigator.pop();
                           navigator.pop();
                           navigator.pop();
@@ -404,8 +415,14 @@ class _NodeDetailsViewState extends State<NodeDetailsView> {
     return Column(
       children: [
         TextField(
+          key: Key("editNodeNodeNameFieldKey"),
           enabled: _isEditing,
           controller: _nameController,
+          onChanged: (newValue) {
+            setState(() {
+              _saveButtonEnabled = _checkEnableSaveButton();
+            });
+          },
         ),
         SizedBox(
           height: 12,
@@ -414,8 +431,15 @@ class _NodeDetailsViewState extends State<NodeDetailsView> {
           children: [
             Expanded(
               child: TextField(
+                key: Key("editNodeAddressFieldKey"),
                 enabled: _isEditing,
                 controller: _addressController,
+                onChanged: (newValue) {
+                  setState(() {
+                    _saveButtonEnabled = _checkEnableSaveButton();
+                    _testButtonEnabled = _checkEnableTestButton();
+                  });
+                },
               ),
             ),
             SizedBox(
@@ -423,28 +447,21 @@ class _NodeDetailsViewState extends State<NodeDetailsView> {
             ),
             Expanded(
               child: TextField(
+                key: Key("editNodeNodePortFieldKey"),
                 enabled: _isEditing,
                 controller: _portController,
                 inputFormatters: [FilteringTextInputFormatter.digitsOnly],
                 keyboardType: TextInputType.number,
+                onChanged: (newValue) {
+                  setState(() {
+                    _saveButtonEnabled = _checkEnableSaveButton();
+                    _testButtonEnabled = _checkEnableTestButton();
+                  });
+                },
               ),
             ),
           ],
         ),
-        // SizedBox(
-        //   height: 12,
-        // ),
-        // TextField(
-        //   enabled: _isEditing,
-        //   controller: _usernameController,
-        // ),
-        // SizedBox(
-        //   height: 12,
-        // ),
-        // TextField(
-        //   enabled: _isEditing,
-        //   controller: _passwordController,
-        // ),
         Row(
           children: [
             Checkbox(
@@ -453,6 +470,7 @@ class _NodeDetailsViewState extends State<NodeDetailsView> {
                   ? (newValue) {
                       setState(() {
                         _useSSL = newValue;
+                        _saveButtonEnabled = true;
                       });
                     }
                   : null,
@@ -477,11 +495,12 @@ class _NodeDetailsViewState extends State<NodeDetailsView> {
       width: MediaQuery.of(context).size.width -
           (SizingUtilities.standardPadding * 2),
       child: SimpleButton(
+        enabled: _testButtonEnabled,
         child: FittedBox(
           child: Text(
             "TEST CONNECTION",
             style: CFTextStyles.button.copyWith(
-              color: CFColors.dusk,
+              color: _testButtonEnabled ? CFColors.dusk : CFColors.smoke,
             ),
           ),
         ),
@@ -498,13 +517,13 @@ class _NodeDetailsViewState extends State<NodeDetailsView> {
       width: MediaQuery.of(context).size.width -
           (SizingUtilities.standardPadding * 2),
       child: GradientButton(
+        enabled: _saveButtonEnabled,
         child: Text(
           "SAVE",
           style: CFTextStyles.button,
         ),
         onTap: () {
           _onSavePressed();
-          Navigator.pop(context);
         },
       ),
     );

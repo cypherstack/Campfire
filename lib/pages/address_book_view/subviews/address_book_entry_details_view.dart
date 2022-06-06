@@ -11,6 +11,7 @@ import 'package:paymint/pages/address_book_view/subviews/edit_address_book_entry
 import 'package:paymint/services/address_book_service.dart';
 import 'package:paymint/services/coins/manager.dart';
 import 'package:paymint/utilities/cfcolors.dart';
+import 'package:paymint/utilities/clipboard_interface.dart';
 import 'package:paymint/utilities/logger.dart';
 import 'package:paymint/utilities/sizing_utilities.dart';
 import 'package:paymint/utilities/text_styles.dart';
@@ -27,9 +28,11 @@ class AddressBookEntryDetailsView extends StatefulWidget {
     Key key,
     @required this.name,
     @required this.address,
+    this.clipboard = const ClipboardWrapper(),
   }) : super(key: key);
 
   final String name, address;
+  final ClipboardInterface clipboard;
 
   @override
   _AddressBookEntryDetailsViewState createState() =>
@@ -48,8 +51,14 @@ class _AddressBookEntryDetailsViewState
     fontWeight: FontWeight.w600,
   );
 
+  AddressBookService addressBookService;
+  ClipboardInterface clipboard;
+
   @override
   initState() {
+    addressBookService =
+        Provider.of<AddressBookService>(context, listen: false);
+    clipboard = widget.clipboard;
     _name = widget.name;
     _address = widget.address;
     _addressTextEditingController.text = _address;
@@ -59,131 +68,167 @@ class _AddressBookEntryDetailsViewState
   @override
   Widget build(BuildContext context) {
     final manager = Provider.of<Manager>(context);
+
     return Scaffold(
       appBar: _buildAppBar(context),
-      body: Container(
-        color: CFColors.white,
-        height: SizingUtilities.getBodyHeight(context),
-        child: Padding(
-          padding: const EdgeInsets.only(
-            top: 10,
-            left: SizingUtilities.standardPadding,
-            right: SizingUtilities.standardPadding,
-            bottom: SizingUtilities.standardPadding,
-          ),
-          child: Column(
-            children: [
-              Align(
-                alignment: Alignment.centerLeft,
-                child: Text(
-                  "Address",
-                  style: GoogleFonts.workSans(
-                    color: CFColors.twilight,
-                    fontSize: 12,
-                    fontWeight: FontWeight.w500,
-                  ),
-                ),
-              ),
-              SizedBox(
-                height: 8,
-              ),
-              TextField(
-                readOnly: true,
-                controller: _addressTextEditingController,
-                decoration: InputDecoration(
-                    suffixIcon: UnconstrainedBox(
-                  child: Padding(
-                    padding: const EdgeInsets.only(right: 16),
-                    child: Row(
-                      children: [
-                        GestureDetector(
-                          child: SvgPicture.asset(
-                            "assets/svg/copy-2.svg",
-                            color: CFColors.twilight,
-                            height: 20,
-                            width: 20,
-                          ),
-                          onTap: () {
-                            Clipboard.setData(ClipboardData(
-                                text: _addressTextEditingController.text));
-                            OverlayNotification.showInfo(
-                              context,
-                              "Address copied to clipboard",
-                              Duration(seconds: 2),
-                            );
-                          },
-                        ),
-                        SizedBox(
-                          width: 10,
-                        ),
-                        GestureDetector(
-                          child: SvgPicture.asset(
-                            "assets/svg/edit-4.svg",
-                            color: CFColors.twilight,
-                            height: 20,
-                            width: 20,
-                          ),
-                          onTap: () {
-                            Logger.print("edit address tapped");
-                            showDialog(
-                              context: context,
-                              useSafeArea: false,
-                              barrierDismissible: false,
-                              builder: (context) {
-                                return EditAddressBookEntryView(
-                                    name: _name, address: _address);
-                              },
-                            );
-                          },
-                        )
-                      ],
+      body: SafeArea(
+        child: Container(
+          color: CFColors.white,
+          height: SizingUtilities.getBodyHeight(context),
+          child: Padding(
+            padding: const EdgeInsets.only(
+              top: 10,
+              left: SizingUtilities.standardPadding,
+              right: SizingUtilities.standardPadding,
+              bottom: SizingUtilities.standardPadding,
+            ),
+            child: Column(
+              children: [
+                Align(
+                  alignment: Alignment.centerLeft,
+                  child: Text(
+                    "Address",
+                    style: GoogleFonts.workSans(
+                      color: CFColors.twilight,
+                      fontSize: 12,
+                      fontWeight: FontWeight.w500,
                     ),
                   ),
-                )),
-              ),
-              SizedBox(
-                height: 8,
-              ),
-              _buildSendButton(context),
-              SizedBox(
-                height: 40,
-              ),
-              Align(
-                alignment: Alignment.centerLeft,
-                child: Text(
-                  "Transaction History",
-                  style: GoogleFonts.workSans(
-                    color: CFColors.twilight,
-                    fontSize: 12,
-                    fontWeight: FontWeight.w500,
+                ),
+                SizedBox(
+                  height: 8,
+                ),
+                TextField(
+                  readOnly: true,
+                  controller: _addressTextEditingController,
+                  decoration: InputDecoration(
+                      suffixIcon: UnconstrainedBox(
+                    child: Padding(
+                      padding: const EdgeInsets.only(right: 16),
+                      child: Row(
+                        children: [
+                          GestureDetector(
+                            key: Key(
+                                "addressBookEntryDetailsCopyAddressButtonKey"),
+                            child: SvgPicture.asset(
+                              "assets/svg/copy-2.svg",
+                              color: CFColors.twilight,
+                              height: 20,
+                              width: 20,
+                            ),
+                            onTap: () {
+                              clipboard.setData(ClipboardData(
+                                  text: _addressTextEditingController.text));
+                              OverlayNotification.showInfo(
+                                context,
+                                "Address copied to clipboard",
+                                Duration(seconds: 2),
+                              );
+                            },
+                          ),
+                          SizedBox(
+                            width: 10,
+                          ),
+                          GestureDetector(
+                            key: Key(
+                                "addressBookEntryDetailsEditEntryButtonKey"),
+                            child: SvgPicture.asset(
+                              "assets/svg/edit-4.svg",
+                              color: CFColors.twilight,
+                              height: 20,
+                              width: 20,
+                            ),
+                            onTap: () {
+                              Logger.print("edit address tapped");
+                              Navigator.push(
+                                context,
+                                CupertinoPageRoute(
+                                  builder: (context) {
+                                    return EditAddressBookEntryView(
+                                        name: _name, address: _address);
+                                  },
+                                ),
+                              );
+                            },
+                          )
+                        ],
+                      ),
+                    ),
+                  )),
+                ),
+                SizedBox(
+                  height: 8,
+                ),
+                _buildSendButton(context),
+                SizedBox(
+                  height: 40,
+                ),
+                Align(
+                  alignment: Alignment.centerLeft,
+                  child: Text(
+                    "Transaction History",
+                    style: GoogleFonts.workSans(
+                      color: CFColors.twilight,
+                      fontSize: 12,
+                      fontWeight: FontWeight.w500,
+                    ),
                   ),
                 ),
-              ),
-              SizedBox(
-                height: 14,
-              ),
-              Expanded(
-                child: FutureBuilder(
-                  future: manager.transactionData,
-                  builder: (context, AsyncSnapshot<TransactionData> snapshot) {
-                    if (snapshot.connectionState == ConnectionState.done) {
-                      if (snapshot.data != null && !snapshot.hasError) {
-                        return _buildTransactionHistory(context, snapshot.data);
-                      }
-                    }
-                    return Center(
-                      child: SpinKitThreeBounce(
-                        color: CFColors.spark,
-                        size: MediaQuery.of(context).size.width * 0.1,
-                      ),
-                    );
-                  },
+                SizedBox(
+                  height: 14,
                 ),
-              ),
-              SizedBox(
-                height: SizingUtilities.standardPadding,
-              )
-            ],
+                Expanded(
+                  child: FutureBuilder(
+                    future: manager.transactionData,
+                    builder:
+                        (context, AsyncSnapshot<TransactionData> snapshot) {
+                      if (snapshot.connectionState == ConnectionState.done) {
+                        if (!snapshot.hasError) {
+                          final txData = snapshot.data;
+                          if (txData == null || txData.txChunks.length == 0) {
+                            return _buildNoTransactionsFound();
+                          }
+
+                          final results = txData.txChunks
+                              .expand((element) => element.transactions)
+                              .toList();
+
+                          results.removeWhere(
+                              (tx) => tx.address != widget.address);
+
+                          if (results.length == 0) {
+                            return _buildNoTransactionsFound();
+                          } else {
+                            return ListView.builder(
+                              itemCount: results.length,
+                              itemBuilder: (context, index) {
+                                return Padding(
+                                  padding: EdgeInsets.all(
+                                    SizingUtilities.listItemSpacing / 2,
+                                  ),
+                                  child: TransactionCard(
+                                    transaction: results[index],
+                                  ),
+                                );
+                              },
+                            );
+                          }
+                        }
+                      }
+                      return Center(
+                        child: SpinKitThreeBounce(
+                          color: CFColors.spark,
+                          size: MediaQuery.of(context).size.width * 0.1,
+                        ),
+                      );
+                    },
+                  ),
+                ),
+                SizedBox(
+                  height: SizingUtilities.standardPadding,
+                )
+              ],
+            ),
           ),
         ),
       ),
@@ -222,35 +267,6 @@ class _AddressBookEntryDetailsViewState
     );
   }
 
-  _buildTransactionHistory(BuildContext context, TransactionData txData) {
-    if (txData.txChunks.length == 0) {
-      return _buildNoTransactionsFound();
-    }
-
-    final results =
-        txData.txChunks.expand((element) => element.transactions).toList();
-
-    results.removeWhere((tx) => tx.address != widget.address);
-
-    if (results.length == 0) {
-      return _buildNoTransactionsFound();
-    } else {
-      return ListView.builder(
-        itemCount: results.length,
-        itemBuilder: (context, index) {
-          return Padding(
-            padding: EdgeInsets.all(
-              SizingUtilities.listItemSpacing / 2,
-            ),
-            child: TransactionCard(
-              transaction: results[index],
-            ),
-          );
-        },
-      );
-    }
-  }
-
   _buildAppBar(BuildContext context) {
     return AppBar(
       backgroundColor: CFColors.white,
@@ -270,6 +286,7 @@ class _AddressBookEntryDetailsViewState
         child: AspectRatio(
           aspectRatio: 1,
           child: AppBarIconButton(
+            key: Key("addressBookDetailsBackButtonKey"),
             size: 36,
             onPressed: () async {
               FocusScope.of(context).unfocus();
@@ -297,6 +314,7 @@ class _AddressBookEntryDetailsViewState
           child: AspectRatio(
             aspectRatio: 1,
             child: AppBarIconButton(
+              key: Key("addressBookDetailsDeleteButtonKey"),
               size: 36,
               icon: SvgPicture.asset(
                 "assets/svg/more-vertical.svg",
@@ -341,13 +359,18 @@ class _AddressBookEntryDetailsViewState
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 GestureDetector(
+                  key: Key("addressBookDetailsContextMenuDeleteButtonKey"),
                   onTap: () async {
                     showDialog(
                       useSafeArea: false,
                       barrierColor: Colors.transparent,
                       barrierDismissible: false,
                       context: context,
-                      builder: (context) => _buildAddressDeleteConfirmDialog(),
+                      builder: (context) => DeleteContactConfirmationDialog(
+                        address: widget.address,
+                        name: widget.name,
+                        addressBookService: addressBookService,
+                      ),
                     );
                   },
                   child: Padding(
@@ -413,11 +436,22 @@ class _AddressBookEntryDetailsViewState
       ),
     );
   }
+}
 
-  _buildAddressDeleteConfirmDialog() {
-    final addressService =
-        Provider.of<AddressBookService>(context, listen: false);
+class DeleteContactConfirmationDialog extends StatelessWidget {
+  const DeleteContactConfirmationDialog({
+    Key key,
+    @required this.address,
+    @required this.name,
+    @required this.addressBookService,
+  }) : super(key: key);
 
+  final String address;
+  final String name;
+  final AddressBookService addressBookService;
+
+  @override
+  Widget build(BuildContext context) {
     return ModalPopupDialog(
       child: Column(
         children: [
@@ -429,7 +463,7 @@ class _AddressBookEntryDetailsViewState
               bottom: 12,
             ),
             child: Text(
-              "Do you want to delete ${widget.name}?",
+              "Do you want to delete $name?",
               style: GoogleFonts.workSans(
                 color: CFColors.dusk,
                 fontWeight: FontWeight.w600,
@@ -445,6 +479,8 @@ class _AddressBookEntryDetailsViewState
                   child: SizedBox(
                     height: SizingUtilities.standardButtonHeight,
                     child: SimpleButton(
+                      key:
+                          Key("deleteContactConfirmationDialogCancelButtonKey"),
                       child: FittedBox(
                         child: Text(
                           "CANCEL",
@@ -468,6 +504,8 @@ class _AddressBookEntryDetailsViewState
                   child: SizedBox(
                     height: SizingUtilities.standardButtonHeight,
                     child: GradientButton(
+                      key:
+                          Key("deleteContactConfirmationDialogDeleteButtonKey"),
                       child: FittedBox(
                         child: Text(
                           "DELETE",
@@ -475,8 +513,8 @@ class _AddressBookEntryDetailsViewState
                         ),
                       ),
                       onTap: () async {
-                        await addressService
-                            .removeAddressBookEntry(widget.address);
+                        await addressBookService
+                            .removeAddressBookEntry(address);
                         final navigator = Navigator.of(context);
                         navigator.pop();
                         navigator.pop();

@@ -9,13 +9,14 @@ import 'package:paymint/notifications/campfire_alert.dart';
 import 'package:paymint/notifications/modal_popup_dialog.dart';
 import 'package:paymint/notifications/overlay_notification.dart';
 import 'package:paymint/pages/onboarding_view/helpers/builders.dart';
-import 'package:paymint/pages/onboarding_view/restore_wallet_view.dart';
+import 'package:paymint/pages/onboarding_view/restore_wallet_form_view.dart';
 import 'package:paymint/services/coins/firo/firo_wallet.dart';
 import 'package:paymint/services/coins/manager.dart';
 import 'package:paymint/services/node_service.dart';
 import 'package:paymint/services/wallets_service.dart';
 import 'package:paymint/utilities/biometrics.dart';
 import 'package:paymint/utilities/cfcolors.dart';
+import 'package:paymint/utilities/flutter_secure_storage_interface.dart';
 import 'package:paymint/utilities/misc_global_constants.dart';
 import 'package:paymint/utilities/sizing_utilities.dart';
 import 'package:paymint/utilities/text_styles.dart';
@@ -28,16 +29,22 @@ import 'backup_key_warning_view.dart';
 import 'helpers/create_wallet_type.dart';
 
 class CreatePinView extends StatefulWidget {
-  const CreatePinView(
-      {Key key,
-      @required this.type,
-      @required this.walletName,
-      this.useTestNet})
-      : super(key: key);
+  const CreatePinView({
+    Key key,
+    @required this.type,
+    @required this.walletName,
+    this.useTestNet,
+    this.secureStore = const SecureStorageWrapper(
+      const FlutterSecureStorage(),
+    ),
+    this.biometrics = const Biometrics(),
+  }) : super(key: key);
 
   final CreateWalletType type;
   final String walletName;
   final bool useTestNet;
+  final FlutterSecureStorageInterface secureStore;
+  final Biometrics biometrics;
 
   @override
   _CreatePinViewState createState() => _CreatePinViewState();
@@ -62,6 +69,19 @@ class _CreatePinViewState extends State<CreatePinView> {
   // Attributes for Page 2 of the pageview
   final TextEditingController _pinPutController2 = TextEditingController();
   final FocusNode _pinPutFocusNode2 = FocusNode();
+
+  FlutterSecureStorageInterface _secureStore;
+  Biometrics biometrics;
+
+  int _onSubmitFailCount = 0;
+  int _onSubmitCount = 0;
+
+  @override
+  initState() {
+    _secureStore = widget.secureStore;
+    biometrics = widget.biometrics;
+    super.initState();
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -183,10 +203,13 @@ class _CreatePinViewState extends State<CreatePinView> {
                     selectedFieldDecoration: _pinPutDecoration,
                     followingFieldDecoration: _pinPutDecoration,
                     onSubmit: (String pin) async {
+                      _onSubmitCount++;
+                      if (_onSubmitCount - _onSubmitFailCount > 1) return;
+
                       if (_pinPutController1.text == _pinPutController2.text) {
                         // ask if want to use biometrics
                         final bool useBiometrics =
-                            await Biometrics.authenticate(
+                            await biometrics.authenticate(
                           cancelButtonText: "SKIP",
                           localizedReason:
                               "Unlock wallet and confirm transactions with your fingerprint",
@@ -197,7 +220,6 @@ class _CreatePinViewState extends State<CreatePinView> {
 
                         final walletService =
                             Provider.of<WalletsService>(context, listen: false);
-                        final store = new FlutterSecureStorage();
 
                         final firoNetworkType = widget.useTestNet
                             ? FiroNetworkType.test
@@ -211,8 +233,9 @@ class _CreatePinViewState extends State<CreatePinView> {
                             await walletService.getWalletId(widget.walletName);
 
                         // This should never fail as we are writing a new pin for a new wallet
-                        assert((await store.read(key: "${id}_pin")) == null);
-                        await store.write(key: "${id}_pin", value: pin);
+                        assert((await _secureStore.read(key: "${id}_pin")) ==
+                            null);
+                        await _secureStore.write(key: "${id}_pin", value: pin);
 
                         if (widget.type == CreateWalletType.NEW) {
                           final manager =
@@ -256,7 +279,7 @@ class _CreatePinViewState extends State<CreatePinView> {
                                   "Bad firo network type encountered");
                           }
 
-                          nodeService.createNode(
+                          await nodeService.createNode(
                             name: defaultNode.name,
                             ipAddress: defaultNode.address,
                             port: defaultNode.port.toString(),
@@ -274,10 +297,11 @@ class _CreatePinViewState extends State<CreatePinView> {
                                 node: defaultNode, hivePath: appDir.path),
                           );
                           Wakelock.enable();
-                          final success = await firoWallet.initializeWallet();
+                          manager.currentWallet = firoWallet;
+                          final success = await manager.initializeWallet();
                           Wakelock.disable();
                           if (!success) {
-                            await firoWallet.exit();
+                            await manager.exitCurrentWallet();
                             await walletService.deleteWallet(widget.walletName);
                             await showDialog(
                               context: context,
@@ -296,7 +320,6 @@ class _CreatePinViewState extends State<CreatePinView> {
                             nav.pop();
                             return;
                           }
-                          manager.currentWallet = firoWallet;
                           await manager.updateBiometricsUsage(useBiometrics);
                           await Future.delayed(Duration(seconds: 3));
 
@@ -342,6 +365,7 @@ class _CreatePinViewState extends State<CreatePinView> {
                           ),
                         );
                       } else {
+                        _onSubmitFailCount++;
                         _pageController.animateTo(
                           0,
                           duration: Duration(milliseconds: 250),
@@ -396,6 +420,22 @@ class _CreatePinViewState extends State<CreatePinView> {
                   "Generating backup key",
                   style: CFTextStyles.pinkHeader.copyWith(
                     fontSize: 16,
+                  ),
+                ),
+              ),
+              SizedBox(
+                height: 12,
+              ),
+              Padding(
+                padding: const EdgeInsets.symmetric(horizontal: 20),
+                child: FittedBox(
+                  child: Text(
+                    "Do not close or leave the app until this completes!",
+                    style: GoogleFonts.workSans(
+                      color: CFColors.dusk,
+                      fontWeight: FontWeight.w600,
+                      fontSize: 16,
+                    ),
                   ),
                 ),
               ),

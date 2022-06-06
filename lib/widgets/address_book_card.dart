@@ -26,6 +26,8 @@ class _AddressBookCardState extends State<AddressBookCard> {
 
   @override
   Widget build(BuildContext context) {
+    final isTiny = SizingUtilities.isTinyWidth(context);
+
     return Container(
       decoration: BoxDecoration(
         color: CFColors.white,
@@ -104,9 +106,12 @@ class _AddressBookCardState extends State<AddressBookCard> {
             ),
           if (_isExpanded)
             Padding(
-              padding: const EdgeInsets.symmetric(vertical: 10, horizontal: 10),
+              padding: EdgeInsets.symmetric(
+                  vertical: 10, horizontal: isTiny ? 1 : 10),
               child: Row(
-                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                mainAxisAlignment: isTiny
+                    ? MainAxisAlignment.center
+                    : MainAxisAlignment.spaceBetween,
                 children: [
                   // send
                   SubButton(
@@ -189,9 +194,11 @@ class SubButton extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final isTiny = SizingUtilities.isTinyWidth(context);
+
     return MaterialButton(
       materialTapTargetSize: MaterialTapTargetSize.shrinkWrap,
-      padding: EdgeInsets.all(8),
+      padding: EdgeInsets.all(isTiny ? 2 : 8),
       onPressed: onTap,
       child: Row(
         children: [
@@ -202,7 +209,7 @@ class SubButton extends StatelessWidget {
             height: 16,
           ),
           SizedBox(
-            width: 6,
+            width: isTiny ? 3 : 6,
           ),
           Text(
             label,

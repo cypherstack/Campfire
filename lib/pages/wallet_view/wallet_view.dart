@@ -2,7 +2,6 @@ import 'dart:async';
 
 import 'package:decimal/decimal.dart';
 import 'package:devicelocale/devicelocale.dart';
-import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_feather_icons/flutter_feather_icons.dart';
 import 'package:flutter_spinkit/flutter_spinkit.dart';
@@ -35,8 +34,6 @@ class _WalletViewState extends State<WalletView> {
 
   StreamSubscription _nodeConnectionStatusChangedEventListener;
 
-  List<Transaction> _cachedTransactions = [];
-
   bool _balanceToggleEnabled = true;
   String _locale = "en_US"; // default
 
@@ -62,18 +59,13 @@ class _WalletViewState extends State<WalletView> {
 
   @override
   void dispose() {
-    _nodeConnectionStatusChangedEventListener.cancel();
+    _nodeConnectionStatusChangedEventListener?.cancel();
     super.dispose();
   }
 
   @override
   Widget build(BuildContext context) {
     final manager = Provider.of<Manager>(context);
-
-    final double _bodyHeight = MediaQuery.of(context).size.height -
-        MediaQuery.of(context).padding.top -
-        kToolbarHeight -
-        SizingUtilities.bottomToolBarHeight;
 
     /// list of balances with length of 4 is expected
     // index 0 and 1 for the funds available to spend.
@@ -89,7 +81,7 @@ class _WalletViewState extends State<WalletView> {
               width: 160,
               child: DraggableSwitchButton(
                 offItem: Text(
-                  "FULL",
+                  "AVAILABLE",
                   style: GoogleFonts.workSans(
                     color: Color(0xFFF27889),
                     fontSize: 10,
@@ -99,7 +91,7 @@ class _WalletViewState extends State<WalletView> {
                   ),
                 ),
                 onItem: Text(
-                  "AVAILABLE",
+                  "FULL",
                   style: GoogleFonts.workSans(
                     color: Color(0xFFF27889),
                     fontSize: 10,
@@ -122,8 +114,8 @@ class _WalletViewState extends State<WalletView> {
             FittedBox(
               child: FutureBuilder(
                 future: _balanceToggleEnabled
-                    ? manager.balance
-                    : manager.totalBalance,
+                    ? manager.totalBalance
+                    : manager.balance,
                 builder: (context, AsyncSnapshot<Decimal> snapshot) {
                   String balance = "...";
                   if (snapshot.connectionState == ConnectionState.done &&
@@ -155,8 +147,8 @@ class _WalletViewState extends State<WalletView> {
                   String fiatTicker = context.watch<String>();
                   return FutureBuilder(
                     future: _balanceToggleEnabled
-                        ? manager.fiatBalance
-                        : manager.fiatTotalBalance,
+                        ? manager.fiatTotalBalance
+                        : manager.fiatBalance,
                     builder: (context, AsyncSnapshot<Decimal> snapshot) {
                       String balance = "...";
                       if (snapshot.connectionState == ConnectionState.done &&
@@ -191,94 +183,89 @@ class _WalletViewState extends State<WalletView> {
       );
     }
 
-    return Scaffold(
-      extendBody: true,
-      backgroundColor: CFColors.white,
-      body: Container(
-        height: _bodyHeight -
-            10, // needed to fit content on screen. Magic numbers \o/
-        color: CFColors.white,
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.stretch,
-          children: [
-            Padding(
-              padding: EdgeInsets.symmetric(
-                vertical: 10,
-                horizontal: SizingUtilities.standardPadding,
-              ),
-              child: GradientCard(
-                circularBorderRadius: SizingUtilities.circularBorderRadius,
-                gradient: CFColors.fireGradientVerticalLight,
-                child: Stack(
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.stretch,
+      children: [
+        Padding(
+          padding: EdgeInsets.symmetric(
+            vertical: 10,
+            horizontal: SizingUtilities.standardPadding,
+          ),
+          child: GradientCard(
+            circularBorderRadius: SizingUtilities.circularBorderRadius,
+            gradient: CFColors.fireGradientVerticalLight,
+            child: Stack(
+              children: [
+                _buildBalance(),
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.end,
                   children: [
-                    _buildBalance(),
-                    Row(
-                      mainAxisAlignment: MainAxisAlignment.end,
-                      children: [
-                        Opacity(
-                          opacity: 0.5,
-                          child: SvgPicture.asset(
-                            "assets/svg/groupLogo.svg",
-                          ),
-                        ),
-                      ],
+                    Opacity(
+                      opacity: 0.5,
+                      child: SvgPicture.asset(
+                        "assets/svg/groupLogo.svg",
+                      ),
                     ),
                   ],
                 ),
-              ),
+              ],
             ),
-            Padding(
-              padding: EdgeInsets.symmetric(
-                vertical: 0,
-                horizontal: SizingUtilities.standardPadding,
-              ),
-              child: Row(
-                mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                children: [
-                  Text(
-                    "TRANSACTIONS",
-                    style: GoogleFonts.workSans(
-                      color: CFColors.twilight,
-                      fontSize: 12,
-                      fontWeight: FontWeight.w600,
-                      letterSpacing: 0.25,
-                    ),
-                  ),
-                  IconButton(
-                    onPressed: () {
-                      showDialog(
-                          context: context,
-                          useSafeArea: false,
-                          barrierDismissible: false,
-                          builder: (context) {
-                            return TransactionSearchView();
-                          });
-                    },
-                    icon: Icon(
-                      FeatherIcons.search,
-                      color: CFColors.twilight,
-                      size: 20,
-                    ),
-                  ),
-                ],
-              ),
-            ),
-            if (_nodeStatus != NodeConnectionStatus.synced &&
-                _nodeStatus != NodeConnectionStatus.disconnected)
-              Center(
-                child: SpinKitThreeBounce(
-                  color: CFColors.spark,
-                  size: MediaQuery.of(context).size.width * 0.1,
+          ),
+        ),
+        Padding(
+          padding: EdgeInsets.symmetric(
+            vertical: 0,
+            horizontal: SizingUtilities.standardPadding,
+          ),
+          child: Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: [
+              Text(
+                "TRANSACTIONS",
+                style: GoogleFonts.workSans(
+                  color: CFColors.twilight,
+                  fontSize: 12,
+                  fontWeight: FontWeight.w600,
+                  letterSpacing: 0.25,
                 ),
               ),
-            Expanded(
-              child: TransactionList(
-                key: ValueKey("main view transactions list"),
+              IconButton(
+                key: Key("walletViewTransactionSearchButton"),
+                onPressed: () {
+                  showDialog(
+                    context: context,
+                    useSafeArea: false,
+                    barrierDismissible: false,
+                    builder: (context) {
+                      return TransactionSearchView(
+                        coinTicker: manager.coinTicker,
+                      );
+                    },
+                  );
+                },
+                icon: Icon(
+                  FeatherIcons.search,
+                  color: CFColors.twilight,
+                  size: 20,
+                ),
               ),
-            ),
-          ],
+            ],
+          ),
         ),
-      ),
+        if (_nodeStatus != NodeConnectionStatus.synced &&
+            _nodeStatus != NodeConnectionStatus.disconnected)
+          Center(
+            child: SpinKitThreeBounce(
+              color: CFColors.spark,
+              size: MediaQuery.of(context).size.width * 0.1,
+            ),
+          ),
+        Expanded(
+          child: TransactionList(
+            key: ValueKey("main view transactions list"),
+          ),
+        ),
+      ],
     );
   }
 }
@@ -288,35 +275,33 @@ class NoTransActionsFound extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Center(
-      child: Column(
-        children: [
-          Spacer(
-            flex: 1,
-          ),
-          SvgPicture.asset(
-            "assets/svg/empty-tx-list.svg",
-            width: MediaQuery.of(context).size.width * 0.52,
-          ),
-          SizedBox(
-            height: 8,
-          ),
-          FittedBox(
-            child: Text(
-              "NO TRANSACTIONS YET",
-              style: GoogleFonts.workSans(
-                color: CFColors.dew,
-                fontWeight: FontWeight.w600,
-                fontSize: 12,
-                letterSpacing: 0.25,
-              ),
+    return Column(
+      children: [
+        Spacer(
+          flex: 1,
+        ),
+        SvgPicture.asset(
+          "assets/svg/empty-tx-list.svg",
+          width: MediaQuery.of(context).size.width * 0.45,
+        ),
+        SizedBox(
+          height: 8,
+        ),
+        FittedBox(
+          child: Text(
+            "NO TRANSACTIONS YET",
+            style: GoogleFonts.workSans(
+              color: CFColors.dew,
+              fontWeight: FontWeight.w600,
+              fontSize: 12,
+              letterSpacing: 0.25,
             ),
           ),
-          Spacer(
-            flex: 2,
-          ),
-        ],
-      ),
+        ),
+        Spacer(
+          flex: 2,
+        ),
+      ],
     );
   }
 }
@@ -330,6 +315,30 @@ class TransactionList extends StatefulWidget {
 
 class _TransactionListState extends State<TransactionList> {
   TransactionData txData;
+
+  NodeConnectionStatus _nodeStatus = NodeConnectionStatus.disconnected;
+  StreamSubscription _nodeConnectionStatusChangedEventListener;
+
+  @override
+  void initState() {
+    // add listener
+    _nodeConnectionStatusChangedEventListener = GlobalEventBus.instance
+        .on<NodeConnectionStatusChangedEvent>()
+        .listen((event) {
+      if (_nodeStatus != event.newStatus) {
+        setState(() {
+          _nodeStatus = event.newStatus;
+        });
+      }
+    });
+    super.initState();
+  }
+
+  @override
+  void dispose() {
+    _nodeConnectionStatusChangedEventListener?.cancel();
+    super.dispose();
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -353,19 +362,27 @@ class _TransactionListState extends State<TransactionList> {
                   vertical: 0,
                   horizontal: 16,
                 ),
-                child: ListView.builder(
-                  itemCount: list.length,
-                  itemBuilder: (context, index) {
-                    return Padding(
-                      padding: EdgeInsets.all(
-                        SizingUtilities.listItemSpacing / 2,
-                      ),
-                      child: TransactionCard(
-                        key: ValueKey(list[index]),
-                        transaction: list[index],
-                      ),
-                    );
+                child: RefreshIndicator(
+                  onRefresh: () async {
+                    Logger.print("pulled down to refresh on transaction list");
+                    if (_nodeStatus != NodeConnectionStatus.loading) {
+                      Provider.of<Manager>(context, listen: false).refresh();
+                    }
                   },
+                  child: ListView.builder(
+                    itemCount: list.length,
+                    itemBuilder: (context, index) {
+                      return Padding(
+                        padding: EdgeInsets.all(
+                          SizingUtilities.listItemSpacing / 2,
+                        ),
+                        child: TransactionCard(
+                          key: ValueKey(list[index]),
+                          transaction: list[index],
+                        ),
+                      );
+                    },
+                  ),
                 ),
               );
             }

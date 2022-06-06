@@ -1,4 +1,5 @@
 import 'dart:async';
+import 'dart:convert';
 import 'dart:io';
 import 'dart:isolate';
 import 'dart:typed_data';
@@ -198,7 +199,7 @@ Future<void> executeNative(arguments) async {
 }
 
 void stop(ReceivePort port) {
-  Isolate isolate = isolates[port];
+  Isolate isolate = isolates.remove(port);
   if (isolate != null) {
     Logger.print('Stopping Isolate...');
     isolate.kill(priority: Isolate.immediate);
@@ -208,8 +209,8 @@ void stop(ReceivePort port) {
 
 isolateDerive(String mnemonic, int from, int to, dynamic _network) async {
   Map<String, dynamic> result = Map();
-  Map<int, dynamic> allReceive = Map();
-  Map<int, dynamic> allChange = Map();
+  Map<String, dynamic> allReceive = Map();
+  Map<String, dynamic> allChange = Map();
   final root = getBip32Root(mnemonic, _network);
   for (int i = from; i < to; i++) {
     var currentNode = getBip32NodeFromRoot(0, i, root);
@@ -218,12 +219,12 @@ isolateDerive(String mnemonic, int from, int to, dynamic _network) async {
             data: new PaymentData(pubkey: currentNode.publicKey))
         .data
         .address;
-    allReceive[i] = {
+    allReceive["$i"] = {
       "publicKey": uint8listToString(currentNode.publicKey),
       "wif": currentNode.toWIF(),
-      "fingerprint": uint8listToString(currentNode.fingerprint),
-      "identifier": uint8listToString(currentNode.identifier),
-      "privateKey": uint8listToString(currentNode.privateKey),
+      // "fingerprint": uint8listToString(currentNode.fingerprint),
+      // "identifier": uint8listToString(currentNode.identifier),
+      // "privateKey": uint8listToString(currentNode.privateKey),
       "address": address,
     };
 
@@ -233,12 +234,12 @@ isolateDerive(String mnemonic, int from, int to, dynamic _network) async {
             data: new PaymentData(pubkey: currentNode.publicKey))
         .data
         .address;
-    allChange[i] = {
+    allChange["$i"] = {
       "publicKey": uint8listToString(currentNode.publicKey),
       "wif": currentNode.toWIF(),
-      "fingerprint": uint8listToString(currentNode.fingerprint),
-      "identifier": uint8listToString(currentNode.identifier),
-      "privateKey": uint8listToString(currentNode.privateKey),
+      // "fingerprint": uint8listToString(currentNode.fingerprint),
+      // "identifier": uint8listToString(currentNode.identifier),
+      // "privateKey": uint8listToString(currentNode.privateKey),
       "address": address,
     };
     if (i % 50 == 0) {
@@ -763,6 +764,8 @@ bip32.BIP32 getBip32Root(String mnemonic, NetworkType network) {
 
 /// Handles a single instance of a firo wallet
 class FiroWallet extends CoinServiceAPI {
+  static const integrationTestFlag =
+      bool.fromEnvironment("IS_INTEGRATION_TEST");
   Timer timer;
   FiroNetworkType _networkType;
   FiroNetworkType get networkType => _networkType;
@@ -844,7 +847,7 @@ class FiroWallet extends CoinServiceAPI {
 
   /// Holds final balances, all utxos under control
   Future<UtxoData> _utxoData;
-  Future<UtxoData> get utxoData => _utxoData;
+  Future<UtxoData> get utxoData => _utxoData ??= _fetchUtxoData();
 
   /// Holds wallet transaction data
   Future<TransactionData> _transactionData;
@@ -997,6 +1000,12 @@ class FiroWallet extends CoinServiceAPI {
         ? SecureStorageWrapper(FlutterSecureStorage())
         : secureStore;
 
+    Logger.print("isolate length: ${isolates.length}");
+    for (final isolate in isolates.values) {
+      isolate.kill(priority: Isolate.immediate);
+    }
+    isolates.clear();
+
     // add listener for nodes changed
     _nodesChangedListener =
         GlobalEventBus.instance.on<NodesChangedEvent>().listen((event) async {
@@ -1013,6 +1022,7 @@ class FiroWallet extends CoinServiceAPI {
   /// already exist.
   ///
   /// Returns false if bad electrumx server info was provided and/or there is no network connection
+  @override
   Future<bool> initializeWallet() async {
     final wallet = await Hive.openBox(this._walletId);
 
@@ -1041,9 +1051,9 @@ class FiroWallet extends CoinServiceAPI {
       final useBio = await _fetchUseBiometrics();
       this._useBiometrics = Future(() => useBio);
     }
-
-    this._utxoData = _fetchUtxoData();
-    this._transactionData = _fetchTransactionData();
+    //
+    // this._utxoData = _fetchUtxoData();
+    // this._transactionData = _fetchTransactionData();
 
     await checkReceivingAddressForTransactions();
     return true;
@@ -1202,15 +1212,18 @@ class FiroWallet extends CoinServiceAPI {
 
   /// Generates initial wallet values such as mnemonic, chain (receive/change) arrays and indexes.
   Future<void> _generateNewWallet(Box<dynamic> wallet) async {
-    final features = await electrumXClient.getServerFeatures();
-    Logger.print("features: $features");
-    if (_networkType == FiroNetworkType.main) {
-      if (features['genesis_hash'] != CampfireConstants.firoGenesisHash) {
-        throw Exception("genesis hash does not match!");
-      }
-    } else if (_networkType == FiroNetworkType.test) {
-      if (features['genesis_hash'] != CampfireConstants.firoTestGenesisHash) {
-        throw Exception("genesis hash does not match!");
+    Logger.print("IS_INTEGRATION_TEST: $integrationTestFlag");
+    if (!integrationTestFlag) {
+      final features = await electrumXClient.getServerFeatures();
+      Logger.print("features: $features");
+      if (_networkType == FiroNetworkType.main) {
+        if (features['genesis_hash'] != CampfireConstants.firoGenesisHash) {
+          throw Exception("genesis hash does not match!");
+        }
+      } else if (_networkType == FiroNetworkType.test) {
+        if (features['genesis_hash'] != CampfireConstants.firoTestGenesisHash) {
+          throw Exception("genesis hash does not match!");
+        }
       }
     }
 
@@ -1260,11 +1273,15 @@ class FiroWallet extends CoinServiceAPI {
       GlobalEventBus.instance.fire(RefreshPercentChangedEvent(0.0));
 
       final wallet = await Hive.openBox(this._walletId);
-      if (wallet.get('receiveDerivations') == null) {
+      final receiveDerivationsString =
+          await _secureStore.read(key: "${this.walletId}_receiveDerivations");
+      if (receiveDerivationsString == null ||
+          receiveDerivationsString == "{}") {
         GlobalEventBus.instance.fire(RefreshPercentChangedEvent(0.05));
         final mnemonic =
             await _secureStore.read(key: '${this._walletId}_mnemonic');
         await fillAddresses(mnemonic,
+            PER_BATCH: 10,
             NUMBER_OF_THREADS:
                 Platform.numberOfProcessors - isolates.length - 1);
       }
@@ -1659,15 +1676,23 @@ class FiroWallet extends CoinServiceAPI {
 
     List<ECPair> elipticCurvePairArray = [];
     List<Uint8List> outputDataArray = [];
-    var receiveDerivations = wallet.get('receiveDerivations');
-    var changeDerivations = wallet.get('changeDerivations');
+
+    final receiveDerivationsString =
+        await _secureStore.read(key: "${this.walletId}_receiveDerivations");
+    final changeDerivationsString =
+        await _secureStore.read(key: "${this.walletId}_changeDerivations");
+
+    final receiveDerivations =
+        Map<String, dynamic>.from(jsonDecode(receiveDerivationsString ?? "{}"));
+    final changeDerivations =
+        Map<String, dynamic>.from(jsonDecode(changeDerivationsString ?? "{}"));
 
     for (var i = 0; i < addressesToDerive.length; i++) {
       final addressToCheckFor = addressesToDerive[i];
 
       for (var i = 0; i < receiveDerivations.length; i++) {
-        var receive = receiveDerivations[i];
-        var change = changeDerivations[i];
+        final receive = receiveDerivations["$i"];
+        final change = changeDerivations["$i"];
 
         if (receive['address'] == addressToCheckFor) {
           Logger.print('Receiving found on loop $i');
@@ -1986,38 +2011,6 @@ class FiroWallet extends CoinServiceAPI {
   Future<ElectrumXNode> _getCurrentNode() async {
     final wallet = await Hive.openBox(this._walletId);
     var nodes = await wallet.get('nodes');
-    //
-    // if (nodes == null || nodes.isEmpty) {
-    //   // initialize default node
-    //   nodes = <String, dynamic>{};
-    //   String ip;
-    //   String port;
-    //   bool useSSL;
-    //   String nodeName;
-    //   if (networkType == FiroNetworkType.main) {
-    //     ip = CampfireConstants.defaultIpAddress;
-    //     port = CampfireConstants.defaultPort.toString();
-    //     useSSL = CampfireConstants.defaultUseSSL;
-    //     nodeName = CampfireConstants.defaultNodeName;
-    //   } else if (networkType == FiroNetworkType.test) {
-    //     ip = CampfireConstants.defaultIpAddressTestNet;
-    //     port = CampfireConstants.defaultPortTestNet.toString();
-    //     useSSL = CampfireConstants.defaultUseSSLTestNet;
-    //     nodeName = CampfireConstants.defaultNodeNameTestNet;
-    //   }
-    //
-    //   nodes.addAll({
-    //     nodeName: {
-    //       "id": Uuid().v1(),
-    //       "ipAddress": ip,
-    //       "port": port,
-    //       "useSSL": useSSL,
-    //     }
-    //   });
-    //
-    //   await wallet.put('nodes', nodes);
-    //   await wallet.put('activeNodeName', nodeName);
-    // }
 
     final name = await wallet.get('activeNodeName');
     try {
@@ -2100,21 +2093,26 @@ class FiroWallet extends CoinServiceAPI {
 
   Future<List<Map<String, dynamic>>> _fetchHistory(
       List<String> allAddresses) async {
-    List<Map<String, dynamic>> allTxHashes = [];
-    // int latestTxnBlockHeight = 0;
+    try {
+      List<Map<String, dynamic>> allTxHashes = [];
+      // int latestTxnBlockHeight = 0;
 
-    for (final address in allAddresses) {
-      final scripthash = AddressUtils.convertToScriptHash(address, _network);
-      final txs = await electrumXClient.getHistory(scripthash: scripthash);
-      for (final map in txs) {
-        if (!allTxHashes.contains(map)) {
-          map['address'] = address;
-          allTxHashes.add(map);
+      for (final address in allAddresses) {
+        final scripthash = AddressUtils.convertToScriptHash(address, _network);
+        final txs = await electrumXClient.getHistory(scripthash: scripthash);
+        for (final map in txs) {
+          if (!allTxHashes.contains(map)) {
+            map['address'] = address;
+            allTxHashes.add(map);
+          }
         }
       }
-    }
 
-    return allTxHashes;
+      return allTxHashes;
+    } catch (e, s) {
+      Logger.print("Exception caught in _fetchHistory(): $e\n$s");
+      return [];
+    }
   }
 
   Future<TransactionData> _fetchTransactionData() async {
@@ -2531,19 +2529,25 @@ class FiroWallet extends CoinServiceAPI {
 
   Future<void> fillAddresses(String suppliedMnemonic,
       {int PER_BATCH = 250, int NUMBER_OF_THREADS = 4}) async {
-    if (NUMBER_OF_THREADS < 0) {
+    if (NUMBER_OF_THREADS <= 0) {
       NUMBER_OF_THREADS = 1;
     }
-    final wallet = await Hive.openBox(this._walletId);
-    var receiveDerivations = wallet.get('receiveDerivations');
-    var changeDerivations = wallet.get('changeDerivations');
-    int start = 0;
-    if (receiveDerivations == null || changeDerivations == null) {
-      receiveDerivations = {};
-      changeDerivations = {};
-    } else {
-      start = receiveDerivations.length;
+    if (Platform.environment["FLUTTER_TEST"] == "true" || integrationTestFlag) {
+      PER_BATCH = 10;
     }
+
+    final receiveDerivationsString =
+        await _secureStore.read(key: "${this.walletId}_receiveDerivations");
+    final changeDerivationsString =
+        await _secureStore.read(key: "${this.walletId}_changeDerivations");
+
+    var receiveDerivations =
+        Map<String, dynamic>.from(jsonDecode(receiveDerivationsString ?? "{}"));
+    var changeDerivations =
+        Map<String, dynamic>.from(jsonDecode(changeDerivationsString ?? "{}"));
+
+    final int start = receiveDerivations.length;
+
     List<ReceivePort> ports = List.empty(growable: true);
     for (int i = 0; i < NUMBER_OF_THREADS; i++) {
       ReceivePort receivePort = await getIsolate({
@@ -2571,31 +2575,47 @@ class FiroWallet extends CoinServiceAPI {
     Logger.print("isolate derives");
     Logger.print(receiveDerivations);
     Logger.print(changeDerivations);
-    wallet.put('receiveDerivations', receiveDerivations);
-    wallet.put('changeDerivations', changeDerivations);
+
+    final newReceiveDerivationsString = jsonEncode(receiveDerivations);
+    final newChangeDerivationsString = jsonEncode(changeDerivations);
+
+    await _secureStore.write(
+        key: "${this.walletId}_receiveDerivations",
+        value: newReceiveDerivationsString);
+    await _secureStore.write(
+        key: "${this.walletId}_changeDerivations",
+        value: newChangeDerivationsString);
   }
 
   /// Generates a new internal or external chain address for the wallet using a BIP84 derivation path.
   /// [chain] - Use 0 for receiving (external), 1 for change (internal). Should not be any other value!
   /// [index] - This can be any integer >= 0
   Future<String> _generateAddressForChain(int chain, int index) async {
-    final wallet = await Hive.openBox(this._walletId);
+    // final wallet = await Hive.openBox(this._walletId);
     final mnemonic = await _secureStore.read(key: '${this._walletId}_mnemonic');
     var derivations;
     if (chain == 0) {
-      derivations = wallet.get('receiveDerivations');
+      final receiveDerivationsString =
+          await _secureStore.read(key: "${this.walletId}_receiveDerivations");
+      derivations = Map<String, dynamic>.from(
+          jsonDecode(receiveDerivationsString ?? "{}"));
     } else if (chain == 1) {
-      derivations = wallet.get('changeDerivations');
+      final changeDerivationsString =
+          await _secureStore.read(key: "${this.walletId}_changeDerivations");
+      derivations = Map<String, dynamic>.from(
+          jsonDecode(changeDerivationsString ?? "{}"));
     }
 
-    if (derivations != null) {
-      if (derivations[index] == null) {
+    if (derivations != null && derivations.length > 0) {
+      if (derivations["$index"] == null) {
         await fillAddresses(mnemonic,
+            PER_BATCH: 10,
             NUMBER_OF_THREADS:
                 Platform.numberOfProcessors - isolates.length - 1);
+        Logger.print("calling _generateAddressForChain recursively");
         return _generateAddressForChain(chain, index);
       }
-      return derivations[index]['address'];
+      return derivations["$index"]['address'];
     } else {
       final node = getBip32Node(chain, index, mnemonic, this._network);
       return P2PKH(
@@ -2679,22 +2699,160 @@ class FiroWallet extends CoinServiceAPI {
     }
   }
 
+  @override
+  Future<void> fullRescan() async {
+    Logger.print("Starting full rescan!");
+    // timer?.cancel();
+    // for (final isolate in isolates.values) {
+    //   isolate.kill(priority: Isolate.immediate);
+    // }
+    // isolates.clear();
+    longMutex = true;
+
+    // clear cache
+    _cachedElectrumXClient.clearSharedTransactionCache(coinName: this.coinName);
+
+    // back up data
+    await _rescanBackup();
+
+    try {
+      final mnemonic =
+          await _secureStore.read(key: '${this._walletId}_mnemonic');
+      await _recoverWalletFromBIP32SeedPhrase(mnemonic);
+
+      longMutex = false;
+      Logger.print("Full rescan complete!");
+    } catch (e, s) {
+      // restore from backup
+      await _rescanRestore();
+
+      longMutex = false;
+      Logger.print("Exception rethrown from fullRescan(): $e\n$s");
+      throw e;
+    }
+  }
+
+  Future<void> _rescanBackup() async {
+    Logger.print("starting rescan backup");
+    final wallet = await Hive.openBox(this._walletId);
+
+    // backup current and clear data
+    final tempReceivingAddresses = await wallet.get('receivingAddresses');
+    await wallet.delete('receivingAddresses');
+    await wallet.put('receivingAddresses_BACKUP', tempReceivingAddresses);
+
+    final tempChangeAddresses = await wallet.get('changeAddresses');
+    await wallet.delete('changeAddresses');
+    await wallet.put('changeAddresses_BACKUP', tempChangeAddresses);
+
+    final tempReceivingIndex = await wallet.get('receivingIndex');
+    await wallet.delete('receivingIndex');
+    await wallet.put('receivingIndex_BACKUP', tempReceivingIndex);
+
+    final tempChangeIndex = await wallet.get('changeIndex');
+    await wallet.delete('changeIndex');
+    await wallet.put('changeIndex_BACKUP', tempChangeIndex);
+
+    final receiveDerivationsString =
+        await _secureStore.read(key: "${this.walletId}_receiveDerivations");
+    final changeDerivationsString =
+        await _secureStore.read(key: "${this.walletId}_changeDerivations");
+
+    await _secureStore.write(
+        key: "${this.walletId}_receiveDerivations_BACKUP",
+        value: receiveDerivationsString);
+    await _secureStore.write(
+        key: "${this.walletId}_changeDerivations_BACKUP",
+        value: changeDerivationsString);
+
+    await _secureStore.write(
+        key: "${this.walletId}_receiveDerivations", value: null);
+    await _secureStore.write(
+        key: "${this.walletId}_changeDerivations", value: null);
+
+    // back up but no need to delete
+    final tempMintIndex = await wallet.get('mintIndex');
+    await wallet.put('mintIndex_BACKUP', tempMintIndex);
+
+    final tempLelantusCoins = await wallet.get('_lelantus_coins');
+    await wallet.put('_lelantus_coins_BACKUP', tempLelantusCoins);
+
+    final tempJIndex = await wallet.get('jindex');
+    await wallet.put('jindex_BACKUP', tempJIndex);
+
+    final tempLelantusTxModel = await wallet.get('latest_lelantus_tx_model');
+    await wallet.put('latest_lelantus_tx_model_BACKUP', tempLelantusTxModel);
+
+    Logger.print("rescan backup complete");
+  }
+
+  Future<void> _rescanRestore() async {
+    Logger.print("starting rescan restore");
+    final wallet = await Hive.openBox(this._walletId);
+
+    // restore from backup
+    final tempReceivingAddresses =
+        await wallet.get('receivingAddresses_BACKUP');
+    final tempChangeAddresses = await wallet.get('changeAddresses_BACKUP');
+    final tempReceivingIndex = await wallet.get('receivingIndex_BACKUP');
+    final tempChangeIndex = await wallet.get('changeIndex_BACKUP');
+    final tempMintIndex = await wallet.get('mintIndex_BACKUP');
+    final tempLelantusCoins = await wallet.get('_lelantus_coins_BACKUP');
+    final tempJIndex = await wallet.get('jindex_BACKUP');
+    final tempLelantusTxModel =
+        await wallet.get('latest_lelantus_tx_model_BACKUP');
+
+    final receiveDerivationsString = await _secureStore.read(
+        key: "${this.walletId}_receiveDerivations_BACKUP");
+    final changeDerivationsString = await _secureStore.read(
+        key: "${this.walletId}_changeDerivations_BACKUP");
+
+    await _secureStore.write(
+        key: "${this.walletId}_receiveDerivations",
+        value: receiveDerivationsString);
+    await _secureStore.write(
+        key: "${this.walletId}_changeDerivations",
+        value: changeDerivationsString);
+
+    await wallet.put('receivingAddresses', tempReceivingAddresses);
+    await wallet.put('changeAddresses', tempChangeAddresses);
+    await wallet.put('receivingIndex', tempReceivingIndex);
+    await wallet.put('changeIndex', tempChangeIndex);
+    await wallet.put('mintIndex', tempMintIndex);
+    await wallet.put('_lelantus_coins', tempLelantusCoins);
+    await wallet.put('jindex', tempJIndex);
+    await wallet.put('latest_lelantus_tx_model', tempLelantusTxModel);
+
+    Logger.print("rescan restore  complete");
+  }
+
   /// wrapper for _recoverWalletFromBIP32SeedPhrase()
   @override
   Future<void> recoverFromMnemonic(String mnemonic) async {
     try {
-      final features = await electrumXClient.getServerFeatures();
-      Logger.print("features: $features");
-      if (_networkType == FiroNetworkType.main) {
-        if (features['genesis_hash'] != CampfireConstants.firoGenesisHash) {
-          throw Exception("genesis hash does not match main net!");
-        }
-      } else if (_networkType == FiroNetworkType.test) {
-        if (features['genesis_hash'] != CampfireConstants.firoTestGenesisHash) {
-          throw Exception("genesis hash does not match test net!");
+      Logger.print("IS_INTEGRATION_TEST: $integrationTestFlag");
+      if (!integrationTestFlag) {
+        final features = await electrumXClient.getServerFeatures();
+        Logger.print("features: $features");
+        if (_networkType == FiroNetworkType.main) {
+          if (features['genesis_hash'] != CampfireConstants.firoGenesisHash) {
+            throw Exception("genesis hash does not match main net!");
+          }
+        } else if (_networkType == FiroNetworkType.test) {
+          if (features['genesis_hash'] !=
+              CampfireConstants.firoTestGenesisHash) {
+            throw Exception("genesis hash does not match test net!");
+          }
         }
       }
-      await _recoverWalletFromBIP32SeedPhrase(mnemonic);
+      // this should never fail
+      if ((await _secureStore.read(key: '${this._walletId}_mnemonic')) !=
+          null) {
+        throw Exception("Attempted to overwrite mnemonic on restore!");
+      }
+      await _secureStore.write(
+          key: '${this._walletId}_mnemonic', value: mnemonic.trim());
+      await _recoverWalletFromBIP32SeedPhrase(mnemonic.trim());
     } catch (e, s) {
       Logger.print("Exception rethrown from recoverFromMnemonic(): $e\n$s");
       throw e;
@@ -2709,12 +2867,6 @@ class FiroWallet extends CoinServiceAPI {
     longMutex = true;
     Logger.print("PROCESSORS ${Platform.numberOfProcessors}");
     try {
-      // this should never fail as overwriting a mnemonic is big bad
-      assert(
-          (await _secureStore.read(key: '${this._walletId}_mnemonic')) == null);
-      await _secureStore.write(
-          key: '${this._walletId}_mnemonic', value: suppliedMnemonic.trim());
-
       final wallet = await Hive.openBox(this._walletId);
       final setDataMap = Map();
       final latestSetId = await getLatestSetId();
@@ -2727,8 +2879,8 @@ class FiroWallet extends CoinServiceAPI {
       List<String> receivingAddressArray = [];
       List<String> changeAddressArray = [];
 
-      int receivingIndex = 0;
-      int changeIndex = 0;
+      int receivingIndex = -1;
+      int changeIndex = -1;
 
       // The gap limit will be capped at 20
       int receivingGapCounter = 0;
@@ -2737,8 +2889,15 @@ class FiroWallet extends CoinServiceAPI {
       await fillAddresses(suppliedMnemonic,
           NUMBER_OF_THREADS: Platform.numberOfProcessors - isolates.length - 1);
 
-      var receiveDerivations = wallet.get('receiveDerivations');
-      var changeDerivations = wallet.get('changeDerivations');
+      final receiveDerivationsString =
+          await _secureStore.read(key: "${this.walletId}_receiveDerivations");
+      final changeDerivationsString =
+          await _secureStore.read(key: "${this.walletId}_changeDerivations");
+
+      final receiveDerivations = Map<String, dynamic>.from(
+          jsonDecode(receiveDerivationsString ?? "{}"));
+      final changeDerivations = Map<String, dynamic>.from(
+          jsonDecode(changeDerivationsString ?? "{}"));
 
       // Deriving and checking for receiving addresses
       for (var i = 0; i < receiveDerivations.length; i++) {
@@ -2748,10 +2907,10 @@ class FiroWallet extends CoinServiceAPI {
           break;
         }
 
-        var receiveDerivation = receiveDerivations[i];
+        final receiveDerivation = receiveDerivations["$i"];
         final address = receiveDerivation['address'];
 
-        var changeDerivation = changeDerivations[i];
+        var changeDerivation = changeDerivations["$i"];
         final _address = changeDerivation['address'];
         dynamic futureNumTxs = null;
         dynamic _futureNumTxs = null;
@@ -2798,24 +2957,23 @@ class FiroWallet extends CoinServiceAPI {
 
       // If restoring a wallet that never received any funds, then set receivingArray manually
       // If we didn't do this, it'd store an empty array
-      if (receivingIndex == 0) {
-        final String receivingAddress =
-            await _generateAddressForChain(0, receivingIndex);
+      if (receivingIndex == -1) {
+        final String receivingAddress = await _generateAddressForChain(0, 0);
         receivingAddressArray.add(receivingAddress);
       }
 
       // If restoring a wallet that never sent any funds with change, then set changeArray
       // manually. If we didn't do this, it'd store an empty array.
-      if (changeIndex == 0) {
-        final String changeAddress =
-            await _generateAddressForChain(1, changeIndex);
+      if (changeIndex == -1) {
+        final String changeAddress = await _generateAddressForChain(1, 0);
         changeAddressArray.add(changeAddress);
       }
 
       await wallet.put('receivingAddresses', receivingAddressArray);
       await wallet.put('changeAddresses', changeAddressArray);
-      await wallet.put('receivingIndex', receivingIndex);
-      await wallet.put('changeIndex', changeIndex);
+      await wallet.put(
+          'receivingIndex', receivingIndex == -1 ? 0 : receivingIndex);
+      await wallet.put('changeIndex', changeIndex == -1 ? 0 : changeIndex);
       await wallet.put("id", this._walletId);
 
       for (int setId = 1; setId <= latestSetId; setId++) {
@@ -2983,6 +3141,10 @@ class FiroWallet extends CoinServiceAPI {
     _nodesChangedListener = null;
     timer?.cancel();
     timer = null;
+    for (final isolate in isolates.values) {
+      isolate.kill(priority: Isolate.immediate);
+    }
     isolates.clear();
+    Logger.print("firo_wallet exit finished");
   }
 }

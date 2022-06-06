@@ -1,5 +1,4 @@
 import 'package:decimal/decimal.dart';
-import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:google_fonts/google_fonts.dart';
@@ -8,6 +7,7 @@ import 'package:paymint/utilities/cfcolors.dart';
 import 'package:paymint/utilities/misc_global_constants.dart';
 import 'package:paymint/utilities/shared_utilities.dart';
 import 'package:paymint/utilities/sizing_utilities.dart';
+import 'package:paymint/utilities/text_styles.dart';
 import 'package:provider/provider.dart';
 
 class AmountInputFieldController {
@@ -55,14 +55,12 @@ class AmountInputField extends StatefulWidget {
     this.fiatAmountController,
     this.controller,
     this.locale,
-    this.maxFee,
   }) : super(key: key);
 
   final AmountInputFieldController controller;
   final TextEditingController cryptoAmountController;
   final TextEditingController fiatAmountController;
   final String locale;
-  final Decimal maxFee;
 
   @override
   _AmountInputFieldState createState() => _AmountInputFieldState();
@@ -78,12 +76,58 @@ class _AmountInputFieldState extends State<AmountInputField> {
 
   Decimal _tempPrice = Decimal.zero;
 
+  VoidCallback onCryptoAmountChanged;
+  bool cryptoAmountChangeLock = false;
+
+  void _cryptoAmountChanged() async {
+    if (!cryptoAmountChangeLock) {
+      final String cryptoAmount = cryptoAmountController.text;
+      if (cryptoAmount.isNotEmpty &&
+          cryptoAmount != "." &&
+          cryptoAmount != ",") {
+        controller.cryptoAmount = cryptoAmount.contains(",")
+            ? Decimal.parse(cryptoAmount.replaceFirst(",", "."))
+            : Decimal.parse(cryptoAmount);
+        final manager = Provider.of<Manager>(context, listen: false);
+        final maxFee = (await manager.maxFee)?.fee ?? 0;
+        setState(() {
+          controller.cryptoTotal =
+              controller.cryptoAmount + Utilities.satoshisToAmount(maxFee);
+        });
+
+        if (_tempPrice > Decimal.zero) {
+          final String fiatAmountString = Utilities.localizedStringAsFixed(
+            value: controller.cryptoAmount * _tempPrice,
+            locale: widget.locale,
+            decimalPlaces: 2,
+          );
+
+          fiatAmountController.text = fiatAmountString;
+        }
+      } else {
+        setState(() {
+          controller.cryptoTotal = Decimal.zero;
+          controller.cryptoAmount = Decimal.zero;
+        });
+        fiatAmountController.text = "";
+      }
+    }
+  }
+
   @override
   void initState() {
     controller = widget.controller;
     cryptoAmountController = widget.cryptoAmountController;
     fiatAmountController = widget.fiatAmountController;
+    onCryptoAmountChanged = _cryptoAmountChanged;
+    cryptoAmountController.addListener(onCryptoAmountChanged);
     super.initState();
+  }
+
+  @override
+  void dispose() {
+    cryptoAmountController.removeListener(onCryptoAmountChanged);
+    super.dispose();
   }
 
   @override
@@ -96,8 +140,7 @@ class _AmountInputFieldState extends State<AmountInputField> {
             BorderRadius.circular(SizingUtilities.circularBorderRadius),
         border: Border.all(
           width: 1,
-          color:
-              controller.hasFocus ? CFColors.focusedBorder : CFColors.twilight,
+          color: controller.hasFocus ? CFColors.focusedBorder : CFColors.dew,
         ),
       ),
       child: Center(
@@ -121,6 +164,7 @@ class _AmountInputFieldState extends State<AmountInputField> {
                     });
                   },
                   child: TextField(
+                    key: Key("amountInputFieldCryptoTextFieldKey"),
                     style: GoogleFonts.workSans(
                       color: CFColors.dusk,
                     ),
@@ -135,37 +179,6 @@ class _AmountInputFieldState extends State<AmountInputField> {
                               ? newValue
                               : oldValue),
                     ],
-                    onChanged: (String cryptoAmount) {
-                      if (cryptoAmount.isNotEmpty &&
-                          cryptoAmount != "." &&
-                          cryptoAmount != ",") {
-                        controller.cryptoAmount = cryptoAmount.contains(",")
-                            ? Decimal.parse(cryptoAmount.replaceFirst(",", "."))
-                            : Decimal.parse(cryptoAmount);
-
-                        setState(() {
-                          controller.cryptoTotal =
-                              controller.cryptoAmount + widget.maxFee;
-                        });
-
-                        if (_tempPrice > Decimal.zero) {
-                          final String fiatAmountString =
-                              Utilities.localizedStringAsFixed(
-                            value: controller.cryptoAmount * _tempPrice,
-                            locale: widget.locale,
-                            decimalPlaces: 2,
-                          );
-
-                          fiatAmountController.text = fiatAmountString;
-                        }
-                      } else {
-                        setState(() {
-                          controller.cryptoTotal = Decimal.zero;
-                          controller.cryptoAmount = Decimal.zero;
-                        });
-                        fiatAmountController.text = "";
-                      }
-                    },
                     decoration: InputDecoration(
                       filled: false,
                       border: InputBorder.none,
@@ -185,11 +198,7 @@ class _AmountInputFieldState extends State<AmountInputField> {
                           child: Text(
                             Provider.of<Manager>(context, listen: false)
                                 .coinTicker,
-                            style: TextStyle(
-                              color: CFColors.twilight,
-                              fontWeight: FontWeight.w600,
-                              fontSize: 16,
-                            ),
+                            style: CFTextStyles.textFieldSuffix,
                           ),
                         ),
                       ),
@@ -198,11 +207,7 @@ class _AmountInputFieldState extends State<AmountInputField> {
                         locale: widget.locale,
                         decimalPlaces: 2,
                       ),
-                      hintStyle: GoogleFonts.workSans(
-                        color: CFColors.twilight,
-                        fontWeight: FontWeight.w400,
-                        fontSize: 16,
-                      ),
+                      hintStyle: CFTextStyles.textFieldHint,
                     ),
                   ),
                 ),
@@ -210,7 +215,7 @@ class _AmountInputFieldState extends State<AmountInputField> {
                   height: 1,
                   color: controller.hasFocus
                       ? CFColors.focusedBorder
-                      : CFColors.twilight,
+                      : CFColors.dew,
                 ),
                 Focus(
                   onFocusChange: (hasFocus) {
@@ -221,6 +226,7 @@ class _AmountInputFieldState extends State<AmountInputField> {
                     });
                   },
                   child: TextField(
+                    key: Key("amountInputFieldFiatTextFieldKey"),
                     style: GoogleFonts.workSans(
                       color: CFColors.dusk,
                     ),
@@ -238,7 +244,7 @@ class _AmountInputFieldState extends State<AmountInputField> {
                               ? newValue
                               : oldValue),
                     ],
-                    onChanged: (String fiatAmount) {
+                    onChanged: (String fiatAmount) async {
                       if (fiatAmount.isNotEmpty &&
                           fiatAmount != "." &&
                           fiatAmount != ",") {
@@ -259,17 +265,23 @@ class _AmountInputFieldState extends State<AmountInputField> {
                           decimalPlaces: CampfireConstants.decimalPlaces,
                         );
 
+                        final maxFee = (await manager.maxFee)?.fee ?? 0;
                         setState(() {
-                          controller.cryptoTotal =
-                              controller.cryptoAmount + widget.maxFee;
+                          controller.cryptoTotal = controller.cryptoAmount +
+                              Utilities.satoshisToAmount(maxFee);
                         });
 
+                        cryptoAmountChangeLock = true;
                         cryptoAmountController.text = amountString;
+                        cryptoAmountChangeLock = false;
                       } else {
                         setState(() {
                           controller.cryptoTotal = Decimal.zero;
                         });
+                        cryptoAmountChangeLock = true;
                         cryptoAmountController.text = "";
+                        cryptoAmountChangeLock = false;
+
                         controller.cryptoAmount = Decimal.zero;
                       }
                     },
@@ -294,11 +306,7 @@ class _AmountInputFieldState extends State<AmountInputField> {
                             builder: (context, child) {
                               return Text(
                                 context.watch<String>(),
-                                style: TextStyle(
-                                  color: CFColors.twilight,
-                                  fontWeight: FontWeight.w600,
-                                  fontSize: 16,
-                                ),
+                                style: CFTextStyles.textFieldSuffix,
                               );
                             },
                           ),
@@ -311,11 +319,7 @@ class _AmountInputFieldState extends State<AmountInputField> {
                               locale: widget.locale,
                               decimalPlaces: 2,
                             ),
-                      hintStyle: GoogleFonts.workSans(
-                        color: CFColors.twilight,
-                        fontWeight: FontWeight.w400,
-                        fontSize: 16, // ScalingUtils.fontScaled(context, 16),
-                      ),
+                      hintStyle: CFTextStyles.textFieldHint,
                     ),
                   ),
                 ),

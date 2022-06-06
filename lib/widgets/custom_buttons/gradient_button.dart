@@ -7,7 +7,7 @@ class GradientButton extends StatelessWidget {
     @required this.onTap,
     this.child,
     this.shadows,
-    this.enabled,
+    this.enabled = true,
   }) : super(key: key);
 
   final VoidCallback onTap;
@@ -39,11 +39,11 @@ class GradientButton extends StatelessWidget {
         decoration: ShapeDecoration(
           // color: CFColors.white,
           shape: _shape,
-          gradient: (enabled == null || enabled)
+          gradient: enabled
               ? CFColors.fireGradientHorizontal
               : CFColors.fireGradientHorizontalDisabled,
         ),
-        child: (enabled == null || enabled)
+        child: enabled
             ? MaterialButton(
                 materialTapTargetSize: MaterialTapTargetSize.shrinkWrap,
                 shape: _shape,

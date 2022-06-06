@@ -7,7 +7,6 @@ import 'package:paymint/notifications/overlay_notification.dart';
 import 'package:paymint/pages/onboarding_view/helpers/builders.dart';
 import 'package:paymint/services/coins/manager.dart';
 import 'package:paymint/utilities/cfcolors.dart';
-import 'package:paymint/utilities/sizing_utilities.dart';
 import 'package:paymint/utilities/text_styles.dart';
 import 'package:paymint/widgets/custom_buttons/gradient_button.dart';
 import 'package:provider/provider.dart';
@@ -67,104 +66,129 @@ class _VerifyBackupKeyViewState extends State<VerifyBackupKeyView> {
   Widget build(BuildContext context) {
     return Scaffold(
       backgroundColor: CFColors.starryNight,
-      appBar: buildOnboardingAppBar(context),
+      appBar: buildOnboardingAppBar(context, backButtonPressed: () async {
+        FocusScope.of(context).unfocus();
+        await Future.delayed(Duration(milliseconds: 100));
+        Navigator.pop(context);
+      }),
       body: buildOnboardingBody(
         context,
-        Column(
-          children: [
-            SingleChildScrollView(
-              child: Column(
-                children: [
-                  SizedBox(
-                    height: 40,
-                  ),
-                  FittedBox(
-                    child: Text(
-                      "Backup Key Verification",
-                      style: CFTextStyles.pinkHeader,
-                    ),
-                  ),
-                  SizedBox(
-                    height: 12,
-                  ),
-                  FittedBox(
-                    child: Text(
-                      "Type the ${_positionStrings[_randomPosition]} word from your key.",
-                      style: GoogleFonts.workSans(
-                        color: CFColors.dusk,
-                        fontWeight: FontWeight.w400,
-                        fontSize: 16,
-                      ),
-                    ),
-                  ),
-                  SizedBox(
-                    height: 20,
-                  ),
-                  Padding(
-                    padding: const EdgeInsets.symmetric(horizontal: 20),
-                    child: TextField(
-                      inputFormatters: <TextInputFormatter>[
-                        FilteringTextInputFormatter.allow(RegExp("[a-z]")),
-                      ],
-                      toolbarOptions: ToolbarOptions(
-                        copy: false,
-                        cut: false,
-                        paste: false,
-                        selectAll: false,
-                      ),
-                      controller: _textEditController,
-                      decoration: InputDecoration(hintText: "Type here..."),
-                    ),
-                  ),
-                ],
+        LayoutBuilder(
+          builder: (context, constraint) {
+            return Padding(
+              padding: const EdgeInsets.only(
+                left: 16,
+                right: 16,
               ),
-            ),
-            Spacer(),
-            SizedBox(
-              height: 48,
-              width: MediaQuery.of(context).size.width -
-                  (SizingUtilities.standardPadding * 2),
-              child: GradientButton(
-                child: FittedBox(
-                  child: Text(
-                    "CONFIRM",
-                    style: GoogleFonts.workSans(
-                      color: CFColors.white,
-                      fontWeight: FontWeight.w600,
-                      fontSize: 16,
-                      letterSpacing: 0.5,
+              child: SingleChildScrollView(
+                padding: const EdgeInsets.only(
+                  top: 8,
+                  left: 4,
+                  right: 4,
+                  bottom: 16,
+                ),
+                child: ConstrainedBox(
+                  constraints: BoxConstraints(
+                    // subtract top and bottom padding set in parent
+                    minHeight: constraint.maxHeight - 8 - 16,
+                  ),
+                  child: IntrinsicHeight(
+                    child: Column(
+                      children: [
+                        SizedBox(
+                          height: 32,
+                        ),
+                        FittedBox(
+                          child: Text(
+                            "Backup Key Verification",
+                            style: CFTextStyles.pinkHeader,
+                          ),
+                        ),
+                        SizedBox(
+                          height: 12,
+                        ),
+                        FittedBox(
+                          child: Text(
+                            "Type the ${_positionStrings[_randomPosition]} word from your key.",
+                            key: Key("nThWordVerificationString"),
+                            style: GoogleFonts.workSans(
+                              color: CFColors.dusk,
+                              fontWeight: FontWeight.w400,
+                              fontSize: 16,
+                            ),
+                          ),
+                        ),
+                        SizedBox(
+                          height: 20,
+                        ),
+                        TextField(
+                          inputFormatters: <TextInputFormatter>[
+                            FilteringTextInputFormatter.allow(RegExp("[a-z]")),
+                          ],
+                          toolbarOptions: ToolbarOptions(
+                            copy: false,
+                            cut: false,
+                            paste: false,
+                            selectAll: false,
+                          ),
+                          controller: _textEditController,
+                          decoration: InputDecoration(hintText: "Type here..."),
+                        ),
+                        SizedBox(
+                          height: 12,
+                        ),
+                        Spacer(),
+                        SizedBox(
+                          height: 48,
+                          width: double.infinity,
+                          child: GradientButton(
+                            child: FittedBox(
+                              child: Text(
+                                "CONFIRM",
+                                style: GoogleFonts.workSans(
+                                  color: CFColors.white,
+                                  fontWeight: FontWeight.w600,
+                                  fontSize: 16,
+                                  letterSpacing: 0.5,
+                                ),
+                              ),
+                            ),
+                            onTap: () async {
+                              // check if field contains correct word
+                              final success = await _verifyMnemonicContains(
+                                  context,
+                                  _textEditController.text,
+                                  _randomPosition);
+                              if (success) {
+                                FocusScope.of(context).unfocus();
+
+                                OverlayNotification.showSuccess(
+                                  context,
+                                  "Correct! Your wallet is set up.",
+                                  Duration(milliseconds: 1500),
+                                );
+                                await Future.delayed(
+                                    Duration(milliseconds: 200));
+
+                                Navigator.pushReplacementNamed(
+                                    context, "/mainview");
+                              } else {
+                                OverlayNotification.showError(
+                                  context,
+                                  "Incorrect. Please try again.",
+                                  Duration(milliseconds: 1500),
+                                );
+                              }
+                            },
+                          ),
+                        ),
+                      ],
                     ),
                   ),
                 ),
-                onTap: () async {
-                  // check if field contains correct word
-                  final success = await _verifyMnemonicContains(
-                      context, _textEditController.text, _randomPosition);
-                  if (success) {
-                    FocusScope.of(context).unfocus();
-
-                    OverlayNotification.showSuccess(
-                      context,
-                      "Correct! Your wallet is set up.",
-                      Duration(milliseconds: 1500),
-                    );
-                    await Future.delayed(Duration(milliseconds: 200));
-
-                    Navigator.pushReplacementNamed(context, "/mainview");
-                  } else {
-                    OverlayNotification.showError(
-                      context,
-                      "Incorrect. Please try again.",
-                      Duration(milliseconds: 1500),
-                    );
-                  }
-                },
               ),
-            ),
-            SizedBox(
-              height: 20,
-            ),
-          ],
+            );
+          },
         ),
       ),
     );

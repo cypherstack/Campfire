@@ -13,8 +13,7 @@ import 'package:paymint/widgets/custom_buttons/gradient_button.dart';
 import 'package:paymint/widgets/custom_buttons/simple_button.dart';
 import 'package:provider/provider.dart';
 
-import '../services/notifications_api.dart';
-import 'lockscreen2.dart';
+import 'lockscreen_view.dart';
 import 'onboarding_view/helpers/builders.dart';
 import 'onboarding_view/helpers/create_wallet_type.dart';
 import 'onboarding_view/terms_and_conditions_view.dart';
@@ -86,6 +85,7 @@ class _WalletSelectionViewState extends State<WalletSelectionView> {
                       SizingUtilities.circularBorderRadius),
                 ),
                 child: MaterialButton(
+                  key: Key("walletSelectionViewWalletButtonKey_$index"),
                   padding: EdgeInsets.only(
                     top: 12,
                     bottom: 12,
@@ -124,7 +124,7 @@ class _WalletSelectionViewState extends State<WalletSelectionView> {
                     Navigator.of(context).push(
                       CupertinoPageRoute(
                         builder: (context) {
-                          return Lockscreen2View(
+                          return LockscreenView(
                             routeOnSuccess: '/mainview',
                             biometricsAuthenticationTitle: walletName,
                             biometricsCancelButtonString: "CANCEL",

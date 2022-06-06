@@ -2,38 +2,29 @@ import 'package:decimal/decimal.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_feather_icons/flutter_feather_icons.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:mockingjay/mockingjay.dart' as mockingjay;
 import 'package:mockito/annotations.dart';
 import 'package:mockito/mockito.dart';
 import 'package:paymint/models/models.dart';
-import 'package:paymint/pages/transaction_subviews/transaction_details_view.dart';
 import 'package:paymint/services/coins/manager.dart';
+import 'package:paymint/services/locale_service.dart';
 import 'package:paymint/services/notes_service.dart';
 import 'package:paymint/widgets/transaction_card.dart';
 import 'package:provider/provider.dart';
 
 import 'transaction_card_test.mocks.dart';
 
-class MockCallbackFunction extends Mock {
-  call();
-}
-
 @GenerateMocks([], customMocks: [
   MockSpec<Manager>(returnNullOnMissingStub: true),
-  MockSpec<NotesService>(returnNullOnMissingStub: true)
+  MockSpec<NotesService>(returnNullOnMissingStub: true),
+  MockSpec<LocaleService>(returnNullOnMissingStub: true),
 ])
 void main() {
-  MockManager mockManager;
-  MockNotesService mockNotesService;
-
-  final mockCallback = MockCallbackFunction();
-
-  setUp(() {
-    mockManager = MockManager()..addListener(mockCallback);
-    mockNotesService = MockNotesService()..addListener(mockCallback);
-    reset(mockCallback);
-  });
-
   testWidgets("Sent confirmed tx displays correctly", (tester) async {
+    final mockManager = MockManager();
+    final mockNotesService = MockNotesService();
+    final mockLocaleService = MockLocaleService();
+
     final tx = Transaction(
       txid: "some txid",
       confirmedStatus: true,
@@ -53,12 +44,11 @@ void main() {
       subType: "mint",
     );
 
-    when(mockNotesService.getNoteFor(txid: "some txid"))
-        .thenAnswer((_) async => "some note");
-
     when(mockManager.coinTicker).thenAnswer((_) => "FIRO");
     when(mockManager.fiatPrice).thenAnswer((_) async => Decimal.ten);
     when(mockManager.fiatCurrency).thenAnswer((_) => "USD");
+
+    when(mockLocaleService.locale).thenAnswer((_) => "en_US");
 
     await tester.pumpWidget(
       MaterialApp(
@@ -69,6 +59,9 @@ void main() {
             ),
             ChangeNotifierProvider<Manager>(
               create: (context) => mockManager,
+            ),
+            ChangeNotifierProvider<LocaleService>(
+              create: (context) => mockLocaleService,
             ),
           ],
           child: TransactionCard(transaction: tx),
@@ -91,9 +84,27 @@ void main() {
 
     final price2 = find.text("\$10.00");
     expect(price2, findsOneWidget);
+
+    verify(mockManager.addListener(any)).called(1);
+    verify(mockLocaleService.addListener(any)).called(1);
+    verify(mockNotesService.addListener(any)).called(1);
+
+    verify(mockManager.fiatCurrency).called(1);
+    verify(mockManager.fiatPrice).called(1);
+    verify(mockManager.coinTicker).called(1);
+
+    verify(mockLocaleService.locale).called(2);
+
+    verifyNoMoreInteractions(mockNotesService);
+    verifyNoMoreInteractions(mockManager);
+    verifyNoMoreInteractions(mockLocaleService);
   });
 
   testWidgets("Received unconfirmed tx displays correctly", (tester) async {
+    final mockManager = MockManager();
+    final mockNotesService = MockNotesService();
+    final mockLocaleService = MockLocaleService();
+
     final tx = Transaction(
       txid: "some txid",
       confirmedStatus: false,
@@ -113,12 +124,11 @@ void main() {
       subType: null,
     );
 
-    when(mockNotesService.getNoteFor(txid: "some txid"))
-        .thenAnswer((_) async => "some note");
-
     when(mockManager.coinTicker).thenAnswer((_) => "FIRO");
     when(mockManager.fiatPrice).thenAnswer((_) async => Decimal.ten);
     when(mockManager.fiatCurrency).thenAnswer((_) => "USD");
+
+    when(mockLocaleService.locale).thenAnswer((_) => "en_US");
 
     await tester.pumpWidget(
       MaterialApp(
@@ -129,6 +139,9 @@ void main() {
             ),
             ChangeNotifierProvider<Manager>(
               create: (context) => mockManager,
+            ),
+            ChangeNotifierProvider<LocaleService>(
+              create: (context) => mockLocaleService,
             ),
           ],
           child: TransactionCard(transaction: tx),
@@ -151,9 +164,27 @@ void main() {
 
     final price2 = find.text("\$10.00");
     expect(price2, findsOneWidget);
+
+    verify(mockManager.addListener(any)).called(1);
+    verify(mockLocaleService.addListener(any)).called(1);
+    verify(mockNotesService.addListener(any)).called(1);
+
+    verify(mockManager.fiatCurrency).called(1);
+    verify(mockManager.fiatPrice).called(1);
+    verify(mockManager.coinTicker).called(1);
+
+    verify(mockLocaleService.locale).called(2);
+
+    verifyNoMoreInteractions(mockNotesService);
+    verifyNoMoreInteractions(mockManager);
+    verifyNoMoreInteractions(mockLocaleService);
   });
 
   testWidgets("bad tx displays correctly", (tester) async {
+    final mockManager = MockManager();
+    final mockNotesService = MockNotesService();
+    final mockLocaleService = MockLocaleService();
+
     final tx = Transaction(
       txid: "some txid",
       confirmedStatus: false,
@@ -173,12 +204,11 @@ void main() {
       subType: null,
     );
 
-    when(mockNotesService.getNoteFor(txid: "some txid"))
-        .thenAnswer((_) async => "some note");
-
     when(mockManager.coinTicker).thenAnswer((_) => "FIRO");
     when(mockManager.fiatPrice).thenAnswer((_) async => Decimal.ten);
     when(mockManager.fiatCurrency).thenAnswer((_) => "USD");
+
+    when(mockLocaleService.locale).thenAnswer((_) => "en_US");
 
     await tester.pumpWidget(
       MaterialApp(
@@ -189,6 +219,9 @@ void main() {
             ),
             ChangeNotifierProvider<Manager>(
               create: (context) => mockManager,
+            ),
+            ChangeNotifierProvider<LocaleService>(
+              create: (context) => mockLocaleService,
             ),
           ],
           child: TransactionCard(transaction: tx),
@@ -211,9 +244,28 @@ void main() {
 
     final price2 = find.text("\$10.00");
     expect(price2, findsOneWidget);
+
+    verify(mockManager.addListener(any)).called(1);
+    verify(mockLocaleService.addListener(any)).called(1);
+    verify(mockNotesService.addListener(any)).called(1);
+
+    verify(mockManager.fiatCurrency).called(1);
+    verify(mockManager.fiatPrice).called(1);
+    verify(mockManager.coinTicker).called(1);
+
+    verify(mockLocaleService.locale).called(2);
+
+    verifyNoMoreInteractions(mockNotesService);
+    verifyNoMoreInteractions(mockManager);
+    verifyNoMoreInteractions(mockLocaleService);
   });
 
   testWidgets("Tap gesture", (tester) async {
+    final mockManager = MockManager();
+    final mockNotesService = MockNotesService();
+    final mockLocaleService = MockLocaleService();
+    final navigator = mockingjay.MockNavigator();
+
     final tx = Transaction(
       txid: "some txid",
       confirmedStatus: false,
@@ -240,18 +292,32 @@ void main() {
     when(mockManager.fiatPrice).thenAnswer((_) async => Decimal.ten);
     when(mockManager.fiatCurrency).thenAnswer((_) => "USD");
 
+    when(mockLocaleService.locale).thenAnswer((_) => "en_US");
+
+    mockingjay
+        .when(() => navigator.push(mockingjay.any(
+            that: mockingjay.isRoute(
+                whereName: equals("/transactiondetailsview")))))
+        .thenAnswer((_) async => {});
+
     await tester.pumpWidget(
       MaterialApp(
-        home: MultiProvider(
-          providers: [
-            ChangeNotifierProvider<NotesService>(
-              create: (context) => mockNotesService,
-            ),
-            ChangeNotifierProvider<Manager>(
-              create: (context) => mockManager,
-            ),
-          ],
-          child: TransactionCard(transaction: tx),
+        home: mockingjay.MockNavigatorProvider(
+          navigator: navigator,
+          child: MultiProvider(
+            providers: [
+              ChangeNotifierProvider<NotesService>(
+                create: (context) => mockNotesService,
+              ),
+              ChangeNotifierProvider<Manager>(
+                create: (context) => mockManager,
+              ),
+              ChangeNotifierProvider<LocaleService>(
+                create: (context) => mockLocaleService,
+              ),
+            ],
+            child: TransactionCard(transaction: tx),
+          ),
         ),
       ),
     );
@@ -259,8 +325,30 @@ void main() {
     expect(find.byType(GestureDetector), findsOneWidget);
 
     await tester.tap(find.byType(GestureDetector));
-    await tester.pumpAndSettle(Duration(seconds: 2));
+    await tester.pump();
 
-    expect(find.byType(TransactionDetailsView), findsOneWidget);
+    verify(mockManager.addListener(any)).called(1);
+    verify(mockLocaleService.addListener(any)).called(1);
+    verify(mockNotesService.addListener(any)).called(1);
+
+    verify(mockNotesService.getNoteFor(txid: "some txid")).called(1);
+
+    verify(mockManager.fiatCurrency).called(1);
+    verify(mockManager.fiatPrice).called(1);
+    verify(mockManager.coinTicker).called(1);
+
+    verify(mockLocaleService.locale).called(2);
+
+    verifyNoMoreInteractions(mockNotesService);
+    verifyNoMoreInteractions(mockManager);
+    verifyNoMoreInteractions(mockLocaleService);
+
+    mockingjay
+        .verify(() => navigator.push(mockingjay.any(
+            that: mockingjay.isRoute(
+                whereName: equals("/transactiondetailsview")))))
+        .called(1);
+
+    mockingjay.verifyNoMoreInteractions(navigator);
   });
 }

@@ -5,21 +5,22 @@ import 'package:paymint/utilities/logger.dart';
 import 'electrumx.dart';
 
 class CachedElectrumX {
-  ElectrumX _client;
-  String _hivePath;
+  final ElectrumX electrumXClient;
+  final String hivePath;
+
+  final String server;
+  final int port;
+  final bool useSSL;
+
   static const minCacheConfirms = 30;
 
-  CachedElectrumX(
-      {String server,
-      int port,
-      bool useSSL,
-      String hivePath,
-      ElectrumX electrumXClient}) {
-    _hivePath = hivePath;
-    _client = electrumXClient == null
-        ? ElectrumX(server: server, port: port, useSSL: useSSL)
-        : electrumXClient;
-  }
+  const CachedElectrumX({
+    this.server,
+    this.port,
+    this.useSSL,
+    this.hivePath,
+    this.electrumXClient,
+  });
 
   factory CachedElectrumX.from(
           {@required ElectrumXNode node, String hivePath}) =>
@@ -41,7 +42,7 @@ class CachedElectrumX {
       // hive must be initialized when this function is called outside of flutter main
       // such as within an isolate
       if (callOutSideMainIsolate) {
-        Hive.init(_hivePath);
+        Hive.init(hivePath);
       }
       final box = await Hive.openBox('${coinName}_anonymitySetCache');
       final cachedSet = await box.get(groupId);
@@ -60,7 +61,13 @@ class CachedElectrumX {
         set = Map<String, dynamic>.from(cachedSet);
       }
 
-      final newSet = await _client.getAnonymitySet(
+      final client = electrumXClient ??
+          ElectrumX(
+            server: this.server,
+            port: this.port,
+            useSSL: this.useSSL,
+          );
+      final newSet = await client.getAnonymitySet(
         groupId: groupId,
         blockhash: set["blockHash"],
       );
@@ -102,13 +109,19 @@ class CachedElectrumX {
       // hive must be initialized when this function is called outside of flutter main
       // such as within an isolate
       if (callOutSideMainIsolate) {
-        Hive.init(_hivePath);
+        Hive.init(hivePath);
       }
       final txCache = await Hive.openBox('${coinName}_txCache');
       final cachedTx = await txCache.get(tx_hash);
       if (cachedTx == null) {
+        final client = electrumXClient ??
+            ElectrumX(
+              server: this.server,
+              port: this.port,
+              useSSL: this.useSSL,
+            );
         final Map<String, dynamic> result =
-            await _client.getTransaction(tx_hash: tx_hash, verbose: verbose);
+            await client.getTransaction(tx_hash: tx_hash, verbose: verbose);
 
         result.remove("hex");
         result.remove("lelantusData");
@@ -133,7 +146,9 @@ class CachedElectrumX {
 
   /// Clear all cached transactions for the specified coin
   Future<void> clearSharedTransactionCache({String coinName}) async {
-    await Hive.deleteBoxFromDisk('${coinName}_txCache');
-    await Hive.deleteBoxFromDisk('${coinName}_anonymitySetCache');
+    final txCache = await Hive.openBox('${coinName}_txCache');
+    await txCache.clear();
+    final setCache = await Hive.openBox('${coinName}_anonymitySetCache');
+    await setCache.clear();
   }
 }

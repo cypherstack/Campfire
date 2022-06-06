@@ -1,4 +1,5 @@
 import 'dart:async';
+import 'dart:convert';
 import 'dart:typed_data';
 
 import 'package:crypto/crypto.dart';
@@ -592,27 +593,32 @@ void main() {
     final firoNetworkType = FiroNetworkType.main;
     final testWalletId = "testWalletID";
     final testWalletName = "Test Wallet";
+    bool hiveAdaptersRegistered = false;
 
-    setUpAll(() async {
+    setUp(() async {
       await setUpTestHive();
 
-      // Registering Transaction Model Adapters
-      Hive.registerAdapter(TransactionDataAdapter());
-      Hive.registerAdapter(TransactionChunkAdapter());
-      Hive.registerAdapter(TransactionAdapter());
-      Hive.registerAdapter(InputAdapter());
-      Hive.registerAdapter(OutputAdapter());
+      if (!hiveAdaptersRegistered) {
+        hiveAdaptersRegistered = true;
 
-      // Registering Utxo Model Adapters
-      Hive.registerAdapter(UtxoDataAdapter());
-      Hive.registerAdapter(UtxoObjectAdapter());
-      Hive.registerAdapter(StatusAdapter());
+        // Registering Transaction Model Adapters
+        Hive.registerAdapter(TransactionDataAdapter());
+        Hive.registerAdapter(TransactionChunkAdapter());
+        Hive.registerAdapter(TransactionAdapter());
+        Hive.registerAdapter(InputAdapter());
+        Hive.registerAdapter(OutputAdapter());
 
-      // Registering Lelantus Model Adapters
-      Hive.registerAdapter(LelantusCoinAdapter());
+        // Registering Utxo Model Adapters
+        Hive.registerAdapter(UtxoDataAdapter());
+        Hive.registerAdapter(UtxoObjectAdapter());
+        Hive.registerAdapter(StatusAdapter());
+
+        // Registering Lelantus Model Adapters
+        Hive.registerAdapter(LelantusCoinAdapter());
+      }
+
       final wallets = await Hive.openBox('wallets');
-      await wallets.put('currentWalletName', "");
-      // await secureStore.write(key: "${testWalletId}_mnemonic", value: mnemonic);
+      await wallets.put('currentWalletName', testWalletName);
     });
 
     test("get fiatPrice", () async {
@@ -710,7 +716,7 @@ void main() {
       expect(() => firo.initializeWallet(), throwsA(isA<Exception>()));
     });
 
-    test("initializeWallet throws bad network on mainnet", () {
+    test("initializeWallet throws bad network on mainnet", () async {
       final client = MockElectrumX();
       final cachedClient = MockCachedElectrumX();
       final secureStore = FakeSecureStorage();
@@ -959,7 +965,7 @@ void main() {
         priceAPI: priceAPI,
       );
 
-      await firo.initializeWallet();
+      expect(await firo.initializeWallet(), true);
 
       final wallet = await Hive.openBox(testWalletId + "initializeWallet");
 
@@ -986,7 +992,7 @@ void main() {
       expect(result, 0);
 
       result = await wallet.get("preferredFiatCurrency");
-      expect(result, "USD");
+      expect(result, null);
 
       result = await wallet.get("receivingAddresses");
       expect(result, isA<List<String>>());
@@ -1191,9 +1197,13 @@ void main() {
       );
 
       await firo.fillAddresses(FillAddressesParams.mnemonic);
-      final wallet = await Hive.openBox(testWalletId + "fillAddresses");
-      final receiveDerivations = await wallet.get('receiveDerivations');
-      final changeDerivations = await wallet.get('changeDerivations');
+
+      final rcv = await secureStore.read(
+          key: "${testWalletId}fillAddresses_receiveDerivations");
+      final chg = await secureStore.read(
+          key: "${testWalletId}fillAddresses_changeDerivations");
+      final receiveDerivations = Map<String, dynamic>.from(jsonDecode(rcv));
+      final changeDerivations = Map<String, dynamic>.from(jsonDecode(chg));
 
       expect(receiveDerivations.toString(),
           FillAddressesParams.expectedReceiveDerivationsString);
@@ -1249,10 +1259,13 @@ void main() {
       final wallet = await Hive.openBox(testWalletId + "buildMintTransaction");
 
       await wallet.put("mintIndex", 0);
-      await wallet.put(
-          'receiveDerivations', BuildMintTxTestParams.receiveDerivations);
-      await wallet.put(
-          'changeDerivations', BuildMintTxTestParams.changeDerivations);
+
+      await secureStore.write(
+          key: "${testWalletId}buildMintTransaction_receiveDerivations",
+          value: jsonEncode(BuildMintTxTestParams.receiveDerivations));
+      await secureStore.write(
+          key: "${testWalletId}buildMintTransaction_changeDerivations",
+          value: jsonEncode(BuildMintTxTestParams.changeDerivations));
 
       final result = await firo.buildMintTransaction(utxos, sats);
 
@@ -1260,6 +1273,10 @@ void main() {
     });
 
     test("recoverFromMnemonic succeeds", () async {
+      TestWidgetsFlutterBinding.ensureInitialized();
+      const MethodChannel('uk.spiralarm.flutter/devicelocale')
+          .setMockMethodCallHandler((methodCall) async => 'en_US');
+
       final client = MockElectrumX();
       final cachedClient = MockCachedElectrumX();
       final secureStore = FakeSecureStorage();
@@ -1300,13 +1317,19 @@ void main() {
       // pre grab derivations in order to set up mock calls needed later on
       await firo.fillAddresses(TEST_MNEMONIC);
       final wallet = await Hive.openBox(testWalletId + "recoverFromMnemonic");
-      final receiveDerivations = await wallet.get('receiveDerivations');
-      final changeDerivations = await wallet.get('changeDerivations');
+
+      final rcv = await secureStore.read(
+          key: "${testWalletId}recoverFromMnemonic_receiveDerivations");
+      final chg = await secureStore.read(
+          key: "${testWalletId}recoverFromMnemonic_changeDerivations");
+      final receiveDerivations = Map<String, dynamic>.from(jsonDecode(rcv));
+      final changeDerivations = Map<String, dynamic>.from(jsonDecode(chg));
+
       for (int i = 0; i < receiveDerivations.length; i++) {
         final receiveHash = AddressUtils.convertToScriptHash(
-            receiveDerivations[i]["address"], firoNetwork);
+            receiveDerivations["$i"]["address"], firoNetwork);
         final changeHash = AddressUtils.convertToScriptHash(
-            changeDerivations[i]["address"], firoNetwork);
+            changeDerivations["$i"]["address"], firoNetwork);
         List<Map<String, dynamic>> data;
         switch (receiveHash) {
           case SampleGetHistoryData.scripthash0:
@@ -1348,9 +1371,527 @@ void main() {
             .thenAnswer((_) async => data);
       }
 
-      expect(() async => await firo.recoverFromMnemonic(TEST_MNEMONIC),
-          returnsNormally);
-    });
+      await firo.recoverFromMnemonic(TEST_MNEMONIC);
+
+      final receivingAddresses = await wallet.get('receivingAddresses');
+      expect(receivingAddresses, ["a8VV7vMzJdTQj1eLEJNskhLEBUxfNWhpAg"]);
+
+      final changeAddresses = await wallet.get('changeAddresses');
+      expect(changeAddresses, ["a5V5r6We6mNZzWJwGwEeRML3mEYLjvK39w"]);
+
+      final receivingIndex = await wallet.get('receivingIndex');
+      expect(receivingIndex, 0);
+
+      final changeIndex = await wallet.get('changeIndex');
+      expect(changeIndex, 0);
+
+      final _rcv = await secureStore.read(
+          key: "${testWalletId}recoverFromMnemonic_receiveDerivations");
+      final _chg = await secureStore.read(
+          key: "${testWalletId}recoverFromMnemonic_changeDerivations");
+      final _receiveDerivations = Map<String, dynamic>.from(jsonDecode(_rcv));
+      final _changeDerivations = Map<String, dynamic>.from(jsonDecode(_chg));
+      expect(_receiveDerivations.length, 190);
+      expect(_changeDerivations.length, 190);
+
+      final mintIndex = await wallet.get('mintIndex');
+      expect(mintIndex, 2);
+
+      final lelantusCoins = await wallet.get('_lelantus_coins');
+      expect(lelantusCoins.length, 1);
+      final lcoin = lelantusCoins[
+              "36c92daa4005d368e28cea917fdb2c1e7069319a4a79fb2ff45c089100680232"]
+          as LelantusCoin;
+      expect(lcoin.index, 1);
+      expect(lcoin.value, 9658);
+      expect(lcoin.publicCoin,
+          "7fd927efbea0a9e4ba299209aaee610c63359857596be0a2da276011a0baa84a0000");
+      expect(lcoin.txId,
+          "36c92daa4005d368e28cea917fdb2c1e7069319a4a79fb2ff45c089100680232");
+      expect(lcoin.anonymitySetId, 1);
+      expect(lcoin.isUsed, true);
+
+      final jIndex = await wallet.get('jindex');
+      expect(jIndex, []);
+
+      final lelantusTxModel = await wallet.get('latest_lelantus_tx_model');
+      expect(lelantusTxModel.getAllTransactions().length, 0);
+    }, timeout: Timeout(Duration(minutes: 3)));
+
+    test("fullRescan succeeds", () async {
+      TestWidgetsFlutterBinding.ensureInitialized();
+      const MethodChannel('uk.spiralarm.flutter/devicelocale')
+          .setMockMethodCallHandler((methodCall) async => 'en_US');
+
+      final client = MockElectrumX();
+      final cachedClient = MockCachedElectrumX();
+      final secureStore = FakeSecureStorage();
+      final priceAPI = MockPriceAPI();
+
+      await secureStore.write(
+          key: '${testWalletId}fullRescan_mnemonic', value: TEST_MNEMONIC);
+
+      // mock electrumx client calls
+      when(client.getLatestCoinId()).thenAnswer((_) async => 1);
+      when(client.getCoinsForRecovery(setId: 1))
+          .thenAnswer((_) async => getCoinsForRecoveryResponse);
+      when(client.getUsedCoinSerials())
+          .thenAnswer((_) async => GetUsedSerialsSampleData.serials);
+
+      when(cachedClient.clearSharedTransactionCache(coinName: "Firo"))
+          .thenAnswer((_) async => {});
+
+      // mock price calls
+      when(priceAPI.getPrice(ticker: "FIRO", baseCurrency: "USD"))
+          .thenAnswer((_) async => Decimal.fromInt(10));
+
+      final firo = FiroWallet(
+        walletName: testWalletName,
+        walletId: testWalletId + "fullRescan",
+        networkType: FiroNetworkType.main,
+        client: client,
+        cachedClient: cachedClient,
+        secureStore: secureStore,
+        priceAPI: priceAPI,
+      );
+
+      // pre grab derivations in order to set up mock calls needed later on
+      await firo.fillAddresses(TEST_MNEMONIC);
+      final wallet = await Hive.openBox(testWalletId + "fullRescan");
+
+      final rcv = await secureStore.read(
+          key: "${testWalletId}fullRescan_receiveDerivations");
+      final chg = await secureStore.read(
+          key: "${testWalletId}fullRescan_changeDerivations");
+      final receiveDerivations = Map<String, dynamic>.from(jsonDecode(rcv));
+      final changeDerivations = Map<String, dynamic>.from(jsonDecode(chg));
+
+      for (int i = 0; i < receiveDerivations.length; i++) {
+        final receiveHash = AddressUtils.convertToScriptHash(
+            receiveDerivations["$i"]["address"], firoNetwork);
+        final changeHash = AddressUtils.convertToScriptHash(
+            changeDerivations["$i"]["address"], firoNetwork);
+        List<Map<String, dynamic>> data;
+        switch (receiveHash) {
+          case SampleGetHistoryData.scripthash0:
+            data = SampleGetHistoryData.data0;
+            break;
+          case SampleGetHistoryData.scripthash1:
+            data = SampleGetHistoryData.data1;
+            break;
+          case SampleGetHistoryData.scripthash2:
+            data = SampleGetHistoryData.data2;
+            break;
+          case SampleGetHistoryData.scripthash3:
+            data = SampleGetHistoryData.data3;
+            break;
+          default:
+            data = [];
+        }
+        when(client.getHistory(scripthash: receiveHash))
+            .thenAnswer((_) async => data);
+
+        switch (changeHash) {
+          case SampleGetHistoryData.scripthash0:
+            data = SampleGetHistoryData.data0;
+            break;
+          case SampleGetHistoryData.scripthash1:
+            data = SampleGetHistoryData.data1;
+            break;
+          case SampleGetHistoryData.scripthash2:
+            data = SampleGetHistoryData.data2;
+            break;
+          case SampleGetHistoryData.scripthash3:
+            data = SampleGetHistoryData.data3;
+            break;
+          default:
+            data = [];
+        }
+
+        when(client.getHistory(scripthash: changeHash))
+            .thenAnswer((_) async => data);
+      }
+
+      await firo.fullRescan();
+
+      final receivingAddresses = await wallet.get('receivingAddresses');
+      expect(receivingAddresses, ["a8VV7vMzJdTQj1eLEJNskhLEBUxfNWhpAg"]);
+
+      final changeAddresses = await wallet.get('changeAddresses');
+      expect(changeAddresses, ["a5V5r6We6mNZzWJwGwEeRML3mEYLjvK39w"]);
+
+      final receivingIndex = await wallet.get('receivingIndex');
+      expect(receivingIndex, 0);
+
+      final changeIndex = await wallet.get('changeIndex');
+      expect(changeIndex, 0);
+
+      final _rcv = await secureStore.read(
+          key: "${testWalletId}fullRescan_receiveDerivations");
+      final _chg = await secureStore.read(
+          key: "${testWalletId}fullRescan_changeDerivations");
+      final _receiveDerivations = Map<String, dynamic>.from(jsonDecode(_rcv));
+      final _changeDerivations = Map<String, dynamic>.from(jsonDecode(_chg));
+      expect(_receiveDerivations.length, 150);
+      expect(_changeDerivations.length, 150);
+
+      final mintIndex = await wallet.get('mintIndex');
+      expect(mintIndex, 2);
+
+      final lelantusCoins = await wallet.get('_lelantus_coins');
+      expect(lelantusCoins.length, 1);
+      final lcoin = lelantusCoins[
+              "36c92daa4005d368e28cea917fdb2c1e7069319a4a79fb2ff45c089100680232"]
+          as LelantusCoin;
+      expect(lcoin.index, 1);
+      expect(lcoin.value, 9658);
+      expect(lcoin.publicCoin,
+          "7fd927efbea0a9e4ba299209aaee610c63359857596be0a2da276011a0baa84a0000");
+      expect(lcoin.txId,
+          "36c92daa4005d368e28cea917fdb2c1e7069319a4a79fb2ff45c089100680232");
+      expect(lcoin.anonymitySetId, 1);
+      expect(lcoin.isUsed, true);
+
+      final jIndex = await wallet.get('jindex');
+      expect(jIndex, []);
+
+      final lelantusTxModel = await wallet.get('latest_lelantus_tx_model');
+      expect(lelantusTxModel.getAllTransactions().length, 0);
+    }, timeout: Timeout(Duration(minutes: 3)));
+
+    test("fullRescan fails", () async {
+      TestWidgetsFlutterBinding.ensureInitialized();
+      const MethodChannel('uk.spiralarm.flutter/devicelocale')
+          .setMockMethodCallHandler((methodCall) async => 'en_US');
+
+      final client = MockElectrumX();
+      final cachedClient = MockCachedElectrumX();
+      final secureStore = FakeSecureStorage();
+      final priceAPI = MockPriceAPI();
+
+      await secureStore.write(
+          key: '${testWalletId}fullRescan_mnemonic', value: TEST_MNEMONIC);
+
+      // mock electrumx client calls
+      when(client.getLatestCoinId()).thenAnswer((_) async => 1);
+      when(client.getCoinsForRecovery(setId: 1))
+          .thenAnswer((_) async => getCoinsForRecoveryResponse);
+      when(client.getUsedCoinSerials())
+          .thenAnswer((_) async => GetUsedSerialsSampleData.serials);
+
+      when(cachedClient.clearSharedTransactionCache(coinName: "Firo"))
+          .thenAnswer((_) async => {});
+
+      // mock price calls
+      when(priceAPI.getPrice(ticker: "FIRO", baseCurrency: "USD"))
+          .thenAnswer((_) async => Decimal.fromInt(10));
+
+      final firo = FiroWallet(
+        walletName: testWalletName,
+        walletId: testWalletId + "fullRescan",
+        networkType: FiroNetworkType.main,
+        client: client,
+        cachedClient: cachedClient,
+        secureStore: secureStore,
+        priceAPI: priceAPI,
+      );
+
+      // pre grab derivations in order to set up mock calls needed later on
+      await firo.fillAddresses(TEST_MNEMONIC);
+      final wallet = await Hive.openBox(testWalletId + "fullRescan");
+
+      final rcv = await secureStore.read(
+          key: "${testWalletId}fullRescan_receiveDerivations");
+      final chg = await secureStore.read(
+          key: "${testWalletId}fullRescan_changeDerivations");
+      final receiveDerivations = Map<String, dynamic>.from(jsonDecode(rcv));
+      final changeDerivations = Map<String, dynamic>.from(jsonDecode(chg));
+
+      for (int i = 0; i < receiveDerivations.length; i++) {
+        final receiveHash = AddressUtils.convertToScriptHash(
+            receiveDerivations["$i"]["address"], firoNetwork);
+        final changeHash = AddressUtils.convertToScriptHash(
+            changeDerivations["$i"]["address"], firoNetwork);
+        List<Map<String, dynamic>> data;
+        switch (receiveHash) {
+          case SampleGetHistoryData.scripthash0:
+            data = SampleGetHistoryData.data0;
+            break;
+          case SampleGetHistoryData.scripthash1:
+            data = SampleGetHistoryData.data1;
+            break;
+          case SampleGetHistoryData.scripthash2:
+            data = SampleGetHistoryData.data2;
+            break;
+          case SampleGetHistoryData.scripthash3:
+            data = SampleGetHistoryData.data3;
+            break;
+          default:
+            data = [];
+        }
+        when(client.getHistory(scripthash: receiveHash))
+            .thenAnswer((_) async => data);
+
+        switch (changeHash) {
+          case SampleGetHistoryData.scripthash0:
+            data = SampleGetHistoryData.data0;
+            break;
+          case SampleGetHistoryData.scripthash1:
+            data = SampleGetHistoryData.data1;
+            break;
+          case SampleGetHistoryData.scripthash2:
+            data = SampleGetHistoryData.data2;
+            break;
+          case SampleGetHistoryData.scripthash3:
+            data = SampleGetHistoryData.data3;
+            break;
+          default:
+            data = [];
+        }
+
+        when(client.getHistory(scripthash: changeHash))
+            .thenAnswer((_) async => data);
+      }
+
+      when(client.getLatestCoinId()).thenThrow(Exception());
+
+      bool didThrow = false;
+      try {
+        await firo.fullRescan();
+      } catch (e) {
+        didThrow = true;
+      }
+      expect(didThrow, true);
+
+      final receivingAddresses = await wallet.get('receivingAddresses');
+      expect(receivingAddresses, null);
+
+      final changeAddresses = await wallet.get('changeAddresses');
+      expect(changeAddresses, null);
+
+      final receivingIndex = await wallet.get('receivingIndex');
+      expect(receivingIndex, null);
+
+      final changeIndex = await wallet.get('changeIndex');
+      expect(changeIndex, null);
+
+      final _rcv = await secureStore.read(
+          key: "${testWalletId}fullRescan_receiveDerivations");
+      final _chg = await secureStore.read(
+          key: "${testWalletId}fullRescan_changeDerivations");
+      final _receiveDerivations = Map<String, dynamic>.from(jsonDecode(_rcv));
+      final _changeDerivations = Map<String, dynamic>.from(jsonDecode(_chg));
+
+      expect(_receiveDerivations.length, 40);
+      expect(_changeDerivations.length, 40);
+
+      final mintIndex = await wallet.get('mintIndex');
+      expect(mintIndex, null);
+
+      final lelantusCoins = await wallet.get('_lelantus_coins');
+      expect(lelantusCoins, null);
+
+      final jIndex = await wallet.get('jindex');
+      expect(jIndex, null);
+
+      final lelantusTxModel = await wallet.get('latest_lelantus_tx_model');
+      expect(lelantusTxModel, null);
+    }, timeout: Timeout(Duration(minutes: 3)));
+
+    test("recoverFromMnemonic then fullRescan", () async {
+      TestWidgetsFlutterBinding.ensureInitialized();
+      const MethodChannel('uk.spiralarm.flutter/devicelocale')
+          .setMockMethodCallHandler((methodCall) async => 'en_US');
+
+      final client = MockElectrumX();
+      final cachedClient = MockCachedElectrumX();
+      final secureStore = FakeSecureStorage();
+      final priceAPI = MockPriceAPI();
+
+      // mock electrumx client calls
+      when(client.getServerFeatures()).thenAnswer((_) async => {
+            "hosts": {},
+            "pruning": null,
+            "server_version": "Unit tests",
+            "protocol_min": "1.4",
+            "protocol_max": "1.4.2",
+            "genesis_hash": CampfireConstants.firoGenesisHash,
+            "hash_function": "sha256",
+            "services": []
+          });
+
+      when(client.getLatestCoinId()).thenAnswer((_) async => 1);
+      when(client.getCoinsForRecovery(setId: 1))
+          .thenAnswer((_) async => getCoinsForRecoveryResponse);
+      when(client.getUsedCoinSerials())
+          .thenAnswer((_) async => GetUsedSerialsSampleData.serials);
+
+      when(cachedClient.clearSharedTransactionCache(coinName: "Firo"))
+          .thenAnswer((_) async => {});
+
+      // mock price calls
+      when(priceAPI.getPrice(ticker: "FIRO", baseCurrency: "USD"))
+          .thenAnswer((_) async => Decimal.fromInt(10));
+
+      final firo = FiroWallet(
+        walletName: testWalletName,
+        walletId: testWalletId + "recoverFromMnemonic",
+        networkType: FiroNetworkType.main,
+        client: client,
+        cachedClient: cachedClient,
+        secureStore: secureStore,
+        priceAPI: priceAPI,
+      );
+
+      // pre grab derivations in order to set up mock calls needed later on
+      await firo.fillAddresses(TEST_MNEMONIC);
+      final wallet = await Hive.openBox(testWalletId + "recoverFromMnemonic");
+
+      final rcv = await secureStore.read(
+          key: "${testWalletId}recoverFromMnemonic_receiveDerivations");
+      final chg = await secureStore.read(
+          key: "${testWalletId}recoverFromMnemonic_changeDerivations");
+      final receiveDerivations = Map<String, dynamic>.from(jsonDecode(rcv));
+      final changeDerivations = Map<String, dynamic>.from(jsonDecode(chg));
+
+      for (int i = 0; i < receiveDerivations.length; i++) {
+        final receiveHash = AddressUtils.convertToScriptHash(
+            receiveDerivations["$i"]["address"], firoNetwork);
+        final changeHash = AddressUtils.convertToScriptHash(
+            changeDerivations["$i"]["address"], firoNetwork);
+        List<Map<String, dynamic>> data;
+        switch (receiveHash) {
+          case SampleGetHistoryData.scripthash0:
+            data = SampleGetHistoryData.data0;
+            break;
+          case SampleGetHistoryData.scripthash1:
+            data = SampleGetHistoryData.data1;
+            break;
+          case SampleGetHistoryData.scripthash2:
+            data = SampleGetHistoryData.data2;
+            break;
+          case SampleGetHistoryData.scripthash3:
+            data = SampleGetHistoryData.data3;
+            break;
+          default:
+            data = [];
+        }
+        when(client.getHistory(scripthash: receiveHash))
+            .thenAnswer((_) async => data);
+
+        switch (changeHash) {
+          case SampleGetHistoryData.scripthash0:
+            data = SampleGetHistoryData.data0;
+            break;
+          case SampleGetHistoryData.scripthash1:
+            data = SampleGetHistoryData.data1;
+            break;
+          case SampleGetHistoryData.scripthash2:
+            data = SampleGetHistoryData.data2;
+            break;
+          case SampleGetHistoryData.scripthash3:
+            data = SampleGetHistoryData.data3;
+            break;
+          default:
+            data = [];
+        }
+
+        when(client.getHistory(scripthash: changeHash))
+            .thenAnswer((_) async => data);
+      }
+
+      await firo.recoverFromMnemonic(TEST_MNEMONIC);
+
+      final receivingAddresses = await wallet.get('receivingAddresses');
+      expect(receivingAddresses, ["a8VV7vMzJdTQj1eLEJNskhLEBUxfNWhpAg"]);
+
+      final changeAddresses = await wallet.get('changeAddresses');
+      expect(changeAddresses, ["a5V5r6We6mNZzWJwGwEeRML3mEYLjvK39w"]);
+
+      final receivingIndex = await wallet.get('receivingIndex');
+      expect(receivingIndex, 0);
+
+      final changeIndex = await wallet.get('changeIndex');
+      expect(changeIndex, 0);
+
+      final _rcv = await secureStore.read(
+          key: "${testWalletId}recoverFromMnemonic_receiveDerivations");
+      final _chg = await secureStore.read(
+          key: "${testWalletId}recoverFromMnemonic_changeDerivations");
+      final _receiveDerivations = Map<String, dynamic>.from(jsonDecode(_rcv));
+      final _changeDerivations = Map<String, dynamic>.from(jsonDecode(_chg));
+      expect(_receiveDerivations.length, 190);
+      expect(_changeDerivations.length, 190);
+
+      final mintIndex = await wallet.get('mintIndex');
+      expect(mintIndex, 2);
+
+      final lelantusCoins = await wallet.get('_lelantus_coins');
+      expect(lelantusCoins.length, 1);
+      final lcoin = lelantusCoins[
+              "36c92daa4005d368e28cea917fdb2c1e7069319a4a79fb2ff45c089100680232"]
+          as LelantusCoin;
+      expect(lcoin.index, 1);
+      expect(lcoin.value, 9658);
+      expect(lcoin.publicCoin,
+          "7fd927efbea0a9e4ba299209aaee610c63359857596be0a2da276011a0baa84a0000");
+      expect(lcoin.txId,
+          "36c92daa4005d368e28cea917fdb2c1e7069319a4a79fb2ff45c089100680232");
+      expect(lcoin.anonymitySetId, 1);
+      expect(lcoin.isUsed, true);
+
+      final jIndex = await wallet.get('jindex');
+      expect(jIndex, []);
+
+      final lelantusTxModel = await wallet.get('latest_lelantus_tx_model');
+      expect(lelantusTxModel.getAllTransactions().length, 0);
+
+      await firo.fullRescan();
+
+      final _receivingAddresses = await wallet.get('receivingAddresses');
+      expect(_receivingAddresses, ["a8VV7vMzJdTQj1eLEJNskhLEBUxfNWhpAg"]);
+
+      final _changeAddresses = await wallet.get('changeAddresses');
+      expect(_changeAddresses, ["a5V5r6We6mNZzWJwGwEeRML3mEYLjvK39w"]);
+
+      final _receivingIndex = await wallet.get('receivingIndex');
+      expect(_receivingIndex, 0);
+
+      final _changeIndex = await wallet.get('changeIndex');
+      expect(_changeIndex, 0);
+
+      final __rcv = await secureStore.read(
+          key: "${testWalletId}recoverFromMnemonic_receiveDerivations");
+      final __chg = await secureStore.read(
+          key: "${testWalletId}recoverFromMnemonic_changeDerivations");
+      final __receiveDerivations = Map<String, dynamic>.from(jsonDecode(__rcv));
+      final __changeDerivations = Map<String, dynamic>.from(jsonDecode(__chg));
+      expect(__receiveDerivations.length, 150);
+      expect(__changeDerivations.length, 150);
+
+      final _mintIndex = await wallet.get('mintIndex');
+      expect(_mintIndex, 2);
+
+      final _lelantusCoins = await wallet.get('_lelantus_coins');
+      expect(_lelantusCoins.length, 1);
+      final _lcoin = lelantusCoins[
+              "36c92daa4005d368e28cea917fdb2c1e7069319a4a79fb2ff45c089100680232"]
+          as LelantusCoin;
+      expect(_lcoin.index, 1);
+      expect(_lcoin.value, 9658);
+      expect(_lcoin.publicCoin,
+          "7fd927efbea0a9e4ba299209aaee610c63359857596be0a2da276011a0baa84a0000");
+      expect(_lcoin.txId,
+          "36c92daa4005d368e28cea917fdb2c1e7069319a4a79fb2ff45c089100680232");
+      expect(_lcoin.anonymitySetId, 1);
+      expect(_lcoin.isUsed, true);
+
+      final _jIndex = await wallet.get('jindex');
+      expect(_jIndex, []);
+
+      final _lelantusTxModel = await wallet.get('latest_lelantus_tx_model');
+      expect(_lelantusTxModel.getAllTransactions().length, 0);
+    }, timeout: Timeout(Duration(minutes: 6)));
 
     test("recoverFromMnemonic fails testnet", () async {
       final client = MockElectrumX();
@@ -1914,14 +2455,19 @@ void main() {
       // build sending wallet
       await firo.fillAddresses(TEST_MNEMONIC);
       final wallet = await Hive.openBox(testWalletId + "send");
-      final receiveDerivations = await wallet.get('receiveDerivations');
-      final changeDerivations = await wallet.get('changeDerivations');
+
+      final rcv =
+          await secureStore.read(key: "${testWalletId}send_receiveDerivations");
+      final chg =
+          await secureStore.read(key: "${testWalletId}send_changeDerivations");
+      final receiveDerivations = Map<String, dynamic>.from(jsonDecode(rcv));
+      final changeDerivations = Map<String, dynamic>.from(jsonDecode(chg));
 
       for (int i = 0; i < receiveDerivations.length; i++) {
         final receiveHash = AddressUtils.convertToScriptHash(
-            receiveDerivations[i]["address"], firoNetwork);
+            receiveDerivations["$i"]["address"], firoNetwork);
         final changeHash = AddressUtils.convertToScriptHash(
-            changeDerivations[i]["address"], firoNetwork);
+            changeDerivations["$i"]["address"], firoNetwork);
         List<Map<String, dynamic>> data;
         switch (receiveHash) {
           case SampleGetHistoryData.scripthash0:
@@ -1988,8 +2534,6 @@ void main() {
       final secureStore = FakeSecureStorage();
       final priceAPI = MockPriceAPI();
 
-      String expectedTxid;
-
       when(client.getBlockHeadTip()).thenAnswer(
           (_) async => {"height": 459185, "hex": "... some block hex ..."});
 
@@ -2005,7 +2549,6 @@ void main() {
             Uint8List.fromList(hash.bytes.reversed.toList(growable: false));
 
         final txid = uint8listToString(reversedBytes);
-        expectedTxid = txid;
         return txid;
       });
 
@@ -2096,14 +2639,19 @@ void main() {
       // build sending wallet
       await firo.fillAddresses(TEST_MNEMONIC);
       final wallet = await Hive.openBox(testWalletId + "send");
-      final receiveDerivations = await wallet.get('receiveDerivations');
-      final changeDerivations = await wallet.get('changeDerivations');
+
+      final rcv =
+          await secureStore.read(key: "${testWalletId}send_receiveDerivations");
+      final chg =
+          await secureStore.read(key: "${testWalletId}send_changeDerivations");
+      final receiveDerivations = Map<String, dynamic>.from(jsonDecode(rcv));
+      final changeDerivations = Map<String, dynamic>.from(jsonDecode(chg));
 
       for (int i = 0; i < receiveDerivations.length; i++) {
         final receiveHash = AddressUtils.convertToScriptHash(
-            receiveDerivations[i]["address"], firoNetwork);
+            receiveDerivations["$i"]["address"], firoNetwork);
         final changeHash = AddressUtils.convertToScriptHash(
-            changeDerivations[i]["address"], firoNetwork);
+            changeDerivations["$i"]["address"], firoNetwork);
         List<Map<String, dynamic>> data;
         switch (receiveHash) {
           case SampleGetHistoryData.scripthash0:
@@ -2167,8 +2715,6 @@ void main() {
       final cachedClient = MockCachedElectrumX();
       final secureStore = FakeSecureStorage();
       final priceAPI = MockPriceAPI();
-
-      String expectedTxid;
 
       when(client.getBlockHeadTip()).thenAnswer(
           (_) async => {"height": 459185, "hex": "... some block hex ..."});
@@ -2265,14 +2811,19 @@ void main() {
       // build sending wallet
       await firo.fillAddresses(TEST_MNEMONIC);
       final wallet = await Hive.openBox(testWalletId + "send");
-      final receiveDerivations = await wallet.get('receiveDerivations');
-      final changeDerivations = await wallet.get('changeDerivations');
+
+      final rcv =
+          await secureStore.read(key: "${testWalletId}send_receiveDerivations");
+      final chg =
+          await secureStore.read(key: "${testWalletId}send_changeDerivations");
+      final receiveDerivations = Map<String, dynamic>.from(jsonDecode(rcv));
+      final changeDerivations = Map<String, dynamic>.from(jsonDecode(chg));
 
       for (int i = 0; i < receiveDerivations.length; i++) {
         final receiveHash = AddressUtils.convertToScriptHash(
-            receiveDerivations[i]["address"], firoNetwork);
+            receiveDerivations["$i"]["address"], firoNetwork);
         final changeHash = AddressUtils.convertToScriptHash(
-            changeDerivations[i]["address"], firoNetwork);
+            changeDerivations["$i"]["address"], firoNetwork);
         List<Map<String, dynamic>> data;
         switch (receiveHash) {
           case SampleGetHistoryData.scripthash0:
@@ -2724,6 +3275,10 @@ void main() {
     });
 
     test("autoMint", () async {
+      TestWidgetsFlutterBinding.ensureInitialized();
+      const MethodChannel('uk.spiralarm.flutter/devicelocale')
+          .setMockMethodCallHandler((methodCall) async => 'en_US');
+
       final client = MockElectrumX();
       final cachedClient = MockCachedElectrumX();
       final secureStore = FakeSecureStorage();
@@ -2835,13 +3390,19 @@ void main() {
       await wallet.put(
           'receivingAddresses', RefreshTestParams.receivingAddresses);
       await wallet.put('changeAddresses', RefreshTestParams.changeAddresses);
-      final receiveDerivations = await wallet.get('receiveDerivations');
-      final changeDerivations = await wallet.get('changeDerivations');
+
+      final rcv = await secureStore.read(
+          key: "${testWalletId}autoMint_receiveDerivations");
+      final chg = await secureStore.read(
+          key: "${testWalletId}autoMint_changeDerivations");
+      final receiveDerivations = Map<String, dynamic>.from(jsonDecode(rcv));
+      final changeDerivations = Map<String, dynamic>.from(jsonDecode(chg));
+
       for (int i = 0; i < receiveDerivations.length; i++) {
         final receiveHash = AddressUtils.convertToScriptHash(
-            receiveDerivations[i]["address"], firoNetwork);
+            receiveDerivations["$i"]["address"], firoNetwork);
         final changeHash = AddressUtils.convertToScriptHash(
-            changeDerivations[i]["address"], firoNetwork);
+            changeDerivations["$i"]["address"], firoNetwork);
         List<Map<String, dynamic>> data;
         switch (receiveHash) {
           case SampleGetHistoryData.scripthash0:
@@ -2892,21 +3453,20 @@ void main() {
 
       firo.timer = Timer(Duration(minutes: 3), () {});
 
-      final adrs = await firo.allOwnAddresses;
-
-      print("adrs.length: ${adrs.length}");
-      for (final adr in adrs) {
-        print(AddressUtils.convertToScriptHash(adr, firoNetwork));
-      }
-
       await firo.refresh();
 
-      await expectLater(() async => await firo.autoMint(), returnsNormally);
+      bool flag = false;
+      try {
+        await firo.autoMint();
+      } catch (_) {
+        flag = true;
+      }
+      expect(flag, false);
 
       await firo.exit();
     }, timeout: Timeout(Duration(minutes: 3)));
 
-    test("exit", () {
+    test("exit", () async {
       final firo = FiroWallet(
         walletId: testWalletId + "exit",
         walletName: testWalletName,
@@ -2919,11 +3479,17 @@ void main() {
 
       firo.timer = Timer(Duration(seconds: 2), () {});
 
-      expectLater(() => firo.exit(), returnsNormally)
-          .then((_) => expect(firo.timer, null));
+      bool flag = false;
+      try {
+        await firo.exit();
+      } catch (_) {
+        flag = true;
+      }
+      expect(flag, false);
+      expect(firo.timer, null);
     });
 
-    tearDownAll(() async {
+    tearDown(() async {
       await tearDownTestHive();
     });
   });

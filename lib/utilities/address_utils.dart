@@ -51,6 +51,18 @@ class AddressUtils {
     return result;
   }
 
+  /// builds a firo uri string with the given address and query parameters if any
+  static String buildFiroUriString(
+    String address,
+    Map<String, String> params,
+  ) {
+    String uriString = "firo:$address";
+    if (params != null && params.isNotEmpty) {
+      uriString += Uri(queryParameters: params).toString();
+    }
+    return uriString;
+  }
+
   /// returns empty if bad data
   static Map<String, dynamic> decodeQRSeedData(String data) {
     Map<String, dynamic> result = {};

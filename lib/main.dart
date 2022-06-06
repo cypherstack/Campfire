@@ -1,8 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:google_fonts/google_fonts.dart';
-import 'package:hive/hive.dart';
 import 'package:hive_flutter/hive_flutter.dart';
+import 'package:keyboard_dismisser/keyboard_dismisser.dart';
 import 'package:path_provider/path_provider.dart' as path;
 import 'package:paymint/models/models.dart';
 import 'package:paymint/pages/loading_view.dart';
@@ -10,15 +10,17 @@ import 'package:paymint/pages/onboarding_view/onboarding_view.dart';
 import 'package:paymint/pages/wallet_selection_view.dart';
 import 'package:paymint/services/address_book_service.dart';
 import 'package:paymint/services/coins/manager.dart';
+import 'package:paymint/services/locale_service.dart';
 import 'package:paymint/services/node_service.dart';
 import 'package:paymint/services/notes_service.dart';
 import 'package:paymint/services/notifications_api.dart';
 import 'package:paymint/services/wallets_service.dart';
 import 'package:paymint/utilities/cfcolors.dart';
+import 'package:paymint/utilities/db_version_migration.dart';
 import 'package:paymint/utilities/logger.dart';
+import 'package:paymint/utilities/misc_global_constants.dart';
 import 'package:paymint/utilities/sizing_utilities.dart';
 import 'package:provider/provider.dart';
-import 'package:keyboard_dismisser/keyboard_dismisser.dart';
 
 import 'route_generator.dart';
 
@@ -47,6 +49,12 @@ void main() async {
   final wallets = await Hive.openBox('wallets');
   await wallets.put('currentWalletName', "");
 
+  int dbVersion = await wallets.get("db_version");
+  if (dbVersion == null || dbVersion < CampfireConstants.currentDbVersion) {
+    if (dbVersion == null) dbVersion = 0;
+    await DbVersionMigrator().migrate(dbVersion);
+  }
+
   SystemChrome.setEnabledSystemUIMode(SystemUiMode.manual,
       overlays: [SystemUiOverlay.bottom]);
   await NotificationApi.init();
@@ -58,6 +66,9 @@ void main() async {
 class MyApp extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
+    final localeService = LocaleService();
+    localeService.loadLocale();
+
     return KeyboardDismisser(
       child: MultiProvider(
         providers: [
@@ -75,6 +86,9 @@ class MyApp extends StatelessWidget {
           ),
           ChangeNotifierProvider(
             create: (_) => NotesService(),
+          ),
+          ChangeNotifierProvider(
+            create: (_) => localeService,
           ),
         ],
         child: MaterialAppWithTheme(),
@@ -102,9 +116,10 @@ class _MaterialAppWithThemeState extends State<MaterialAppWithTheme> {
 
   /// Returns true if the user has never set up any wallets before
   Future<bool> _checkForWallets() async {
-    final wallets = await Hive.openBox('wallets');
-    Logger.print("wallets: ${wallets.toMap()}");
-    if (wallets.isEmpty || wallets.length == 1) {
+    final walletsBox = await Hive.openBox('wallets');
+    final wallets = await walletsBox.get("names");
+    Logger.print("walletBox: ${walletsBox.toMap()}");
+    if (!(wallets != null && wallets.length > 0)) {
       return true;
     } else {
       return false;
@@ -168,10 +183,10 @@ class _MaterialAppWithThemeState extends State<MaterialAppWithTheme> {
             fontWeight: FontWeight.w400,
             fontSize: 16,
           ),
-          enabledBorder: _buildOutlineInputBorder(CFColors.twilight),
+          enabledBorder: _buildOutlineInputBorder(CFColors.dew),
           focusedBorder: _buildOutlineInputBorder(CFColors.focusedBorder),
           errorBorder: _buildOutlineInputBorder(CFColors.errorBorder),
-          disabledBorder: _buildOutlineInputBorder(CFColors.twilight),
+          disabledBorder: _buildOutlineInputBorder(CFColors.dew),
           focusedErrorBorder: _buildOutlineInputBorder(CFColors.errorBorder),
         ),
       ),

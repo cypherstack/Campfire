@@ -7,6 +7,7 @@ import 'package:paymint/pages/settings_view/settings_subviews/network_settings_s
 import 'package:paymint/pages/settings_view/settings_subviews/wallet_backup_view.dart';
 import 'package:paymint/pages/settings_view/settings_subviews/wallet_settings_subviews/change_pin_view.dart';
 import 'package:paymint/pages/settings_view/settings_subviews/wallet_settings_subviews/delete_wallet_warning_view.dart';
+import 'package:paymint/pages/settings_view/settings_subviews/wallet_settings_subviews/rescan_warning_view.dart';
 import 'package:paymint/pages/wallet_view/receive_view.dart';
 import 'package:paymint/pages/wallet_view/send_view.dart';
 
@@ -36,6 +37,8 @@ class RouteGenerator {
         return CupertinoPageRoute(builder: (_) => ChangePinView());
       case '/settings/addcustomnode':
         return CupertinoPageRoute(builder: (_) => AddCustomNodeView());
+      case '/settings/rescanwarning':
+        return CupertinoPageRoute(builder: (_) => RescanWarningView());
 
       default:
         return _routeError();

@@ -12,7 +12,18 @@ abstract class FlutterSecureStorageInterface {
     MacOsOptions mOptions,
     WindowsOptions wOptions,
   });
+
   Future<String> read({
+    @required String key,
+    IOSOptions iOptions,
+    AndroidOptions aOptions,
+    LinuxOptions lOptions,
+    WebOptions webOptions,
+    MacOsOptions mOptions,
+    WindowsOptions wOptions,
+  });
+
+  Future<void> delete({
     @required String key,
     IOSOptions iOptions,
     AndroidOptions aOptions,
@@ -26,7 +37,7 @@ abstract class FlutterSecureStorageInterface {
 class SecureStorageWrapper implements FlutterSecureStorageInterface {
   final FlutterSecureStorage secureStore;
 
-  SecureStorageWrapper(this.secureStore);
+  const SecureStorageWrapper(this.secureStore);
 
   @override
   Future<String> read({
@@ -71,6 +82,26 @@ class SecureStorageWrapper implements FlutterSecureStorageInterface {
       wOptions: wOptions,
     );
   }
+
+  Future<void> delete({
+    @required String key,
+    IOSOptions iOptions,
+    AndroidOptions aOptions,
+    LinuxOptions lOptions,
+    WebOptions webOptions,
+    MacOsOptions mOptions,
+    WindowsOptions wOptions,
+  }) async {
+    await secureStore.delete(
+      key: key,
+      iOptions: iOptions,
+      aOptions: aOptions,
+      lOptions: lOptions,
+      webOptions: webOptions,
+      mOptions: mOptions,
+      wOptions: wOptions,
+    );
+  }
 }
 
 // Mock class for testing purposes
@@ -102,5 +133,18 @@ class FakeSecureStorage implements FlutterSecureStorageInterface {
     WindowsOptions wOptions,
   }) async {
     _store[key] = value;
+  }
+
+  @override
+  Future<void> delete({
+    @required String key,
+    IOSOptions iOptions,
+    AndroidOptions aOptions,
+    LinuxOptions lOptions,
+    WebOptions webOptions,
+    MacOsOptions mOptions,
+    WindowsOptions wOptions,
+  }) async {
+    _store.remove(key);
   }
 }
