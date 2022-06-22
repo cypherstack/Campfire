@@ -25,7 +25,7 @@ void main() {
             blockhash: "",
           ),
         ).thenAnswer(
-          (_) async => GetAnonymitySetSampleData.initialData,
+          (_) async => GetAnonymitySetSampleData.data,
         );
 
         final cachedClient = CachedElectrumX(electrumXClient: client);
@@ -36,40 +36,41 @@ void main() {
           callOutSideMainIsolate: false,
         );
 
-        final expected = Map.from(GetAnonymitySetSampleData.initialData);
+        final expected = Map.from(GetAnonymitySetSampleData.data);
         expected["setId"] = "1";
 
         expect(result, expected);
       });
 
       test("use and update set cache call", () async {
-        final storedData = Map.from(GetAnonymitySetSampleData.initialData);
-        storedData["setId"] = "1";
-        final box = await Hive.openBox('Some coinName_anonymitySetCache');
-        await box.put("1", storedData);
-
-        final client = MockElectrumX();
-        when(
-          client.getAnonymitySet(
-            groupId: "1",
-            blockhash: GetAnonymitySetSampleData.initialData["blockHash"],
-          ),
-        ).thenAnswer(
-          (_) async => GetAnonymitySetSampleData.followUpData,
-        );
-
-        final cachedClient = CachedElectrumX(electrumXClient: client);
-
-        final result = await cachedClient.getAnonymitySet(
-          groupId: "1",
-          coinName: "Some coinName",
-          callOutSideMainIsolate: true,
-        );
-
-        final expected = Map.from(GetAnonymitySetSampleData.finalData);
-        expected["setId"] = "1";
-
-        expect(result, expected);
+        // final storedData = Map.from(GetAnonymitySetSampleData.initialData);
+        // storedData["setId"] = "1";
+        // final box = await Hive.openBox('Some coinName_anonymitySetCache');
+        // await box.put("1", storedData);
+        //
+        // final client = MockElectrumX();
+        // when(
+        //   client.getAnonymitySet(
+        //     groupId: "1",
+        //     blockhash: GetAnonymitySetSampleData.initialData["blockHash"],
+        //   ),
+        // ).thenAnswer(
+        //   (_) async => GetAnonymitySetSampleData.followUpData,
+        // );
+        //
+        // final cachedClient = CachedElectrumX(electrumXClient: client);
+        //
+        // final result = await cachedClient.getAnonymitySet(
+        //   groupId: "1",
+        //   coinName: "Some coinName",
+        //   callOutSideMainIsolate: true,
+        // );
+        //
+        // final expected = Map.from(GetAnonymitySetSampleData.finalData);
+        // expected["setId"] = "1";
+        //
+        // expect(result, expected);
+        fail("This test needs updating");
       });
 
       test("getAnonymitySet throws", () async {
@@ -237,7 +238,7 @@ void main() {
         groupId: "1",
       ),
     ).thenAnswer(
-      (_) async => GetAnonymitySetSampleData.initialData,
+      (_) async => GetAnonymitySetSampleData.data,
     );
 
     final cachedClient = CachedElectrumX(electrumXClient: client);

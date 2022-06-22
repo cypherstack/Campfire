@@ -7,7 +7,6 @@ import 'package:paymint/electrumx_rpc/rpc.dart';
 import 'electrumx_test.mocks.dart';
 import 'sample_data/get_anonymity_set_sample_data.dart';
 import 'sample_data/get_used_serials_sample_data.dart';
-import 'sample_data/getcoinsforrecovery_sample_output.dart';
 import 'sample_data/transaction_data_samples.dart';
 
 @GenerateMocks([JsonRPC])
@@ -495,7 +494,7 @@ void main() {
   group("getAnonymitySet", () {
     test("getAnonymitySet success", () async {
       final mockClient = MockJsonRPC();
-      final command = "sigma.getanonymityset";
+      final command = "lelantus.getanonymityset";
       final jsonArgs = '["1",""]';
       when(
         mockClient.request(
@@ -503,7 +502,7 @@ void main() {
       ).thenAnswer(
         (_) async => {
           "jsonrpc": "2.0",
-          "result": GetAnonymitySetSampleData.initialData,
+          "result": GetAnonymitySetSampleData.data,
           "id": "some requestId"
         },
       );
@@ -514,12 +513,12 @@ void main() {
       final result = await client.getAnonymitySet(
           groupId: "1", blockhash: "", requestID: "some requestId");
 
-      expect(result, GetAnonymitySetSampleData.initialData);
+      expect(result, GetAnonymitySetSampleData.data);
     });
 
     test("getAnonymitySet throws/fails", () {
       final mockClient = MockJsonRPC();
-      final command = "sigma.getanonymityset";
+      final command = "lelantus.getanonymityset";
       final jsonArgs = '["1",""]';
       when(
         mockClient.request(
@@ -539,7 +538,7 @@ void main() {
   group("getMintData", () {
     test("getMintData success", () async {
       final mockClient = MockJsonRPC();
-      final command = "sigma.getmintmetadata";
+      final command = "lelantus.getmintmetadata";
       final jsonArgs = '["some mints"]';
       when(
         mockClient.request(
@@ -563,7 +562,7 @@ void main() {
 
     test("getMintData throws/fails", () {
       final mockClient = MockJsonRPC();
-      final command = "sigma.getmintmetadata";
+      final command = "lelantus.getmintmetadata";
       final jsonArgs = '["some mints"]';
       when(
         mockClient.request(
@@ -583,8 +582,8 @@ void main() {
   group("getUsedCoinSerials", () {
     test("getUsedCoinSerials success", () async {
       final mockClient = MockJsonRPC();
-      final command = "sigma.getusedcoinserials";
-      final jsonArgs = '[]';
+      final command = "lelantus.getusedcoinserials";
+      final jsonArgs = '["0"]';
       when(
         mockClient.request(
             '{"jsonrpc": "2.0", "id": "some requestId","method": "$command","params": $jsonArgs}'),
@@ -599,16 +598,16 @@ void main() {
       final client = ElectrumX(
           server: "some server", port: 0, useSSL: true, client: mockClient);
 
-      final result =
-          await client.getUsedCoinSerials(requestID: "some requestId");
+      final result = await client.getUsedCoinSerials(
+          requestID: "some requestId", startNumber: 0);
 
       expect(result, GetUsedSerialsSampleData.serials);
     });
 
     test("getUsedCoinSerials throws/fails", () {
       final mockClient = MockJsonRPC();
-      final command = "sigma.getusedcoinserials";
-      final jsonArgs = '[]';
+      final command = "lelantus.getusedcoinserials";
+      final jsonArgs = '["0"]';
       when(
         mockClient.request(
             '{"jsonrpc": "2.0", "id": "some requestId","method": "$command","params": $jsonArgs}'),
@@ -617,7 +616,9 @@ void main() {
       final client = ElectrumX(
           server: "some server", port: 0, useSSL: true, client: mockClient);
 
-      expect(() => client.getUsedCoinSerials(requestID: "some requestId"),
+      expect(
+          () => client.getUsedCoinSerials(
+              requestID: "some requestId", startNumber: 0),
           throwsA(isA<Exception>()));
     });
   });
@@ -625,7 +626,7 @@ void main() {
   group("getLatestCoinId", () {
     test("getLatestCoinId success", () async {
       final mockClient = MockJsonRPC();
-      final command = "sigma.getlatestcoinid";
+      final command = "lelantus.getlatestcoinid";
       final jsonArgs = '[]';
       when(
         mockClient.request(
@@ -644,7 +645,7 @@ void main() {
 
     test("getLatestCoinId throws/fails", () {
       final mockClient = MockJsonRPC();
-      final command = "sigma.getlatestcoinid";
+      final command = "lelantus.getlatestcoinid";
       final jsonArgs = '[]';
       when(
         mockClient.request(
@@ -659,49 +660,49 @@ void main() {
     });
   });
 
-  group("getCoinsForRecovery", () {
-    test("getCoinsForRecovery success", () async {
-      final mockClient = MockJsonRPC();
-      final command = "sigma.getcoinsforrecovery";
-      final jsonArgs = '[1]';
-      when(
-        mockClient.request(
-            '{"jsonrpc": "2.0", "id": "some requestId","method": "$command","params": $jsonArgs}'),
-      ).thenAnswer(
-        (_) async => {
-          "jsonrpc": "2.0",
-          "result": getCoinsForRecoveryResponse,
-          "id": "some requestId"
-        },
-      );
-
-      final client = ElectrumX(
-          server: "some server", port: 0, useSSL: true, client: mockClient);
-
-      final result = await client.getCoinsForRecovery(
-          setId: 1, requestID: "some requestId");
-
-      expect(result, getCoinsForRecoveryResponse);
-    });
-
-    test("getCoinsForRecovery throws/fails", () {
-      final mockClient = MockJsonRPC();
-      final command = "sigma.getcoinsforrecovery";
-      final jsonArgs = '[1]';
-      when(
-        mockClient.request(
-            '{"jsonrpc": "2.0", "id": "some requestId","method": "$command","params": $jsonArgs}'),
-      ).thenThrow(Exception());
-
-      final client = ElectrumX(
-          server: "some server", port: 0, useSSL: true, client: mockClient);
-
-      expect(
-          () =>
-              client.getCoinsForRecovery(setId: 1, requestID: "some requestId"),
-          throwsA(isA<Exception>()));
-    });
-  });
+  // group("getCoinsForRecovery", () {
+  //   test("getCoinsForRecovery success", () async {
+  //     final mockClient = MockJsonRPC();
+  //     final command = "sigma.getcoinsforrecovery";
+  //     final jsonArgs = '[1]';
+  //     when(
+  //       mockClient.request(
+  //           '{"jsonrpc": "2.0", "id": "some requestId","method": "$command","params": $jsonArgs}'),
+  //     ).thenAnswer(
+  //       (_) async => {
+  //         "jsonrpc": "2.0",
+  //         "result": getCoinsForRecoveryResponse,
+  //         "id": "some requestId"
+  //       },
+  //     );
+  //
+  //     final client = ElectrumX(
+  //         server: "some server", port: 0, useSSL: true, client: mockClient);
+  //
+  //     final result = await client.getCoinsForRecovery(
+  //         setId: 1, requestID: "some requestId");
+  //
+  //     expect(result, getCoinsForRecoveryResponse);
+  //   });
+  //
+  //   test("getCoinsForRecovery throws/fails", () {
+  //     final mockClient = MockJsonRPC();
+  //     final command = "sigma.getcoinsforrecovery";
+  //     final jsonArgs = '[1]';
+  //     when(
+  //       mockClient.request(
+  //           '{"jsonrpc": "2.0", "id": "some requestId","method": "$command","params": $jsonArgs}'),
+  //     ).thenThrow(Exception());
+  //
+  //     final client = ElectrumX(
+  //         server: "some server", port: 0, useSSL: true, client: mockClient);
+  //
+  //     expect(
+  //         () =>
+  //             client.getCoinsForRecovery(setId: 1, requestID: "some requestId"),
+  //         throwsA(isA<Exception>()));
+  //   });
+  // });
 
   group("getFeeRate", () {
     test("getFeeRate success", () async {
