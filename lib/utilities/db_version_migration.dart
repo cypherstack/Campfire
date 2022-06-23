@@ -16,6 +16,9 @@ class DbVersionMigrator {
 
     switch (fromVersion) {
       case 0:
+        final setCache = await Hive.openBox('Firo_anonymitySetCache');
+        await setCache.clear();
+
         // migrate each
         for (final entry in names.entries) {
           final walletId = entry.value;
