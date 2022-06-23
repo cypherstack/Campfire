@@ -95,7 +95,7 @@ Future<void> executeNative(arguments) async {
       String coinName = arguments['coinName'];
       dynamic network = arguments['network'];
       int locktime = arguments['locktime'];
-      dynamic anonymitySet = arguments['anonymitySet'];
+      dynamic _anonymity_sets = arguments['_anonymity_sets'];
       String locale = arguments["locale"];
       if (!(spendAmount == null ||
           address == null ||
@@ -108,7 +108,7 @@ Future<void> executeNative(arguments) async {
           coinName == null ||
           network == null ||
           locale == null ||
-          anonymitySet == null)) {
+          _anonymity_sets == null)) {
         var joinSplit = await isolateCreateJoinSplitTransaction(
             spendAmount,
             address,
@@ -120,7 +120,7 @@ Future<void> executeNative(arguments) async {
             locktime,
             coinName,
             network,
-            anonymitySet,
+            _anonymity_sets,
             locale);
         sendPort.send(joinSplit);
         return;
@@ -272,25 +272,7 @@ isolateRestore(
   var currentIndex = 0;
 
   try {
-    Map dataMintMaps = Map();
-    Map dataJMintMaps = Map();
-    for (var setId = 1; setId <= _latestSetId; setId++) {
-      final Map<String, dynamic> setData = _setDataMap[setId];
-      Map<String, dynamic> setDataMints = Map();
-      for (int i = 0; i < setData['mints'].length; i++) {
-        final value = setData['mints'][i];
-        setDataMints[value[1]] = value;
-      }
-      Map<String, dynamic> setDataJMints = Map();
-      for (int i = 0; i < setData['jmints'].length; i++) {
-        final value = setData['jmints'][i];
-        setDataJMints[value[1]] = value;
-      }
-      dataMintMaps[setId] = setDataMints;
-      dataJMintMaps[setId] = setDataJMints;
-    }
-
-    final usedSerialNumbers = _usedSerialNumbers['serials'];
+    final usedSerialNumbers = _usedSerialNumbers;
     Set usedSerialNumbersSet = Set();
     for (int ind = 0; ind < usedSerialNumbers.length; ind++) {
       usedSerialNumbersSet.add(usedSerialNumbers[ind]);
@@ -303,38 +285,37 @@ isolateRestore(
           currentIndex, uint8listToString(mintKeyPair.identifier));
 
       for (var setId = 1; setId <= _latestSetId; setId++) {
-        var foundMint = dataMintMaps[setId][mintTag];
+        final setData = _setDataMap[setId];
+        final foundCoin = setData["coins"]
+            .firstWhere((e) => e[1] == mintTag, orElse: () => null);
 
-        if (foundMint != null) {
+        if (foundCoin != null) {
           lastFoundIndex = currentIndex;
-          final amount = foundMint[2];
-          final serialNumber = GetSerialNumber(
-            amount,
-            uint8listToString(mintKeyPair.privateKey),
-            currentIndex,
-          );
-          _lelantus_coins[foundMint[3]] = LelantusCoin(
-            currentIndex,
-            amount,
-            foundMint[0],
-            foundMint[3],
-            setId,
-            usedSerialNumbersSet.contains(serialNumber),
-          );
-          Logger.print(
-              "amount ${_lelantus_coins[foundMint[3]].value} used ${_lelantus_coins[foundMint[3]].isUsed}");
-        } else {
-          var foundJmint = dataJMintMaps[setId][mintTag];
-          if (foundJmint != null) {
-            lastFoundIndex = currentIndex;
-
-            final keyPath = GetAesKeyPath(foundJmint[0]);
+          if (foundCoin[2] is int) {
+            final amount = foundCoin[2];
+            final serialNumber = GetSerialNumber(
+              amount,
+              uint8listToString(mintKeyPair.privateKey),
+              currentIndex,
+            );
+            _lelantus_coins[foundCoin[3]] = LelantusCoin(
+              currentIndex,
+              amount,
+              foundCoin[0],
+              foundCoin[3],
+              setId,
+              usedSerialNumbersSet.contains(serialNumber),
+            );
+            Logger.print(
+                "amount ${_lelantus_coins[foundCoin[3]].value} used ${_lelantus_coins[foundCoin[3]].isUsed}");
+          } else {
+            final keyPath = GetAesKeyPath(foundCoin[0]);
             final aesKeyPair = getBip32NodeFromRoot(JMINT_INDEX, keyPath, root);
             final aesPrivateKey = uint8listToString(aesKeyPair.privateKey);
             if (aesPrivateKey != null) {
               final amount = decryptMintAmount(
                 aesPrivateKey,
-                foundJmint[2],
+                foundCoin[2],
               );
 
               final serialNumber = GetSerialNumber(
@@ -343,17 +324,17 @@ isolateRestore(
                 currentIndex,
               );
 
-              _lelantus_coins[foundJmint[3]] = LelantusCoin(
+              _lelantus_coins[foundCoin[3]] = LelantusCoin(
                 currentIndex,
                 amount,
-                foundJmint[0],
-                foundJmint[3],
+                foundCoin[0],
+                foundCoin[3],
                 setId,
                 usedSerialNumbersSet.contains(serialNumber),
               );
               jindexes.add(currentIndex);
 
-              spendTxIds.add(foundJmint[3]);
+              spendTxIds.add(foundCoin[3]);
             }
           }
         }
@@ -361,8 +342,8 @@ isolateRestore(
 
       currentIndex++;
     }
-  } catch (e) {
-    Logger.print("Exception rethrown from isolateRestore(): $e");
+  } catch (e, s) {
+    Logger.print("Exception rethrown from isolateRestore(): $e\n$s");
     throw e;
   }
 
@@ -445,7 +426,7 @@ isolateRestore(
 
 Future<LelantusFeeData> isolateEstimateJoinSplitFee(int spendAmount,
     bool subtractFeeFromAmount, List<DartLelantusEntry> lelantusEntries) async {
-  Logger.print("estimateJoinsplit ree");
+  Logger.print("estimateJoinsplit fee");
   for (int i = 0; i < lelantusEntries.length; i++) {
     Logger.print(lelantusEntries[i]);
   }
@@ -480,7 +461,7 @@ isolateCreateJoinSplitTransaction(
   int locktime,
   String coinName,
   dynamic _network,
-  dynamic anonymitySet,
+  List<Map> _anonymity_sets,
   String locale,
 ) async {
   final estimateJoinSplitFee = await isolateEstimateJoinSplitFee(
@@ -549,12 +530,17 @@ isolateCreateJoinSplitTransaction(
     final anonymitySetId = lelantusEntries[i].anonymitySetId;
     if (!setIds.contains(anonymitySetId)) {
       setIds.add(anonymitySetId);
-      List<Map> _anonymity_sets = [null, anonymitySet];
-      if (_anonymity_sets[anonymitySetId] != null) {
-        final anonymitySet = _anonymity_sets[anonymitySetId];
+      final anonymitySet = _anonymity_sets.firstWhere(
+          (element) => element["setId"] == anonymitySetId,
+          orElse: () => null);
+      if (anonymitySet != null) {
         anonymitySetHashes.add(anonymitySet['setHash']);
         groupBlockHashes.add(anonymitySet['blockHash']);
-        anonymitySets.add(anonymitySet['serializedCoins']);
+        List<String> list = [];
+        for (int i = 0; i < anonymitySet['coins'].length; i++) {
+          list.add(anonymitySet['coins'][i][0]);
+        }
+        anonymitySets.add(list);
       }
     }
   }
@@ -689,15 +675,15 @@ Future<List<models.Transaction>> getJMintTransactions(
   }
 }
 
-Future<dynamic> getAnonymitySet(CachedElectrumX cachedClient,
-    bool callOutSideMainIsolate, String coinName) async {
+Future<dynamic> getAnonymitySet(CachedElectrumX cachedClient, String blockHash,
+    String groupId, bool callOutSideMainIsolate, String coinName) async {
   try {
     var tod = await cachedClient.getAnonymitySet(
-      groupId: "1",
+      groupId: groupId,
+      blockhash: blockHash,
       coinName: coinName,
       callOutSideMainIsolate: callOutSideMainIsolate,
     );
-    tod['serializedCoins'] = tod['serializedCoins'].cast<String>();
 
     return tod;
   } catch (e) {
@@ -2870,9 +2856,15 @@ class FiroWallet extends CoinServiceAPI {
       final wallet = await Hive.openBox(this._walletId);
       final setDataMap = Map();
       final latestSetId = await getLatestSetId();
+      final _anonymity_sets = await fetchAnonymitySets();
       for (var setId = 1; setId <= latestSetId; setId++) {
-        final setData = getSetData(setId);
-        setDataMap[setId] = setData;
+        final setData = _anonymity_sets.firstWhere(
+            (element) => element["setId"] == setId,
+            orElse: () => null);
+
+        if (setData != null) {
+          setDataMap[setId] = setData;
+        }
       }
       final usedSerialNumbers = getUsedCoinSerials();
 
@@ -2976,9 +2968,6 @@ class FiroWallet extends CoinServiceAPI {
       await wallet.put('changeIndex', changeIndex == -1 ? 0 : changeIndex);
       await wallet.put("id", this._walletId);
 
-      for (int setId = 1; setId <= latestSetId; setId++) {
-        setDataMap[setId] = await setDataMap[setId];
-      }
       await _restore(latestSetId, setDataMap, await usedSerialNumbers);
       longMutex = false;
     } catch (e, s) {
@@ -3060,6 +3049,27 @@ class FiroWallet extends CoinServiceAPI {
     }
   }
 
+  Future<List<Map>> fetchAnonymitySets() async {
+    try {
+      final latestSetId = await getLatestSetId();
+
+      List<Map> sets = [];
+      for (int i = 1; i <= latestSetId; i++) {
+        Map set = await cachedElectrumXClient.getAnonymitySet(
+          groupId: "$i",
+          coinName: coinName,
+          callOutSideMainIsolate: false,
+        );
+        set["setId"] = i;
+        sets.add(set);
+      }
+      return sets;
+    } catch (e, s) {
+      Logger.print("Exception rethrown from refreshAnonymitySets: $e\n$s");
+      throw e;
+    }
+  }
+
   Future<dynamic> _createJoinSplitTransaction(
       int spendAmount, String address, bool subtractFeeFromAmount) async {
     final price = await firoPrice;
@@ -3067,11 +3077,7 @@ class FiroWallet extends CoinServiceAPI {
     final mnemonic = await _secureStore.read(key: '${this._walletId}_mnemonic');
     final index = await wallet.get('mintIndex');
     final lelantusEntry = await _getLelantusEntry();
-    final setData = await getAnonymitySet(
-      cachedElectrumXClient,
-      false,
-      coinName,
-    );
+    final _anonymity_sets = await fetchAnonymitySets();
     final locktime = await getBlockHead(electrumXClient);
     final locale = await Devicelocale.currentLocale;
 
@@ -3087,7 +3093,7 @@ class FiroWallet extends CoinServiceAPI {
       "locktime": locktime,
       "coinName": coinName,
       "network": _network,
-      "anonymitySet": setData,
+      "_anonymity_sets": _anonymity_sets,
       "locale": locale,
     });
     var message = await receivePort.first;
@@ -3115,22 +3121,15 @@ class FiroWallet extends CoinServiceAPI {
     }
   }
 
-  Future<Map<String, dynamic>> getSetData(int setID) async {
+  Future<List<dynamic>> getUsedCoinSerials() async {
     try {
-      final response = await electrumXClient.getCoinsForRecovery(setId: setID);
+      final response = await cachedElectrumXClient.getUsedCoinSerials(
+        coinName: coinName,
+        callOutSideMainIsolate: false,
+      );
       return response;
-    } catch (e) {
-      Logger.print("Exception rethrown in firo_wallet.dart: $e");
-      throw e;
-    }
-  }
-
-  Future<Map<String, dynamic>> getUsedCoinSerials() async {
-    try {
-      final response = await electrumXClient.getUsedCoinSerials();
-      return response;
-    } catch (e) {
-      Logger.print("Exception rethrown in firo_wallet.dart: $e");
+    } catch (e, s) {
+      Logger.print("Exception rethrown in firo_wallet.dart: $e\n$s");
       throw e;
     }
   }

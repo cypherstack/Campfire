@@ -1,6 +1,7 @@
 import 'package:flutter/cupertino.dart';
 import 'package:hive/hive.dart';
 import 'package:paymint/utilities/logger.dart';
+import 'package:paymint/utilities/misc_global_constants.dart';
 
 import 'electrumx.dart';
 
@@ -32,6 +33,7 @@ class CachedElectrumX {
 
   Future<Map<String, dynamic>> getAnonymitySet(
       {@required String groupId,
+      String blockhash = "",
       @required String coinName,
       @required bool callOutSideMainIsolate}) async {
     if (coinName == null || coinName.isEmpty) {
@@ -53,20 +55,32 @@ class CachedElectrumX {
       if (cachedSet == null) {
         set = {
           "setId": groupId,
-          "blockHash": "",
+          "blockHash": blockhash,
           "setHash": "",
-          "serializedCoins": <String>[],
+          "coins": <dynamic>[],
         };
       } else {
         set = Map<String, dynamic>.from(cachedSet);
       }
 
-      final client = electrumXClient ??
-          ElectrumX(
-            server: this.server,
-            port: this.port,
-            useSSL: this.useSSL,
-          );
+      ElectrumX client;
+
+      if (this.server == CampfireConstants.defaultIpAddress) {
+        //TODO: remove the following temp fix using the following server
+        client = ElectrumX(
+          server: "electrumx03.firo.org",
+          port: 50002,
+          useSSL: true,
+        );
+      } else {
+        client = electrumXClient ??
+            ElectrumX(
+              server: this.server,
+              port: this.port,
+              useSSL: this.useSSL,
+            );
+      }
+
       final newSet = await client.getAnonymitySet(
         groupId: groupId,
         blockhash: set["blockHash"],
@@ -76,8 +90,8 @@ class CachedElectrumX {
       if (newSet["setHash"] != "" && set["setHash"] != newSet["setHash"]) {
         set["setHash"] = newSet["setHash"];
         set["blockHash"] = newSet["blockHash"];
-        for (int i = newSet["serializedCoins"].length - 1; i >= 0; i--) {
-          set["serializedCoins"].insert(0, newSet["serializedCoins"][i]);
+        for (int i = newSet["coins"].length - 1; i >= 0; i--) {
+          set["coins"].insert(0, newSet["coins"][i]);
         }
         // save set to db
         await box.put(groupId, set);
@@ -144,11 +158,57 @@ class CachedElectrumX {
     }
   }
 
+  Future<List<dynamic>> getUsedCoinSerials(
+      {@required String coinName,
+      @required bool callOutSideMainIsolate,
+      int startNumber}) async {
+    if (coinName == null || coinName.isEmpty) {
+      throw Exception("Invalid argument: coinName cannot be empty!");
+    }
+
+    try {
+      // hive must be initialized when this function is called outside of flutter main
+      // such as within an isolate
+      if (callOutSideMainIsolate) {
+        Hive.init(hivePath);
+      }
+      final usedSerialsCache =
+          await Hive.openBox('${coinName}_usedSerialsCache');
+      List<dynamic> cachedSerials = await usedSerialsCache.get("serials");
+
+      if (cachedSerials == null) {
+        cachedSerials = [];
+      }
+
+      final startNumber = cachedSerials.length;
+
+      final client = electrumXClient ??
+          ElectrumX(
+            server: this.server,
+            port: this.port,
+            useSSL: this.useSSL,
+          );
+
+      final serials = await client.getUsedCoinSerials(startNumber: startNumber);
+      cachedSerials.addAll(serials["serials"]);
+
+      await usedSerialsCache.put('${coinName}_usedSerialsCache', cachedSerials);
+
+      return cachedSerials;
+    } catch (e, s) {
+      Logger.print(
+          "Failed to process CachedElectrumX.getTransaction(): $e\n$s");
+      throw e;
+    }
+  }
+
   /// Clear all cached transactions for the specified coin
   Future<void> clearSharedTransactionCache({String coinName}) async {
     final txCache = await Hive.openBox('${coinName}_txCache');
     await txCache.clear();
     final setCache = await Hive.openBox('${coinName}_anonymitySetCache');
     await setCache.clear();
+    final usedSerialsCache = await Hive.openBox('${coinName}_usedSerialsCache');
+    await usedSerialsCache.clear();
   }
 }

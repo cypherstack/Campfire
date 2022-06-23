@@ -6,15 +6,21 @@ import 'misc_global_constants.dart';
 abstract class Logger {
   static final isTestEnv = Platform.environment["FLUTTER_TEST"] == "true";
 
-  static void print(core.Object object,
-      {core.bool withTimeStamp = true}) async {
+  static void print(
+    core.Object object, {
+    core.bool withTimeStamp = true,
+    core.bool normalLength = true,
+  }) async {
     if (CampfireConstants.disableLogger && !isTestEnv) {
       return;
     }
     final utcTime =
         withTimeStamp ? core.DateTime.now().toUtc().toString() + ": " : "++++";
     core.int defaultPrintLength = 1020 - utcTime.length;
-    if (object == null || object.toString().length <= defaultPrintLength) {
+    if (normalLength) {
+      core.print("$utcTime$object");
+    } else if (object == null ||
+        object.toString().length <= defaultPrintLength) {
       core.print("$utcTime$object");
     } else {
       core.String log = object.toString();

@@ -344,20 +344,21 @@ class ElectrumX {
   ///  {
   ///     "blockHash": "37effb57352693f4efcb1710bf68e3a0d79ff6b8f1605529de3e0706d9ca21da",
   ///     "setHash": "aae1a64f19f5ccce1c242dfe331d8db2883a9508d998efa3def8a64844170fe4",
-  ///     "serializedCoins": [
-  ///         "1a0d9a5aa8ec83771ead4271d90b6bac2b99879a6233c4d7700eafcd312e5a020100",
-  ///         "47c3a2c837fa67a10b6d32d1f92e42c19b6bb88fa65034f778307bfc0305f12d0000",
-  ///         ...
-  ///         "7a9e57560d4abc384a48bf850a12df94e83d33496bb456aad26e7317921845330000",
-  ///         "a7a8ddf79fdaf6846c0c19eb00ba7a95713a1a62df91761cb74b122606385fb80000"
-  ///      ]
+  ///     "coins": [
+  ///               [dynamic list of length 4],
+  ///               [dynamic list of length 4],
+  ///               ....
+  ///               [dynamic list of length 4],
+  ///               [dynamic list of length 4],
+  ///         ]
   ///   }
   Future<Map<String, dynamic>> getAnonymitySet(
       {String groupId, String blockhash, String requestID}) async {
     try {
       final response = await request(
+        connectionTimeout: Duration(minutes: 3),
         requestID: requestID,
-        command: 'sigma.getanonymityset',
+        command: 'lelantus.getanonymityset',
         args: [
           groupId ?? "1",
           blockhash ?? "",
@@ -377,7 +378,7 @@ class ElectrumX {
     try {
       final response = await request(
         requestID: requestID,
-        command: 'sigma.getmintmetadata',
+        command: 'lelantus.getmintmetadata',
         args: [
           mints,
         ],
@@ -390,12 +391,17 @@ class ElectrumX {
 
   //TODO add example to docs
   /// Returns the whole set of the used coin serials.
-  Future<Map<String, dynamic>> getUsedCoinSerials({String requestID}) async {
+  Future<Map<String, dynamic>> getUsedCoinSerials({
+    String requestID,
+    @required int startNumber,
+  }) async {
     try {
       final response = await request(
-        requestID: requestID,
-        command: 'sigma.getusedcoinserials',
-      );
+          requestID: requestID,
+          command: 'lelantus.getusedcoinserials',
+          args: [
+            "$startNumber",
+          ]);
       return response["result"];
     } catch (e) {
       Logger.print(e);
@@ -410,7 +416,7 @@ class ElectrumX {
     try {
       final response = await request(
         requestID: requestID,
-        command: 'sigma.getlatestcoinid',
+        command: 'lelantus.getlatestcoinid',
       );
       return response["result"];
     } catch (e) {
@@ -419,23 +425,23 @@ class ElectrumX {
     }
   }
 
-  /// Returns about 13 megabytes of json data as of march 2, 2022
-  Future<Map<String, dynamic>> getCoinsForRecovery(
-      {dynamic setId, String requestID}) async {
-    try {
-      final response = await request(
-        requestID: requestID,
-        command: 'sigma.getcoinsforrecovery',
-        args: [
-          setId ?? 1,
-        ],
-      );
-      return response["result"];
-    } catch (e) {
-      Logger.print(e);
-      throw e;
-    }
-  }
+  // /// Returns about 13 megabytes of json data as of march 2, 2022
+  // Future<Map<String, dynamic>> getCoinsForRecovery(
+  //     {dynamic setId, String requestID}) async {
+  //   try {
+  //     final response = await request(
+  //       requestID: requestID,
+  //       command: 'lelantus.getcoinsforrecovery',
+  //       args: [
+  //         setId ?? 1,
+  //       ],
+  //     );
+  //     return response["result"];
+  //   } catch (e) {
+  //     Logger.print(e);
+  //     throw e;
+  //   }
+  // }
 
   /// Get the current fee rate.
   ///

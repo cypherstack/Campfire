@@ -24,7 +24,6 @@ import 'firo_wallet_test_parameters.dart';
 import 'sample_data/get_anonymity_set_sample_data.dart';
 import 'sample_data/get_used_serials_sample_data.dart';
 import 'sample_data/get_utxos_sample_data.dart';
-import 'sample_data/getcoinsforrecovery_sample_output.dart';
 import 'sample_data/gethistory_samples.dart';
 import 'sample_data/transaction_data_samples.dart';
 
@@ -42,8 +41,30 @@ void main() {
       final cachedClient = MockCachedElectrumX();
       final txData = TransactionData.fromJson(dateTimeChunksJson);
       final Map setData = {};
-      setData[1] = getCoinsForRecoveryResponse;
+      setData[1] = GetAnonymitySetSampleData.data;
       final usedSerials = GetUsedSerialsSampleData.serials;
+
+      when(cachedClient.getTransaction(
+              tx_hash: SampleGetTransactionData.txHash8,
+              coinName: "Firo",
+              callOutSideMainIsolate: true))
+          .thenAnswer((_) async {
+        return SampleGetTransactionData.txData8;
+      });
+      when(cachedClient.getTransaction(
+              tx_hash: SampleGetTransactionData.txHash9,
+              coinName: "Firo",
+              callOutSideMainIsolate: true))
+          .thenAnswer((_) async {
+        return SampleGetTransactionData.txData9;
+      });
+      when(cachedClient.getTransaction(
+              tx_hash: SampleGetTransactionData.txHash7,
+              coinName: "Firo",
+              callOutSideMainIsolate: true))
+          .thenAnswer((_) async {
+        return SampleGetTransactionData.txData7;
+      });
 
       final result = await isolateRestore(
         cachedClient,
@@ -100,7 +121,7 @@ void main() {
         459185,
         "Firo",
         firoNetwork,
-        GetAnonymitySetSampleData.initialData,
+        [GetAnonymitySetSampleData.data],
         "en_US",
       );
 
@@ -119,7 +140,7 @@ void main() {
         459185,
         "Firo",
         firoNetwork,
-        GetAnonymitySetSampleData.finalData,
+        [GetAnonymitySetSampleData.data],
         "en_US",
       );
 
@@ -412,7 +433,8 @@ void main() {
                 ]
               });
 
-      final result = await getAnonymitySet(cachedClient, false, "Firo");
+      final result =
+          await getAnonymitySet(cachedClient, "", "1", false, "Firo");
 
       expect(result, isA<Map<String, dynamic>>());
       expect(result["blockHash"],
@@ -1295,10 +1317,39 @@ void main() {
           });
 
       when(client.getLatestCoinId()).thenAnswer((_) async => 1);
-      when(client.getCoinsForRecovery(setId: 1))
-          .thenAnswer((_) async => getCoinsForRecoveryResponse);
-      when(client.getUsedCoinSerials())
-          .thenAnswer((_) async => GetUsedSerialsSampleData.serials);
+      // when(client.getCoinsForRecovery(setId: 1))
+      //     .thenAnswer((_) async => getCoinsForRecoveryResponse);
+      when(cachedClient.getUsedCoinSerials(
+              coinName: "Firo", callOutSideMainIsolate: false))
+          .thenAnswer((_) async => GetUsedSerialsSampleData.serials["serials"]);
+
+      when(cachedClient.getAnonymitySet(
+              groupId: "1", coinName: "Firo", callOutSideMainIsolate: false))
+          .thenAnswer(
+        (_) async => GetAnonymitySetSampleData.data,
+      );
+
+      when(cachedClient.getTransaction(
+              tx_hash: SampleGetTransactionData.txHash8,
+              coinName: "Firo",
+              callOutSideMainIsolate: true))
+          .thenAnswer((_) async {
+        return SampleGetTransactionData.txData8;
+      });
+      when(cachedClient.getTransaction(
+              tx_hash: SampleGetTransactionData.txHash9,
+              coinName: "Firo",
+              callOutSideMainIsolate: true))
+          .thenAnswer((_) async {
+        return SampleGetTransactionData.txData9;
+      });
+      when(cachedClient.getTransaction(
+              tx_hash: SampleGetTransactionData.txHash7,
+              coinName: "Firo",
+              callOutSideMainIsolate: true))
+          .thenAnswer((_) async {
+        return SampleGetTransactionData.txData7;
+      });
 
       // mock price calls
       when(priceAPI.getPrice(ticker: "FIRO", baseCurrency: "USD"))
@@ -1395,7 +1446,7 @@ void main() {
       expect(_changeDerivations.length, 190);
 
       final mintIndex = await wallet.get('mintIndex');
-      expect(mintIndex, 2);
+      expect(mintIndex, 8);
 
       final lelantusCoins = await wallet.get('_lelantus_coins');
       expect(lelantusCoins.length, 1);
@@ -1433,9 +1484,9 @@ void main() {
 
       // mock electrumx client calls
       when(client.getLatestCoinId()).thenAnswer((_) async => 1);
-      when(client.getCoinsForRecovery(setId: 1))
-          .thenAnswer((_) async => getCoinsForRecoveryResponse);
-      when(client.getUsedCoinSerials())
+      // when(client.getCoinsForRecovery(setId: 1))
+      //     .thenAnswer((_) async => getCoinsForRecoveryResponse);
+      when(client.getUsedCoinSerials(startNumber: 0))
           .thenAnswer((_) async => GetUsedSerialsSampleData.serials);
 
       when(cachedClient.clearSharedTransactionCache(coinName: "Firo"))
@@ -1574,9 +1625,9 @@ void main() {
 
       // mock electrumx client calls
       when(client.getLatestCoinId()).thenAnswer((_) async => 1);
-      when(client.getCoinsForRecovery(setId: 1))
-          .thenAnswer((_) async => getCoinsForRecoveryResponse);
-      when(client.getUsedCoinSerials())
+      // when(client.getCoinsForRecovery(setId: 1))
+      //     .thenAnswer((_) async => getCoinsForRecoveryResponse);
+      when(client.getUsedCoinSerials(startNumber: 0))
           .thenAnswer((_) async => GetUsedSerialsSampleData.serials);
 
       when(cachedClient.clearSharedTransactionCache(coinName: "Firo"))
@@ -1721,9 +1772,9 @@ void main() {
           });
 
       when(client.getLatestCoinId()).thenAnswer((_) async => 1);
-      when(client.getCoinsForRecovery(setId: 1))
-          .thenAnswer((_) async => getCoinsForRecoveryResponse);
-      when(client.getUsedCoinSerials())
+      // when(client.getCoinsForRecovery(setId: 1))
+      //     .thenAnswer((_) async => getCoinsForRecoveryResponse);
+      when(client.getUsedCoinSerials(startNumber: 0))
           .thenAnswer((_) async => GetUsedSerialsSampleData.serials);
 
       when(cachedClient.clearSharedTransactionCache(coinName: "Firo"))
@@ -2191,30 +2242,30 @@ void main() {
       expect(setId, 1);
     });
 
-    test("getSetData", () async {
-      final client = MockElectrumX();
-
-      when(client.getCoinsForRecovery(setId: 1))
-          .thenAnswer((_) async => getCoinsForRecoveryResponse);
-
-      final firo = FiroWallet(
-        walletId: testWalletId + "exit",
-        walletName: testWalletName,
-        networkType: firoNetworkType,
-        client: client,
-        cachedClient: MockCachedElectrumX(),
-        secureStore: FakeSecureStorage(),
-        priceAPI: MockPriceAPI(),
-      );
-
-      final setData = await firo.getSetData(1);
-      expect(setData, getCoinsForRecoveryResponse);
-    });
+    // test("getSetData", () async {
+    //   final client = MockElectrumX();
+    //
+    //   when(client.getCoinsForRecovery(setId: 1))
+    //       .thenAnswer((_) async => getCoinsForRecoveryResponse);
+    //
+    //   final firo = FiroWallet(
+    //     walletId: testWalletId + "exit",
+    //     walletName: testWalletName,
+    //     networkType: firoNetworkType,
+    //     client: client,
+    //     cachedClient: MockCachedElectrumX(),
+    //     secureStore: FakeSecureStorage(),
+    //     priceAPI: MockPriceAPI(),
+    //   );
+    //
+    //   final setData = await firo.getSetData(1);
+    //   expect(setData, getCoinsForRecoveryResponse);
+    // });
 
     test("getUsedCoinSerials", () async {
       final client = MockElectrumX();
 
-      when(client.getUsedCoinSerials())
+      when(client.getUsedCoinSerials(startNumber: 0))
           .thenAnswer((_) async => GetUsedSerialsSampleData.serials);
 
       final firo = FiroWallet(
@@ -2255,9 +2306,9 @@ void main() {
           });
 
       when(client.getLatestCoinId()).thenAnswer((_) async => 1);
-      when(client.getCoinsForRecovery(setId: 1))
-          .thenAnswer((_) async => getCoinsForRecoveryResponse);
-      when(client.getUsedCoinSerials())
+      // when(client.getCoinsForRecovery(setId: 1))
+      //     .thenAnswer((_) async => getCoinsForRecoveryResponse);
+      when(client.getUsedCoinSerials(startNumber: 0))
           .thenAnswer((_) async => GetUsedSerialsSampleData.serials);
 
       when(client.getFeeRate()).thenAnswer((_) async => {"rate": 1000});
@@ -2367,12 +2418,12 @@ void main() {
         expectedTxid = txid;
         return txid;
       });
-
-      when(cachedClient.getAnonymitySet(
-        groupId: "1",
-        coinName: "Firo",
-        callOutSideMainIsolate: false,
-      )).thenAnswer((_) async => GetAnonymitySetSampleData.finalData);
+      //
+      // when(cachedClient.getAnonymitySet(
+      //   groupId: "1",
+      //   coinName: "Firo",
+      //   callOutSideMainIsolate: false,
+      // )).thenAnswer((_) async => GetAnonymitySetSampleData.finalData);
 
       // mock price calls
       when(priceAPI.getPrice(ticker: "FIRO", baseCurrency: "USD"))
@@ -2552,11 +2603,11 @@ void main() {
         return txid;
       });
 
-      when(cachedClient.getAnonymitySet(
-        groupId: "1",
-        coinName: "Firo",
-        callOutSideMainIsolate: false,
-      )).thenAnswer((_) async => GetAnonymitySetSampleData.finalData);
+      // when(cachedClient.getAnonymitySet(
+      //   groupId: "1",
+      //   coinName: "Firo",
+      //   callOutSideMainIsolate: false,
+      // )).thenAnswer((_) async => GetAnonymitySetSampleData.finalData);
 
       // mock price calls
       when(priceAPI.getPrice(ticker: "FIRO", baseCurrency: "USD"))
@@ -2724,11 +2775,11 @@ void main() {
         return "some bad txid";
       });
 
-      when(cachedClient.getAnonymitySet(
-        groupId: "1",
-        coinName: "Firo",
-        callOutSideMainIsolate: false,
-      )).thenAnswer((_) async => GetAnonymitySetSampleData.finalData);
+      // when(cachedClient.getAnonymitySet(
+      //   groupId: "1",
+      //   coinName: "Firo",
+      //   callOutSideMainIsolate: false,
+      // )).thenAnswer((_) async => GetAnonymitySetSampleData.finalData);
 
       // mock price calls
       when(priceAPI.getPrice(ticker: "FIRO", baseCurrency: "USD"))
@@ -3189,9 +3240,9 @@ void main() {
           });
 
       when(client.getLatestCoinId()).thenAnswer((_) async => 1);
-      when(client.getCoinsForRecovery(setId: 1))
-          .thenAnswer((_) async => getCoinsForRecoveryResponse);
-      when(client.getUsedCoinSerials())
+      // when(client.getCoinsForRecovery(setId: 1))
+      //     .thenAnswer((_) async => getCoinsForRecoveryResponse);
+      when(client.getUsedCoinSerials(startNumber: 0))
           .thenAnswer((_) async => GetUsedSerialsSampleData.serials);
 
       when(client.getFeeRate()).thenAnswer((_) async => {"rate": 1000});
@@ -3318,9 +3369,9 @@ void main() {
       when(client.getFeeRate()).thenAnswer((_) async => {"rate": 1000});
 
       when(client.getLatestCoinId()).thenAnswer((_) async => 1);
-      when(client.getCoinsForRecovery(setId: 1))
-          .thenAnswer((_) async => getCoinsForRecoveryResponse);
-      when(client.getUsedCoinSerials())
+      // when(client.getCoinsForRecovery(setId: 1))
+      //     .thenAnswer((_) async => getCoinsForRecoveryResponse);
+      when(client.getUsedCoinSerials(startNumber: 0))
           .thenAnswer((_) async => GetUsedSerialsSampleData.serials);
 
       // mock price calls
