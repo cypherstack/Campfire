@@ -5,6 +5,7 @@ import 'package:google_fonts/google_fonts.dart';
 import 'package:paymint/notifications/modal_popup_dialog.dart';
 import 'package:paymint/pages/address_book_view/address_book_view.dart';
 import 'package:paymint/pages/lockscreen_view.dart';
+import 'package:paymint/pages/settings_view/settings_subviews/about_view.dart';
 import 'package:paymint/pages/settings_view/settings_subviews/currency_view.dart';
 import 'package:paymint/pages/settings_view/settings_subviews/network_settings_view.dart';
 import 'package:paymint/pages/settings_view/settings_subviews/wallet_settings_view.dart';
@@ -303,6 +304,25 @@ class SettingsView extends StatelessWidget {
                 color: CFColors.fog,
               ),
               // address book item
+              _buildItem(
+                "assets/svg/ellipsis.svg",
+                "About",
+                () {
+                  Navigator.push(
+                    context,
+                    CupertinoPageRoute(
+                      builder: (_) => AboutView(),
+                      settings: RouteSettings(name: "/settings/about"),
+                    ),
+                  );
+                },
+                Key("settingsOptionAbout"),
+              ),
+              Container(
+                height: 1,
+                width: double.infinity,
+                color: CFColors.fog,
+              ),
               _buildItem(
                 "assets/svg/usd-circle.svg",
                 "Currency",
