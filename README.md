@@ -1,7 +1,7 @@
 # Campfire - A secure Firo wallet
 Campfire is a Firo thin client written in Dart with powerful features.
 
-[![Playstore](https://bluewallet.io/img/play-store-badge.svg)](https://play.google.com/store/apps/details?id=com.cypherstack.campfire)
+[![Playstore](https://bluewallet.io/uploads//play-store-badge-blue.svg)](https://play.google.com/store/apps/details?id=com.cypherstack.campfire)
 
 ## Feature List
 
