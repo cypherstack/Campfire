@@ -70,6 +70,7 @@ dependencies:
   intl: ^0.17.0
   devicelocale: ^0.5.0
   keyboard_dismisser: ^2.0.1
+  package_info_plus: ^1.4.2
 
 dev_dependencies:
   flutter_test:
@@ -121,6 +122,7 @@ flutter:
     - assets/svg/chevron-right.svg
     - assets/svg/close.svg
     - assets/svg/copy.svg
+    - assets/svg/ellipsis.svg
     - assets/svg/groupLogo.svg
     - assets/svg/menu.svg
     - assets/svg/radio.svg
