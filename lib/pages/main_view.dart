@@ -485,8 +485,13 @@ class _MainViewState extends State<MainView> {
     final percentString = (percent * 100).toStringAsFixed(0);
     return Column(
       children: [
-        _buildDropDown(context, "Synchronizing ($percentString%)",
-            CFColors.dropdownSynchronizing),
+        percent == 0.05
+            ? _buildDropDown(
+                context,
+                "Synchronizing ($percentString%)\n Please do not exit.",
+                CFColors.dropdownSynchronizing)
+            : _buildDropDown(context, "Synchronizing ($percentString%)",
+                CFColors.dropdownSynchronizing),
       ],
     );
   }
