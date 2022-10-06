@@ -67,13 +67,14 @@ class UtxoObjectAdapter extends TypeAdapter<UtxoObject> {
       fiatWorth: fields[4] as String,
       txName: fields[5] as String,
       blocked: fields[6] as bool,
+      isCoinbase: fields[7] as bool,
     );
   }
 
   @override
   void write(BinaryWriter writer, UtxoObject obj) {
     writer
-      ..writeByte(7)
+      ..writeByte(8)
       ..writeByte(0)
       ..write(obj.txid)
       ..writeByte(1)
@@ -87,7 +88,9 @@ class UtxoObjectAdapter extends TypeAdapter<UtxoObject> {
       ..writeByte(5)
       ..write(obj.txName)
       ..writeByte(6)
-      ..write(obj.blocked);
+      ..write(obj.blocked)
+      ..writeByte(7)
+      ..write(obj.isCoinbase);
   }
 
   @override
