@@ -7,7 +7,7 @@ abstract class CampfireConstants {
   static const int decimalPlaces = 8;
 
   // current datastore version
-  static const int currentDbVersion = 1;
+  static const int currentDbVersion = 2;
 
   // network stuff
   static const String firoGenesisHash =
@@ -33,5 +33,5 @@ abstract class CampfireConstants {
   static const bool allowTestnets = false;
 
   // Enable Logger.print statements
-  static const bool disableLogger = true;
+  static const bool disableLogger = false;
 }

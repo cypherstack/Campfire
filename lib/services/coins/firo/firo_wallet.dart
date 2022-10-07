@@ -12,6 +12,7 @@ import 'package:decimal/decimal.dart';
 import 'package:devicelocale/devicelocale.dart';
 import 'package:firo_flutter/firo_flutter.dart';
 import 'package:flutter/cupertino.dart';
+import 'package:flutter/material.dart';
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 import 'package:hive/hive.dart';
 import 'package:http/http.dart';
@@ -38,6 +39,7 @@ import 'package:paymint/utilities/logger.dart';
 import 'package:paymint/utilities/misc_global_constants.dart';
 import 'package:paymint/utilities/shared_utilities.dart';
 
+import '../../../pages/settings_view/settings_subviews/wallet_settings_view.dart';
 import '../../globals.dart';
 import '../../notifications_api.dart';
 
@@ -206,6 +208,37 @@ void stop(ReceivePort port) {
     Logger.print('Stopping Isolate...');
     isolate.kill(priority: Isolate.immediate);
     isolate = null;
+  }
+}
+
+Future<Map<String, dynamic>> getInitialAnonymitySetCache(
+  String groupID,
+) async {
+  final Client client = Client();
+  try {
+    final uri = Uri.parse("https://extras.stackwallet.com/getAnonymity");
+
+    final anonSetResult = await client.post(
+      uri,
+      headers: {'Content-Type': 'application/json'},
+      body: jsonEncode({
+        "jsonrpc": "2.0",
+        "id": "0",
+        'aset': groupID,
+      }),
+    );
+
+    final response = jsonDecode(anonSetResult.body.toString());
+    if (response['status'] == 'success') {
+      final anonResponse = jsonDecode(response['result'] as String);
+
+      final setData = Map<String, dynamic>.from(anonResponse["result"] as Map);
+      return setData;
+    } else {
+      return null;
+    }
+  } catch (e, s) {
+    return null;
   }
 }
 
@@ -1298,6 +1331,14 @@ class FiroWallet extends CoinServiceAPI {
       GlobalEventBus.instance.fire(RefreshPercentChangedEvent(0.0));
 
       final wallet = await Hive.openBox(this._walletId);
+      if (wallet.get("needsRescan") ?? false) {
+        GlobalEventBus.instance.fire(RefreshPercentChangedEvent(-0.013));
+        print("hi i need rescan");
+        await fullRescan();
+        await wallet.put("needsRescan", false);
+      } else {
+        await wallet.put("needsRescan", false);
+      }
       final receiveDerivationsString =
           await _secureStore.read(key: "${this.walletId}_receiveDerivations");
       if (receiveDerivationsString == null ||

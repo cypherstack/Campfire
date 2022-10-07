@@ -483,15 +483,24 @@ class _MainViewState extends State<MainView> {
   Column _buildSyncing(double percent) {
     _hasSynced = false;
     final percentString = (percent * 100).toStringAsFixed(0);
+    Container container;
+    if (percent == 0.05) {
+      container = _buildDropDown(
+          context,
+          "Synchronizing ($percentString%)\n Please do not exit.",
+          CFColors.dropdownSynchronizing);
+    } else if (percent == -0.013) {
+      container = _buildDropDown(
+          context,
+          "Rescanning for update\n Please do not exit.\n This may take a few minutes.",
+          CFColors.dropdownSynchronizing);
+    } else {
+      container = _buildDropDown(context, "Synchronizing ($percentString%)",
+          CFColors.dropdownSynchronizing);
+    }
     return Column(
       children: [
-        percent == 0.05
-            ? _buildDropDown(
-                context,
-                "Synchronizing ($percentString%)\n Please do not exit.",
-                CFColors.dropdownSynchronizing)
-            : _buildDropDown(context, "Synchronizing ($percentString%)",
-                CFColors.dropdownSynchronizing),
+        container,
       ],
     );
   }
