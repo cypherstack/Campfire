@@ -80,7 +80,6 @@ Future<ReceivePort> getIsolate(Map<String, dynamic> arguments) async {
 }
 
 Future<void> executeNative(arguments) async {
-  Logger.print(arguments);
   SendPort sendPort = arguments['sendPort'];
   String function = arguments['function'];
   try {
