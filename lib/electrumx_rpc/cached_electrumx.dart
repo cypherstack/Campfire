@@ -1,7 +1,6 @@
 import 'package:flutter/cupertino.dart';
 import 'package:hive/hive.dart';
 import 'package:paymint/utilities/logger.dart';
-import 'package:paymint/utilities/misc_global_constants.dart';
 
 import 'electrumx.dart';
 
@@ -63,23 +62,12 @@ class CachedElectrumX {
         set = Map<String, dynamic>.from(cachedSet);
       }
 
-      ElectrumX client;
-
-      if (this.server == CampfireConstants.defaultIpAddress) {
-        //TODO: remove the following temp fix using the following server
-        client = ElectrumX(
-          server: "electrumx03.firo.org",
-          port: 50002,
-          useSSL: true,
-        );
-      } else {
-        client = electrumXClient ??
-            ElectrumX(
-              server: this.server,
-              port: this.port,
-              useSSL: this.useSSL,
-            );
-      }
+      ElectrumX client = electrumXClient ??
+          ElectrumX(
+            server: this.server,
+            port: this.port,
+            useSSL: this.useSSL,
+          );
 
       final newSet = await client.getAnonymitySet(
         groupId: groupId,
