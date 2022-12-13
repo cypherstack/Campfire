@@ -34,8 +34,8 @@ dependencies:
   provider: ^6.0.1
   http: ^0.13.4
   local_auth: ^1.1.10
-  permission_handler: ^10.0.0
-  flutter_local_notifications: ^9.4.0
+#  permission_handler: ^8.3.0
+  flutter_local_notifications: '9.4.0'
   rxdart: ^0.27.3
 
   # Bitcoin plugins
@@ -43,18 +43,18 @@ dependencies:
   bip32: ^2.0.0
 
   # Storage plugins
-  flutter_secure_storage: ^5.0.2
+  flutter_secure_storage: '5.0.2'
   hive: ^2.0.5
   hive_flutter: ^1.1.0
   path_provider: ^2.0.8
 
   # UI/Component plugins
-  animations: ^2.0.2
-  toast: ^0.1.5
-  flare_flutter: ^3.0.2
+#  animations: ^2.0.2
+#  toast: ^0.1.5
+#  flare_flutter: ^3.0.2
   google_fonts: ^2.2.0
   pretty_qr_code: ^2.0.2
-  url_launcher: ^6.0.5
+#  url_launcher: ^6.0.5
   flutter_svg: ^1.0.1
   flutter_feather_icons: ^2.0.0+1
   flutter_spinkit: ^5.1.0
@@ -63,14 +63,14 @@ dependencies:
   uuid: ^3.0.5
   flutter_rounded_date_picker: ^3.0.2
   crypto: ^3.0.1
-  jsonrpc2: ^3.0.1
+#  jsonrpc2: ^3.0.1
   barcode_scan2: ^4.2.0
   app_settings: ^4.1.1
   wakelock: ^0.6.1+2
   intl: ^0.17.0
-  devicelocale: ^0.5.0
+  devicelocale: '0.5.0'
   keyboard_dismisser: ^2.0.1
-  package_info_plus: ^1.4.2
+  string_validator: ^0.3.0
 
 dev_dependencies:
   flutter_test:

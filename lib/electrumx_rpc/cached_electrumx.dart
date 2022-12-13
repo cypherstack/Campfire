@@ -1,7 +1,10 @@
+import 'dart:convert';
+
 import 'package:flutter/cupertino.dart';
 import 'package:hive/hive.dart';
 import 'package:paymint/services/coins/firo/firo_wallet.dart';
 import 'package:paymint/utilities/logger.dart';
+import 'package:string_validator/string_validator.dart';
 
 import 'electrumx.dart';
 
@@ -83,15 +86,37 @@ class CachedElectrumX {
 
       final newSet = await client.getAnonymitySet(
         groupId: groupId,
-        blockhash: set["blockHash"],
+        blockhash: set["blockHash"] as String,
       );
 
       // update set with new data
       if (newSet["setHash"] != "" && set["setHash"] != newSet["setHash"]) {
-        set["setHash"] = newSet["setHash"];
-        set["blockHash"] = newSet["blockHash"];
-        for (int i = newSet["coins"].length - 1; i >= 0; i--) {
-          set["coins"].insert(0, newSet["coins"][i]);
+        set["setHash"] = !isHexadecimal(newSet["setHash"] as String)
+            ? base64ToReverseHex(newSet["setHash"] as String)
+            : newSet["setHash"];
+        set["blockHash"] = !isHexadecimal(newSet["blockHash"] as String)
+            ? base64ToHex(newSet["blockHash"] as String)
+            : newSet["blockHash"];
+        for (int i = (newSet["coins"] as List).length - 1; i >= 0; i--) {
+          dynamic newCoin = newSet["coins"][i];
+          List translatedCoin = [];
+          translatedCoin.add(!isHexadecimal(newCoin[0] as String)
+              ? base64ToHex(newCoin[0] as String)
+              : newCoin[0]);
+          translatedCoin.add(!isHexadecimal(newCoin[1] as String)
+              ? base64ToReverseHex(newCoin[1] as String)
+              : newCoin[1]);
+          try {
+            translatedCoin.add(!isHexadecimal(newCoin[2] as String)
+                ? base64ToHex(newCoin[2] as String)
+                : newCoin[2]);
+          } catch (_) {
+            translatedCoin.add(newCoin[2]);
+          }
+          translatedCoin.add(!isHexadecimal(newCoin[3] as String)
+              ? base64ToReverseHex(newCoin[3] as String)
+              : newCoin[3]);
+          set["coins"].insert(0, translatedCoin);
         }
         // save set to db
         await box.put(groupId, set);
@@ -158,10 +183,11 @@ class CachedElectrumX {
     }
   }
 
-  Future<List<dynamic>> getUsedCoinSerials(
-      {@required String coinName,
-      @required bool callOutSideMainIsolate,
-      int startNumber}) async {
+  Future<List<dynamic>> getUsedCoinSerials({
+    @required String coinName,
+    @required bool callOutSideMainIsolate,
+    int startNumber,
+  }) async {
     if (coinName == null || coinName.isEmpty) {
       throw Exception("Invalid argument: coinName cannot be empty!");
     }
@@ -190,7 +216,15 @@ class CachedElectrumX {
           );
 
       final serials = await client.getUsedCoinSerials(startNumber: startNumber);
-      cachedSerials.addAll(serials["serials"]);
+      List newSerials = [];
+      for (var element in (serials["serials"] as List)) {
+        if (!isHexadecimal(element as String)) {
+          newSerials.add(base64ToHex(element));
+        } else {
+          newSerials.add(element);
+        }
+      }
+      cachedSerials.addAll(newSerials);
 
       await usedSerialsCache.put('${coinName}_usedSerialsCache', cachedSerials);
 
@@ -211,4 +245,15 @@ class CachedElectrumX {
     final usedSerialsCache = await Hive.openBox('${coinName}_usedSerialsCache');
     await usedSerialsCache.clear();
   }
+
+  String base64ToHex(String source) =>
+      base64Decode(LineSplitter.split(source).join())
+          .map((e) => e.toRadixString(16).padLeft(2, '0'))
+          .join();
+
+  String base64ToReverseHex(String source) =>
+      base64Decode(LineSplitter.split(source).join())
+          .reversed
+          .map((e) => e.toRadixString(16).padLeft(2, '0'))
+          .join();
 }
