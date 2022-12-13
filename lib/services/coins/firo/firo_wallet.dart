@@ -39,7 +39,6 @@ import 'package:paymint/utilities/logger.dart';
 import 'package:paymint/utilities/misc_global_constants.dart';
 import 'package:paymint/utilities/shared_utilities.dart';
 
-import '../../../pages/settings_view/settings_subviews/wallet_settings_view.dart';
 import '../../globals.dart';
 import '../../notifications_api.dart';
 
@@ -207,37 +206,6 @@ void stop(ReceivePort port) {
     Logger.print('Stopping Isolate...');
     isolate.kill(priority: Isolate.immediate);
     isolate = null;
-  }
-}
-
-Future<Map<String, dynamic>> getInitialAnonymitySetCache(
-  String groupID,
-) async {
-  final Client client = Client();
-  try {
-    final uri = Uri.parse("https://extras.stackwallet.com/getAnonymity");
-
-    final anonSetResult = await client.post(
-      uri,
-      headers: {'Content-Type': 'application/json'},
-      body: jsonEncode({
-        "jsonrpc": "2.0",
-        "id": "0",
-        'aset': groupID,
-      }),
-    );
-
-    final response = jsonDecode(anonSetResult.body.toString());
-    if (response['status'] == 'success') {
-      final anonResponse = jsonDecode(response['result'] as String);
-
-      final setData = Map<String, dynamic>.from(anonResponse["result"] as Map);
-      return setData;
-    } else {
-      return null;
-    }
-  } catch (e, s) {
-    return null;
   }
 }
 
