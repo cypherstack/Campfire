@@ -2,7 +2,6 @@ import 'dart:convert';
 
 import 'package:flutter/cupertino.dart';
 import 'package:hive/hive.dart';
-import 'package:paymint/services/coins/firo/firo_wallet.dart';
 import 'package:paymint/utilities/logger.dart';
 import 'package:string_validator/string_validator.dart';
 
@@ -62,17 +61,6 @@ class CachedElectrumX {
           "setHash": "",
           "coins": <dynamic>[],
         };
-        // try up to 3 times
-        for (int i = 0; i < 3; i++) {
-          final result = await getInitialAnonymitySetCache(groupId);
-          if (result != null) {
-            set["setHash"] = result["setHash"];
-            set["blockHash"] = result["blockHash"];
-            set["coins"] = result["coins"];
-            Logger.print("Populated initial anon set cache for group $groupId");
-            break;
-          }
-        }
       } else {
         set = Map<String, dynamic>.from(cachedSet);
       }
