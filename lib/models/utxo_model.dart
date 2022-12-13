@@ -55,29 +55,36 @@ class UtxoObject {
   String txName;
   // @HiveField(6)
   bool blocked;
+  // @HiveField(7)
+  bool isCoinbase;
 
-  UtxoObject(
-      {this.txid,
-      this.vout,
-      this.status,
-      this.value,
-      this.fiatWorth,
-      this.txName,
-      this.blocked});
+  UtxoObject({
+    this.txid,
+    this.vout,
+    this.status,
+    this.value,
+    this.fiatWorth,
+    this.txName,
+    this.blocked,
+    this.isCoinbase,
+  });
 
   factory UtxoObject.fromJson(Map<String, dynamic> json) {
     return UtxoObject(
-        txName: '----',
-        txid: json['txid'],
-        vout: json['vout'],
-        status: Status.fromJson(json['status']),
-        value: json['value'],
-        fiatWorth: json['fiatWorth'],
-        blocked: false);
+      txName: '----',
+      txid: json['txid'],
+      vout: json['vout'],
+      status: Status.fromJson(json['status']),
+      value: json['value'],
+      fiatWorth: json['fiatWorth'],
+      blocked: false,
+      isCoinbase: json["is_coinbase"] as bool ?? false,
+    );
   }
 
   String toString() {
-    String utxo = "{txid: $txid, vout: $vout, value: $value, fiat: $fiatWorth}";
+    String utxo =
+        "{txid: $txid, vout: $vout, value: $value, fiat: $fiatWorth, blocked: $blocked, status: $status, is_coinbase: $isCoinbase}";
 
     return utxo;
   }
@@ -93,15 +100,24 @@ class Status {
   final int blockHeight;
   // @HiveField(3)
   final int blockTime;
+  // @HiveField(4)
+  final int confirmations;
 
-  Status({this.confirmed, this.blockHash, this.blockHeight, this.blockTime});
+  Status({
+    this.confirmed,
+    this.blockHash,
+    this.blockHeight,
+    this.blockTime,
+    this.confirmations,
+  });
 
   factory Status.fromJson(Map<String, dynamic> json) {
     return Status(
         confirmed: json['confirmed'],
         blockHash: json['block_hash'],
         blockHeight: json['block_height'],
-        blockTime: json['block_time']);
+        blockTime: json['block_time'],
+        confirmations: json["confirmations"]);
   }
 
   @override

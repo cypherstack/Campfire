@@ -87,12 +87,19 @@ class DbVersionMigrator {
         // finally update version
         await wallets.put("db_version", 1);
 
-        return;
-      // not needed yet
-      // return migrate(1);
+        return migrate(1);
 
-      // case 1:
-      //   return migrate(2);
+      case 1:
+        for (final entry in names.entries) {
+          final walletId = entry.value;
+
+          final wallet = await Hive.openBox(walletId);
+
+          // mark current wallets as needing a rescan
+          await wallet.put("needsRescan", true);
+        }
+        await wallets.put("db_version", 2);
+        return migrate(2);
 
       default:
         return;
