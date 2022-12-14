@@ -303,6 +303,25 @@ class SettingsView extends StatelessWidget {
                 width: double.infinity,
                 color: CFColors.fog,
               ),
+              _buildItem(
+                "assets/svg/usd-circle.svg",
+                "Currency",
+                () {
+                  Navigator.push(
+                    context,
+                    CupertinoPageRoute(
+                      builder: (_) => CurrencyView(),
+                      settings: RouteSettings(name: "/settings/currency"),
+                    ),
+                  );
+                },
+                Key("settingsOptionCurrency"),
+              ),
+              Container(
+                height: 1,
+                width: double.infinity,
+                color: CFColors.fog,
+              ),
               // address book item
               _buildItem(
                 "assets/svg/ellipsis.svg",
@@ -317,25 +336,6 @@ class SettingsView extends StatelessWidget {
                   );
                 },
                 Key("settingsOptionAbout"),
-              ),
-              Container(
-                height: 1,
-                width: double.infinity,
-                color: CFColors.fog,
-              ),
-              _buildItem(
-                "assets/svg/usd-circle.svg",
-                "Currency",
-                () {
-                  Navigator.push(
-                    context,
-                    CupertinoPageRoute(
-                      builder: (_) => CurrencyView(),
-                      settings: RouteSettings(name: "/settings/currency"),
-                    ),
-                  );
-                },
-                Key("settingsOptionCurrency"),
               ),
             ],
           ),
