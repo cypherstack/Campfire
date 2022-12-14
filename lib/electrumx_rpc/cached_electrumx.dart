@@ -3,7 +3,6 @@ import 'dart:convert';
 import 'package:flutter/cupertino.dart';
 import 'package:hive/hive.dart';
 import 'package:paymint/utilities/logger.dart';
-import 'package:string_validator/string_validator.dart';
 
 import 'electrumx.dart';
 
@@ -79,31 +78,25 @@ class CachedElectrumX {
 
       // update set with new data
       if (newSet["setHash"] != "" && set["setHash"] != newSet["setHash"]) {
-        set["setHash"] = !isHexadecimal(newSet["setHash"] as String)
-            ? base64ToReverseHex(newSet["setHash"] as String)
-            : newSet["setHash"];
-        set["blockHash"] = !isHexadecimal(newSet["blockHash"] as String)
-            ? base64ToHex(newSet["blockHash"] as String)
-            : newSet["blockHash"];
+        set["blockHash"] = base64ToReverseHex(newSet["blockHash"] as String);
+        set["setHash"] = base64ToHex(newSet["setHash"] as String);
+
         for (int i = (newSet["coins"] as List).length - 1; i >= 0; i--) {
           dynamic newCoin = newSet["coins"][i];
           List translatedCoin = [];
-          translatedCoin.add(!isHexadecimal(newCoin[0] as String)
-              ? base64ToHex(newCoin[0] as String)
-              : newCoin[0]);
-          translatedCoin.add(!isHexadecimal(newCoin[1] as String)
-              ? base64ToReverseHex(newCoin[1] as String)
-              : newCoin[1]);
-          try {
-            translatedCoin.add(!isHexadecimal(newCoin[2] as String)
-                ? base64ToHex(newCoin[2] as String)
-                : newCoin[2]);
-          } catch (_) {
-            translatedCoin.add(newCoin[2]);
+
+          translatedCoin.add(base64ToHex(newCoin[0] as String));
+
+          translatedCoin.add(base64ToReverseHex(newCoin[1] as String));
+
+          if (newCoin[2] is int) {
+            translatedCoin.add(newCoin[2] as int);
+          } else {
+            translatedCoin.add(base64ToHex(newCoin[2] as String));
           }
-          translatedCoin.add(!isHexadecimal(newCoin[3] as String)
-              ? base64ToReverseHex(newCoin[3] as String)
-              : newCoin[3]);
+
+          translatedCoin.add(base64ToReverseHex(newCoin[3] as String));
+
           set["coins"].insert(0, translatedCoin);
         }
         // save set to db
@@ -206,11 +199,7 @@ class CachedElectrumX {
       final serials = await client.getUsedCoinSerials(startNumber: startNumber);
       List newSerials = [];
       for (var element in (serials["serials"] as List)) {
-        if (!isHexadecimal(element as String)) {
-          newSerials.add(base64ToHex(element));
-        } else {
-          newSerials.add(element);
-        }
+        newSerials.add(base64ToHex(element));
       }
       cachedSerials.addAll(newSerials);
 

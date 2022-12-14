@@ -714,23 +714,6 @@ Future<List<models.Transaction>> getJMintTransactions(
   }
 }
 
-Future<dynamic> getAnonymitySet(CachedElectrumX cachedClient, String blockHash,
-    String groupId, bool callOutSideMainIsolate, String coinName) async {
-  try {
-    var tod = await cachedClient.getAnonymitySet(
-      groupId: groupId,
-      blockhash: blockHash,
-      coinName: coinName,
-      callOutSideMainIsolate: callOutSideMainIsolate,
-    );
-
-    return tod;
-  } catch (e) {
-    Logger.print("Exception rethrown in getAnonymitySet(): $e");
-    throw e;
-  }
-}
-
 Future<int> getBlockHead(ElectrumX client) async {
   try {
     final tip = await client.getBlockHeadTip();
