@@ -101,6 +101,17 @@ class DbVersionMigrator {
         await wallets.put("db_version", 2);
         return migrate(2);
 
+      case 2:
+        final coinName = "Firo";
+        final setCache = await Hive.openBox('${coinName}_anonymitySetCache');
+        await setCache.clear();
+        final usedSerialsCache =
+            await Hive.openBox('${coinName}_usedSerialsCache');
+        await usedSerialsCache.clear();
+
+        await wallets.put("db_version", 3);
+        return migrate(3);
+
       default:
         return;
     }
