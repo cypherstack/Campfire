@@ -1667,7 +1667,7 @@ class FiroWallet extends CoinServiceAPI {
   Future<List<Map<String, dynamic>>> createMintsFromAmount(int total) async {
     final wallet = await Hive.openBox(this._walletId);
     var tmpTotal = total;
-    var index = 0;
+    var index = 1;
     var mints = <Map<String, dynamic>>[];
     final next_free_mint_index = await wallet.get('mintIndex');
     while (tmpTotal > 0) {
