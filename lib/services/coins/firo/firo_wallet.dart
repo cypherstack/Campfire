@@ -1515,7 +1515,12 @@ class FiroWallet extends CoinServiceAPI {
             ltx = lData.findTransaction(value.txId);
             // Logger.print("$value $tx $ltx");
             if (!jindexes.contains(value.index) && tx == null) {
+              if (!value.isUsed && ltx != null && ltx.confirmedStatus) {
+                // mint tx, add value to balance
+                intLelantusBalance += value.value;
+              } /* else {
               // This coin is not confirmed and may be replaced
+              }*/
             } else if (jindexes.contains(value.index) &&
                 tx == null &&
                 !value.isUsed &&
