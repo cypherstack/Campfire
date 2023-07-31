@@ -44,6 +44,12 @@ class _TransactionCardState extends State<TransactionCard> {
       } else {
         return "Sending";
       }
+    } else if (type == "Sent to self") {
+      if (_transaction.confirmedStatus) {
+        return "Sent to self";
+      } else {
+        return "Sending to self";
+      }
     } else {
       return type;
     }
@@ -72,6 +78,16 @@ class _TransactionCardState extends State<TransactionCard> {
     } else if (type == "Sent") {
       color = CFColors.spark;
       type = "Sent";
+      icon = Icon(
+        FeatherIcons.arrowUp,
+        color: color,
+        size: 20,
+      );
+      //TODO: Not sure if needed.
+      // Are there any other txTypes strings?
+      // Maybe use enum for this
+    } else if (type == "Sent to self") {
+      color = CFColors.warning;
       icon = Icon(
         FeatherIcons.arrowUp,
         color: color,

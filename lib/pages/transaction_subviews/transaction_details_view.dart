@@ -246,6 +246,14 @@ class _TransactionDetailsViewState extends State<TransactionDetailsView> {
                             ),
                           if (_transaction.txType == "Received")
                             _buildSeparator(),
+                          if (_transaction.txType == "Sent to self")
+                            _buildItem(
+                              "Received on:",
+                              _transaction.address,
+                              1,
+                            ),
+                          if (_transaction.txType == "Received")
+                            _buildSeparator(),
                           _buildItem(
                             "Amount:",
                             // _transaction.confirmedStatus
