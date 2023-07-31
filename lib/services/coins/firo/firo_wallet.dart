@@ -2530,7 +2530,7 @@ class FiroWallet extends CoinServiceAPI {
         midSortedTx["subType"] = "";
         midSortedTx["aliens"] = [];
         midSortedTx["fees"] = fee;
-        midSortedTx["address"] = outAddress;
+        midSortedTx["address"] = transactionAddress;
         midSortedTx["height"] = txObject["height"];
         midSortedTx["inputSize"] = txObject["vin"].length;
         midSortedTx["outputSize"] = txObject["vout"].length;
