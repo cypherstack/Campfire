@@ -2193,14 +2193,16 @@ class FiroWallet extends CoinServiceAPI {
   Future<TransactionData> _fetchTransactionData() async {
     final wallet = await Hive.openBox(this._walletId);
     final String currency = fetchPreferredCurrency();
-    final List changeAddresses = await wallet.get('changeAddresses');
-    final List<String> allAddresses = await _fetchAllOwnAddresses();
-    //Logger.print("receiving addresses: $receivingAddresses");
-    //Logger.print("change addresses: $changeAddresses");
+    final listAllAddresses = await _fetchAllOwnAddresses();
+    final Set<String> changeAddresses =
+        ((await wallet.get('changeAddresses') as List)).cast<String>().toSet();
+    final Set<String> allAddresses = listAllAddresses.toSet();
+    final Set<String> receivingAddresses =
+        allAddresses.difference(changeAddresses);
 
     List<Map<String, dynamic>> allTxHashes = [];
 
-    allTxHashes = await _fetchHistory(allAddresses);
+    allTxHashes = await _fetchHistory(listAllAddresses);
 
     List<Map<String, dynamic>> allTransactions = [];
 
@@ -2215,12 +2217,13 @@ class FiroWallet extends CoinServiceAPI {
       tx.remove("hex");
       tx.remove("lelantusData");
 
+      tx["address"] = txHash["address"];
+
       allTransactions.add(tx);
     }
 
     Logger.print("allTransactions length: ${allTransactions.length}");
 
-    // sort thing stuff
     final currentPrice = await this
         ._priceAPI
         .getPrice(ticker: coinTicker, baseCurrency: currency);
@@ -2230,169 +2233,389 @@ class FiroWallet extends CoinServiceAPI {
 
     Logger.print("refresh the txs");
     for (final txObject in allTransactions) {
-      Logger.print(txObject);
-      List<String> sendersArray = [];
-      List<String> recipientsArray = [];
+      final inputList = txObject["vin"] as List;
+      final outputList = txObject["vout"] as List;
 
-      // Usually only has value when txType = 'Send'
-      int inputAmtSentFromWallet = 0;
-      // Usually has value regardless of txType due to change addresses
-      int outputAmtAddressedToWallet = 0;
+      bool isMint = false;
+      bool isJMint = false;
+
+      // check if tx is Mint or jMint
+      for (final output in outputList) {
+        if (output["scriptPubKey"]["type"] == "lelantusmint") {
+          final asm = output["scriptPubKey"]["asm"] as String;
+          if (asm != null) {
+            if (asm.startsWith("OP_LELANTUSJMINT")) {
+              isJMint = true;
+              break;
+            } else if (asm.startsWith("OP_LELANTUSMINT")) {
+              isMint = true;
+              break;
+            } else {
+              Logger.print(
+                "Unknown mint op code found for lelantusmint tx: ${txObject["txid"]}",
+              );
+            }
+          } else {
+            Logger.print(
+              "ASM for lelantusmint tx: ${txObject["txid"]} is null!",
+            );
+          }
+        }
+      }
+
+      Set<String> inputAddresses = {};
+      Set<String> outputAddresses = {};
+
+      int totalInputValue = 0;
+      int totalOutputValue = 0;
+
+      int amountSentFromWallet = 0;
+      int amountReceivedInWallet = 0;
+      int changeAmount = 0;
 
       Map<String, dynamic> midSortedTx = {};
-      List<dynamic> aliens = [];
-
-      for (final input in txObject["vin"]) {
-        final address = input["address"];
-        if (address != null) {
-          sendersArray.add(address);
-        }
-      }
-
-      Logger.print("sendersArray: $sendersArray");
-
-      for (final output in txObject["vout"]) {
-        final addresses = output["scriptPubKey"]["addresses"];
-        if (addresses != null) {
-          recipientsArray.add(addresses[0]);
-        }
-      }
-      Logger.print("recipientsArray: $recipientsArray");
-
-      final foundInSenders =
-          allAddresses.any((element) => sendersArray.contains(element));
-      Logger.print("foundInSenders: $foundInSenders");
 
       String outAddress = "";
 
-      int fees = 0;
+      // Parse mint transaction ================================================
+      // We should be able to assume this belongs to this wallet
+      if (isMint) {
+        // Parse input values
+        for (final input in inputList) {
+          // Both value and address should not be null for a mint
+          final address = input["address"] as String;
+          final value = input["valueSat"] as int;
 
-      // If txType = Sent, then calculate inputAmtSentFromWallet, calculate who received how much in aliens array (check outputs)
-      if (foundInSenders) {
-        int outAmount = 0;
-        int inAmount = 0;
-        bool nFeesUsed = false;
-
-        for (final input in txObject["vin"]) {
-          final nFees = input["nFees"];
-          if (nFees != null) {
-            nFeesUsed = true;
-            fees = (Decimal.parse(nFees.toString()) *
-                    Decimal.fromInt(CampfireConstants.satsPerCoin))
-                .toBigInt()
-                .toInt();
-          }
-          final address = input["address"];
-          final value = input["valueSat"];
+          // We should not need to check whether the mint belongs to this
+          // wallet as any tx we look up will be looked up by one of this
+          // wallet's addresses
           if (address != null && value != null) {
-            if (allAddresses.contains(address)) {
-              inputAmtSentFromWallet += value;
-            }
-          }
-
-          if (value != null) {
-            inAmount += value;
+            totalInputValue += value;
           }
         }
 
-        for (final output in txObject["vout"]) {
-          final addresses = output["scriptPubKey"]["addresses"];
-          final value = output["value"];
-          if (addresses != null) {
-            final address = addresses[0];
-            if (address != null && value != null) {
-              if (changeAddresses.contains(address)) {
-                inputAmtSentFromWallet -= (Decimal.parse(value.toString()) *
-                        Decimal.fromInt(CampfireConstants.satsPerCoin))
-                    .toBigInt()
-                    .toInt();
-              } else {
-                outAddress = address;
-              }
-            }
-          }
-          if (value != null) {
-            outAmount += (Decimal.parse(value.toString()) *
-                    Decimal.fromInt(CampfireConstants.satsPerCoin))
-                .toBigInt()
-                .toInt();
+        // Parse outputs
+        for (final output in outputList) {
+          // get value
+          final value = output["value"] is double
+              ? (Decimal.parse(output["value"].toString()) *
+                      Decimal.fromInt(CampfireConstants.satsPerCoin))
+                  .toBigInt()
+                  .toInt()
+              : 0;
+
+          // add value to total
+          totalOutputValue += value;
+
+          final address = _getAddressFromOutput(output);
+          if (address != null && allAddresses.contains(address)) {
+            outAddress = address;
           }
         }
 
-        fees = nFeesUsed ? fees : inAmount - outAmount;
-        inputAmtSentFromWallet -= inAmount - outAmount;
-      } else {
-        for (final input in txObject["vin"]) {
-          final nFees = input["nFees"];
-          if (nFees != null) {
-            fees += (Decimal.parse(nFees.toString()) *
-                    Decimal.fromInt(CampfireConstants.satsPerCoin))
-                .toBigInt()
-                .toInt();
-          }
-        }
-
-        for (final output in txObject["vout"]) {
-          final addresses = output["scriptPubKey"]["addresses"];
-          if (addresses != null) {
-            final address = addresses[0];
-            final value = output["value"];
-            Logger.print(address + value.toString());
-            if (address != null) {
-              if (allAddresses.contains(address)) {
-                outputAmtAddressedToWallet += (Decimal.parse(value.toString()) *
-                        Decimal.fromInt(CampfireConstants.satsPerCoin))
-                    .toBigInt()
-                    .toInt();
-                outAddress = address;
-              }
-            }
-          }
-        }
-      }
-
-      // create final tx map
-      midSortedTx["txid"] = txObject["txid"];
-      midSortedTx["confirmed_status"] = (txObject["confirmations"] != null) &&
-          (txObject["confirmations"] > 0);
-      midSortedTx["timestamp"] = txObject["blocktime"] ??
-          (DateTime.now().millisecondsSinceEpoch ~/ 1000);
-      if (foundInSenders) {
+        final fee = totalInputValue - totalOutputValue;
+        // create final tx map
+        midSortedTx["txid"] = txObject["txid"];
+        midSortedTx["confirmed_status"] = (txObject["confirmations"] != null) &&
+            (txObject["confirmations"] > 0);
+        midSortedTx["timestamp"] = txObject["blocktime"] ??
+            (DateTime.now().millisecondsSinceEpoch ~/ 1000);
         midSortedTx["txType"] = "Sent";
-        midSortedTx["amount"] = inputAmtSentFromWallet;
+        midSortedTx["amount"] = totalOutputValue;
         final worthNow = Utilities.localizedStringAsFixed(
-            value: ((currentPrice * Decimal.fromInt(inputAmtSentFromWallet)) /
+            value: ((currentPrice * Decimal.fromInt(totalOutputValue)) /
                     Decimal.fromInt(CampfireConstants.satsPerCoin))
                 .toDecimal(scaleOnInfinitePrecision: 2),
             decimalPlaces: 2,
             locale: locale);
         midSortedTx["worthNow"] = worthNow;
         midSortedTx["worthAtBlockTimestamp"] = worthNow;
-        if (txObject["vout"][0]["scriptPubKey"]["type"] == "lelantusmint") {
-          midSortedTx["subType"] = "mint";
+        midSortedTx["subType"] = "mint";
+        midSortedTx["aliens"] = [];
+        midSortedTx["fees"] = fee;
+        midSortedTx["address"] = outAddress;
+        midSortedTx["height"] = txObject["height"];
+        midSortedTx["inputSize"] = txObject["vin"].length;
+        midSortedTx["outputSize"] = txObject["vout"].length;
+        midSortedTx["inputs"] = txObject["vin"];
+        midSortedTx["outputs"] = txObject["vout"];
+
+        midSortedArray.add(midSortedTx);
+
+        // Otherwise parse JMint transaction ===================================
+      } else if (isJMint) {
+        int jMintFees = 0;
+
+        // Parse inputs
+        for (final input in inputList) {
+          // JMint fee
+          final nFee = Decimal.tryParse(input["nFees"].toString());
+          if (nFee != null) {
+            final fees = (Decimal.parse(nFee.toString()) *
+                    Decimal.fromInt(CampfireConstants.satsPerCoin))
+                .toBigInt()
+                .toInt();
+
+            jMintFees += fees;
+          }
         }
-      } else {
-        midSortedTx["txType"] = "Received";
-        midSortedTx["amount"] = outputAmtAddressedToWallet;
+
+        bool nonWalletAddressFoundInOutputs = false;
+
+        // Parse outputs
+        for (final output in outputList) {
+          // get value
+          final value = output["value"] is double
+              ? (Decimal.parse(output["value"].toString()) *
+                      Decimal.fromInt(CampfireConstants.satsPerCoin))
+                  .toBigInt()
+                  .toInt()
+              : 0;
+
+          // add value to total
+          totalOutputValue += value;
+
+          final address = _getAddressFromOutput(output);
+
+          if (address != null) {
+            outputAddresses.add(address);
+            if (allAddresses.contains(address)) {
+              amountReceivedInWallet += value;
+            } else {
+              nonWalletAddressFoundInOutputs = true;
+            }
+          }
+        }
+        final txid = txObject["txid"] as String;
+
+        final type = nonWalletAddressFoundInOutputs
+            ? "Sent"
+            : (await _lelantusTransactionData).findTransaction(txid) == null
+                ? "Received"
+                : "Sent to self";
+
+        final amount = nonWalletAddressFoundInOutputs
+            ? totalOutputValue
+            : amountReceivedInWallet;
+
+        final possibleNonWalletAddresses =
+            receivingAddresses.difference(outputAddresses);
+        final possibleReceivingAddresses =
+            receivingAddresses.intersection(outputAddresses);
+
+        final transactionAddress = nonWalletAddressFoundInOutputs
+            ? possibleNonWalletAddresses.first
+            : allAddresses.firstWhere(
+                (e) => e == possibleReceivingAddresses.first,
+              );
+
+        // create final tx map
+        midSortedTx["txid"] = txid;
+        midSortedTx["confirmed_status"] = (txObject["confirmations"] != null) &&
+            (txObject["confirmations"] > 0);
+        midSortedTx["timestamp"] = txObject["blocktime"] ??
+            (DateTime.now().millisecondsSinceEpoch ~/ 1000);
+        midSortedTx["txType"] = type;
+        midSortedTx["amount"] = amount;
         final worthNow = Utilities.localizedStringAsFixed(
-            value:
-                ((currentPrice * Decimal.fromInt(outputAmtAddressedToWallet)) /
-                        Decimal.fromInt(CampfireConstants.satsPerCoin))
-                    .toDecimal(scaleOnInfinitePrecision: 2),
+            value: ((currentPrice * Decimal.fromInt(amount)) /
+                    Decimal.fromInt(CampfireConstants.satsPerCoin))
+                .toDecimal(scaleOnInfinitePrecision: 2),
             decimalPlaces: 2,
             locale: locale);
         midSortedTx["worthNow"] = worthNow;
-      }
-      midSortedTx["aliens"] = aliens;
-      midSortedTx["fees"] = fees;
-      midSortedTx["address"] = outAddress;
-      midSortedTx["height"] = txObject["height"];
-      midSortedTx["inputSize"] = txObject["vin"].length;
-      midSortedTx["outputSize"] = txObject["vout"].length;
-      midSortedTx["inputs"] = txObject["vin"];
-      midSortedTx["outputs"] = txObject["vout"];
+        midSortedTx["worthAtBlockTimestamp"] = worthNow;
+        midSortedTx["subType"] = "join";
+        midSortedTx["aliens"] = [];
+        midSortedTx["fees"] = jMintFees;
+        midSortedTx["address"] = transactionAddress;
+        midSortedTx["height"] = txObject["height"];
+        midSortedTx["inputSize"] = txObject["vin"].length;
+        midSortedTx["outputSize"] = txObject["vout"].length;
+        midSortedTx["inputs"] = txObject["vin"];
+        midSortedTx["outputs"] = txObject["vout"];
 
-      midSortedArray.add(midSortedTx);
+        midSortedArray.add(midSortedTx);
+
+        // Master node payment =====================================
+      } else if (inputList.length == 1 &&
+          inputList.first["coinbase"] is String) {
+        // parse outputs
+        for (final output in outputList) {
+          // get value
+          final value = output["value"] is double
+              ? (Decimal.parse(output["value"].toString()) *
+                      Decimal.fromInt(CampfireConstants.satsPerCoin))
+                  .toBigInt()
+                  .toInt()
+              : 0;
+
+          // add value to total
+          totalOutputValue += value;
+
+          // get output address
+          final address = _getAddressFromOutput(output);
+          if (address != null) {
+            outputAddresses.add(address);
+
+            // if output was to my wallet, add value to amount received
+            if (receivingAddresses.contains(address)) {
+              amountReceivedInWallet += value;
+            }
+          }
+        }
+
+        // this is the address initially used to fetch the txid
+        final String transactionAddress = txObject["address"];
+
+        // create final tx map
+        midSortedTx["txid"] = txObject["txid"] as String;
+        midSortedTx["confirmed_status"] = (txObject["confirmations"] != null) &&
+            (txObject["confirmations"] > 0);
+        midSortedTx["timestamp"] = txObject["blocktime"] ??
+            (DateTime.now().millisecondsSinceEpoch ~/ 1000);
+        midSortedTx["txType"] = "Received";
+        midSortedTx["amount"] = amountReceivedInWallet;
+        final worthNow = Utilities.localizedStringAsFixed(
+            value: ((currentPrice * Decimal.fromInt(amountReceivedInWallet)) /
+                    Decimal.fromInt(CampfireConstants.satsPerCoin))
+                .toDecimal(scaleOnInfinitePrecision: 2),
+            decimalPlaces: 2,
+            locale: locale);
+        midSortedTx["worthNow"] = worthNow;
+        midSortedTx["worthAtBlockTimestamp"] = worthNow;
+        midSortedTx["subType"] = "masternode_payment";
+        midSortedTx["aliens"] = [];
+        midSortedTx["fees"] = 0;
+        midSortedTx["address"] = transactionAddress;
+        midSortedTx["height"] = txObject["height"];
+        midSortedTx["inputSize"] = txObject["vin"].length;
+        midSortedTx["outputSize"] = txObject["vout"].length;
+        midSortedTx["inputs"] = txObject["vin"];
+        midSortedTx["outputs"] = txObject["vout"];
+
+        midSortedArray.add(midSortedTx);
+
+        // Assume non lelantus transaction =====================================
+      } else {
+        // parse inputs
+        for (final input in inputList) {
+          final valueSat = input["valueSat"] as int;
+          final address = input["address"] as String ??
+              input["scriptPubKey"]["address"] as String ??
+              input["scriptPubKey"]["addresses"][0] as String;
+
+          if (address != null && valueSat != null) {
+            // add value to total
+            totalInputValue += valueSat;
+            inputAddresses.add(address);
+
+            // if input was from my wallet, add value to amount sent
+            if (receivingAddresses.contains(address) ||
+                changeAddresses.contains(address)) {
+              amountSentFromWallet += valueSat;
+            }
+          }
+        }
+
+        // parse outputs
+        for (final output in outputList) {
+          // get value
+          final value = output["value"] is double
+              ? (Decimal.parse(output["value"].toString()) *
+                      Decimal.fromInt(CampfireConstants.satsPerCoin))
+                  .toBigInt()
+                  .toInt()
+              : 0;
+
+          // add value to total
+          totalOutputValue += value;
+
+          // get output address
+          final address = _getAddressFromOutput(output);
+          if (address != null) {
+            outputAddresses.add(address);
+
+            // if output was to my wallet, add value to amount received
+            if (receivingAddresses.contains(address)) {
+              amountReceivedInWallet += value;
+            } else if (changeAddresses.contains(address)) {
+              changeAmount += value;
+            }
+          }
+        }
+
+        final mySentFromAddresses = [
+          ...receivingAddresses.intersection(inputAddresses),
+          ...changeAddresses.intersection(inputAddresses)
+        ];
+        final myReceivedOnAddresses =
+            receivingAddresses.intersection(outputAddresses);
+        final myChangeReceivedOnAddresses =
+            changeAddresses.intersection(outputAddresses);
+
+        final fee = totalInputValue - totalOutputValue;
+
+        // this is the address initially used to fetch the txid
+        String transactionAddress = txObject["address"];
+
+        String type;
+        int amount;
+        if (mySentFromAddresses.isNotEmpty &&
+            myReceivedOnAddresses.isNotEmpty) {
+          // tx is sent to self
+          type = "Sent to self";
+
+          // should be 0
+          amount = amountSentFromWallet -
+              amountReceivedInWallet -
+              fee -
+              changeAmount;
+        } else if (mySentFromAddresses.isNotEmpty) {
+          // outgoing tx
+          type = "Sent";
+          amount = amountSentFromWallet - changeAmount - fee;
+
+          final possible =
+              outputAddresses.difference(myChangeReceivedOnAddresses).first;
+
+          if (transactionAddress != possible) {
+            transactionAddress = possible;
+          }
+        } else {
+          // incoming tx
+          type = "Received";
+          amount = amountReceivedInWallet;
+        }
+
+        // create final tx map
+        midSortedTx["txid"] = txObject["txid"];
+        midSortedTx["confirmed_status"] = (txObject["confirmations"] != null) &&
+            (txObject["confirmations"] > 0);
+        midSortedTx["timestamp"] = txObject["blocktime"] ??
+            (DateTime.now().millisecondsSinceEpoch ~/ 1000);
+        midSortedTx["txType"] = type;
+        midSortedTx["amount"] = amount;
+        final worthNow = Utilities.localizedStringAsFixed(
+            value: ((currentPrice * Decimal.fromInt(amount)) /
+                    Decimal.fromInt(CampfireConstants.satsPerCoin))
+                .toDecimal(scaleOnInfinitePrecision: 2),
+            decimalPlaces: 2,
+            locale: locale);
+        midSortedTx["worthNow"] = worthNow;
+        midSortedTx["worthAtBlockTimestamp"] = worthNow;
+        midSortedTx["subType"] = "";
+        midSortedTx["aliens"] = [];
+        midSortedTx["fees"] = fee;
+        midSortedTx["address"] = outAddress;
+        midSortedTx["height"] = txObject["height"];
+        midSortedTx["inputSize"] = txObject["vin"].length;
+        midSortedTx["outputSize"] = txObject["vout"].length;
+        midSortedTx["inputs"] = txObject["vin"];
+        midSortedTx["outputs"] = txObject["vout"];
+
+        midSortedArray.add(midSortedTx);
+      }
     }
 
     // sort by date  ----  //TODO not sure if needed
@@ -2448,6 +2671,27 @@ class FiroWallet extends CoinServiceAPI {
     // await wallet.put('storedTxnDataHeight', latestTxnBlockHeight);
     // await wallet.put('latest_tx_model', txModel);
     // return txModel;
+  }
+
+  String _getAddressFromOutput(Map output) {
+    final scriptPubKey = output["scriptPubKey"];
+    if (scriptPubKey == null) {
+      return null;
+    }
+
+    final addresses = scriptPubKey["addresses"];
+
+    if (addresses is List &&
+        addresses.isNotEmpty &&
+        addresses.first is String) {
+      return addresses.first;
+    }
+
+    if (scriptPubKey["address"] is String) {
+      return scriptPubKey["address"] as String;
+    }
+
+    return null;
   }
 
   Future<UtxoData> _fetchUtxoData() async {
