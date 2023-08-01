@@ -6,6 +6,9 @@ abstract class CampfireConstants {
   static const int satsPerCoin = 100000000;
   static const int decimalPlaces = 8;
 
+  // dirty bandaid
+  static bool sunsettingWarningShownNonConstant = false;
+
   // current datastore version
   static const int currentDbVersion = 3;
 

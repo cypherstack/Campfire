@@ -1,10 +1,12 @@
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
+import 'package:hive/hive.dart';
 import 'package:paymint/notifications/campfire_alert.dart';
 import 'package:paymint/pages/onboarding_view/helpers/create_wallet_type.dart';
 import 'package:paymint/pages/onboarding_view/terms_and_conditions_view.dart';
 import 'package:paymint/utilities/cfcolors.dart';
+import 'package:paymint/utilities/misc_global_constants.dart';
 import 'package:paymint/utilities/text_styles.dart';
 import 'package:paymint/widgets/custom_buttons/gradient_button.dart';
 import 'package:paymint/widgets/custom_buttons/simple_button.dart';
@@ -17,13 +19,13 @@ class OnboardingView extends StatefulWidget {
 }
 
 class _OnboardingViewState extends State<OnboardingView> {
-  bool _shouldShow = true;
-
   @override
-  Widget build(BuildContext context) {
-    if (_shouldShow) {
-      _shouldShow = false;
+  void initState() {
+    if (!CampfireConstants.sunsettingWarningShownNonConstant) {
+      CampfireConstants.sunsettingWarningShownNonConstant = true;
       WidgetsBinding.instance.addPostFrameCallback((_) async {
+        Hive.openBox('wallets')
+            .then((box) => box.put("sunsettingWarningShown", true));
         await showDialog<void>(
           useSafeArea: false,
           barrierDismissible: false,
@@ -38,6 +40,11 @@ class _OnboardingViewState extends State<OnboardingView> {
       });
     }
 
+    super.initState();
+  }
+
+  @override
+  Widget build(BuildContext context) {
     return Scaffold(
       body: Container(
         color: CFColors.starryNight,
