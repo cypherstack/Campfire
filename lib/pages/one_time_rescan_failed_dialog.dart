@@ -57,7 +57,7 @@ class OneTimeRescanFailedDialog extends StatelessWidget {
               child: FittedBox(
                 child: Text(
                   "Cancel",
-                  style: CFTextStyles.button,
+                  style: CFTextStyles.button.copyWith(color: CFColors.dusk),
                 ),
               ),
               onTap: () {
@@ -75,7 +75,7 @@ class OneTimeRescanFailedDialog extends StatelessWidget {
               child: FittedBox(
                 child: Text(
                   "Show mnemonic",
-                  style: CFTextStyles.button,
+                  style: CFTextStyles.button.copyWith(color: CFColors.dusk),
                 ),
               ),
               onTap: () async {
@@ -106,7 +106,7 @@ class OneTimeRescanFailedDialog extends StatelessWidget {
               child: FittedBox(
                 child: Text(
                   "Delete wallet",
-                  style: CFTextStyles.button,
+                  style: CFTextStyles.button.copyWith(color: CFColors.dusk),
                 ),
               ),
               onTap: () async {
