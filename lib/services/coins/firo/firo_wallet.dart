@@ -46,7 +46,8 @@ const JMINT_INDEX = 5;
 const MINT_INDEX = 2;
 const TRANSACTION_LELANTUS = 8;
 const ANONYMITY_SET_EMPTY_ID = 0;
-const MINT_LIMIT = 100100000000;
+const MINT_LIMIT = 500100000000;
+const MINT_LIMIT_TESTNET = 100100000000;
 
 final firoNetwork = NetworkType(
     messagePrefix: '\x18Zcoin Signed Message:\n',
@@ -1673,25 +1674,91 @@ class FiroWallet extends CoinServiceAPI {
   }
 
   Future<List<Map<String, dynamic>>> createMintsFromAmount(int total) async {
+    if (total > MINT_LIMIT) {
+      throw Exception(
+          "Lelantus mints of more than 5001 are currently disabled");
+    }
+
     final wallet = await Hive.openBox(this._walletId);
-    var tmpTotal = total;
-    var index = 1;
-    var mints = <Map<String, dynamic>>[];
-    final next_free_mint_index = await wallet.get('mintIndex');
+    int tmpTotal = total;
+    int counter = 0;
+    final mints = <Map<String, dynamic>>[];
+    int nextFreeMintIndex = await wallet.get('mintIndex') ?? 0;
+
+    final root = getBip32Root(
+      (await mnemonic).join(" "),
+      _network,
+    );
+
     while (tmpTotal > 0) {
-      final mintValue = min(tmpTotal, MINT_LIMIT);
-      final mint = await _getMintHex(
-        mintValue,
-        next_free_mint_index + index,
+      nextFreeMintIndex += counter;
+
+      final bip32.BIP32 mintKeyPair = getBip32NodeFromRoot(
+        MINT_INDEX,
+        nextFreeMintIndex,
+        root,
       );
-      mints.add({
-        "value": mintValue,
-        "script": mint,
-        "index": next_free_mint_index + index,
-        "publicCoin": "",
-      });
-      tmpTotal = tmpTotal - MINT_LIMIT;
-      index++;
+
+      final String mintTag = CreateTag(
+        uint8listToString(mintKeyPair.privateKey),
+        nextFreeMintIndex,
+        uint8listToString(mintKeyPair.identifier),
+        isTestnet: networkType == FiroNetworkType.test,
+      );
+
+      List<Map<String, dynamic>> anonymitySets;
+      try {
+        anonymitySets = await fetchAnonymitySets();
+      } catch (e, s) {
+        Logger.print(
+          "Firo needs better internet to create mints: $e\n$s",
+        );
+        rethrow;
+      }
+
+      bool isUsedMintTag = false;
+
+      // stupid dynamic maps
+      for (final set in anonymitySets) {
+        final setCoins = set["coins"] as List;
+        for (final coin in setCoins) {
+          if (coin[1] == mintTag) {
+            isUsedMintTag = true;
+            break;
+          }
+        }
+        if (isUsedMintTag) {
+          break;
+        }
+      }
+
+      if (isUsedMintTag) {
+        Logger.print(
+          "Found used index when minting",
+        );
+      } else {
+        final mintValue = min(
+            tmpTotal,
+            (networkType == FiroNetworkType.test
+                ? MINT_LIMIT_TESTNET
+                : MINT_LIMIT));
+        final mint = await _getMintHex(
+          mintValue,
+          nextFreeMintIndex,
+        );
+
+        mints.add({
+          "value": mintValue,
+          "script": mint,
+          "index": nextFreeMintIndex,
+        });
+        tmpTotal = tmpTotal -
+            (networkType == FiroNetworkType.test
+                ? MINT_LIMIT_TESTNET
+                : MINT_LIMIT);
+      }
+
+      counter++;
     }
     return mints;
   }
@@ -1903,13 +1970,13 @@ class FiroWallet extends CoinServiceAPI {
             transactionInfo['txid'],
             latestSetId,
             false);
-        if (jmint.value > 0) {
-          coins.add({jmint.txId: jmint});
-          List jindexes = await wallet.get('jindex');
-          jindexes.add(index);
-          await wallet.put('jindex', jindexes);
-          await wallet.put('mintIndex', index + 1);
-        }
+
+        coins.add({jmint.txId: jmint});
+        List jindexes = await wallet.get('jindex');
+        jindexes.add(index);
+        await wallet.put('jindex', jindexes);
+        await wallet.put('mintIndex', index + 1);
+
         await wallet.put('_lelantus_coins', coins);
       } else {
         // This is a mint
@@ -1926,10 +1993,9 @@ class FiroWallet extends CoinServiceAPI {
             1,
             false,
           );
-          if (mint.value > 0) {
-            coins.add({mint.txId: mint});
-            await wallet.put('mintIndex', index + 1);
-          }
+
+          coins.add({mint.txId: mint});
+          await wallet.put('mintIndex', index + 1);
         }
         Logger.print(coins);
         await wallet.put('_lelantus_coins', coins);
