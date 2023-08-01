@@ -1,6 +1,7 @@
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
+import 'package:paymint/notifications/campfire_alert.dart';
 import 'package:paymint/pages/onboarding_view/helpers/create_wallet_type.dart';
 import 'package:paymint/pages/onboarding_view/terms_and_conditions_view.dart';
 import 'package:paymint/utilities/cfcolors.dart';
@@ -8,11 +9,35 @@ import 'package:paymint/utilities/text_styles.dart';
 import 'package:paymint/widgets/custom_buttons/gradient_button.dart';
 import 'package:paymint/widgets/custom_buttons/simple_button.dart';
 
-class OnboardingView extends StatelessWidget {
+class OnboardingView extends StatefulWidget {
   const OnboardingView({Key key}) : super(key: key);
 
   @override
+  State<OnboardingView> createState() => _OnboardingViewState();
+}
+
+class _OnboardingViewState extends State<OnboardingView> {
+  bool _shouldShow = true;
+
+  @override
   Widget build(BuildContext context) {
+    if (_shouldShow) {
+      _shouldShow = false;
+      WidgetsBinding.instance.addPostFrameCallback((_) async {
+        await showDialog<void>(
+          useSafeArea: false,
+          barrierDismissible: false,
+          context: context,
+          builder: (_) => CampfireAlert(
+            message:
+                "We're sunsetting Campfire. We recommend moving funds to another "
+                "Firo Wallet, like Stack Wallet. Campfire will be remade in the "
+                "coming months after Spark with a brand new shiny codebase.",
+          ),
+        );
+      });
+    }
+
     return Scaffold(
       body: Container(
         color: CFColors.starryNight,

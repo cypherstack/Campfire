@@ -4,6 +4,7 @@ import 'package:flutter/services.dart';
 import 'package:flutter_spinkit/flutter_spinkit.dart';
 import 'package:flutter_svg/flutter_svg.dart';
 import 'package:google_fonts/google_fonts.dart';
+import 'package:paymint/notifications/campfire_alert.dart';
 import 'package:paymint/services/node_service.dart';
 import 'package:paymint/services/wallets_service.dart';
 import 'package:paymint/utilities/cfcolors.dart';
@@ -26,6 +27,8 @@ class WalletSelectionView extends StatefulWidget {
 }
 
 class _WalletSelectionViewState extends State<WalletSelectionView> {
+  bool _shouldShow = true;
+
   @override
   void initState() {
     SystemChrome.setSystemUIOverlayStyle(
@@ -155,6 +158,24 @@ class _WalletSelectionViewState extends State<WalletSelectionView> {
         statusBarIconBrightness: Brightness.light,
       ),
     );
+
+    if (_shouldShow) {
+      _shouldShow = false;
+      WidgetsBinding.instance.addPostFrameCallback((_) async {
+        await showDialog<void>(
+          useSafeArea: false,
+          barrierDismissible: false,
+          context: context,
+          builder: (_) => CampfireAlert(
+            message:
+                "We're sunsetting Campfire. We recommend moving funds to another "
+                "Firo Wallet, like Stack Wallet. Campfire will be remade in the "
+                "coming months after Spark with a brand new shiny codebase.",
+          ),
+        );
+      });
+    }
+
     return Scaffold(
         backgroundColor: CFColors.starryNight,
         body: Column(
