@@ -13,6 +13,7 @@ class Manager with ChangeNotifier {
   CoinServiceAPI _currentWallet;
   StreamSubscription _backgroundRefreshListener;
 
+  CoinServiceAPI get currentWallet => _currentWallet;
   set currentWallet(CoinServiceAPI newValue) {
     if (newValue == null) {
       throw Exception(

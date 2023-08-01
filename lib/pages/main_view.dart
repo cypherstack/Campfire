@@ -5,12 +5,15 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_svg/flutter_svg.dart';
 import 'package:google_fonts/google_fonts.dart';
+import 'package:paymint/notifications/campfire_alert.dart';
 import 'package:paymint/notifications/modal_popup_dialog.dart';
+import 'package:paymint/pages/one_time_rescan_failed_dialog.dart';
 import 'package:paymint/pages/settings_view/settings_view.dart';
 import 'package:paymint/pages/wallet_selection_view.dart';
 import 'package:paymint/pages/wallet_view/receive_view.dart';
 import 'package:paymint/pages/wallet_view/send_view.dart';
 import 'package:paymint/pages/wallet_view/wallet_view.dart';
+import 'package:paymint/services/coins/firo/firo_wallet.dart';
 import 'package:paymint/services/coins/manager.dart';
 import 'package:paymint/services/event_bus/events/refresh_percent_changed_event.dart';
 import 'package:paymint/services/event_bus/global_event_bus.dart';
@@ -20,6 +23,7 @@ import 'package:paymint/utilities/cfcolors.dart';
 import 'package:paymint/utilities/sizing_utilities.dart';
 import 'package:paymint/utilities/text_styles.dart';
 import 'package:provider/provider.dart';
+import 'package:wakelock/wakelock.dart';
 
 import '../widgets/custom_buttons/app_bar_icon_button.dart';
 
@@ -92,6 +96,143 @@ class _MainViewState extends State<MainView> {
 
   double _percentChanged = 0.0;
 
+  Future<void> _oneTimeRescan() async {
+    Wakelock.enable();
+    // show restoring in progress
+    showDialog(
+      context: context,
+      useSafeArea: false,
+      barrierDismissible: false,
+      builder: (context) => WillPopScope(
+        onWillPop: () async {
+          return false;
+        },
+        child: ModalPopupDialog(
+          child: Column(
+            children: [
+              SizedBox(
+                height: 28,
+              ),
+              FittedBox(
+                child: Text(
+                  "Rescanning wallet",
+                  style: CFTextStyles.pinkHeader.copyWith(
+                    fontSize: 16,
+                  ),
+                ),
+              ),
+              SizedBox(
+                height: 12,
+              ),
+              FittedBox(
+                child: Text(
+                  "This may take a while.",
+                  style: GoogleFonts.workSans(
+                    color: CFColors.dusk,
+                    fontWeight: FontWeight.w400,
+                    fontSize: 14,
+                  ),
+                ),
+              ),
+              SizedBox(
+                height: 12,
+              ),
+              Padding(
+                padding: const EdgeInsets.symmetric(horizontal: 20),
+                child: FittedBox(
+                  child: Text(
+                    "Do not close or leave the app until this completes!",
+                    style: GoogleFonts.workSans(
+                      color: CFColors.dusk,
+                      fontWeight: FontWeight.w400,
+                      fontSize: 14,
+                    ),
+                    maxLines: 2,
+                  ),
+                ),
+              ),
+              SizedBox(
+                height: 50,
+              ),
+              Container(
+                width: 98,
+                height: 98,
+                decoration: BoxDecoration(
+                  borderRadius: BorderRadius.circular(49),
+                  border: Border.all(
+                    color: CFColors.dew,
+                    width: 2,
+                  ),
+                ),
+                child: Center(
+                  child: Container(
+                    height: 40,
+                    width: 40,
+                    child: CircularProgressIndicator(
+                      color: CFColors.spark,
+                      strokeWidth: 2,
+                    ),
+                  ),
+                ),
+              ),
+              SizedBox(
+                height: 50,
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+
+    try {
+      // do rescan
+      await Provider.of<Manager>(context, listen: false).fullRescan();
+
+      // mark one time rescan success
+      await (Provider.of<Manager>(
+        context,
+        listen: false,
+      ).currentWallet as FiroWallet)
+          .setOneTimeSunsettingRescanDone();
+
+      // start refreshing
+      Provider.of<Manager>(
+        context,
+        listen: false,
+      ).refresh();
+
+      // pop scanning dialog
+      Navigator.pop(context);
+
+      showDialog(
+        context: context,
+        useSafeArea: false,
+        barrierDismissible: false,
+        builder: (_) => CampfireAlert(message: "Rescan succeeded"),
+      );
+      Wakelock.disable();
+    } catch (e) {
+      Wakelock.disable();
+      // pop waiting dialog
+      Navigator.pop(context);
+      // show restoring wallet failed dialog
+      final result = await showDialog<dynamic>(
+        context: context,
+        useSafeArea: false,
+        barrierDismissible: false,
+        builder: (_) => OneTimeRescanFailedDialog(
+          errorMessage: e.toString(),
+        ),
+      );
+
+      if (result == "retry") {
+        return await _oneTimeRescan();
+      } else {
+        Navigator.pop(context);
+      }
+    }
+  }
+
   @override
   void initState() {
     // show system status bar
@@ -143,8 +284,17 @@ class _MainViewState extends State<MainView> {
       });
     });
 
-    if (!_disableRefreshOnInit) {
-      Provider.of<Manager>(context, listen: false).refresh();
+    final manager = Provider.of<Manager>(context, listen: false);
+
+    if ((manager.currentWallet as FiroWallet).getOneTimeSunsettingRescanDone) {
+      if (!_disableRefreshOnInit) {
+        manager.refresh();
+      }
+    } else {
+      // init rescan
+      WidgetsBinding.instance.addPostFrameCallback((timeStamp) {
+        _oneTimeRescan();
+      });
     }
 
     super.initState();

@@ -850,7 +850,9 @@ class FiroWallet extends CoinServiceAPI {
   Future<TransactionData> get transactionData async {
     final data = await _txnData;
     final map = data.getAllTransactions();
-    map.removeWhere((key, value) => value.subType == "mint");
+    if (map.isNotEmpty) {
+      map.removeWhere((key, value) => value.subType == "mint");
+    }
     return TransactionData.fromMap(map);
   }
 
@@ -1052,6 +1054,7 @@ class FiroWallet extends CoinServiceAPI {
 
     if (wallet.isEmpty || (await wallet.get("id")) == null) {
       // Triggers for new users automatically. Generates new wallet
+      await setOneTimeSunsettingRescanDone();
       await _generateNewWallet(wallet);
       await wallet.put("id", this._walletId);
       // final lelantusTxData = await _getLelantusTransactionData();
@@ -1069,7 +1072,9 @@ class FiroWallet extends CoinServiceAPI {
     // this._utxoData = _fetchUtxoData();
     // this._transactionData = _fetchTransactionData();
 
-    await checkReceivingAddressForTransactions();
+    if (getOneTimeSunsettingRescanDone) {
+      await checkReceivingAddressForTransactions();
+    }
     return true;
   }
 
@@ -2105,8 +2110,9 @@ class FiroWallet extends CoinServiceAPI {
   Future<List<String>> _fetchAllOwnAddresses() async {
     final List<String> allAddresses = [];
     final wallet = await Hive.openBox(this._walletId);
-    final List receivingAddresses = await wallet.get('receivingAddresses');
-    final List changeAddresses = await wallet.get('changeAddresses');
+    final List receivingAddresses =
+        await wallet.get('receivingAddresses') ?? [];
+    final List changeAddresses = await wallet.get('changeAddresses') ?? [];
 
     for (var i = 0; i < receivingAddresses.length; i++) {
       allAddresses.add(receivingAddresses[i]);
@@ -2146,7 +2152,9 @@ class FiroWallet extends CoinServiceAPI {
     final String currency = fetchPreferredCurrency();
     final listAllAddresses = await _fetchAllOwnAddresses();
     final Set<String> changeAddresses =
-        ((await wallet.get('changeAddresses') as List)).cast<String>().toSet();
+        ((await wallet.get('changeAddresses') as List) ?? [])
+            .cast<String>()
+            .toSet();
     final Set<String> allAddresses = listAllAddresses.toSet();
     final Set<String> receivingAddresses =
         allAddresses.difference(changeAddresses);
@@ -2687,8 +2695,9 @@ class FiroWallet extends CoinServiceAPI {
     final wallet = await Hive.openBox(this._walletId);
     final List<String> allAddresses = [];
     final String currency = fetchPreferredCurrency();
-    final List receivingAddresses = await wallet.get('receivingAddresses');
-    final List changeAddresses = await wallet.get('changeAddresses');
+    final List receivingAddresses =
+        await wallet.get('receivingAddresses') ?? [];
+    final List changeAddresses = await wallet.get('changeAddresses') ?? [];
 
     for (var i = 0; i < receivingAddresses.length; i++) {
       if (!allAddresses.contains(receivingAddresses[i])) {
@@ -2803,8 +2812,9 @@ class FiroWallet extends CoinServiceAPI {
   Future<String> _getCurrentAddressForChain(int chain) async {
     final wallet = await Hive.openBox(this._walletId);
     if (chain == 0) {
-      final externalChainArray = await wallet.get('receivingAddresses');
-      return externalChainArray.last;
+      final externalChainArray =
+          await wallet.get('receivingAddresses') ?? ["error"];
+      return externalChainArray.last ?? ["error"];
     } else {
       // Here, we assume that chain == 1
       final internalChainArray = await wallet.get('changeAddresses');
@@ -3135,6 +3145,8 @@ class FiroWallet extends CoinServiceAPI {
           null) {
         throw Exception("Attempted to overwrite mnemonic on restore!");
       }
+
+      await setOneTimeSunsettingRescanDone();
       await _secureStore.write(
           key: '${this._walletId}_mnemonic', value: mnemonic.trim());
       await _recoverWalletFromBIP32SeedPhrase(mnemonic.trim());
@@ -3443,5 +3455,21 @@ class FiroWallet extends CoinServiceAPI {
     }
     isolates.clear();
     Logger.print("firo_wallet exit finished");
+  }
+
+  Future<void> setOneTimeSunsettingRescanDone() async {
+    final wallet = await Hive.openBox(this._walletId);
+    await wallet.put("oneTimeSunsettingRescanDoneFlag", true);
+  }
+
+  bool get getOneTimeSunsettingRescanDone {
+    final wallet = Hive.box(this._walletId);
+    final flag = wallet.get("oneTimeSunsettingRescanDoneFlag");
+
+    if (flag == true) {
+      return true;
+    } else {
+      return false;
+    }
   }
 }
