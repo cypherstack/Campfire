@@ -31,6 +31,11 @@ class _CurrencyViewState extends State<CurrencyView> {
     "SGD",
     "TRY",
     "USD",
+    "RUB",
+    "IDR",
+    "VND",
+    "MYR",
+    "THB",
     "XAU",
   ];
 
