@@ -56,6 +56,11 @@ void main() {
     expect(find.text("SGD", skipOffstage: false), findsOneWidget);
     expect(find.text("TRY", skipOffstage: false), findsOneWidget);
     expect(find.text("USD", skipOffstage: false), findsOneWidget);
+    expect(find.text("RUB", skipOffstage: false), findsOneWidget);
+    expect(find.text("IDR", skipOffstage: false), findsOneWidget);
+    expect(find.text("VND", skipOffstage: false), findsOneWidget);
+    expect(find.text("MYR", skipOffstage: false), findsOneWidget);
+    expect(find.text("THB", skipOffstage: false), findsOneWidget);
     expect(find.text("XAU", skipOffstage: false), findsOneWidget);
 
     expect(find.byType(Text, skipOffstage: false), findsNWidgets(16));
