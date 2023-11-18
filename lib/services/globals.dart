@@ -28,5 +28,10 @@ final Map<String, String> currencyMap = {
   'SGD': 'SGD ',
   'TRY': 'TRY ',
   'USD': '\$',
+  'RUB': '₽',
+  'IDR': 'Rp',
+  'VND': '₫',
+  'MYR': 'RM',
+  'THB': '฿',
   'XAU': 'GOLD '
 };
