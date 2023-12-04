@@ -4,9 +4,12 @@ import 'package:flutter/services.dart';
 import 'package:flutter_spinkit/flutter_spinkit.dart';
 import 'package:flutter_svg/flutter_svg.dart';
 import 'package:google_fonts/google_fonts.dart';
+import 'package:hive/hive.dart';
+import 'package:paymint/notifications/campfire_alert.dart';
 import 'package:paymint/services/node_service.dart';
 import 'package:paymint/services/wallets_service.dart';
 import 'package:paymint/utilities/cfcolors.dart';
+import 'package:paymint/utilities/misc_global_constants.dart';
 import 'package:paymint/utilities/sizing_utilities.dart';
 import 'package:paymint/utilities/text_styles.dart';
 import 'package:paymint/widgets/custom_buttons/gradient_button.dart';
@@ -35,6 +38,25 @@ class _WalletSelectionViewState extends State<WalletSelectionView> {
         statusBarIconBrightness: Brightness.light,
       ),
     );
+
+    if (!CampfireConstants.sunsettingWarningShownNonConstant) {
+      CampfireConstants.sunsettingWarningShownNonConstant = true;
+      WidgetsBinding.instance.addPostFrameCallback((_) async {
+        Hive.openBox('wallets')
+            .then((box) => box.put("sunsettingWarningShown", true));
+        await showDialog<void>(
+          useSafeArea: false,
+          barrierDismissible: false,
+          context: context,
+          builder: (_) => CampfireAlert(
+            message:
+                "We're sunsetting Campfire. We recommend moving funds to another "
+                "Firo Wallet, like Stack Wallet. Campfire will be remade in the "
+                "coming months after Spark with a brand new shiny codebase.",
+          ),
+        );
+      });
+    }
     super.initState();
   }
 
@@ -155,6 +177,7 @@ class _WalletSelectionViewState extends State<WalletSelectionView> {
         statusBarIconBrightness: Brightness.light,
       ),
     );
+
     return Scaffold(
         backgroundColor: CFColors.starryNight,
         body: Column(

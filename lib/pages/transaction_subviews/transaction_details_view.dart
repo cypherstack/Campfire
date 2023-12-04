@@ -1,3 +1,4 @@
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:paymint/models/models.dart';
@@ -78,6 +79,12 @@ class _TransactionDetailsViewState extends State<TransactionDetailsView> {
     } else if (_transaction.txType == "Sent") {
       if (_transaction.confirmedStatus) {
         return "Sent";
+      } else {
+        return "Sending (~10 min)";
+      }
+    } else if (_transaction.txType == "Sent to self") {
+      if (_transaction.confirmedStatus) {
+        return "Sent to self";
       } else {
         return "Sending (~10 min)";
       }
@@ -246,6 +253,21 @@ class _TransactionDetailsViewState extends State<TransactionDetailsView> {
                             ),
                           if (_transaction.txType == "Received")
                             _buildSeparator(),
+                          if (_transaction.txType == "Sent to self")
+                            _buildItem(
+                              "Received on:",
+                              _transaction.address,
+                              1,
+                            ),
+                          if (_transaction.txType == "Sent to self")
+                            _buildSeparator(),
+                          if (kDebugMode)
+                            _buildItem(
+                              "Tx sub type",
+                              _transaction.subType ?? "ERROR",
+                              1,
+                            ),
+                          if (kDebugMode) _buildSeparator(),
                           _buildItem(
                             "Amount:",
                             // _transaction.confirmedStatus

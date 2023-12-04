@@ -17,12 +17,22 @@ class LelantusCoin {
   // @HiveField(5)
   bool isUsed;
 
-  LelantusCoin(this.index, this.value, this.publicCoin, this.txId,
-      this.anonymitySetId, this.isUsed);
+  LelantusCoin(
+    this.index,
+    this.value,
+    this.publicCoin,
+    this.txId,
+    this.anonymitySetId,
+    this.isUsed,
+  );
 
   String toString() {
-    String coin =
-        "{index: $index, value: $value, publicCoin: $publicCoin, txId: $txId, anonymitySetId: $anonymitySetId, isUsed: $isUsed}";
+    String coin = "{index: $index, "
+        "value: $value, "
+        "publicCoin: $publicCoin, "
+        "txId: $txId, "
+        "anonymitySetId: $anonymitySetId, "
+        "isUsed: $isUsed}";
     return coin;
   }
 }

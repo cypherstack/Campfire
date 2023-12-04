@@ -49,6 +49,14 @@ void main() async {
   final wallets = await Hive.openBox('wallets');
   await wallets.put('currentWalletName', "");
 
+  final sunsettingShown = wallets.get("sunsettingWarningShown");
+
+  if (sunsettingShown == true) {
+    CampfireConstants.sunsettingWarningShownNonConstant = true;
+  } else {
+    CampfireConstants.sunsettingWarningShownNonConstant = false;
+  }
+
   int dbVersion = await wallets.get("db_version");
   if (dbVersion == null || dbVersion < CampfireConstants.currentDbVersion) {
     if (dbVersion == null) dbVersion = 0;
